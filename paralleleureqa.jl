@@ -29,7 +29,7 @@ for k=1:niterations
     # Migration
     for j=1:nthreads
         for k in rand(1:npop, 50)
-            # Copy in case one gets copied twice
+            # Copy in case one gets used twice
             allPops[j].members[k] = deepcopy(bestPops.members[rand(1:size(bestPops.members)[1])])
         end
     end
