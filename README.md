@@ -19,4 +19,4 @@ const y = ((cx,)->cx^2).(X[:, 2]) + cos.(X[:, 3]) .+ 5.0;
 ```
 
 The default number of processes is 10; this is set with
-`addprocs(10)`.
+`addprocs(10)` in `paralleleureqa.jl`.
