@@ -386,6 +386,12 @@ function bestOfSample(pop::Population)::PopMember
     return sample.members[best_idx]
 end
 
+# Return best 10 examples
+function bestSubPop(pop::Population)::Population
+    best_idx = sortperm([pop.members[member].score for member=1:pop.n])
+    return Population(pop.members[best_idx[1:10]])
+end
+
 # Mutate the best sampled member of the population
 function iterateSample(pop::Population, T::Float64)::PopMember
     allstar = bestOfSample(pop)
