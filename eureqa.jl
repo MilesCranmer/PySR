@@ -1,24 +1,24 @@
 # Define allowed operators
-plus(x::Float32, y::Float32) = x+y
-mult(x::Float32, y::Float32) = x*y;
+plus(x::Float32, y::Float32)::Float32 = x+y
+mult(x::Float32, y::Float32)::Float32 = x*y;
+pow(x::Float32, y::Float32)::Float32 = sign(x)*abs(x)^y
 
 ##########################
 # # Allowed operators
 # (Apparently using const for globals helps speed)
-const binops = [plus, mult]
-const unaops = [sin, cos, exp]
+const binops = [plus, mult, pow]
+const unaops = [sin, cos]
 ##########################
 
 # How many equations to search when replacing
 const ns=10;
 
-const nvar = 5;
 # Here is the function we want to learn (x2^2 + cos(x3) + 5)
 #
 ##########################
 # # Dataset to learn
-const X = convert(Array{Float32, 2}, randn(100, nvar)*2)
-const y = convert(Array{Float32, 1}, ((cx,)->cx^2).(X[:, 2]) + cos.(X[:, 3]))
+const X = convert(Array{Float32, 2}, randn(100, 5)*2)
+const y = convert(Array{Float32, 1}, ((cx,)->sign(cx)*abs(cx)^3.5).(X[:, 2]) + cos.(X[:, 3]) .+ 5.0)
 ##########################
 
 ##################
@@ -34,6 +34,7 @@ id = (x,) -> x
 const nuna = size(unaops)[1]
 const nbin = size(binops)[1]
 const nops = nuna + nbin
+const nvar = size(X)[2];
 
 # Define a serialization format for the symbolic equations:
 mutable struct Node

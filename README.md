@@ -12,17 +12,17 @@ You can change the binary and unary operators in `eureqa.jl` here:
 const binops = [plus, mult]
 const unaops = [sin, cos, exp];
 ```
-E.g., you can add another binary function with:
+E.g., you can add the function for powers with:
 ```
-const binops = [plus, mult, (x, y)->x^2*y]
+pow(x::Float32, y::Float32)::Float32 = sign(x)*abs(x)^y
+const binops = [plus, mult, pow]
 ```
 
 You can change the dataset here:
 ```
-const nvar = 5;
-const X = rand(100, nvar);
+const X = convert(Array{Float32, 2}, randn(100, 5)*2)
 # Here is the function we want to learn (x2^2 + cos(x3))
-const y = ((cx,)->cx^2).(X[:, 2]) + cos.(X[:, 3])
+const y = convert(Array{Float32, 1}, ((cx,)->cx^2).(X[:, 2]) + cos.(X[:, 3]))
 ```
 by either loading in a dataset, or modifying the definition of `y`.
 
