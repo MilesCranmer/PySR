@@ -322,7 +322,8 @@ function iterate(
     prev = deepcopy(tree)
     
     mutationChoice = rand()
-    weights = [8, 1, 1, 1, 2]
+    weight_for_constant = min(8, countConstants(tree))
+    weights = [weight_for_constant, 1, 1, 1, 2]
     weights /= sum(weights)
     cweights = cumsum(weights)
     n = countNodes(tree)

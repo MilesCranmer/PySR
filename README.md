@@ -54,3 +54,8 @@ weights = [8, 1, 1, 1]
 (for: 1. perturb constant, 2. mutate operator,
 3. append a node, 4. delete a subtree).
 
+
+# TODO
+
+- Record hall of fame
+- Optionally migrate the hall of fame, rather than current bests
