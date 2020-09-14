@@ -16,7 +16,7 @@ for pop in allPops
     bestCurScoreIdx = argmin([pop.members[member].score for member=1:pop.n])
     bestCurScore = pop.members[bestCurScoreIdx].score
     if bestCurScore < bestScore
-        bestScore = bestCurScore
+        global bestScore = bestCurScore
         println(bestScore, " is the score for ", stringTree(pop.members[bestCurScoreIdx].tree))
     end
 end
