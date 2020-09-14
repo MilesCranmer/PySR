@@ -17,7 +17,7 @@ for k=1:niterations
 
     # Spawn threads to run indepdent evolutions, then gather them
     @inbounds Threads.@threads for i=1:nthreads
-        allPops[i] = run(allPops[i], ncyclesperiteration, annealing)
+        allPops[i] = run(allPops[i], ncyclesperiteration, annealing, verbose=1000)
     end
 
     # Get best 10 models from each evolution. Copy because we re-assign later.

@@ -433,7 +433,8 @@ end
 function run(
         pop::Population,
         ncycles::Int,
-        annealing::Bool=false,
+        annealing::Bool=false;
+        verbose::Int=0
         )::Population
     pop = deepcopy(pop)
 
@@ -443,6 +444,13 @@ function run(
             pop = regEvolCycle(pop, allT[iT])
         else
             pop = regEvolCycle(pop, 1.0)
+        end
+        if verbose > 0 && (iT % verbose == 0)
+            # Get best 10 models from each evolution. Copy because we re-assign later.
+            bestPops = bestSubPop(pop)
+            bestCurScoreIdx = argmin([bestPops.members[member].score for member=1:bestPops.n])
+            bestCurScore = bestPops.members[bestCurScoreIdx].score
+            println(bestCurScore, " is the score for ", stringTree(bestPops.members[bestCurScoreIdx].tree))
         end
     end
     return pop
