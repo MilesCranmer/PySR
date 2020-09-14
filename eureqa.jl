@@ -17,6 +17,8 @@ const parsimony = 0.01
 # How much to scale temperature by (T between 0 and 1)
 const alpha = 10.0
 
+const maxsize = 20
+
 
 
 
@@ -188,7 +190,8 @@ function mutateConstant(
         node = randomNode(tree)
     end
     
-    maxChange = T + 1.0
+    bottom = 0.1
+    maxChange = T + 1.0 + bottom
     factor = maxChange^rand()
     makeConstBigger = rand() > 0.5
     
@@ -310,12 +313,13 @@ function iterate(
     weights = [8, 1, 1, 1]
     weights /= sum(weights)
     cweights = cumsum(weights)
+    n = countNodes(tree)
     
     if mutationChoice < cweights[1]
         tree = mutateConstant(tree, T)
     elseif mutationChoice < cweights[2]
         tree = mutateOperator(tree)
-    elseif mutationChoice < cweights[3]
+    elseif mutationChoice < cweights[3] && n < maxsize
         tree = appendRandomOp(tree)
     elseif mutationChoice < cweights[4]
         tree = deleteRandomOp(tree)
@@ -407,6 +411,7 @@ end
 function regEvolCycle(pop::Population, T::Float64)::Population
     for i=1:Int(pop.n/10)
         baby = iterateSample(pop, T)
+        #printTree(baby.tree)
         oldest = argmin([pop.members[member].birth for member=1:pop.n])
         pop.members[oldest] = baby
     end
@@ -427,8 +432,9 @@ function run(
         if annealing
             pop = regEvolCycle(pop, allT[iT])
         else
-            pop = regEvolCycle(pop, 0.0)
+            pop = regEvolCycle(pop, 1.0)
         end
     end
     return pop
 end
+
