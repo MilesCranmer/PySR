@@ -346,11 +346,12 @@ function iterate(
         delta = afterLoss - beforeLoss
         probChange = exp(-delta/(T*alpha))
 
-        if probChange > rand()
-            return tree
+        if isnan(afterLoss) || probChange < rand()
+            return prev
         end
 
-        return prev
+        return tree
+
     catch error
         # Sometimes too many chained exp operators
         if isa(error, DomainError)
