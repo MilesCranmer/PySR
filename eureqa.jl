@@ -420,6 +420,7 @@ function run(
         ncycles::Int,
         annealing::Bool=false,
         )::Population
+    pop = deepcopy(pop)
 
     allT = LinRange(1.0, 0.0, ncycles)
     for iT in 1:size(allT)[1]

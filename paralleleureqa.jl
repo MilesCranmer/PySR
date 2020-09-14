@@ -1,36 +1,58 @@
 using Distributed
-const nthreads = 10
+const nthreads = 8
 addprocs(nthreads)
+
 @everywhere include("eureqa.jl")
 
 println("Lets try to learn (x2^2 + cos(x3) + 5) using regularized evolution from scratch")
 const npop = 100
 const annealing = false
 const niterations = 10
-bestScore = Inf
+const ncyclesperiteration = 1000
 
 # Generate random initial populations
-allPops = [Population(npop, 3) for i=1:nthreads]
 
 # Create a mapping for running the algorithm on all processes
-@everywhere f = (pop,)->run(pop, 1000, annealing)
+@everywhere f = (pop,)->run(pop, ncyclesperiteration, annealing)
 
-# Do niterations cycles
-for i=1:niterations
+
+function update(allPops::Array{Population, 1}, bestScore::Float64, pool::AbstractWorkerPool)
     # Map it over our workers
-    global allPops = deepcopy(pmap(f, allPops))
+    #global allPops = deepcopy(pmap(f, deepcopy(allPops)))
+    curAllPops = deepcopy(pmap(f, allPops))
+    for j=1:nthreads
+        allPops[j] = curAllPops[j]
+    end
 
     # Get best 10 models for each processes
-    bestPops = Population(vcat(map(((pop,)->bestSubPop(pop).members), allPops)...))
-    for pop in bestPops
-        bestCurScoreIdx = argmin([pop.members[member].score for member=1:pop.n])
-        bestCurScore = pop.members[bestCurScoreIdx].score
-        if bestCurScore < bestScore
-            global bestScore = bestCurScore
-            println(bestScore, " is the score for ", stringTree(pop.members[bestCurScoreIdx].tree))
-        end
+    bestPops = Population([member for pop in allPops for member in bestSubPop(pop).members])
+    bestCurScoreIdx = argmin([bestPops.members[member].score for member=1:bestPops.n])
+    bestCurScore = bestPops.members[bestCurScoreIdx].score
+    if bestCurScore < bestScore
+        bestScore = bestCurScore
+        println(bestScore, " is the score for ", stringTree(bestPops.members[bestCurScoreIdx].tree))
     end
-    exit()
+
+    # Migration
+    for j=1:nthreads
+        allPops[j].members[1:50] = deepcopy(bestPops.members[rand(1:bestPops.n, 50)])
+    end
+    return allPops, bestScore
 end
 
+
+function runExperiment()
+    # Do niterations cycles
+    allPops = [Population(npop, 3) for j=1:nthreads]
+    bestScore = Inf
+    #pool = CachingPool(workers())
+    pool = WorkerPool(workers())
+    for i=1:niterations
+        allPops, bestScore = update(allPops, bestScore, pool)
+    end
+
+    return bestScore
+end
+
+runExperiment()
 
