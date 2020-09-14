@@ -9,21 +9,24 @@ const binops = [plus, mult]
 const unaops = [sin, cos, exp]
 ##########################
 
+# How many equations to search when replacing
+const ns=10;
+
 const nvar = 5;
 # Here is the function we want to learn (x2^2 + cos(x3) + 5)
 #
 ##########################
 # # Dataset to learn
-const X = rand(100, nvar)
-const y = ((cx,)->cx^2).(X[:, 2]) + cos.(X[:, 3]) .+ 5.0;
+const X = randn(100, nvar)*2
+const y = ((cx,)->cx^2).(X[:, 2]) + cos.(X[:, 3])
 ##########################
 
 ##################
 # Hyperparameters
 # How much to punish complexity
-const parsimony = 0.01
+const parsimony = 1e-3
 # How much to scale temperature by (T between 0 and 1)
-const alpha = 10.0
+const alpha = 100.0
 const maxsize = 20
 ##################
 
@@ -315,7 +318,7 @@ function iterate(
     prev = deepcopy(tree)
     
     mutationChoice = rand()
-    weights = [8, 1, 1, 1]
+    weights = [8, 1, 1, 1, 2]
     weights /= sum(weights)
     cweights = cumsum(weights)
     n = countNodes(tree)
@@ -328,6 +331,8 @@ function iterate(
         tree = appendRandomOp(tree)
     elseif mutationChoice < cweights[4]
         tree = deleteRandomOp(tree)
+    else
+        tree = tree
     end
     
     try
@@ -384,7 +389,7 @@ end
 
 # Sample 10 random members of the population, and make a new one
 function samplePop(pop::Population)::Population
-    idx = rand(1:pop.n, 10)
+    idx = rand(1:pop.n, ns)
     return Population(pop.members[idx])#Population(deepcopy(pop.members[idx]))
 end
 
@@ -414,7 +419,7 @@ end
 # Pass through the population several times, replacing the oldest
 # with the fittest of a small subsample
 function regEvolCycle(pop::Population, T::Float64)::Population
-    for i=1:Int(pop.n/10)
+    for i=1:Int(pop.n/ns)
         baby = iterateSample(pop, T)
         #printTree(baby.tree)
         oldest = argmin([pop.members[member].birth for member=1:pop.n])

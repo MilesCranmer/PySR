@@ -20,8 +20,8 @@ You can change the dataset here:
 ```
 const nvar = 5;
 const X = rand(100, nvar);
-# Here is the function we want to learn (x2^2 + cos(x3) + 5)
-const y = ((cx,)->cx^2).(X[:, 2]) + cos.(X[:, 3]) .+ 5.0;
+# Here is the function we want to learn (x2^2 + cos(x3))
+const y = ((cx,)->cx^2).(X[:, 2]) + cos.(X[:, 3])
 ```
 by either loading in a dataset, or modifying the definition of `y`.
 

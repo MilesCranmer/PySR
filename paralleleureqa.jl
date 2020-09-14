@@ -1,12 +1,12 @@
 include("eureqa.jl")
 
-println("Lets try to learn (x2^2 + cos(x3) + 5) using regularized evolution from scratch")
+println("Lets try to learn (x2^2 + cos(x3)) using regularized evolution from scratch")
 const nthreads = Threads.nthreads()
 println("Running with $nthreads threads")
-const npop = 100
+const npop = 1000
 const annealing = true
-const niterations = 30
-const ncyclesperiteration = 10000
+const niterations = 100
+const ncyclesperiteration = 30000
 
 # Generate random initial populations
 allPops = [Population(npop, 3) for j=1:nthreads]
