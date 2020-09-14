@@ -2,23 +2,30 @@
 plus(x::Float64, y::Float64) = x+y
 mult(x::Float64, y::Float64) = x*y;
 
+##########################
+# # Allowed operators
 # (Apparently using const for globals helps speed)
-const binops = [plus, mult]
+const binops = [plus, mult, (x, y)->x^2*y]
 const unaops = [sin, cos, exp]
+##########################
 
 const nvar = 5;
-const X = rand(100, nvar)
-
 # Here is the function we want to learn (x2^2 + cos(x3) + 5)
+#
+##########################
+# # Dataset to learn
+const X = rand(100, nvar)
 const y = ((cx,)->cx^2).(X[:, 2]) + cos.(X[:, 3]) .+ 5.0;
+##########################
 
+##################
+# Hyperparameters
 # How much to punish complexity
 const parsimony = 0.01
 # How much to scale temperature by (T between 0 and 1)
 const alpha = 10.0
 const maxsize = 20
-
-
+##################
 
 id = (x,) -> x
 const nuna = size(unaops)[1]
