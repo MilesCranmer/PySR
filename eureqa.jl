@@ -5,7 +5,7 @@ mult(x::Float64, y::Float64) = x*y;
 ##########################
 # # Allowed operators
 # (Apparently using const for globals helps speed)
-const binops = [plus, mult, (x, y)->x^2*y]
+const binops = [plus, mult]
 const unaops = [sin, cos, exp]
 ##########################
 
