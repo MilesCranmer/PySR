@@ -1,8 +1,9 @@
 # Running:
 
-For now, just modify the script to your liking:
+For now, just modify the script in `paralleleureqa.jl`
+to your liking and run:
 
-`JULIA_NUM_THREADS=8 julia paralleleureqa.jl`
+`julia --threads auto -O3 paralleleureqa.jl`
 
 ## Modification
 
@@ -49,10 +50,10 @@ Larger alpha means more exploration.
 
 One can also adjust the relative probabilities of each mutation here:
 ```
-weights = [8, 1, 1, 1]
+weights = [8, 1, 1, 1, 2]
 ```
 (for: 1. perturb constant, 2. mutate operator,
-3. append a node, 4. delete a subtree).
+3. append a node, 4. delete a subtree, 5. do nothing).
 
 
 # TODO
