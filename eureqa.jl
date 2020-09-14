@@ -16,9 +16,7 @@ const y = ((cx,)->cx^2).(X[:, 2]) + cos.(X[:, 3]) .+ 5.0;
 const parsimony = 0.01
 # How much to scale temperature by (T between 0 and 1)
 const alpha = 10.0
-
 const maxsize = 20
-
 
 
 
