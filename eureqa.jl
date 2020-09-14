@@ -1,15 +1,13 @@
-using ProgressBars
-
 # Define allowed operators
 plus(x::Float64, y::Float64) = x+y
 mult(x::Float64, y::Float64) = x*y;
 
 # (Apparently using const for globals helps speed)
 const binops = [plus, mult]
-const unaops = [sin, cos, exp];
+const unaops = [sin, cos, exp]
 
 const nvar = 5;
-const X = rand(100, nvar);
+const X = rand(100, nvar)
 
 # Here is the function we want to learn (x2^2 + cos(x3) + 5)
 const y = ((cx,)->cx^2).(X[:, 2]) + cos.(X[:, 3]) .+ 5.0;
@@ -411,30 +409,19 @@ end
 
 # Cycle through regularized evolution many times,
 # printing the fittest equation every 10% through
-function run(ncycles::Int,
-        npop::Int=100,
-        annealing::Bool=false)::Population
+function run(
+        pop::Population,
+        ncycles::Int,
+        annealing::Bool=false,
+        )::Population
 
     allT = LinRange(1.0, 0.0, ncycles)
-    pop = Population(npop, 3)
-    bestScore = Inf
-    for iT in tqdm(1:size(allT)[1])
+    for iT in 1:size(allT)[1]
         if annealing
             pop = regEvolCycle(pop, allT[iT])
         else
             pop = regEvolCycle(pop, 0.0)
         end
-        bestCurScoreIdx = argmin([pop.members[member].score for member=1:pop.n])
-        bestCurScore = pop.members[bestCurScoreIdx].score
-        if bestCurScore < bestScore
-            bestScore = bestCurScore
-            println(bestScore, " is the score for ", stringTree(pop.members[bestCurScoreIdx].tree))
-        end
     end
     return pop
 end
-
-println("Lets try to learn (x2^2 + cos(x3) + 5) using regularized evolution from scratch")
-pop = run(10000, 1000, false);
-
-
