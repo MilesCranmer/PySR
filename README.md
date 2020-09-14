@@ -1,5 +1,7 @@
 # Running:
 
+For now, just modify the script to your liking:
+
 `julia paralleleureqa.jl`
 
 ## Modification
@@ -23,5 +25,6 @@ The default number of processes is 10; this is set with
 
 ### Hyperparameters
 
-Turn on annealing by setting the following in `paralleleureqa.jl`
+Turn on annealing by setting the following in `paralleleureqa.jl`:
+
 `const annealing = true`
