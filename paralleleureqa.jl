@@ -1,33 +1,26 @@
-using Distributed
-addprocs(8)
-@everywhere const nthreads = 8
-
-@everywhere include("eureqa.jl")
+include("eureqa.jl")
 
 println("Lets try to learn (x2^2 + cos(x3) + 5) using regularized evolution from scratch")
-@everywhere const npop = 100
-@everywhere const annealing = false
-@everywhere const niterations = 30
-@everywhere const ncyclesperiteration = 10000
+const nthreads = Threads.nthreads()
+println("Running with $nthreads threads")
+const npop = 100
+const annealing = true
+const niterations = 30
+const ncyclesperiteration = 10000
 
 # Generate random initial populations
-
-# Create a mapping for running the algorithm on all processes
-@everywhere f = (pop,)->run(pop, ncyclesperiteration, annealing)
-
-
 allPops = [Population(npop, 3) for j=1:nthreads]
 bestScore = Inf
 # Repeat this many evolutions; we collect and migrate the best
 # each time.
 for k=1:4
     # Spawn independent evolutions
-    futures = [@spawnat :any f(allPops[i]) for i=1:nthreads]
 
     # Gather them
-    for i=1:nthreads
-        allPops[i] = fetch(futures[i])
+    @inbounds Threads.@threads for i=1:nthreads
+        allPops[i] = run(allPops[i], ncyclesperiteration, annealing)
     end
+
     # Get best 10 models for each processes. Copy because we re-assign later.
     bestPops = deepcopy(Population([member for pop in allPops for member in bestSubPop(pop).members]))
     bestCurScoreIdx = argmin([bestPops.members[member].score for member=1:bestPops.n])
@@ -42,6 +35,53 @@ for k=1:4
         end
     end
 end
+
+## Possibly calls once for every thread? But works.
+
+# using Distributed
+# addprocs(8)
+# @everywhere const nthreads = 8
+
+# @everywhere include("eureqa.jl")
+
+# println("Lets try to learn (x2^2 + cos(x3) + 5) using regularized evolution from scratch")
+# @everywhere const npop = 100
+# @everywhere const annealing = false
+# @everywhere const niterations = 30
+# @everywhere const ncyclesperiteration = 10000
+
+# # Generate random initial populations
+
+# # Create a mapping for running the algorithm on all processes
+# @everywhere f = (pop,)->run(pop, ncyclesperiteration, annealing)
+
+
+# @everywhere allPops = [Population(npop, 3) for j=1:nthreads]
+# @everywhere bestScore = Inf
+# # Repeat this many evolutions; we collect and migrate the best
+# # each time.
+# for k=1:4
+    # # Spawn independent evolutions
+    # @everywhere futures = [@spawnat :any f(allPops[i]) for i=1:nthreads]
+
+    # # Gather them
+    # for i=1:nthreads
+        # @everywhere allPops[i] = fetch(futures[i])
+    # end
+    # # Get best 10 models for each processes. Copy because we re-assign later.
+    # @everywhere bestPops = deepcopy(Population([member for pop in allPops for member in bestSubPop(pop).members]))
+    # @everywhere bestCurScoreIdx = argmin([bestPops.members[member].score for member=1:bestPops.n])
+    # @everywhere bestCurScore = bestPops.members[bestCurScoreIdx].score
+    # println(bestCurScore, " is the score for ", stringTree(bestPops.members[bestCurScoreIdx].tree))
+
+    # # Migration
+    # for j=1:nthreads
+        # for k in rand(1:npop, 50)
+            # # Copy in case one gets copied twice
+            # @everywhere allPops[j].members[k] = deepcopy(bestPops.members[rand(1:size(bestPops.members)[1])])
+        # end
+    # end
+# end
 
 
 
