@@ -1,13 +1,12 @@
 # Define allowed operators
-plus(x::Float32, y::Float32)::Float32 = x+y
-mult(x::Float32, y::Float32)::Float32 = x*y;
-pow(x::Float32, y::Float32)::Float32 = sign(x)*abs(x)^y
+plus(x::Float32, y::Float32) = x+y
+mult(x::Float32, y::Float32) = x*y;
 
 ##########################
 # # Allowed operators
 # (Apparently using const for globals helps speed)
-const binops = [plus, mult, pow]
-const unaops = [sin, cos]
+const binops = [plus, mult]
+const unaops = [sin, cos, exp]
 ##########################
 
 # How many equations to search when replacing
@@ -18,7 +17,7 @@ const ns=10;
 ##########################
 # # Dataset to learn
 const X = convert(Array{Float32, 2}, randn(100, 5)*2)
-const y = convert(Array{Float32, 1}, ((cx,)->sign(cx)*abs(cx)^3.5).(X[:, 2]) + cos.(X[:, 3]) .+ 5.0)
+const y = convert(Array{Float32, 1}, ((cx,)->cx^2).(X[:, 2]) + cos.(X[:, 3]))
 ##########################
 
 ##################
