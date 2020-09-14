@@ -1,6 +1,6 @@
 # Define allowed operators
-plus(x::Float64, y::Float64) = x+y
-mult(x::Float64, y::Float64) = x*y;
+plus(x::Float32, y::Float32) = x+y
+mult(x::Float32, y::Float32) = x*y;
 
 ##########################
 # # Allowed operators
@@ -17,16 +17,16 @@ const nvar = 5;
 #
 ##########################
 # # Dataset to learn
-const X = randn(100, nvar)*2
-const y = ((cx,)->cx^2).(X[:, 2]) + cos.(X[:, 3])
+const X = convert(Array{Float32, 2}, randn(100, nvar)*2)
+const y = convert(Array{Float32, 1}, ((cx,)->cx^2).(X[:, 2]) + cos.(X[:, 3]))
 ##########################
 
 ##################
 # Hyperparameters
 # How much to punish complexity
-const parsimony = 1e-3
+const parsimony = 1f-3
 # How much to scale temperature by (T between 0 and 1)
-const alpha = 100.0
+const alpha = 10.0f0
 const maxsize = 20
 ##################
 
@@ -38,27 +38,27 @@ const nops = nuna + nbin
 # Define a serialization format for the symbolic equations:
 mutable struct Node
     #Holds operators, variables, constants in a tree
-    degree::Int #0 for constant/variable, 1 for cos/sin, 2 for +/* etc.
-    val::Union{Float64, Int} #Either const value, or enumerates variable
+    degree::Integer #0 for constant/variable, 1 for cos/sin, 2 for +/* etc.
+    val::Union{Float32, Integer} #Either const value, or enumerates variable
     constant::Bool #false if variable 
     op::Function #enumerates operator (for degree=1,2)
     l::Union{Node, Nothing}
     r::Union{Node, Nothing}
     
-    Node(val::Float64) = new(0, val, true, id, nothing, nothing)
-    Node(val::Int) = new(0, val, false, id, nothing, nothing)
-    Node(op, l::Node) = new(1, 0.0, false, op, l, nothing)
-    Node(op, l::Union{Float64, Int}) = new(1, 0.0, false, op, Node(l), nothing)
-    Node(op, l::Node, r::Node) = new(2, 0.0, false, op, l, r)
+    Node(val::Float32) = new(0, val, true, id, nothing, nothing)
+    Node(val::Integer) = new(0, val, false, id, nothing, nothing)
+    Node(op, l::Node) = new(1, 0.0f0, false, op, l, nothing)
+    Node(op, l::Union{Float32, Integer}) = new(1, 0.0f0, false, op, Node(l), nothing)
+    Node(op, l::Node, r::Node) = new(2, 0.0f0, false, op, l, r)
     
     #Allow to pass the leaf value without additional node call:
-    Node(op, l::Union{Float64, Int}, r::Node) = new(2, 0.0, false, op, Node(l), r)
-    Node(op, l::Node, r::Union{Float64, Int}) = new(2, 0.0, false, op, l, Node(r))
-    Node(op, l::Union{Float64, Int}, r::Union{Float64, Int}) = new(2, 0.0, false, op, Node(l), Node(r))
+    Node(op, l::Union{Float32, Integer}, r::Node) = new(2, 0.0f0, false, op, Node(l), r)
+    Node(op, l::Node, r::Union{Float32, Integer}) = new(2, 0.0f0, false, op, l, Node(r))
+    Node(op, l::Union{Float32, Integer}, r::Union{Float32, Integer}) = new(2, 0.0f0, false, op, Node(l), Node(r))
 end
 
 # Evaluate a symbolic equation:
-function evalTree(tree::Node, x::Array{Float64, 1}=Float64[])::Float64
+function evalTree(tree::Node, x::Array{Float32, 1}=Float32[])::Float32
     if tree.degree == 0
         if tree.constant
             return tree.val
@@ -73,7 +73,7 @@ function evalTree(tree::Node, x::Array{Float64, 1}=Float64[])::Float64
 end
 
 # Count the operators, constants, variables in an equation
-function countNodes(tree::Node)::Int
+function countNodes(tree::Node)::Integer
     if tree.degree == 0
         return 1
     elseif tree.degree == 1
@@ -129,7 +129,7 @@ function randomNode(tree::Node)::Node
 end
 
 # Count the number of unary operators in the equation
-function countUnaryOperators(tree::Node)::Int
+function countUnaryOperators(tree::Node)::Integer
     if tree.degree == 0
         return 0
     elseif tree.degree == 1
@@ -140,7 +140,7 @@ function countUnaryOperators(tree::Node)::Int
 end
 
 # Count the number of binary operators in the equation
-function countBinaryOperators(tree::Node)::Int
+function countBinaryOperators(tree::Node)::Integer
     if tree.degree == 0
         return 0
     elseif tree.degree == 1
@@ -151,7 +151,7 @@ function countBinaryOperators(tree::Node)::Int
 end
 
 # Count the number of operators in the equation
-function countOperators(tree::Node)::Int
+function countOperators(tree::Node)::Integer
     return countUnaryOperators(tree) + countBinaryOperators(tree)
 end
 
@@ -174,9 +174,9 @@ function mutateOperator(tree::Node)::Node
 end
 
 # Count the number of constants in an equation
-function countConstants(tree::Node)::Int
+function countConstants(tree::Node)::Integer
     if tree.degree == 0
-        return convert(Int, tree.constant)
+        return convert(Integer, tree.constant)
     elseif tree.degree == 1
         return 0 + countConstants(tree.l)
     else
@@ -186,8 +186,8 @@ end
 
 # Randomly perturb a constant
 function mutateConstant(
-        tree::Node, T::Float64,
-        probNegate::Float64=0.01)::Node
+        tree::Node, T::Float32,
+        probNegate::Float32=0.01f0)::Node
     # T is between 0 and 1.
     
     if countConstants(tree) == 0
@@ -198,9 +198,9 @@ function mutateConstant(
         node = randomNode(tree)
     end
     
-    bottom = 0.1
-    maxChange = T + 1.0 + bottom
-    factor = maxChange^rand()
+    bottom = 0.1f0
+    maxChange = T + 1.0f0 + bottom
+    factor = maxChange^Float32(rand())
     makeConstBigger = rand() > 0.5
     
     if makeConstBigger 
@@ -219,31 +219,35 @@ end
 # Evaluate an equation over an array of datapoints
 function evalTreeArray(
         tree::Node,
-        x::Array{Float64, 2})::Array{Float64, 1}
+        x::Array{Float32, 2})::Array{Float32, 1}
     return mapslices(
-        (cx,) -> evalTree(tree, cx),
-        x,
-        dims=[2]
-    )[:, 1]
+            (cx,) -> evalTree(tree, cx),
+            x,
+            dims=[2]
+        )[:, 1]
 end
 
 # Sum of square error between two arrays
-function SSE(x::Array{Float64}, y::Array{Float64})::Float64
+function SSE(x::Array{Float32}, y::Array{Float32})::Float32
     return sum(((cx,)->cx^2).(x - y))
 end
 
 # Mean of square error between two arrays
-function MSE(x::Array{Float64}, y::Array{Float64})::Float64
+function MSE(x::Array{Float32}, y::Array{Float32})::Float32
     return SSE(x, y)/size(x)[1]
 end
 
 # Score an equation
 function scoreFunc(
         tree::Node,
-        X::Array{Float64, 2},
-        y::Array{Float64, 1},
-        parsimony::Float64=0.1)::Float64
-    return MSE(evalTreeArray(tree, X), y) + countNodes(tree)*parsimony
+        X::Array{Float32, 2},
+        y::Array{Float32, 1},
+        parsimony::Float32=0.1f0)::Float32
+    try
+        return MSE(evalTreeArray(tree, X), y) + countNodes(tree)*parsimony
+    catch error
+        return 1f9
+    end
 end
 
 # Add a random unary/binary operation to the end of a tree
@@ -256,12 +260,12 @@ function appendRandomOp(tree::Node)::Node
     choice = rand()
     makeNewBinOp = choice < nbin/nops
     if rand() > 0.5
-        left = randn()
+        left = Float32(randn())
     else
         left = rand(1:nvar)
     end
     if rand() > 0.5
-        right = randn()
+        right = Float32(randn())
     else
         right = rand(1:nvar)
     end
@@ -293,7 +297,7 @@ function deleteRandomOp(tree::Node)::Node
     node = randomNode(tree)
     # Can "delete" variable or constant too
     if rand() > 0.5
-        val = randn()
+        val = Float32(randn())
     else
         val = rand(1:nvar)
     end
@@ -310,10 +314,10 @@ end
 # Go through one simulated annealing mutation cycle
 #  exp(-delta/T) defines probability of accepting a change
 function iterate(
-        tree::Node, T::Float64,
-        X::Array{Float64, 2}, y::Array{Float64, 1},
-        alpha::Float64=1.0,
-        mult::Float64=0.1
+        tree::Node, T::Float32,
+        X::Array{Float32, 2}, y::Array{Float32, 1},
+        alpha::Float32=1.0f0,
+        mult::Float32=0.1f0
     )::Node
     prev = deepcopy(tree)
     
@@ -357,8 +361,8 @@ function iterate(
 end
 
 # Create a random equation by appending random operators
-function genRandomTree(length::Int)::Node
-    tree = Node(1.0)
+function genRandomTree(length::Integer)::Node
+    tree = Node(1.0f0)
     for i=1:length
         tree = appendRandomOp(tree)
     end
@@ -369,21 +373,21 @@ end
 # Define a member of population by equation, score, and age
 mutable struct PopMember
     tree::Node
-    score::Float64
-    birth::Float64
+    score::Float32
+    birth::Float32
     
-    PopMember(t) = new(t, scoreFunc(t, X, y, parsimony), time()-1.6e9)
+    PopMember(t) = new(t, scoreFunc(t, X, y, parsimony), Float32(time())-1.6f9)
 end
 
 # A list of members of the population, with easy constructors,
 #  which allow for random generation of new populations
 mutable struct Population
     members::Array{PopMember, 1}
-    n::Int
+    n::Integer
     
     Population(pop::Array{PopMember, 1}) = new(pop, size(pop)[1])
-    Population(npop::Int64) = new([PopMember(genRandomTree(3)) for i=1:npop], npop)
-    Population(npop::Int64, nlength::Int64) = new([PopMember(genRandomTree(nlength)) for i=1:npop], npop)
+    Population(npop::Integer) = new([PopMember(genRandomTree(3)) for i=1:npop], npop)
+    Population(npop::Integer, nlength::Integer) = new([PopMember(genRandomTree(nlength)) for i=1:npop], npop)
     
 end
 
@@ -407,19 +411,19 @@ function bestSubPop(pop::Population)::Population
 end
 
 # Mutate the best sampled member of the population
-function iterateSample(pop::Population, T::Float64)::PopMember
+function iterateSample(pop::Population, T::Float32)::PopMember
     allstar = bestOfSample(pop)
     new = iterate(allstar.tree, T, X, y, alpha, parsimony)
     allstar.tree = new
     allstar.score = scoreFunc(new, X, y, parsimony)
-    allstar.birth = time() - 1.6e9
+    allstar.birth = Float32(time()) - 1.6f9
     return allstar
 end
 
 # Pass through the population several times, replacing the oldest
 # with the fittest of a small subsample
-function regEvolCycle(pop::Population, T::Float64)::Population
-    for i=1:Int(pop.n/ns)
+function regEvolCycle(pop::Population, T::Float32)::Population
+    for i=1:Integer(pop.n/ns)
         baby = iterateSample(pop, T)
         #printTree(baby.tree)
         oldest = argmin([pop.members[member].birth for member=1:pop.n])
@@ -432,18 +436,18 @@ end
 # printing the fittest equation every 10% through
 function run(
         pop::Population,
-        ncycles::Int,
+        ncycles::Integer,
         annealing::Bool=false;
-        verbose::Int=0
+        verbose::Integer=0
         )::Population
     pop = deepcopy(pop)
 
-    allT = LinRange(1.0, 0.0, ncycles)
+    allT = LinRange(1.0f0, 0.0f0, ncycles)
     for iT in 1:size(allT)[1]
         if annealing
             pop = regEvolCycle(pop, allT[iT])
         else
-            pop = regEvolCycle(pop, 1.0)
+            pop = regEvolCycle(pop, 1.0f0)
         end
         if verbose > 0 && (iT % verbose == 0)
             # Get best 10 models from each evolution. Copy because we re-assign later.
