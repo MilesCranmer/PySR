@@ -3,3 +3,4 @@ The median time is TrialEstimate(435.125 ms)
 The median time is TrialEstimate(422.519 ms) with annealing, TrialEstimate(361.631 ms) without
 The median time is TrialEstimate(985.015 ms) with annealing, TrialEstimate(857.946 ms) without
 The median time is TrialEstimate(690.542 ms) with annealing, TrialEstimate(581.777 ms) without
+The median time is TrialEstimate(298.679 ms) with annealing, TrialEstimate(327.586 ms) without
