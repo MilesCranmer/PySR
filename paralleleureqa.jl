@@ -36,4 +36,3 @@ function fullRun(niterations::Integer;
         end
     end
 end
-

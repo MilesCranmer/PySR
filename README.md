@@ -89,4 +89,9 @@ weights = [8, 1, 1, 1, 2]
 - [ ] Use NN to generate weights over all probability distribution, and train on some randomly-generated equations
 - [ ] Performance:
     - Use an enum for functions instead of storing them?
+    - Current most expensive operations:
+        - deepcopy() before the mutate, to see whether to accept or not.
+            - (This is only for simulated annealing... but generally we don't need to use this)
+        - Calculating the loss function - there is duplicate calculations happening.
+        - Declaration of the weights array every iteration
 

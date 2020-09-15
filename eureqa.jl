@@ -332,9 +332,12 @@ function iterate(
         tree::Node, T::Float32,
         X::Array{Float32, 2}, y::Array{Float32, 1},
         alpha::Float32=1.0f0,
-        mult::Float32=0.1f0
+        mult::Float32=0.1f0;
+        annealing::Bool=true
     )::Node
-    prev = deepcopy(tree)
+    if annealing
+        prev = deepcopy(tree)
+    end
 
     mutationChoice = rand()
     weight_for_constant = min(8, countConstants(tree))
@@ -355,7 +358,7 @@ function iterate(
         tree = tree
     end
 
-    try
+    if annealing
         beforeLoss = scoreFunc(prev, X, y, parsimony=mult)
         afterLoss = scoreFunc(tree, X, y, parsimony=mult)
         delta = afterLoss - beforeLoss
@@ -364,17 +367,9 @@ function iterate(
         if isnan(afterLoss) || probChange < rand()
             return prev
         end
-
-        return tree
-
-    catch error
-        # Sometimes too many chained exp operators
-        if isa(error, DomainError)
-            return prev
-        else
-            throw(error)
-        end
     end
+
+    return tree
 end
 
 # Create a random equation by appending random operators
@@ -429,9 +424,13 @@ function bestSubPop(pop::Population)::Population
 end
 
 # Mutate the best sampled member of the population
-function iterateSample(pop::Population, T::Float32)::PopMember
+function iterateSample(
+        pop::Population, T::Float32;
+        annealing::Bool=true)::PopMember
     allstar = bestOfSample(pop)
-    new = iterate(allstar.tree, T, X, y, alpha, parsimony)
+    new = iterate(
+        allstar.tree, T, X, y,
+        alpha, parsimony, annealing=annealing)
     allstar.tree = new
     allstar.score = scoreFunc(new, X, y, parsimony=parsimony)
     allstar.birth = round(Int32, 1e3*(time()-1.6e9))
@@ -440,9 +439,11 @@ end
 
 # Pass through the population several times, replacing the oldest
 # with the fittest of a small subsample
-function regEvolCycle(pop::Population, T::Float32)::Population
+function regEvolCycle(
+    pop::Population, T::Float32;
+    annealing::Bool=true)::Population
     for i=1:Integer(pop.n/ns)
-        baby = iterateSample(pop, T)
+        baby = iterateSample(pop, T, annealing=annealing)
         #printTree(baby.tree)
         oldest = argmin([pop.members[member].birth for member=1:pop.n])
         pop.members[oldest] = baby
@@ -458,14 +459,13 @@ function run(
         annealing::Bool=false;
         verbosity::Integer=0
         )::Population
-    pop = deepcopy(pop)
 
     allT = LinRange(1.0f0, 0.0f0, ncycles)
     for iT in 1:size(allT)[1]
         if annealing
-            pop = regEvolCycle(pop, allT[iT])
+            pop = regEvolCycle(pop, allT[iT], annealing=true)
         else
-            pop = regEvolCycle(pop, 1.0f0)
+            pop = regEvolCycle(pop, 1.0f0, annealing=true)
         end
         if verbosity > 0 && (iT % verbosity == 0)
             bestPops = bestSubPop(pop)
