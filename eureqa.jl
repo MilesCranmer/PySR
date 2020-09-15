@@ -337,9 +337,8 @@ function iterate(
         mult::Float32=0.1f0;
         annealing::Bool=true
     )::Node
-    if annealing
-        prev = deepcopy(tree)
-    end
+    prev = tree
+    tree = deepcopy(tree)
 
     mutationChoice = rand()
     weight_for_constant = min(8, countConstants(tree))
