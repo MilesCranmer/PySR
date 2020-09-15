@@ -81,6 +81,7 @@ weights = [8, 1, 1, 1, 2]
 - [ ] Create a benchmark for accuracy
 - [ ] Record hall of fame
 - [ ] Optionally (with hyperparameter) migrate the hall of fame, rather than current bests
+- [ ] Test performance of reduced precision integers
 - [ ] Create struct to pass through all hyperparameters, instead of treating as constants
     - Make sure doesn't affect performance
 - [ ] Hyperparameter tune
