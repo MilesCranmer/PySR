@@ -14,7 +14,7 @@ t = @benchmark(fullRun(3,
         ncyclesperiteration=100,
         fractionReplaced=0.1f0,
         verbosity=0
-       ), evals=5)
+       ), evals=10)
 
 tnoanneal = @benchmark(fullRun(3,
         npop=100,
@@ -22,7 +22,7 @@ tnoanneal = @benchmark(fullRun(3,
         ncyclesperiteration=100,
         fractionReplaced=0.1f0,
         verbosity=0
-       ), evals=5)
+       ), evals=10)
 
 println("The median time is $(median(t)) with annealing, $(median(tnoanneal)) without")
 
