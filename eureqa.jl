@@ -376,9 +376,10 @@ end
 mutable struct PopMember
     tree::Node
     score::Float32
-    birth::Float32
+    birth::Int32
     
-    PopMember(t) = new(t, scoreFunc(t, X, y, parsimony), Float32(time())-1.6f9)
+    PopMember(t) = new(t, scoreFunc(t, X, y, parsimony), round(Int32, 1e3*(time()-1.6e9))
+)
 end
 
 # A list of members of the population, with easy constructors,
@@ -418,7 +419,7 @@ function iterateSample(pop::Population, T::Float32)::PopMember
     new = iterate(allstar.tree, T, X, y, alpha, parsimony)
     allstar.tree = new
     allstar.score = scoreFunc(new, X, y, parsimony)
-    allstar.birth = Float32(time()) - 1.6f9
+    allstar.birth = round(Int32, 1e3*(time()-1.6e9))
     return allstar
 end
 
