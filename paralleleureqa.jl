@@ -3,7 +3,7 @@ include("eureqa.jl")
 const nthreads = Threads.nthreads()
 const migration = true
 const hofMigration = true
-const fractionReplacedHof = 0.05f0
+const fractionReplacedHof = 0.1f0
 
 # List of the best members seen all time
 mutable struct HallOfFame

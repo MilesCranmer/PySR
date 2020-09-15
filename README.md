@@ -43,10 +43,11 @@ const binops = [plus, mult, pow]
 You can change the dataset here:
 ```julia
 const X = convert(Array{Float32, 2}, randn(100, 5)*2)
-# Here is the function we want to learn (x2^2 + cos(x3))
-const y = convert(Array{Float32, 1}, ((cx,)->cx^2).(X[:, 2]) + cos.(X[:, 3]))
+# Here is the function we want to learn (x2^2 + cos(x3) - 5)
+const y = convert(Array{Float32, 1}, ((cx,)->cx^2).(X[:, 2]) + cos.(X[:, 3]) .- 5)
 ```
 by either loading in a dataset, or modifying the definition of `y`.
+(The `.` are are used for vectorization of a scalar function)
 
 ### Hyperparameters
 
@@ -66,27 +67,23 @@ const alpha = 10.0
 ```
 Larger alpha means more exploration.
 
-One can also adjust the relative probabilities of each mutation here:
+One can also adjust the relative probabilities of each operation here:
 ```julia
-weights = [8, 1, 1, 1, 2]
+weights = [8, 1, 1, 1, 0.1, 2]
 ```
 (for: 1. perturb constant, 2. mutate operator,
-3. append a node, 4. delete a subtree, 5. do nothing).
+3. append a node, 4. delete a subtree, 5. simplify equation,
+6. do nothing).
 
 
 # TODO
 
+- [ ] Explicit constant operation on hall-of-fame
+- [ ] Hyperparameter tune
 - [ ] Create a Python interface
-- [x] Create a benchmark for speed
 - [ ] Create a benchmark for accuracy
-- [x] Record hall of fame
-- [x] Optionally (with hyperparameter) migrate the hall of fame, rather than current bests
-- [x] Test performance of reduced precision integers
-    - No effect
 - [ ] Create struct to pass through all hyperparameters, instead of treating as constants
     - Make sure doesn't affect performance
-- [ ] Hyperparameter tune
-- [ ] Simplify subtrees with only constants beneath them. Or should I? Maybe randomly simplify sometimes?
 - [ ] Use NN to generate weights over all probability distribution, and train on some randomly-generated equations
 - [ ] Performance:
     - [ ] Use an enum for functions instead of storing them?
@@ -95,4 +92,9 @@ weights = [8, 1, 1, 1, 2]
             - Seems like its necessary right now. But still by far the slowest option.
         - [ ] Calculating the loss function - there is duplicate calculations happening.
         - [ ] Declaration of the weights array every iteration
-
+- [x] Create a benchmark for speed
+- [x] Simplify subtrees with only constants beneath them. Or should I? Maybe randomly simplify sometimes?
+- [x] Record hall of fame
+- [x] Optionally (with hyperparameter) migrate the hall of fame, rather than current bests
+- [x] Test performance of reduced precision integers
+    - No effect

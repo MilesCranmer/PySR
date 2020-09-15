@@ -17,7 +17,7 @@ const ns=10;
 ##########################
 # # Dataset to learn
 const X = convert(Array{Float32, 2}, randn(100, 5)*2)
-const y = convert(Array{Float32, 1}, ((cx,)->cx^2).(X[:, 2]) + cos.(X[:, 3]))
+const y = convert(Array{Float32, 1}, ((cx,)->cx^2).(X[:, 2]) + cos.(X[:, 3]) .- 5)
 ##########################
 
 ##################
@@ -364,7 +364,7 @@ function iterate(
 
     mutationChoice = rand()
     weight_for_constant = min(8, countConstants(tree))
-    weights = [weight_for_constant, 1, 1, 1, 1, 2] .* 1.0
+    weights = [weight_for_constant, 1, 1, 1, 0.1, 2] .* 1.0
     weights /= sum(weights)
     cweights = cumsum(weights)
     n = countNodes(tree)
