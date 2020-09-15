@@ -44,17 +44,17 @@ mutable struct Node
     #Holds operators, variables, constants in a tree
     degree::Integer #0 for constant/variable, 1 for cos/sin, 2 for +/* etc.
     val::Union{Float32, Integer} #Either const value, or enumerates variable
-    constant::Bool #false if variable 
+    constant::Bool #false if variable
     op::Function #enumerates operator (for degree=1,2)
     l::Union{Node, Nothing}
     r::Union{Node, Nothing}
-    
+
     Node(val::Float32) = new(0, val, true, id, nothing, nothing)
     Node(val::Integer) = new(0, val, false, id, nothing, nothing)
     Node(op, l::Node) = new(1, 0.0f0, false, op, l, nothing)
     Node(op, l::Union{Float32, Integer}) = new(1, 0.0f0, false, op, Node(l), nothing)
     Node(op, l::Node, r::Node) = new(2, 0.0f0, false, op, l, r)
-    
+
     #Allow to pass the leaf value without additional node call:
     Node(op, l::Union{Float32, Integer}, r::Node) = new(2, 0.0f0, false, op, Node(l), r)
     Node(op, l::Node, r::Union{Float32, Integer}) = new(2, 0.0f0, false, op, l, Node(r))
@@ -121,15 +121,15 @@ function randomNode(tree::Node)::Node
     if tree.degree == 2
         c = countNodes(tree.r)
     end
-            
+
     i = rand(1:1+b+c)
     if i <= b
         return randomNode(tree.l)
     elseif i == b + 1
         return tree
     end
-    
-    return randomNode(tree.r)        
+
+    return randomNode(tree.r)
 end
 
 # Count the number of unary operators in the equation
@@ -193,7 +193,7 @@ function mutateConstant(
         tree::Node, T::Float32,
         probNegate::Float32=0.01f0)::Node
     # T is between 0 and 1.
-    
+
     if countConstants(tree) == 0
         return tree
     end
@@ -201,22 +201,22 @@ function mutateConstant(
     while node.degree != 0 || node.constant == false
         node = randomNode(tree)
     end
-    
+
     bottom = 0.1f0
     maxChange = T + 1.0f0 + bottom
     factor = maxChange^Float32(rand())
     makeConstBigger = rand() > 0.5
-    
-    if makeConstBigger 
+
+    if makeConstBigger
         node.val *= factor
     else
         node.val /= factor
     end
-    
+
     if rand() > probNegate
         node.val *= -1
     end
-    
+
     return tree
 end
 
@@ -224,11 +224,18 @@ end
 function evalTreeArray(
         tree::Node,
         x::Array{Float32, 2})::Array{Float32, 1}
-    return mapslices(
-            (cx,) -> evalTree(tree, cx),
-            x,
-            dims=[2]
-        )[:, 1]
+    len = ones(size(x))[2]
+    if tree.degree == 0
+        if tree.constant
+            return ones(Float32, len) .* tree.val
+        else
+            return ones(Float32, len) .* x[:, tree.val]
+        end
+    elseif tree.degree == 1
+        return tree.op.(evalTree(tree.l, x))
+    else
+        return tree.op.(evalTree(tree.l, x), evalTree(tree.r, x))
+    end
 end
 
 # Sum of square error between two arrays
@@ -260,7 +267,7 @@ function appendRandomOp(tree::Node)::Node
     while node.degree != 0
         node = randomNode(tree)
     end
-    
+
     choice = rand()
     makeNewBinOp = choice < nbin/nops
     if rand() > 0.5
@@ -273,7 +280,7 @@ function appendRandomOp(tree::Node)::Node
     else
         right = rand(1:nvar)
     end
-    
+
     if makeNewBinOp
         newnode = Node(
             binops[rand(1:length(binops))],
@@ -324,14 +331,14 @@ function iterate(
         mult::Float32=0.1f0
     )::Node
     prev = deepcopy(tree)
-    
+
     mutationChoice = rand()
     weight_for_constant = min(8, countConstants(tree))
     weights = [weight_for_constant, 1, 1, 1, 2]
     weights /= sum(weights)
     cweights = cumsum(weights)
     n = countNodes(tree)
-    
+
     if mutationChoice < cweights[1]
         tree = mutateConstant(tree, T)
     elseif mutationChoice < cweights[2]
@@ -343,7 +350,7 @@ function iterate(
     else
         tree = tree
     end
-    
+
     try
         beforeLoss = scoreFunc(prev, X, y, parsimony=mult)
         afterLoss = scoreFunc(tree, X, y, parsimony=mult)
@@ -381,7 +388,7 @@ mutable struct PopMember
     tree::Node
     score::Float32
     birth::Int32
-    
+
     PopMember(t) = new(t, scoreFunc(t, X, y, parsimony=parsimony), round(Int32, 1e3*(time()-1.6e9))
 )
 end
@@ -391,11 +398,11 @@ end
 mutable struct Population
     members::Array{PopMember, 1}
     n::Integer
-    
+
     Population(pop::Array{PopMember, 1}) = new(pop, size(pop)[1])
     Population(npop::Integer) = new([PopMember(genRandomTree(3)) for i=1:npop], npop)
     Population(npop::Integer, nlength::Integer) = new([PopMember(genRandomTree(nlength)) for i=1:npop], npop)
-    
+
 end
 
 # Sample 10 random members of the population, and make a new one
@@ -465,4 +472,3 @@ function run(
     end
     return pop
 end
-
