@@ -35,13 +35,13 @@ const binops = [plus, mult]
 const unaops = [sin, cos, exp];
 ```
 E.g., you can add the function for powers with:
-```
+```julia
 pow(x::Float32, y::Float32)::Float32 = sign(x)*abs(x)^y
 const binops = [plus, mult, pow]
 ```
 
 You can change the dataset here:
-```
+```julia
 const X = convert(Array{Float32, 2}, randn(100, 5)*2)
 # Here is the function we want to learn (x2^2 + cos(x3))
 const y = convert(Array{Float32, 1}, ((cx,)->cx^2).(X[:, 2]) + cos.(X[:, 3]))
@@ -55,19 +55,19 @@ rate over time: at the end (temperature 0), it will only select solutions
 better than existing solutions.
 
 The following parameter, parsimony, is how much to punish complex solutions:
-`
+```julia
 const parsimony = 0.01
-`
+```
 
 Finally, the following
 determins how much to scale temperature by (T between 0 and 1).
-`
+```julia
 const alpha = 10.0
-`
+```
 Larger alpha means more exploration.
 
 One can also adjust the relative probabilities of each mutation here:
-```
+```julia
 weights = [8, 1, 1, 1, 2]
 ```
 (for: 1. perturb constant, 2. mutate operator,
