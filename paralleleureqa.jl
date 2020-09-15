@@ -5,7 +5,8 @@ const nthreads = Threads.nthreads()
 println("Running with $nthreads threads")
 const npop = 300
 const annealing = true
-const ncyclesperiteration = 3000
+const ncyclesperiteration = 30000
+const fractionReplaced = 0.1
 
 function fullRun(niterations::Integer)
     # Generate random initial populations
@@ -27,7 +28,7 @@ function fullRun(niterations::Integer)
 
         # Migration
         for j=1:nthreads
-            for k in rand(1:npop, Integer(npop/2))
+            for k in rand(1:npop, Integer(npop*fractionReplaced))
                 # Copy in case one gets used twice
                 allPops[j].members[k] = deepcopy(bestPops.members[rand(1:size(bestPops.members)[1])])
             end
