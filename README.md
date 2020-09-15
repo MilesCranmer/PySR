@@ -58,5 +58,15 @@ weights = [8, 1, 1, 1, 2]
 
 # TODO
 
+- Create a Python interface
+- Create a benchmark for speed
+- Create a benchmark for accuracy
 - Record hall of fame
-- Optionally migrate the hall of fame, rather than current bests
+- Optionally (with hyperparameter) migrate the hall of fame, rather than current bests
+- Create struct to pass through all hyperparameters, instead of treating as constants
+    - Make sure doesn't affect performance
+- Hyperparameter tune
+- Use NN to generate weights over all probability distribution, and train on some randomly-generated equations
+- Performance:
+    - Use an enum for functions instead of storing them?
+
