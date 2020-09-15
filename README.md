@@ -79,19 +79,20 @@ weights = [8, 1, 1, 1, 2]
 - [ ] Create a Python interface
 - [x] Create a benchmark for speed
 - [ ] Create a benchmark for accuracy
-- [ ] Record hall of fame
-- [ ] Optionally (with hyperparameter) migrate the hall of fame, rather than current bests
+- [x] Record hall of fame
+- [x] Optionally (with hyperparameter) migrate the hall of fame, rather than current bests
 - [x] Test performance of reduced precision integers
     - No effect
 - [ ] Create struct to pass through all hyperparameters, instead of treating as constants
     - Make sure doesn't affect performance
 - [ ] Hyperparameter tune
+- [ ] Simplify subtrees with only constants beneath them. Or should I? Maybe randomly simplify sometimes?
 - [ ] Use NN to generate weights over all probability distribution, and train on some randomly-generated equations
 - [ ] Performance:
-    - Use an enum for functions instead of storing them?
+    - [ ] Use an enum for functions instead of storing them?
     - Current most expensive operations:
-        - deepcopy() before the mutate, to see whether to accept or not.
-            - (This is only for simulated annealing... but generally we don't need to use this)
-        - Calculating the loss function - there is duplicate calculations happening.
-        - Declaration of the weights array every iteration
+        - [x] deepcopy() before the mutate, to see whether to accept or not.
+            - Seems like its necessary right now. But still by far the slowest option.
+        - [ ] Calculating the loss function - there is duplicate calculations happening.
+        - [ ] Declaration of the weights array every iteration
 
