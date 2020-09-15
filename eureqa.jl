@@ -224,7 +224,7 @@ end
 function evalTreeArray(
         tree::Node,
         x::Array{Float32, 2})::Array{Float32, 1}
-    len = ones(size(x))[2]
+    len = size(x)[1]
     if tree.degree == 0
         if tree.constant
             return ones(Float32, len) .* tree.val
@@ -232,9 +232,9 @@ function evalTreeArray(
             return ones(Float32, len) .* x[:, tree.val]
         end
     elseif tree.degree == 1
-        return tree.op.(evalTree(tree.l, x))
+        return tree.op.(evalTreeArray(tree.l, x))
     else
-        return tree.op.(evalTree(tree.l, x), evalTree(tree.r, x))
+        return tree.op.(evalTreeArray(tree.l, x), evalTreeArray(tree.r, x))
     end
 end
 
@@ -257,7 +257,11 @@ function scoreFunc(
     try
         return MSE(evalTreeArray(tree, X), y) + countNodes(tree)*parsimony
     catch error
-        return 1f9
+        if isa(error, DomainError)
+            return 1f9
+        else
+            throw(error)
+        end
     end
 end
 

@@ -1,2 +1,2 @@
 The median time is TrialEstimate(3.136 s)
-The median time is TrialEstimate(611.157 ms)
+The median time is TrialEstimate(435.125 ms)
