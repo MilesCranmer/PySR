@@ -1,35 +1,8 @@
-# Define allowed operators
-plus(x::Float32, y::Float32)::Float32 = x+y
-mult(x::Float32, y::Float32)::Float32 = x*y;
+include("hyperparams.jl")
+include("dataset.jl")
 
-##########################
-# # Allowed operators
-# (Apparently using const for globals helps speed)
-const binops = [plus, mult]
-const unaops = [sin, cos, exp]
-##########################
-
-# How many equations to search when replacing
-const ns=10;
-
-# Here is the function we want to learn (x2^2 + cos(x3) + 5)
-#
-##########################
-# # Dataset to learn
-const X = convert(Array{Float32, 2}, randn(100, 5)*2)
-const y = convert(Array{Float32, 1}, ((cx,)->cx^2).(X[:, 2]) + cos.(X[:, 3]) .- 5)
-##########################
-
-##################
-# Hyperparameters
-# How much to punish complexity
-const parsimony = 1f-3
-# How much to scale temperature by (T between 0 and 1)
-const alpha = 10.0f0
-const maxsize = 20
 const maxdegree = 2
 const actualMaxsize = maxsize + maxdegree
-##################
 
 id = (x,) -> x
 const nuna = size(unaops)[1]

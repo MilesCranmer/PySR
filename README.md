@@ -2,15 +2,14 @@
 
 You can run the performance benchmark with `./benchmark.sh`.
 
-Modify the search code in `paralleleureqa.jl` and `eureqa.jl` to your liking
+Modify the hyperparameters in `hyperparams.jl` and the dataset in `dataset.jl`
 (see below for options). Then, in a new Julia file called
-`myfile.jl`, you can write:
+`myfile.jl`, or the interpreter, you can write:
 
 ```julia
 include("paralleleureqa.jl")
 fullRun(10,
     npop=100,
-    annealing=true,
     ncyclesperiteration=1000,
     fractionReplaced=0.1f0,
     verbosity=100)
@@ -29,7 +28,7 @@ Run it with threading turned on using:
 
 ## Modification
 
-You can change the binary and unary operators in `eureqa.jl` here:
+You can change the binary and unary operators in `hyperparams.jl` here:
 ```julia
 const binops = [plus, mult]
 const unaops = [sin, cos, exp];
@@ -78,7 +77,10 @@ weights = [8, 1, 1, 1, 0.1, 2]
 
 # TODO
 
-- [ ] Explicit constant operation on hall-of-fame
+- [ ] Explicit constant optimization on hall-of-fame
+    - Create method to find and return all constants, from left to right
+    - Create method to find and set all constants, in same order
+    - Pull up some optimization algorithm and add it. No need for gradients; that's a headache. Keep the package small!
 - [ ] Hyperparameter tune
 - [ ] Create a Python interface
 - [ ] Create a benchmark for accuracy
