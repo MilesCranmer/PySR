@@ -366,7 +366,7 @@ function iterate(
         probChange = exp(-delta/(T*alpha))
 
         if isnan(afterLoss) || probChange < rand()
-            return prev
+            return deepcopy(prev)
         end
     end
 
@@ -409,7 +409,7 @@ end
 # Sample 10 random members of the population, and make a new one
 function samplePop(pop::Population)::Population
     idx = rand(1:pop.n, ns)
-    return Population(pop.members[idx])#Population(deepcopy(pop.members[idx]))
+    return Population(pop.members[idx])
 end
 
 # Sample the population, and get the best member from that sample
