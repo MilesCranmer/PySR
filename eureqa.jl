@@ -1,6 +1,6 @@
 # Define allowed operators
-plus(x::Float32, y::Float32) = x+y
-mult(x::Float32, y::Float32) = x*y;
+plus(x::Float32, y::Float32)::Float32 = x+y
+mult(x::Float32, y::Float32)::Float32 = x*y;
 
 ##########################
 # # Allowed operators
@@ -328,6 +328,28 @@ function deleteRandomOp(tree::Node)::Node
     return tree
 end
 
+
+# Simplify tree 
+function simplifyTree(tree::Node)::Node
+    if tree.degree == 1
+        tree.l = simplifyTree(tree.l)
+        if tree.l.degree == 0 && tree.l.constant
+            return Node(tree.op(tree.l.val))
+        end
+    elseif tree.degree == 2
+        tree.r = simplifyTree(tree.r)
+        tree.l = simplifyTree(tree.l)
+        constantsBelow = (
+             tree.l.degree == 0 && tree.l.constant &&
+             tree.r.degree == 0 && tree.r.constant
+        )
+        if constantsBelow
+            return Node(tree.op(tree.l.val, tree.r.val))
+        end
+    end
+    return tree
+end
+
 # Go through one simulated annealing mutation cycle
 #  exp(-delta/T) defines probability of accepting a change
 function iterate(
@@ -342,7 +364,7 @@ function iterate(
 
     mutationChoice = rand()
     weight_for_constant = min(8, countConstants(tree))
-    weights = [weight_for_constant, 1, 1, 1, 2]
+    weights = [weight_for_constant, 1, 1, 1, 1, 2] .* 1.0
     weights /= sum(weights)
     cweights = cumsum(weights)
     n = countNodes(tree)
@@ -355,8 +377,11 @@ function iterate(
         tree = appendRandomOp(tree)
     elseif mutationChoice < cweights[4]
         tree = deleteRandomOp(tree)
+    elseif mutationChoice < cweights[5]
+        tree = simplifyTree(tree) # Sometimes we simplify tree
+        return tree
     else
-        tree = tree
+        return tree
     end
 
     if annealing
