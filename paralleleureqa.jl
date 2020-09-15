@@ -51,14 +51,14 @@ function fullRun(niterations::Integer;
         dominating = PopMember[]
         debug(verbosity, "Hall of Fame:")
         debug(verbosity, "-----------------------------------------")
-        debug(verbosity, "Complexity \t Score \t Equation")
+        debug(verbosity, "Complexity \t MSE \t Equation")
         for size=1:maxsize
             if hallOfFame.exists[size]
                 member = hallOfFame.members[size]
                 numberSmallerAndBetter = sum([member.score > hallOfFame.members[i].score for i=1:(size-1)])
                 betterThanAllSmaller = (numberSmallerAndBetter == 0)
                 if betterThanAllSmaller
-                    debug(verbosity, "$size \t $(member.score) \t $(stringTree(member.tree))")
+                    debug(verbosity, "$size \t $(member.score-parsimony*size) \t $(stringTree(member.tree))")
                     push!(dominating, member)
                 end
             end
