@@ -27,6 +27,8 @@ const parsimony = 1f-3
 # How much to scale temperature by (T between 0 and 1)
 const alpha = 10.0f0
 const maxsize = 20
+const maxdegree = 2
+const actualMaxsize = maxsize + maxdegree
 ##################
 
 id = (x,) -> x
@@ -388,8 +390,9 @@ mutable struct PopMember
     score::Float32
     birth::Int32
 
-    PopMember(t) = new(t, scoreFunc(t, X, y, parsimony=parsimony), round(Int32, 1e3*(time()-1.6e9))
-)
+    PopMember(t::Node) = new(t, scoreFunc(t, X, y, parsimony=parsimony), round(Int32, 1e3*(time()-1.6e9)))
+    PopMember(t::Node, score::Float32) = new(t, score, round(Int32, 1e3*(time()-1.6e9)))
+
 end
 
 # A list of members of the population, with easy constructors,
