@@ -471,3 +471,42 @@ function run(
     end
     return pop
 end
+
+# Get all the constants from a tree
+function getConstants(tree::Node)::Array{Float32, 1}
+    if tree.degree == 0
+        if tree.constant
+            return [tree.val]
+        else
+            return Float32[]
+        end
+    elseif tree.degree == 1
+        return getConstants(tree.l)
+    else
+        both = [getConstants(tree.l), getConstants(tree.r)]
+        return [constant for subtree in both for constant in subtree]
+    end
+end
+
+# Set all the constants inside a tree
+function setConstants(tree::Node, constants::Array{Float32, 1})
+    if tree.degree == 0
+        if tree.constant
+            tree.val = constants[1]
+        end
+    elseif tree.degree == 1
+        setConstants(tree.l, constants)
+    else
+        numberLeft = countConstants(tree.l)
+        setConstants(tree.l, constants)
+        setConstants(tree.r, constants[numberLeft+1:end])
+    end
+end
+
+# Does nothing currently
+function optimizeConstants(member::PopMember)::PopMember
+    x0 = getConstants(member.tree)
+    return member
+end
+
+
