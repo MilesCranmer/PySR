@@ -1,14 +1,36 @@
 # Running:
 
-For now, just modify the script in `paralleleureqa.jl`
-to your liking and run:
+You can run the performance benchmark with `./benchmark.sh`.
 
-`julia --threads auto -O3 paralleleureqa.jl`
+Modify the search code in `paralleleureqa.jl` and `eureqa.jl` to your liking
+(see below for options). Then, in a new Julia file called
+`myfile.jl`, you can write:
+
+```julia
+include("paralleleureqa.jl")
+fullRun(10,
+    npop=100,
+    annealing=true,
+    ncyclesperiteration=1000,
+    fractionReplaced=0.1f0,
+    verbosity=100)
+```
+The first arg is the number of migration periods to run,
+with `ncyclesperiteration` determining how many generations
+per migration period.  `npop` is the number of population members.
+`annealing` determines whether to stay in exploration mode,
+or tune it down with each cycle. `fractionReplaced` is
+how much of the population is replaced by migrated equations each
+step.
+
+
+Run it with threading turned on using:
+`julia --threads auto -O3 myfile.jl`
 
 ## Modification
 
 You can change the binary and unary operators in `eureqa.jl` here:
-```
+```julia
 const binops = [plus, mult]
 const unaops = [sin, cos, exp];
 ```
@@ -27,10 +49,6 @@ const y = convert(Array{Float32, 1}, ((cx,)->cx^2).(X[:, 2]) + cos.(X[:, 3]))
 by either loading in a dataset, or modifying the definition of `y`.
 
 ### Hyperparameters
-
-Turn on annealing by setting the following in `paralleleureqa.jl`:
-
-`const annealing = true`
 
 Annealing allows each evolutionary cycle to turn down the exploration
 rate over time: at the end (temperature 0), it will only select solutions

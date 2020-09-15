@@ -35,6 +35,10 @@ const nbin = size(binops)[1]
 const nops = nuna + nbin
 const nvar = size(X)[2];
 
+function debug(verbosity, string...)
+    verbosity > 0 ? println(string...) : nothing
+end
+
 # Define a serialization format for the symbolic equations:
 mutable struct Node
     #Holds operators, variables, constants in a tree
@@ -241,7 +245,7 @@ end
 function scoreFunc(
         tree::Node,
         X::Array{Float32, 2},
-        y::Array{Float32, 1},
+        y::Array{Float32, 1};
         parsimony::Float32=0.1f0)::Float32
     try
         return MSE(evalTreeArray(tree, X), y) + countNodes(tree)*parsimony
@@ -341,8 +345,8 @@ function iterate(
     end
     
     try
-        beforeLoss = scoreFunc(prev, X, y, mult)
-        afterLoss = scoreFunc(tree, X, y, mult)
+        beforeLoss = scoreFunc(prev, X, y, parsimony=mult)
+        afterLoss = scoreFunc(tree, X, y, parsimony=mult)
         delta = afterLoss - beforeLoss
         probChange = exp(-delta/(T*alpha))
 
@@ -378,7 +382,7 @@ mutable struct PopMember
     score::Float32
     birth::Int32
     
-    PopMember(t) = new(t, scoreFunc(t, X, y, parsimony), round(Int32, 1e3*(time()-1.6e9))
+    PopMember(t) = new(t, scoreFunc(t, X, y, parsimony=parsimony), round(Int32, 1e3*(time()-1.6e9))
 )
 end
 
@@ -418,7 +422,7 @@ function iterateSample(pop::Population, T::Float32)::PopMember
     allstar = bestOfSample(pop)
     new = iterate(allstar.tree, T, X, y, alpha, parsimony)
     allstar.tree = new
-    allstar.score = scoreFunc(new, X, y, parsimony)
+    allstar.score = scoreFunc(new, X, y, parsimony=parsimony)
     allstar.birth = round(Int32, 1e3*(time()-1.6e9))
     return allstar
 end
@@ -441,7 +445,7 @@ function run(
         pop::Population,
         ncycles::Integer,
         annealing::Bool=false;
-        verbose::Integer=0
+        verbosity::Integer=0
         )::Population
     pop = deepcopy(pop)
 
@@ -452,12 +456,11 @@ function run(
         else
             pop = regEvolCycle(pop, 1.0f0)
         end
-        if verbose > 0 && (iT % verbose == 0)
-            # Get best 10 models from each evolution. Copy because we re-assign later.
+        if verbosity > 0 && (iT % verbosity == 0)
             bestPops = bestSubPop(pop)
             bestCurScoreIdx = argmin([bestPops.members[member].score for member=1:bestPops.n])
             bestCurScore = bestPops.members[bestCurScoreIdx].score
-            println(bestCurScore, " is the score for ", stringTree(bestPops.members[bestCurScoreIdx].tree))
+            debug(verbosity, bestCurScore, " is the score for ", stringTree(bestPops.members[bestCurScoreIdx].tree))
         end
     end
     return pop
