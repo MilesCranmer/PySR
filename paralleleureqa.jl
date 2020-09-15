@@ -40,13 +40,11 @@ function fullRun(niterations::Integer;
         bestPops = deepcopy(Population([member for pop in allPops for member in bestSubPop(pop).members]))
 
         #Update hall of fame
-        for pop in allPops
-            for member in pop.members
-                size = countNodes(member.tree)
-                if member.score < hallOfFame.members[size].score
-                    hallOfFame.members[size] = deepcopy(member)
-                    hallOfFame.exists[size] = true
-                end
+        for member in bestPops.members
+            size = countNodes(member.tree)
+            if member.score < hallOfFame.members[size].score
+                hallOfFame.members[size] = deepcopy(member)
+                hallOfFame.exists[size] = true
             end
         end
 
