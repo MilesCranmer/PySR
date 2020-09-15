@@ -196,20 +196,18 @@ function mutateConstant(
 end
 
 # Evaluate an equation over an array of datapoints
-function evalTreeArray(
-        tree::Node,
-        x::Array{Float32, 2})::Array{Float32, 1}
-    len = size(x)[1]
+function evalTreeArray(tree::Node)::Array{Float32, 1}
+    len = size(X)[1]
     if tree.degree == 0
         if tree.constant
             return ones(Float32, len) .* tree.val
         else
-            return ones(Float32, len) .* x[:, tree.val]
+            return ones(Float32, len) .* X[:, tree.val]
         end
     elseif tree.degree == 1
-        return tree.op.(evalTreeArray(tree.l, x))
+        return tree.op.(evalTreeArray(tree.l))
     else
-        return tree.op.(evalTreeArray(tree.l, x), evalTreeArray(tree.r, x))
+        return tree.op.(evalTreeArray(tree.l), evalTreeArray(tree.r))
     end
 end
 
@@ -225,12 +223,10 @@ end
 
 # Score an equation
 function scoreFunc(
-        tree::Node,
-        X::Array{Float32, 2},
-        y::Array{Float32, 1};
+        tree::Node;
         parsimony::Float32=0.1f0)::Float32
     try
-        return MSE(evalTreeArray(tree, X), y) + countNodes(tree)*parsimony
+        return MSE(evalTreeArray(tree), y) + countNodes(tree)*parsimony
     catch error
         if isa(error, DomainError)
             return 1f9
@@ -327,7 +323,6 @@ end
 #  exp(-delta/T) defines probability of accepting a change
 function iterate(
         tree::Node, T::Float32,
-        X::Array{Float32, 2}, y::Array{Float32, 1},
         alpha::Float32=1.0f0,
         mult::Float32=0.1f0;
         annealing::Bool=true
@@ -358,8 +353,8 @@ function iterate(
     end
 
     if annealing
-        beforeLoss = scoreFunc(prev, X, y, parsimony=mult)
-        afterLoss = scoreFunc(tree, X, y, parsimony=mult)
+        beforeLoss = scoreFunc(prev, parsimony=mult)
+        afterLoss = scoreFunc(tree, parsimony=mult)
         delta = afterLoss - beforeLoss
         probChange = exp(-delta/(T*alpha))
 
@@ -387,7 +382,7 @@ mutable struct PopMember
     score::Float32
     birth::Int32
 
-    PopMember(t::Node) = new(t, scoreFunc(t, X, y, parsimony=parsimony), round(Int32, 1e3*(time()-1.6e9)))
+    PopMember(t::Node) = new(t, scoreFunc(t, parsimony=parsimony), round(Int32, 1e3*(time()-1.6e9)))
     PopMember(t::Node, score::Float32) = new(t, score, round(Int32, 1e3*(time()-1.6e9)))
 
 end
@@ -429,10 +424,10 @@ function iterateSample(
         annealing::Bool=true)::PopMember
     allstar = bestOfSample(pop)
     new = iterate(
-        allstar.tree, T, X, y,
+        allstar.tree, T,
         alpha, parsimony, annealing=annealing)
     allstar.tree = new
-    allstar.score = scoreFunc(new, X, y, parsimony=parsimony)
+    allstar.score = scoreFunc(new, parsimony=parsimony)
     allstar.birth = round(Int32, 1e3*(time()-1.6e9))
     return allstar
 end
