@@ -334,7 +334,7 @@ function iterate(
 
     mutationChoice = rand()
     weight_for_constant = min(8, countConstants(tree))
-    weights = [weight_for_constant, 1, 1, 1, 0.1, 2] .* 1.0
+    weights = [weight_for_constant, 1, 1, 1, 0.1, 0.5, 2] .* 1.0
     weights /= sum(weights)
     cweights = cumsum(weights)
     n = countNodes(tree)
@@ -350,6 +350,8 @@ function iterate(
     elseif mutationChoice < cweights[5]
         tree = simplifyTree(tree) # Sometimes we simplify tree
         return tree
+    elseif mutationChoice < cweights[6]
+        tree = genRandomTree(5) # Sometimes we simplify tree
     else
         return tree
     end

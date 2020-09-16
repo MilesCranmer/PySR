@@ -68,21 +68,28 @@ Larger alpha means more exploration.
 
 One can also adjust the relative probabilities of each operation here:
 ```julia
-weights = [8, 1, 1, 1, 0.1, 2]
+weights = [8, 1, 1, 1, 0.1, 0.5, 2]
 ```
-(for: 1. perturb constant, 2. mutate operator,
-3. append a node, 4. delete a subtree, 5. simplify equation,
-6. do nothing).
+for:
+
+1. Perturb constant
+2. Mutate operator
+3. Append a node
+4. Delete a subtree
+5. Simplify equation
+6. Randomize completely
+7. Do nothing
 
 
 # TODO
 
 - [ ] Hyperparameter tune
+- [ ] Add mutation for constant<->variable
 - [ ] Create a Python interface
 - [ ] Create a benchmark for accuracy
 - [ ] Create struct to pass through all hyperparameters, instead of treating as constants
     - Make sure doesn't affect performance
-- [ ] Use NN to generate weights over all probability distribution, and train on some randomly-generated equations
+- [ ] Use NN to generate weights over all probability distribution conditional on error and existing equation, and train on some randomly-generated equations
 - [ ] Performance:
     - [ ] Use an enum for functions instead of storing them?
     - Current most expensive operations:

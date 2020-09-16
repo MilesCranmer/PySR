@@ -35,8 +35,10 @@ function fullRun(niterations::Integer;
         @inbounds Threads.@threads for i=1:nthreads
             allPops[i] = run(allPops[i], ncyclesperiteration, annealing, verbosity=verbosity)
             bestSubPops[i] = bestSubPop(allPops[i], topn=topn)
-            for j=1:bestSubPops[i].n
-                bestSubPops[i].members[j] = optimizeConstants(bestSubPops[i].members[j])
+            if shouldOptimizeConstants
+                for j=1:bestSubPops[i].n
+                    bestSubPops[i].members[j] = optimizeConstants(bestSubPops[i].members[j])
+                end
             end
         end
 
@@ -49,7 +51,6 @@ function fullRun(niterations::Integer;
             size = countNodes(member.tree)
             if member.score < hallOfFame.members[size].score
                 hallOfFame.members[size] = deepcopy(member)
-                #hallOfFame.members[size] = optimizeConstants(hallOfFame.members[size])
                 hallOfFame.exists[size] = true
             end
         end

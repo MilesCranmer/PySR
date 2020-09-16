@@ -26,6 +26,8 @@ const migration = true
 const hofMigration = true
 # Fraction of population to replace with hall of fame
 const fractionReplacedHof = 0.1f0
+# Optimize constants
+const shouldOptimizeConstants = true
 ##################
 
 
