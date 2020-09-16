@@ -15,7 +15,7 @@ function debug(verbosity, string...)
     verbosity > 0 ? println(string...) : nothing
 end
 
-function giveBirth()::Int32
+function getTime()::Int32
     return round(Int32, 1e3*(time()-1.6e9))
 end
 
@@ -326,17 +326,17 @@ end
 #  exp(-delta/T) defines probability of accepting a change
 function iterate(
         tree::Node, T::Float32,
-        alpha::Float32=1.0f0;
         annealing::Bool=true
     )::Node
     prev = tree
     tree = deepcopy(tree)
 
     mutationChoice = rand()
-    weight_for_constant = min(8, countConstants(tree))
-    weights = [weight_for_constant, 1, 1, 1, 0.1, 0.5, 2] .* 1.0
-    weights /= sum(weights)
-    cweights = cumsum(weights)
+    weightAdjustmentMutateConstant = min(8, countConstants(tree))/8.0
+    cur_weights = deepcopy(mutationWeights) .* 1.0
+    cur_weights[1] *= weightAdjustmentMutateConstant
+    cur_weights /= sum(cur_weights)
+    cweights = cumsum(cur_weights)
     n = countNodes(tree)
 
     if mutationChoice < cweights[1]
@@ -386,8 +386,8 @@ mutable struct PopMember
     score::Float32
     birth::Int32
 
-    PopMember(t::Node) = new(t, scoreFunc(t), giveBirth())
-    PopMember(t::Node, score::Float32) = new(t, score, giveBirth())
+    PopMember(t::Node) = new(t, scoreFunc(t), getTime())
+    PopMember(t::Node, score::Float32) = new(t, score, getTime())
 
 end
 
@@ -429,10 +429,10 @@ function iterateSample(
     allstar = bestOfSample(pop)
     new = iterate(
         allstar.tree, T,
-        alpha, annealing=annealing)
+        annealing=annealing)
     allstar.tree = new
     allstar.score = scoreFunc(new)
-    allstar.birth = giveBirth()
+    allstar.birth = getTime()
     return allstar
 end
 
@@ -530,7 +530,7 @@ function optimizeConstants(member::PopMember)::PopMember
     if Optim.converged(result)
         setConstants(member.tree, result.minimizer)
         member.score = convert(Float32, result.minimum)
-        member.birth = giveBirth()
+        member.birth = getTime()
     else
         setConstants(member.tree, x0)
     end

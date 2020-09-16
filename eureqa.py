@@ -7,15 +7,22 @@ import pandas as pd
 
 
 def eureqa(X=None, y=None, threads=4, parsimony=1e-3, alpha=10,
-        maxsize=20, migration=True,
-        hofMigration=True, fractionReplacedHof=0.1,
-        shouldOptimizeConstants=True,
-        binary_operators=["plus", "mult"],
-        unary_operators=["cos", "exp", "sin"],
-        niterations=20, npop=100, annealing=True,
-        ncyclesperiteration=5000, fractionReplaced=0.1,
-        topn=10, equation_file='hall_of_fame.csv',
-        test='simple1'
+            maxsize=20, migration=True,
+            hofMigration=True, fractionReplacedHof=0.1,
+            shouldOptimizeConstants=True,
+            binary_operators=["plus", "mult"],
+            unary_operators=["cos", "exp", "sin"],
+            niterations=20, npop=100, annealing=True,
+            ncyclesperiteration=5000, fractionReplaced=0.1,
+            topn=10, equation_file='hall_of_fame.csv',
+            test='simple1',
+            weightMutateConstant=4.0,
+            weightMutateOperator=0.5,
+            weightAddNode=0.5,
+            weightDeleteNode=0.5,
+            weightSimplify=0.05,
+            weightRandomize=0.25,
+            weightDoNothing=1.0,
         ):
     """ Runs symbolic regression in Julia, to fit y given X.
     Either provide a 2D numpy array for X, 1D array for y, or declare a test to run.
@@ -74,6 +81,12 @@ def eureqa(X=None, y=None, threads=4, parsimony=1e-3, alpha=10,
             eval_str = "np.sign(X[:, 2])*np.abs(X[:, 2])**2.5 + 5*np.cos(X[:, 3]) - 5"
         elif test == 'simple2':
             eval_str = "np.sign(X[:, 2])*np.abs(X[:, 2])**3.5 + 1/np.abs(X[:, 0])"
+        elif test == 'simple3':
+            eval_str = "np.exp(X[:, 0]/2) + 12.0 + np.log(np.abs(X[:, 0])*10 + 1)"
+        elif test == 'simple4':
+            eval_str = "1.0 + 3*X[:, 0]**2 - 0.5*X[:, 0]**3 + 0.1*X[:, 0]**4"
+        elif test == 'simple5':
+            eval_str = "(np.exp(X[:, 3]) + 3)/(X[:, 1] + np.cos(X[:, 0]))"
 
         X = np.random.randn(100, 5)*3
         y = eval(eval_str)
@@ -93,6 +106,15 @@ def eureqa(X=None, y=None, threads=4, parsimony=1e-3, alpha=10,
     const shouldOptimizeConstants = {'true' if shouldOptimizeConstants else 'false'}
     const hofFile = "{equation_file}"
     const nthreads = {threads:d}
+    const mutationWeights = [
+        {weightMutateConstant:f},
+        {weightMutateOperator:f},
+        {weightAddNode:f},
+        {weightDeleteNode:f},
+        {weightSimplify:f},
+        {weightRandomize:f},
+        {weightDoNothing:f}
+    ]
     """
 
     assert len(X.shape) == 2

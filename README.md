@@ -86,21 +86,9 @@ Then just specify the operator names in your call, as above.
 You can also change the dataset learned on by passing in `X` and `y` as
 numpy arrays to `eureqa(...)`.
 
-One can also adjust the relative probabilities of each operation here,
-inside `eureqa.jl`:
-```julia
-weights = [8, 1, 1, 1, 0.1, 0.5, 2]
-```
-for:
-
-1. Perturb constant
-2. Mutate operator
-3. Append a node
-4. Delete a subtree
-5. Simplify equation
-6. Randomize completely
-7. Do nothing
-
+One can also adjust the relative probabilities of each mutation operation
+with the `weight...` parameters to `eureqa(...).
+inside `eureqa.jl`.
 
 # TODO
 
