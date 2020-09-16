@@ -5,7 +5,7 @@ Uses regularized evolution and simulated annealing.
 
 ## Running:
 
-You can either call the program using `eureqa` from `eureqa.py`,
+You can either call the program by calling the `eureqa` function from `eureqa.py`,
 or execute the program from the command line with, for example:
 ```bash
 python eureqa.py --threads 8 --binary-operators plus mult pow --npop 200
@@ -76,18 +76,12 @@ optional arguments:
 
 You can add more operators in `operators.jl`, or use default
 Julia ones. Make sure all operators are defined for scalar `Float32`.
-Then just call the operator in your call to `eureqa`.
+Then just specify the operator names in your call, as above.
+You can also change the dataset learned on by passing in `X` and `y` as
+numpy arrays to `eureqa(...)`.
 
-You can change the dataset in `eureqa.py` here:
-```julia
-const X = convert(Array{Float32, 2}, randn(100, 5)*2)
-# Here is the function we want to learn (x2^2 + cos(x3) - 5)
-const y = convert(Array{Float32, 1}, ((cx,)->cx^2).(X[:, 2]) + cos.(X[:, 3]) .- 5)
-```
-by either loading in a dataset, or modifying the definition of `y`.
-(The `.` are are used for vectorization of a scalar function)
-
-One can also adjust the relative probabilities of each operation here:
+One can also adjust the relative probabilities of each operation here,
+inside `eureqa.jl`:
 ```julia
 weights = [8, 1, 1, 1, 0.1, 0.5, 2]
 ```
