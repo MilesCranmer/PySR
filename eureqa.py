@@ -71,13 +71,13 @@ def eureqa(X=None, y=None, threads=4, parsimony=1e-3, alpha=10,
 
     if X is None:
         if test == 'simple1':
-            eval_str = "X[:, 2]**2 + 5*np.cos(X[:, 3]) - 5"
+            eval_str = "np.sign(X[:, 2])*np.abs(X[:, 2])**2.5 + 5*np.cos(X[:, 3]) - 5"
         elif test == 'simple2':
             eval_str = "np.sign(X[:, 2])*np.abs(X[:, 2])**3.5 + 1/np.abs(X[:, 0])"
 
         X = np.random.randn(100, 5)*3
         y = eval(eval_str)
-        print("Runing on", eval_str)
+        print("Running on", eval_str)
 
     def_hyperparams = f"""
     include("operators.jl")
