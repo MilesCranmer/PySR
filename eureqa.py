@@ -1,5 +1,5 @@
 import os
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from collections import namedtuple
 
 
@@ -71,7 +71,8 @@ def eureqa(threads=4, parsimony=1e-3, alpha=10,
 
 
 if __name__ == "__main__":
-    parser = ArgumentParser()
+    parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
+
     parser.add_argument("--threads", type=int, default=4, help="Number of threads")
     parser.add_argument("--parsimony", type=float, default=0.001, help="How much to punish complexity")
     parser.add_argument("--alpha", type=int, default=10, help="Scaling of temperature")

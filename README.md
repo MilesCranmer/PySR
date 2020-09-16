@@ -5,14 +5,65 @@ Uses regularized evolution and simulated annealing.
 
 ## Running:
 
-You can execute the program from the command line with, for example:
+You can either call the program using `eureqa` from `eureqa.py`,
+or execute the program from the command line with, for example:
 ```bash
 python eureqa.py --threads 8 --binary-operators plus mult
 ```
 
-You can see all hyperparameters in the function `eureqa` inside `eureqa.py`.
-This function generates Julia code which is then executed
-by `eureqa.jl` and `paralleleureqa.jl`.
+Here is the full list of arguments:
+```
+usage: eureqa.py [-h] [--threads THREADS] [--parsimony PARSIMONY]
+                 [--alpha ALPHA] [--maxsize MAXSIZE]
+                 [--niterations NITERATIONS] [--npop NPOP]
+                 [--ncyclesperiteration NCYCLESPERITERATION] [--topn TOPN]
+                 [--fractionReplacedHof FRACTIONREPLACEDHOF]
+                 [--fractionReplaced FRACTIONREPLACED] [--migration MIGRATION]
+                 [--hofMigration HOFMIGRATION]
+                 [--shouldOptimizeConstants SHOULDOPTIMIZECONSTANTS]
+                 [--annealing ANNEALING]
+                 [--binary-operators BINARY_OPERATORS [BINARY_OPERATORS ...]]
+                 [--unary-operators UNARY_OPERATORS]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --threads THREADS     Number of threads (default: 4)
+  --parsimony PARSIMONY
+                        How much to punish complexity (default: 0.001)
+  --alpha ALPHA         Scaling of temperature (default: 10)
+  --maxsize MAXSIZE     Max size of equation (default: 20)
+  --niterations NITERATIONS
+                        Number of total migration periods (default: 20)
+  --npop NPOP           Number of members per population (default: 100)
+  --ncyclesperiteration NCYCLESPERITERATION
+                        Number of evolutionary cycles per migration (default:
+                        5000)
+  --topn TOPN           How many best species to distribute from each
+                        population (default: 10)
+  --fractionReplacedHof FRACTIONREPLACEDHOF
+                        Fraction of population to replace with hall of fame
+                        (default: 0.1)
+  --fractionReplaced FRACTIONREPLACED
+                        Fraction of population to replace with best from other
+                        populations (default: 0.1)
+  --migration MIGRATION
+                        Whether to migrate (default: True)
+  --hofMigration HOFMIGRATION
+                        Whether to have hall of fame migration (default: True)
+  --shouldOptimizeConstants SHOULDOPTIMIZECONSTANTS
+                        Whether to use classical optimization on constants
+                        before every migration (doesn't impact performance
+                        that much) (default: True)
+  --annealing ANNEALING
+                        Whether to use simulated annealing (default: True)
+  --binary-operators BINARY_OPERATORS [BINARY_OPERATORS ...]
+                        Binary operators. Make sure they are defined in
+                        operators.jl (default: ['plus', 'mul'])
+  --unary-operators UNARY_OPERATORS
+                        Unary operators. Make sure they are defined in
+                        operators.jl (default: ['exp', 'sin', 'cos'])
+```
+
 
 
 
