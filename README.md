@@ -21,7 +21,8 @@ usage: eureqa.py [-h] [--threads THREADS] [--parsimony PARSIMONY]
                  [--fractionReplaced FRACTIONREPLACED] [--migration MIGRATION]
                  [--hofMigration HOFMIGRATION]
                  [--shouldOptimizeConstants SHOULDOPTIMIZECONSTANTS]
-                 [--annealing ANNEALING]
+                 [--annealing ANNEALING] [--equation_file EQUATION_FILE]
+                 [--test TEST]
                  [--binary-operators BINARY_OPERATORS [BINARY_OPERATORS ...]]
                  [--unary-operators UNARY_OPERATORS]
 
@@ -56,6 +57,10 @@ optional arguments:
                         that much) (default: True)
   --annealing ANNEALING
                         Whether to use simulated annealing (default: True)
+  --equation_file EQUATION_FILE
+                        File to dump best equations to (default:
+                        hall_of_fame.csv)
+  --test TEST           Which test to run (default: simple1)
   --binary-operators BINARY_OPERATORS [BINARY_OPERATORS ...]
                         Binary operators. Make sure they are defined in
                         operators.jl (default: ['plus', 'mul'])

@@ -557,7 +557,6 @@ function fullRun(niterations::Integer;
                 verbosity::Integer=0,
                 topn::Integer=10
                )
-    debug(verbosity, "Lets try to learn (x2^2 + cos(x3)) using regularized evolution from scratch")
     debug(verbosity, "Running with $nthreads threads")
     # Generate random initial populations
     allPops = [Population(npop, 3) for j=1:nthreads]
