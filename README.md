@@ -77,10 +77,6 @@ weights = [8, 1, 1, 1, 0.1, 2]
 
 # TODO
 
-- [ ] Explicit constant optimization on hall-of-fame
-    - Create method to find and return all constants, from left to right
-    - Create method to find and set all constants, in same order
-    - Pull up some optimization algorithm and add it. No need for gradients; that's a headache. Keep the package small!
 - [ ] Hyperparameter tune
 - [ ] Create a Python interface
 - [ ] Create a benchmark for accuracy
@@ -94,6 +90,10 @@ weights = [8, 1, 1, 1, 0.1, 2]
             - Seems like its necessary right now. But still by far the slowest option.
         - [ ] Calculating the loss function - there is duplicate calculations happening.
         - [ ] Declaration of the weights array every iteration
+- [x] Explicit constant optimization on hall-of-fame
+    - Create method to find and return all constants, from left to right
+    - Create method to find and set all constants, in same order
+    - Pull up some optimization algorithm and add it. Keep the package small!
 - [x] Create a benchmark for speed
 - [x] Simplify subtrees with only constants beneath them. Or should I? Maybe randomly simplify sometimes?
 - [x] Record hall of fame

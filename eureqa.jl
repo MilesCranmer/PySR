@@ -1,5 +1,6 @@
 include("hyperparams.jl")
 include("dataset.jl")
+import Optim
 
 const maxdegree = 2
 const actualMaxsize = maxsize + maxdegree
@@ -12,6 +13,10 @@ const nvar = size(X)[2];
 
 function debug(verbosity, string...)
     verbosity > 0 ? println(string...) : nothing
+end
+
+function giveBirth()::Int32
+    return round(Int32, 1e3*(time()-1.6e9))
 end
 
 # Define a serialization format for the symbolic equations:
@@ -222,9 +227,7 @@ function MSE(x::Array{Float32}, y::Array{Float32})::Float32
 end
 
 # Score an equation
-function scoreFunc(
-        tree::Node;
-        parsimony::Float32=0.1f0)::Float32
+function scoreFunc(tree::Node)::Float32
     try
         return MSE(evalTreeArray(tree), y) + countNodes(tree)*parsimony
     catch error
@@ -323,8 +326,7 @@ end
 #  exp(-delta/T) defines probability of accepting a change
 function iterate(
         tree::Node, T::Float32,
-        alpha::Float32=1.0f0,
-        mult::Float32=0.1f0;
+        alpha::Float32=1.0f0;
         annealing::Bool=true
     )::Node
     prev = tree
@@ -353,8 +355,8 @@ function iterate(
     end
 
     if annealing
-        beforeLoss = scoreFunc(prev, parsimony=mult)
-        afterLoss = scoreFunc(tree, parsimony=mult)
+        beforeLoss = scoreFunc(prev)
+        afterLoss = scoreFunc(tree)
         delta = afterLoss - beforeLoss
         probChange = exp(-delta/(T*alpha))
 
@@ -382,8 +384,8 @@ mutable struct PopMember
     score::Float32
     birth::Int32
 
-    PopMember(t::Node) = new(t, scoreFunc(t, parsimony=parsimony), round(Int32, 1e3*(time()-1.6e9)))
-    PopMember(t::Node, score::Float32) = new(t, score, round(Int32, 1e3*(time()-1.6e9)))
+    PopMember(t::Node) = new(t, scoreFunc(t), giveBirth())
+    PopMember(t::Node, score::Float32) = new(t, score, giveBirth())
 
 end
 
@@ -413,9 +415,9 @@ function bestOfSample(pop::Population)::PopMember
 end
 
 # Return best 10 examples
-function bestSubPop(pop::Population)::Population
+function bestSubPop(pop::Population; topn::Int32=10)::Population
     best_idx = sortperm([pop.members[member].score for member=1:pop.n])
-    return Population(pop.members[best_idx[1:10]])
+    return Population(pop.members[best_idx[1:topn]])
 end
 
 # Mutate the best sampled member of the population
@@ -425,10 +427,10 @@ function iterateSample(
     allstar = bestOfSample(pop)
     new = iterate(
         allstar.tree, T,
-        alpha, parsimony, annealing=annealing)
+        alpha, annealing=annealing)
     allstar.tree = new
-    allstar.score = scoreFunc(new, parsimony=parsimony)
-    allstar.birth = round(Int32, 1e3*(time()-1.6e9))
+    allstar.score = scoreFunc(new)
+    allstar.birth = giveBirth()
     return allstar
 end
 
@@ -503,9 +505,33 @@ function setConstants(tree::Node, constants::Array{Float32, 1})
     end
 end
 
-# Does nothing currently
+
+# Proxy function for optimization
+function optFunc(x::Array{Float32, 1}, tree::Node)::Float32
+    setConstants(tree, x)
+    return scoreFunc(tree)
+end
+
+# Use Nelder-Mead to optimize the constants in an equation
 function optimizeConstants(member::PopMember)::PopMember
+    nconst = countConstants(member.tree)
+    if nconst == 0
+        return member
+    end
     x0 = getConstants(member.tree)
+    f(x::Array{Float32,1})::Float32 = optFunc(x, member.tree)
+    if size(x0)[1] == 1
+        result = Optim.optimize(f, x0, Optim.Newton(), Optim.Options(iterations=20))
+    else
+        result = Optim.optimize(f, x0, Optim.LBFGS(), Optim.Options(iterations=10))
+    end
+    if Optim.converged(result)
+        setConstants(member.tree, result.minimizer)
+        member.score = convert(Float32, result.minimum)
+        member.birth = giveBirth()
+    else
+        setConstants(member.tree, x0)
+    end
     return member
 end
 

@@ -1,4 +1,5 @@
 include("eureqa.jl")
+import Optim
 
 const nthreads = Threads.nthreads()
 
@@ -6,10 +7,9 @@ const nthreads = Threads.nthreads()
 mutable struct HallOfFame
     members::Array{PopMember, 1}
     exists::Array{Bool, 1} #Whether it has been set
-    optimized::Array{Bool, 1} #Whether the constants have been optimized
 
     # Arranged by complexity - store one at each.
-    HallOfFame() = new([PopMember(Node(1f0), 1f9) for i=1:actualMaxsize], [false for i=1:actualMaxsize], [false for i=1:actualMaxsize])
+    HallOfFame() = new([PopMember(Node(1f0), 1f9) for i=1:actualMaxsize], [false for i=1:actualMaxsize])
 end
 
 
@@ -19,11 +19,13 @@ function fullRun(niterations::Integer;
                 ncyclesperiteration::Integer=3000,
                 fractionReplaced::Float32=0.1f0,
                 verbosity::Integer=0,
+                topn::Int32=10
                )
     debug(verbosity, "Lets try to learn (x2^2 + cos(x3)) using regularized evolution from scratch")
     debug(verbosity, "Running with $nthreads threads")
     # Generate random initial populations
     allPops = [Population(npop, 3) for j=1:nthreads]
+    bestSubPops = [Population(1) for j=1:nthreads]
     # Repeat this many evolutions; we collect and migrate the best
     # each time.
     hallOfFame = HallOfFame()
@@ -32,16 +34,22 @@ function fullRun(niterations::Integer;
         # Spawn threads to run indepdent evolutions, then gather them
         @inbounds Threads.@threads for i=1:nthreads
             allPops[i] = run(allPops[i], ncyclesperiteration, annealing, verbosity=verbosity)
+            bestSubPops[i] = bestSubPop(allPops[i], topn=topn)
+            for j=1:bestSubPops[i].n
+                bestSubPops[i].members[j] = optimizeConstants(bestSubPops[i].members[j])
+            end
         end
 
         # Get best 10 models from each evolution. Copy because we re-assign later.
-        bestPops = deepcopy(Population([member for pop in allPops for member in bestSubPop(pop).members]))
+        # bestPops = deepcopy(Population([member for pop in allPops for member in bestSubPop(pop).members]))
+        bestPops = deepcopy(Population([member for pop in bestSubPops for member in pop.members]))
 
         #Update hall of fame
         for member in bestPops.members
             size = countNodes(member.tree)
             if member.score < hallOfFame.members[size].score
                 hallOfFame.members[size] = deepcopy(member)
+                #hallOfFame.members[size] = optimizeConstants(hallOfFame.members[size])
                 hallOfFame.exists[size] = true
             end
         end
@@ -57,7 +65,6 @@ function fullRun(niterations::Integer;
                 betterThanAllSmaller = (numberSmallerAndBetter == 0)
                 if betterThanAllSmaller
                     debug(verbosity, "$size \t $(member.score-parsimony*size) \t $(stringTree(member.tree))")
-                    member = optimizeConstants(member)
                     push!(dominating, member)
                 end
             end
@@ -79,7 +86,7 @@ function fullRun(niterations::Integer;
             for j=1:nthreads
                 for k in rand(1:npop, Integer(npop*fractionReplacedHof))
                     # Copy in case one gets used twice
-                    allPops[j].members[k] = deepcopy(dominating[rand(1:size(dominating)[1])])
+                    allPops[j].members[k] = deepcopy(dominating[rand(2:size(dominating)[1])])
                 end
             end
         end
