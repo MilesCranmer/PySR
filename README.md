@@ -105,8 +105,6 @@ for:
 # TODO
 
 - [ ] Hyperparameter tune
-- [ ] Add interface for either defining an operation to learn, or loading in arbitrary dataset.
-    - Could just write out the dataset in julia, or load it.
 - [ ] Add mutation for constant<->variable
 - [ ] Create a benchmark for accuracy
 - [ ] Use NN to generate weights over all probability distribution conditional on error and existing equation, and train on some randomly-generated equations
@@ -117,6 +115,8 @@ for:
             - Seems like its necessary right now. But still by far the slowest option.
         - [ ] Calculating the loss function - there is duplicate calculations happening.
         - [ ] Declaration of the weights array every iteration
+- [x] Add interface for either defining an operation to learn, or loading in arbitrary dataset.
+    - Could just write out the dataset in julia, or load it.
 - [x] Create a Python interface
 - [x] Explicit constant optimization on hall-of-fame
     - Create method to find and return all constants, from left to right
