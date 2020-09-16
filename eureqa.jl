@@ -415,7 +415,7 @@ function bestOfSample(pop::Population)::PopMember
 end
 
 # Return best 10 examples
-function bestSubPop(pop::Population; topn::Int32=10)::Population
+function bestSubPop(pop::Population; topn::Integer=10)::Population
     best_idx = sortperm([pop.members[member].score for member=1:pop.n])
     return Population(pop.members[best_idx[1:topn]])
 end

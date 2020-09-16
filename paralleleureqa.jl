@@ -19,7 +19,7 @@ function fullRun(niterations::Integer;
                 ncyclesperiteration::Integer=3000,
                 fractionReplaced::Float32=0.1f0,
                 verbosity::Integer=0,
-                topn::Int32=10
+                topn::Integer=10
                )
     debug(verbosity, "Lets try to learn (x2^2 + cos(x3)) using regularized evolution from scratch")
     debug(verbosity, "Running with $nthreads threads")
@@ -82,11 +82,11 @@ function fullRun(niterations::Integer;
         end
 
         # Hall of fame migration
-        if hofMigration
+        if hofMigration && size(dominating)[1] > 0
             for j=1:nthreads
                 for k in rand(1:npop, Integer(npop*fractionReplacedHof))
                     # Copy in case one gets used twice
-                    allPops[j].members[k] = deepcopy(dominating[rand(2:size(dominating)[1])])
+                    allPops[j].members[k] = deepcopy(dominating[rand(1:size(dominating)[1])])
                 end
             end
         end
