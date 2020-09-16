@@ -56,6 +56,7 @@ def eureqa(threads=4, parsimony=1e-3, alpha=10,
 
     with open('.hyperparams.jl', 'w') as f:
         print(def_hyperparams, file=f)
+
     with open('.dataset.jl', 'w') as f:
         print(def_datasets, file=f)
 
@@ -71,8 +72,21 @@ def eureqa(threads=4, parsimony=1e-3, alpha=10,
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument("--threads", type=int, default=4, help="number of threads")
-    parser.add_argument("--parsimony", type=float, default=4, help="number of threads")
+    parser.add_argument("--threads", type=int, default=4, help="Number of threads")
+    parser.add_argument("--parsimony", type=float, default=0.001, help="How much to punish complexity")
+    parser.add_argument("--alpha", type=int, default=10, help="Scaling of temperature")
+    parser.add_argument("--maxsize", type=int, default=20, help="Max size of equation")
+    parser.add_argument("--niterations", type=int, default=20, help="Number of total migration periods")
+    parser.add_argument("--npop", type=int, default=100, help="Number of members per population")
+    parser.add_argument("--ncyclesperiteration", type=int, default=5000, help="Number of evolutionary cycles per migration")
+    parser.add_argument("--topn", type=int, default=10, help="How many best species to distribute from each population")
+    parser.add_argument("--fractionReplacedHof", type=float, default=0.1, help="Fraction of population to replace with hall of fame")
+    parser.add_argument("--fractionReplaced", type=float, default=0.1, help="Fraction of population to replace with best from other populations")
+    parser.add_argument("--migration", type=bool, default=True, help="Whether to migrate")
+    parser.add_argument("--hofMigration", type=bool, default=True, help="Whether to have hall of fame migration")
+    parser.add_argument("--shouldOptimizeConstants", type=bool, default=True, help="Whether to use classical optimization on constants before every migration (doesn't impact performance that much)")
+    parser.add_argument("--annealing", type=bool, default=True, help="Whether to use simulated annealing")
+
     parser.add_argument(
             "--binary-operators", type=str, nargs="+", default=["plus", "mul"],
             help="Binary operators. Make sure they are defined in operators.jl")
