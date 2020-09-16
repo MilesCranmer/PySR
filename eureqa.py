@@ -1,6 +1,7 @@
 import os
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from collections import namedtuple
+import pathlib
 
 
 def eureqa(threads=4, parsimony=1e-3, alpha=10,
@@ -63,13 +64,19 @@ def eureqa(threads=4, parsimony=1e-3, alpha=10,
         print(def_datasets, file=f)
 
     command = ' '.join([
+        f'cd {pathlib.Path(__file__).parent.absolute()}', #Move to filepath of code
+        '&&',
         'julia -O3',
         f'--threads {threads}',
         '-e',
         f'\'include("eureqa.jl"); fullRun({niterations:d}, npop={npop:d}, annealing={"true" if annealing else "false"}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, 1e9), topn={topn:d})\''
+        '&&',
+        f'cd {pathlib.Path().absolute()}',
         ])
     import os
     os.system(command)
+
+
 
 
 if __name__ == "__main__":
