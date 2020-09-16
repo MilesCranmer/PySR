@@ -57,7 +57,7 @@ def eureqa(X=None, y=None, threads=4, parsimony=1e-3, alpha=10,
      --test TEST           Which test to run (default: simple1)
      --binary-operators BINARY_OPERATORS [BINARY_OPERATORS ...]
                            Binary operators. Make sure they are defined in
-                           operators.jl (default: ['plus', 'mul'])
+                           operators.jl (default: ['plus', 'mult'])
      --unary-operators UNARY_OPERATORS
                            Unary operators. Make sure they are defined in
                            operators.jl (default: ['exp', 'sin', 'cos'])
@@ -155,7 +155,7 @@ if __name__ == "__main__":
     parser.add_argument("--test", type=str, default='simple1', help="Which test to run")
 
     parser.add_argument(
-            "--binary-operators", type=str, nargs="+", default=["plus", "mul"],
+            "--binary-operators", type=str, nargs="+", default=["plus", "mult"],
             help="Binary operators. Make sure they are defined in operators.jl")
     parser.add_argument(
             "--unary-operators", type=str, nargs="+", default=["exp", "sin", "cos"],

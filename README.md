@@ -69,7 +69,7 @@ optional arguments:
   --test TEST           Which test to run (default: simple1)
   --binary-operators BINARY_OPERATORS [BINARY_OPERATORS ...]
                         Binary operators. Make sure they are defined in
-                        operators.jl (default: ['plus', 'mul'])
+                        operators.jl (default: ['plus', 'mult'])
   --unary-operators UNARY_OPERATORS
                         Unary operators. Make sure they are defined in
                         operators.jl (default: ['exp', 'sin', 'cos'])
