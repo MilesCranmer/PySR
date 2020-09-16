@@ -1,19 +1,14 @@
 # Running:
 
-Modify the hyperparameters in `hyperparams.jl` and the dataset in `dataset.jl`
-(see below for options). Then, in a new Julia file called
-`myfile.jl`, or the interpreter, you can write:
-
-```julia
-include("paralleleureqa.jl")
-fullRun(10,
-    npop=100,
-    ncyclesperiteration=1000,
-    fractionReplaced=0.1f0,
-    verbosity=100,
-    topn=10)
+You can execute the program from the command line with
+```bash
+julia --threads 6 -O3 -e 'include("paralleleureqa.jl"); fullRun(20, npop=100, annealing=true, ncyclesperiteration=5000, fractionReplaced=0.1f0, verbosity=round(Int32, 1e9), topn=10)'
 ```
-The first arg is the number of migration periods to run,
+
+Modify the hyperparameters in `hyperparams.jl` and the dataset in `dataset.jl`
+(see below for options). 
+
+The first argument to `fullRun` is the number of migration periods to run,
 with `ncyclesperiteration` determining how many generations
 per migration period.  `npop` is the number of population members.
 `annealing` determines whether to stay in exploration mode,
