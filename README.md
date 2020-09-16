@@ -69,18 +69,11 @@ optional arguments:
 
 ## Modification
 
-You can change the binary and unary operators in `hyperparams.jl` here:
-```julia
-const binops = [plus, mult]
-const unaops = [sin, cos, exp];
-```
-E.g., you can add the function for powers with:
-```julia
-pow(x::Float32, y::Float32)::Float32 = sign(x)*abs(x)^y
-const binops = [plus, mult, pow]
-```
+You can add more operators in `operators.jl`, or use default
+Julia ones. Make sure all operators are defined for scalar `Float32`.
+Then just call the operator in your call to `eureqa`.
 
-You can change the dataset here:
+You can change the dataset in `eureqa.py` here:
 ```julia
 const X = convert(Array{Float32, 2}, randn(100, 5)*2)
 # Here is the function we want to learn (x2^2 + cos(x3) - 5)
@@ -88,24 +81,6 @@ const y = convert(Array{Float32, 1}, ((cx,)->cx^2).(X[:, 2]) + cos.(X[:, 3]) .- 
 ```
 by either loading in a dataset, or modifying the definition of `y`.
 (The `.` are are used for vectorization of a scalar function)
-
-### Hyperparameters
-
-Annealing allows each evolutionary cycle to turn down the exploration
-rate over time: at the end (temperature 0), it will only select solutions
-better than existing solutions.
-
-The following parameter, parsimony, is how much to punish complex solutions:
-```julia
-const parsimony = 0.01
-```
-
-Finally, the following
-determins how much to scale temperature by (T between 0 and 1).
-```julia
-const alpha = 10.0
-```
-Larger alpha means more exploration.
 
 One can also adjust the relative probabilities of each operation here:
 ```julia
@@ -125,11 +100,10 @@ for:
 # TODO
 
 - [ ] Hyperparameter tune
+- [ ] Add interface for either defining an operation to learn, or loading in arbitrary dataset.
+    - Could just write out the dataset in julia, or load it.
 - [ ] Add mutation for constant<->variable
-- [ ] Create a Python interface
 - [ ] Create a benchmark for accuracy
-- [ ] Create struct to pass through all hyperparameters, instead of treating as constants
-    - Make sure doesn't affect performance
 - [ ] Use NN to generate weights over all probability distribution conditional on error and existing equation, and train on some randomly-generated equations
 - [ ] Performance:
     - [ ] Use an enum for functions instead of storing them?
@@ -138,6 +112,7 @@ for:
             - Seems like its necessary right now. But still by far the slowest option.
         - [ ] Calculating the loss function - there is duplicate calculations happening.
         - [ ] Declaration of the weights array every iteration
+- [x] Create a Python interface
 - [x] Explicit constant optimization on hall-of-fame
     - Create method to find and return all constants, from left to right
     - Create method to find and set all constants, in same order
@@ -148,3 +123,5 @@ for:
 - [x] Optionally (with hyperparameter) migrate the hall of fame, rather than current bests
 - [x] Test performance of reduced precision integers
     - No effect
+- [x] Create struct to pass through all hyperparameters, instead of treating as constants
+    - Make sure doesn't affect performance
