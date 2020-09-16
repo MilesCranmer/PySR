@@ -86,6 +86,7 @@ def eureqa(X=None, y=None, threads=4, parsimony=1e-3, alpha=10,
     const fractionReplacedHof = {fractionReplacedHof}f0
     const shouldOptimizeConstants = {'true' if shouldOptimizeConstants else 'false'}
     const hofFile = "{equation_file}"
+    const nthreads = {threads:d}
     """
 
     assert len(X.shape) == 2

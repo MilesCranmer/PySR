@@ -10,7 +10,6 @@ const nuna = size(unaops)[1]
 const nbin = size(binops)[1]
 const nops = nuna + nbin
 const nvar = size(X)[2];
-const nthreads = Threads.nthreads()
 
 function debug(verbosity, string...)
     verbosity > 0 ? println(string...) : nothing
