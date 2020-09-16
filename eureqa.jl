@@ -592,21 +592,25 @@ function fullRun(niterations::Integer;
         end
 
         dominating = PopMember[]
-        debug(verbosity, "Hall of Fame:")
-        debug(verbosity, "-----------------------------------------")
-        debug(verbosity, "Complexity \t MSE \t Equation")
-        for size=1:maxsize
-            if hallOfFame.exists[size]
-                member = hallOfFame.members[size]
-                numberSmallerAndBetter = sum([member.score > hallOfFame.members[i].score for i=1:(size-1)])
-                betterThanAllSmaller = (numberSmallerAndBetter == 0)
-                if betterThanAllSmaller
-                    debug(verbosity, "$size \t $(member.score-parsimony*size) \t $(stringTree(member.tree))")
-                    push!(dominating, member)
+        open(hofFile, "w") do io
+            debug(verbosity, "Hall of Fame:")
+            debug(verbosity, "-----------------------------------------")
+            debug(verbosity, "Complexity \t MSE \t Equation")
+            println(io,"Complexity|MSE|Equation")
+            for size=1:maxsize
+                if hallOfFame.exists[size]
+                    member = hallOfFame.members[size]
+                    numberSmallerAndBetter = sum([member.score > hallOfFame.members[i].score for i=1:(size-1)])
+                    betterThanAllSmaller = (numberSmallerAndBetter == 0)
+                    if betterThanAllSmaller
+                        debug(verbosity, "$size \t $(member.score-parsimony*size) \t $(stringTree(member.tree))")
+                        println(io, "$size|$(member.score-parsimony*size)|$(stringTree(member.tree))")
+                        push!(dominating, member)
+                    end
                 end
             end
+            debug(verbosity, "")
         end
-        debug(verbosity, "")
 
         # Migration
         if migration

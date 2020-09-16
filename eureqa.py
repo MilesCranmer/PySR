@@ -11,7 +11,7 @@ def eureqa(threads=4, parsimony=1e-3, alpha=10,
         unary_operators=["cos", "exp", "sin"],
         niterations=20, npop=100, annealing=True,
         ncyclesperiteration=5000, fractionReplaced=0.1,
-        topn=10
+        topn=10, equation_file='hall_of_fame.csv'
         ):
 
     def_hyperparams = f"""
@@ -42,6 +42,8 @@ def eureqa(threads=4, parsimony=1e-3, alpha=10,
     const fractionReplacedHof = {fractionReplacedHof}f0
     # Optimize constants
     const shouldOptimizeConstants = {'true' if shouldOptimizeConstants else 'false'}
+    # File to put operators
+    const hofFile = "{equation_file}"
     ##################
     """
 
@@ -64,7 +66,7 @@ def eureqa(threads=4, parsimony=1e-3, alpha=10,
         'julia -O3',
         f'--threads {threads}',
         '-e',
-        f'\'include("paralleleureqa.jl"); fullRun({niterations:d}, npop={npop:d}, annealing={"true" if annealing else "false"}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, 1e9), topn={topn:d})\''
+        f'\'include("eureqa.jl"); fullRun({niterations:d}, npop={npop:d}, annealing={"true" if annealing else "false"}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, 1e9), topn={topn:d})\''
         ])
     import os
     os.system(command)
@@ -87,6 +89,7 @@ if __name__ == "__main__":
     parser.add_argument("--hofMigration", type=bool, default=True, help="Whether to have hall of fame migration")
     parser.add_argument("--shouldOptimizeConstants", type=bool, default=True, help="Whether to use classical optimization on constants before every migration (doesn't impact performance that much)")
     parser.add_argument("--annealing", type=bool, default=True, help="Whether to use simulated annealing")
+    parser.add_argument("--equation_file", type=str, default='hall_of_fame.csv', help="File to dump best equations to")
 
     parser.add_argument(
             "--binary-operators", type=str, nargs="+", default=["plus", "mul"],

@@ -1,6 +1,6 @@
 # Eureqa.jl
 
-Symbolic regression built on Eureqa, and interfaced by Python.
+Symbolic regression built on Julia, and interfaced by Python.
 Uses regularized evolution and simulated annealing.
 
 ## Running:
