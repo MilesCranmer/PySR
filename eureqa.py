@@ -96,4 +96,4 @@ if __name__ == "__main__":
             help="Unary operators. Make sure they are defined in operators.jl")
     args = vars(parser.parse_args()) #dict
 
-    run(**args)
+    eureqa(**args)
