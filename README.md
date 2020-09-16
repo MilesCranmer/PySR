@@ -1,7 +1,5 @@
 # Running:
 
-You can run the performance benchmark with `./benchmark.sh`.
-
 Modify the hyperparameters in `hyperparams.jl` and the dataset in `dataset.jl`
 (see below for options). Then, in a new Julia file called
 `myfile.jl`, or the interpreter, you can write:
@@ -12,7 +10,8 @@ fullRun(10,
     npop=100,
     ncyclesperiteration=1000,
     fractionReplaced=0.1f0,
-    verbosity=100)
+    verbosity=100,
+    topn=10)
 ```
 The first arg is the number of migration periods to run,
 with `ncyclesperiteration` determining how many generations
@@ -20,7 +19,8 @@ per migration period.  `npop` is the number of population members.
 `annealing` determines whether to stay in exploration mode,
 or tune it down with each cycle. `fractionReplaced` is
 how much of the population is replaced by migrated equations each
-step.
+step. `topn` is the number of top members of each population
+to migrate.
 
 
 Run it with threading turned on using:
