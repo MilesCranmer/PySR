@@ -523,7 +523,7 @@ function optimizeConstants(member::PopMember)::PopMember
     if size(x0)[1] == 1
         result = Optim.optimize(f, x0, Optim.Newton(), Optim.Options(iterations=20))
     else
-        result = Optim.optimize(f, x0, Optim.LBFGS(), Optim.Options(iterations=10))
+        result = Optim.optimize(f, x0, Optim.NelderMead(), Optim.Options(iterations=100))
     end
     if Optim.converged(result)
         setConstants(member.tree, result.minimizer)
