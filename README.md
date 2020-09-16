@@ -8,7 +8,7 @@ Uses regularized evolution and simulated annealing.
 You can either call the program using `eureqa` from `eureqa.py`,
 or execute the program from the command line with, for example:
 ```bash
-python eureqa.py --threads 8 --binary-operators plus mult
+python eureqa.py --threads 8 --binary-operators plus mult pow --npop 200
 ```
 
 Here is the full list of arguments:
