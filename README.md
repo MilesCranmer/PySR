@@ -1,25 +1,20 @@
-# Running:
+# Eureqa.jl
 
-You can execute the program from the command line with
+Symbolic regression built on Eureqa, and interfaced by Python.
+Uses regularized evolution and simulated annealing.
+
+## Running:
+
+You can execute the program from the command line with, for example:
 ```bash
-julia --threads 6 -O3 -e 'include("paralleleureqa.jl"); fullRun(20, npop=100, annealing=true, ncyclesperiteration=5000, fractionReplaced=0.1f0, verbosity=round(Int32, 1e9), topn=10)'
+python eureqa.py --threads 8 --binary-operators plus mult
 ```
 
-Modify the hyperparameters in `hyperparams.jl` and the dataset in `dataset.jl`
-(see below for options). 
-
-The first argument to `fullRun` is the number of migration periods to run,
-with `ncyclesperiteration` determining how many generations
-per migration period.  `npop` is the number of population members.
-`annealing` determines whether to stay in exploration mode,
-or tune it down with each cycle. `fractionReplaced` is
-how much of the population is replaced by migrated equations each
-step. `topn` is the number of top members of each population
-to migrate.
+You can see all hyperparameters in the function `eureqa` inside `eureqa.py`.
+This function generates Julia code which is then executed
+by `eureqa.jl` and `paralleleureqa.jl`.
 
 
-Run it with threading turned on using:
-`julia --threads auto -O3 myfile.jl`
 
 ## Modification
 

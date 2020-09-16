@@ -1,5 +1,5 @@
-include("hyperparams.jl")
-include("dataset.jl")
+include(".hyperparams.jl")
+include(".dataset.jl")
 import Optim
 
 const maxdegree = 2
