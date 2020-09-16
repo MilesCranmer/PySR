@@ -72,6 +72,7 @@ def eureqa(X=None, y=None, threads=4, parsimony=1e-3, alpha=10,
     Returns:
         Pandas dataset listing (complexity, MSE, equation string)
     """
+    rand_string = f'{"".join([str(np.random.rand())[2] for i in range(20)])}'
 
     if isinstance(binary_operators, str): binary_operators = [binary_operators]
     if isinstance(unary_operators, str): unary_operators = [unary_operators]
@@ -133,17 +134,17 @@ def eureqa(X=None, y=None, threads=4, parsimony=1e-3, alpha=10,
 
     os.system(code_path)
 
-    with open('.hyperparams.jl', 'w') as f:
+    with open(f'.hyperparams_{rand_string}.jl', 'w') as f:
         print(def_hyperparams, file=f)
 
-    with open('.dataset.jl', 'w') as f:
+    with open(f'.dataset_{rand_string}.jl', 'w') as f:
         print(def_datasets, file=f)
 
     command = [
         'julia -O3',
         f'--threads {threads}',
         '-e',
-        f'\'include("eureqa.jl"); fullRun({niterations:d}, npop={npop:d}, annealing={"true" if annealing else "false"}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, 1e9), topn={topn:d})\'',
+        f'\'include(".hyperparams_{rand_string}.jl"); include(".dataset_{rand_string}.jl"); include("eureqa.jl"); fullRun({niterations:d}, npop={npop:d}, annealing={"true" if annealing else "false"}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, 1e9), topn={topn:d})\'',
         ]
     cur_cmd = ' '.join(command)
     print("Running on", cur_cmd)

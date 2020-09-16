@@ -1,5 +1,3 @@
-include(".hyperparams.jl")
-include(".dataset.jl")
 import Optim
 
 const maxdegree = 2
@@ -325,7 +323,7 @@ end
 # Go through one simulated annealing mutation cycle
 #  exp(-delta/T) defines probability of accepting a change
 function iterate(
-        tree::Node, T::Float32,
+        tree::Node, T::Float32;
         annealing::Bool=true
     )::Node
     prev = tree
