@@ -106,6 +106,11 @@ def eureqa(X=None, y=None, threads=4, parsimony=1e-3, alpha=10,
     const y = convert(Array{Float32, 1}, """f"{y_str})""""
     """
 
+    starting_path = f'cd {pathlib.Path().absolute()}'
+    code_path = f'cd {pathlib.Path(__file__).parent.absolute()}' #Move to filepath of code
+
+    os.system(code_path)
+
     with open('.hyperparams.jl', 'w') as f:
         print(def_hyperparams, file=f)
 
@@ -113,21 +118,16 @@ def eureqa(X=None, y=None, threads=4, parsimony=1e-3, alpha=10,
         print(def_datasets, file=f)
 
     command = [
-        f'cd {pathlib.Path(__file__).parent.absolute()}', #Move to filepath of code
-        '&&',
         'julia -O3',
         f'--threads {threads}',
         '-e',
         f'\'include("eureqa.jl"); fullRun({niterations:d}, npop={npop:d}, annealing={"true" if annealing else "false"}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, 1e9), topn={topn:d})\'',
-        '&&',
-        f'cd {pathlib.Path().absolute()}',
         ]
-    import os
-    cur_cmd = ' '.join(command[:-2])
+    cur_cmd = ' '.join(command)
     print("Running on", cur_cmd)
     os.system(cur_cmd)
     output = pd.read_csv(equation_file, sep="|")
-    os.system(command[-1])
+    os.system(starting_path)
     return output
 
 
