@@ -17,8 +17,11 @@ def eureqa(X=None, y=None, threads=4, parsimony=1e-3, alpha=10,
         topn=10, equation_file='hall_of_fame.csv',
         test='simple1'
         ):
-    """Either provide a 2D numpy array for X, 1D array for y, or declare a test to run.
+    """ Runs symbolic regression in Julia, to fit y given X.
+    Either provide a 2D numpy array for X, 1D array for y, or declare a test to run.
 
+    Arguments:
+    
      --threads THREADS     Number of threads (default: 4)
      --parsimony PARSIMONY
                            How much to punish complexity (default: 0.001)
@@ -58,6 +61,9 @@ def eureqa(X=None, y=None, threads=4, parsimony=1e-3, alpha=10,
      --unary-operators UNARY_OPERATORS
                            Unary operators. Make sure they are defined in
                            operators.jl (default: ['exp', 'sin', 'cos'])
+
+    Returns:
+        Pandas dataset listing (complexity, MSE, equation string)
     """
 
     if isinstance(binary_operators, str): binary_operators = [binary_operators]

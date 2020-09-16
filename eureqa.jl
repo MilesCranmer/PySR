@@ -73,7 +73,7 @@ function stringTree(tree::Node)::String
         if tree.constant
             return string(tree.val)
         else
-            return "x$(tree.val)"
+            return "x$(tree.val - 1)"
         end
     elseif tree.degree == 1
         return "$(tree.op)($(stringTree(tree.l)))"
