@@ -75,35 +75,17 @@ def eureqa(X=None, y=None, threads=4, parsimony=1e-3, alpha=10,
 
     def_hyperparams = f"""
     include("operators.jl")
-    ##########################
-    # # Allowed operators
-    # (Apparently using const for globals helps speed)
     const binops = {'[' + ', '.join(binary_operators) + ']'}
     const unaops = {'[' + ', '.join(unary_operators) + ']'}
-    ##########################
-    
-    # How many equations to search when replacing
     const ns=10;
-    
-    ##################
-    # Hyperparameters
-    # How much to punish complexity
     const parsimony = {parsimony:f}f0
-    # How much to scale temperature by (T between 0 and 1)
     const alpha = {alpha:f}f0
-    # Max size of an equation (too large will slow program down)
     const maxsize = {maxsize:d}
-    # Whether to migrate between threads (you should)
     const migration = {'true' if migration else 'false'}
-    # Whether to re-introduce best examples seen (helps a lot)
     const hofMigration = {'true' if hofMigration else 'false'}
-    # Fraction of population to replace with hall of fame
     const fractionReplacedHof = {fractionReplacedHof}f0
-    # Optimize constants
     const shouldOptimizeConstants = {'true' if shouldOptimizeConstants else 'false'}
-    # File to put operators
     const hofFile = "{equation_file}"
-    ##################
     """
 
     assert len(X.shape) == 2
@@ -113,12 +95,8 @@ def eureqa(X=None, y=None, threads=4, parsimony=1e-3, alpha=10,
     y_str = str(y.tolist())
 
     def_datasets = """
-    # Here is the function we want to learn (x2^2 + cos(x3) + 5)
-    ##########################
-    # # Dataset to learn
     const X = convert(Array{Float32, 2}, """f"{X_str})""""
     const y = convert(Array{Float32, 1}, """f"{y_str})""""
-    ##########################
     """
 
     with open('.hyperparams.jl', 'w') as f:
