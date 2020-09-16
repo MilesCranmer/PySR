@@ -3,6 +3,12 @@
 Symbolic regression built on Julia, and interfaced by Python.
 Uses regularized evolution and simulated annealing.
 
+## Installation
+
+Install [Julia](https://julialang.org/downloads/). Then, at the command line,
+install the `Optim` package via: `julia -e 'import Pkg; Pkg.add("Optim")'`.
+For python, you need to have Python 3, numpy, and pandas installed.
+
 ## Running:
 
 You can either call the program by calling the `eureqa` function from `eureqa.py`,
