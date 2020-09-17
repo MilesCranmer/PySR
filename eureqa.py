@@ -51,54 +51,58 @@ def eureqa(X=None, y=None, threads=4,
             test='simple1',
             maxsize=20,
         ):
-    """ Runs symbolic regression in Julia, to fit y given X.
-    Either provide a 2D numpy array for X, 1D array for y, or declare a test to run.
+    """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
 
-    Arguments:
-    
-     --threads THREADS     Number of threads (default: 4)
-     --parsimony PARSIMONY
-                           How much to punish complexity (default: 0.001)
-     --alpha ALPHA         Scaling of temperature (default: 10)
-     --maxsize MAXSIZE     Max size of equation (default: 20)
-     --niterations NITERATIONS
-                           Number of total migration periods (default: 20)
-     --npop NPOP           Number of members per population (default: 100)
-     --ncyclesperiteration NCYCLESPERITERATION
-                           Number of evolutionary cycles per migration (default:
-                           5000)
-     --topn TOPN           How many best species to distribute from each
-                           population (default: 10)
-     --fractionReplacedHof FRACTIONREPLACEDHOF
-                           Fraction of population to replace with hall of fame
-                           (default: 0.1)
-     --fractionReplaced FRACTIONREPLACED
-                           Fraction of population to replace with best from other
-                           populations (default: 0.1)
-     --migration MIGRATION
-                           Whether to migrate (default: True)
-     --hofMigration HOFMIGRATION
-                           Whether to have hall of fame migration (default: True)
-     --shouldOptimizeConstants SHOULDOPTIMIZECONSTANTS
-                           Whether to use classical optimization on constants
-                           before every migration (doesn't impact performance
-                           that much) (default: True)
-     --annealing ANNEALING
-                           Whether to use simulated annealing (default: True)
-     --equation_file EQUATION_FILE
-                           File to dump best equations to (default:
-                           hall_of_fame.csv)
-     --test TEST           Which test to run (default: simple1)
-     --binary-operators BINARY_OPERATORS [BINARY_OPERATORS ...]
-                           Binary operators. Make sure they are defined in
-                           operators.jl (default: ['plus', 'mult'])
-     --unary-operators UNARY_OPERATORS
-                           Unary operators. Make sure they are defined in
-                           operators.jl (default: ['exp', 'sin', 'cos'])
+    Note: most default parameters have been tuned over several example
+    equations, but you should adjust `threads`, `niterations`,
+    `binary_operators`, `unary_operators` to your requirements.
 
-    Returns:
-        Pandas dataset listing (complexity, MSE, equation string)
+    :X: np.ndarray, 2D. Rows are examples, columns are features.
+    :y: np.ndarray, 1D. Rows are examples.
+    :threads: Number of threads (=number of populations running).
+        You can have more threads than cores - it actually makes it more
+        efficient.
+    :niterations: Number of iterations of the algorithm to run. The best
+        equations are printed, and migrate between populations, at the
+        end of each.
+    :ncyclesperiteration: Number of total mutations to run, per 10
+        samples of the population, per iteration.
+    :binary_operators: List of strings giving the binary operators
+        in Julia's Base, or in `operator.jl`.
+    :unary_operators: Same but for operators taking a single `Float32`.
+    :alpha: Initial temperature.
+    :annealing: Whether to use annealing. You should (and it is default).
+    :fractionReplaced: How much of population to replace with migrating
+        equations from other populations.
+    :fractionReplacedHof: How much of population to replace with migrating
+        equations from hall of fame.
+    :npop: Number of individuals in each population
+    :parsimony: Multiplicative factor for how much to punish complexity.
+    :migration: Whether to migrate.
+    :hofMigration: Whether to have the hall of fame migrate.
+    :shouldOptimizeConstants: Whether to numerically optimize
+        constants (Nelder-Mead/Newton) at the end of each iteration.
+    :topn: How many top individuals migrate from each population.
+    :weightAddNode: Relative likelihood for mutation to add a node
+    :weightDeleteNode: Relative likelihood for mutation to delete a node
+    :weightDoNothing: Relative likelihood for mutation to leave the individual
+    :weightMutateConstant: Relative likelihood for mutation to change
+        the constant slightly in a random direction.
+    :weightMutateOperator: Relative likelihood for mutation to swap
+        an operator.
+    :weightRandomize: Relative likelihood for mutation to completely
+        delete and then randomly generate the equation
+    :weightSimplify: Relative likelihood for mutation to simplify
+        constant parts by evaluation
+    :timeout: Time in seconds to timeout search
+    :equation_file: Where to save the files (.csv separated by |)
+    :test: What test to run, if X,y not passed.
+    :maxsize: Max size of an equation.
+    :returns: pd.DataFrame, giving complexity, MSE, and equations
+        (as strings).
+
     """
+
     rand_string = f'{"".join([str(np.random.rand())[2] for i in range(20)])}'
 
     if isinstance(binary_operators, str): binary_operators = [binary_operators]
