@@ -11,10 +11,40 @@ For python, you need to have Python 3, numpy, and pandas installed.
 
 ## Running:
 
+### Quickstart
+
+```python
+import numpy as np
+from eureqa import eureqa
+
+# Dataset
+X = 2*np.random.randn(100, 5)
+y = 2*np.cos(X[:, 3]) + X[:, 0]**2 - 2
+
+# Learn equations
+equations = eureqa(X, y, niterations=5)
+
+...
+
+print(equations)
+```
+
+which gives:
+
+```
+   Complexity       MSE                                                Equation
+0           5  1.947431                          plus(-1.7420927, mult(x0, x0))
+1           8  0.486858           plus(-1.8710494, plus(cos(x3), mult(x0, x0)))
+2          11  0.000000  plus(plus(mult(x0, x0), cos(x3)), plus(-2.0, cos(x3)))
+```
+
+### API
+
 What follows is the API reference for running the numpy interface.
-Note that nearly all parameters here
+Note that most parameters here
 have been tuned with ~1000 trials over several example
-equations. However, you should adjust `threads`, `niterations`,
+equations, so you don't need to tune them yourself.
+However, you should adjust `threads`, `niterations`,
 `binary_operators`, `unary_operators` to your requirements.
 
 The program will output a pandas DataFrame containing the equations,
@@ -30,7 +60,15 @@ You can also change the dataset learned on by passing in `X` and `y` as
 numpy arrays to `eureqa(...)`.
 
 ```python
-eureqa(X=None, y=None, threads=4, niterations=20, ncyclesperiteration=int(default_ncyclesperiteration), binary_operators=["plus", "mult"], unary_operators=["cos", "exp", "sin"], alpha=default_alpha, annealing=True, fractionReplaced=default_fractionReplaced, fractionReplacedHof=default_fractionReplacedHof, npop=int(default_npop), parsimony=default_parsimony, migration=True, hofMigration=True, shouldOptimizeConstants=True, topn=int(default_topn), weightAddNode=default_weightAddNode, weightDeleteNode=default_weightDeleteNode, weightDoNothing=default_weightDoNothing, weightMutateConstant=default_weightMutateConstant, weightMutateOperator=default_weightMutateOperator, weightRandomize=default_weightRandomize, weightSimplify=default_weightSimplify, timeout=None, equation_file='hall_of_fame.csv', test='simple1', maxsize=20)
+eureqa(X=None, y=None, threads=4, niterations=20, ncyclesperiteration=int(default_ncyclesperiteration),
+binary_operators=["plus", "mult"], unary_operators=["cos", "exp", "sin"], alpha=default_alpha,
+annealing=True, fractionReplaced=default_fractionReplaced, fractionReplacedHof=default_fractionReplacedHof,
+npop=int(default_npop), parsimony=default_parsimony, migration=True, hofMigration=True
+shouldOptimizeConstants=True, topn=int(default_topn), weightAddNode=default_weightAddNode,
+weightDeleteNode=default_weightDeleteNode, weightDoNothing=default_weightDoNothing,
+weightMutateConstant=default_weightMutateConstant, weightMutateOperator=default_weightMutateOperator,
+weightRandomize=default_weightRandomize, weightSimplify=default_weightSimplify, timeout=None,
+equation_file='hall_of_fame.csv', test='simple1', maxsize=20)
 ```
 
 Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
