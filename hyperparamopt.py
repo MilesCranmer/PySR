@@ -32,13 +32,14 @@ def run_trial(args):
         print("Took too long. Skipping.")
         raise ValueError("Takes too long")
 
-    maxTime = 60
-    ntrials = 3 #3
-    equation_file=f'hall_of_fame_{np.random.rand():f}.csv'
+    maxTime = 120
+    ntrials = 3
+    equation_file = f'.hall_of_fame_{np.random.rand():f}.csv'
 
     try:
         trials = []
-        for i in range(1, 6):
+        for i in range(1, 4):
+            subtrials = []
             for j in range(ntrials):
                 trial = eureqa.eureqa(
                     test=f"simple{i}",
@@ -49,7 +50,8 @@ def run_trial(args):
                     timeout=maxTime,
                     **args)
                 if len(trial) == 0: raise ValueError
-                trials.append([np.min(trial['MSE'])])
+                subtrials.append(np.min(trial['MSE']))
+            trials.append(np.log(np.median(subtrials) + 0.1))
     except ValueError:
         return {
             'status': 'ok', # or 'fail' if nan loss
