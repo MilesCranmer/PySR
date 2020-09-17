@@ -5,24 +5,23 @@ import pathlib
 import numpy as np
 import pandas as pd
 
-
-def eureqa(X=None, y=None, threads=4, parsimony=1e-3, alpha=10,
+def eureqa(X=None, y=None, threads=4, parsimony=1e-3, alpha=2.4,
             maxsize=20, migration=True,
-            hofMigration=True, fractionReplacedHof=0.1,
+            hofMigration=True, fractionReplacedHof=0.15,
             shouldOptimizeConstants=True,
             binary_operators=["plus", "mult"],
             unary_operators=["cos", "exp", "sin"],
-            niterations=20, npop=100, annealing=True,
-            ncyclesperiteration=5000, fractionReplaced=0.1,
-            topn=10, equation_file='hall_of_fame.csv',
+            niterations=20, npop=120, annealing=True,
+            ncyclesperiteration=12000, fractionReplaced=0.1,
+            topn=2, equation_file='hall_of_fame.csv',
             test='simple1',
-            weightMutateConstant=4.0,
-            weightMutateOperator=0.5,
-            weightAddNode=0.5,
-            weightDeleteNode=0.5,
-            weightSimplify=0.05,
-            weightRandomize=0.25,
-            weightDoNothing=1.0,
+            weightMutateConstant=8.0,
+            weightMutateOperator=0.7,
+            weightAddNode=1.2,
+            weightDeleteNode=0.17,
+            weightSimplify=0.07,
+            weightRandomize=0.18,
+            weightDoNothing=1.7,
             timeout=None,
         ):
     """ Runs symbolic regression in Julia, to fit y given X.
@@ -160,20 +159,18 @@ const y = convert(Array{Float32, 1}, """f"{y_str})""""
 
 
 
-
-
 if __name__ == "__main__":
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
 
     parser.add_argument("--threads", type=int, default=4, help="Number of threads")
     parser.add_argument("--parsimony", type=float, default=0.001, help="How much to punish complexity")
-    parser.add_argument("--alpha", type=int, default=10, help="Scaling of temperature")
+    parser.add_argument("--alpha", type=int, default=2.4, help="Scaling of temperature")
     parser.add_argument("--maxsize", type=int, default=20, help="Max size of equation")
     parser.add_argument("--niterations", type=int, default=20, help="Number of total migration periods")
-    parser.add_argument("--npop", type=int, default=100, help="Number of members per population")
-    parser.add_argument("--ncyclesperiteration", type=int, default=5000, help="Number of evolutionary cycles per migration")
-    parser.add_argument("--topn", type=int, default=10, help="How many best species to distribute from each population")
-    parser.add_argument("--fractionReplacedHof", type=float, default=0.1, help="Fraction of population to replace with hall of fame")
+    parser.add_argument("--npop", type=int, default=120, help="Number of members per population")
+    parser.add_argument("--ncyclesperiteration", type=int, default=12000, help="Number of evolutionary cycles per migration")
+    parser.add_argument("--topn", type=int, default=2, help="How many best species to distribute from each population")
+    parser.add_argument("--fractionReplacedHof", type=float, default=0.15, help="Fraction of population to replace with hall of fame")
     parser.add_argument("--fractionReplaced", type=float, default=0.1, help="Fraction of population to replace with best from other populations")
     parser.add_argument("--migration", type=bool, default=True, help="Whether to migrate")
     parser.add_argument("--hofMigration", type=bool, default=True, help="Whether to have hall of fame migration")
