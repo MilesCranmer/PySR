@@ -147,13 +147,12 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 
 # TODO
 
+- [ ] Write our own tree copy operation; deepcopy() is the slowest operation by far.
 - [ ] Consider adding mutation for constant<->variable
 - [ ] Use NN to generate weights over all probability distribution conditional on error and existing equation, and train on some randomly-generated equations
 - [ ] Performance:
     - [ ] Use an enum for functions instead of storing them?
     - Current most expensive operations:
-        - [x] deepcopy() before the mutate, to see whether to accept or not.
-            - Seems like its necessary right now. But still by far the slowest option.
         - [ ] Calculating the loss function - there is duplicate calculations happening.
         - [ ] Declaration of the weights array every iteration
 - [x] Hyperparameter tune
