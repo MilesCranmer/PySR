@@ -578,8 +578,9 @@ function fullRun(niterations::Integer;
         @inbounds Threads.@threads for i=1:nthreads
             allPops[i] = run(allPops[i], ncyclesperiteration, annealing, verbosity=verbosity)
             bestSubPops[i] = bestSubPop(allPops[i], topn=topn)
-            if shouldOptimizeConstants
-                for j=1:bestSubPops[i].n
+            for j=1:bestSubPops[i].n
+                bestSubPops[i].members[j].tree = simplifyTree(bestSubPops[i].members[j].tree)
+                if shouldOptimizeConstants
                     bestSubPops[i].members[j] = optimizeConstants(bestSubPops[i].members[j])
                 end
             end
