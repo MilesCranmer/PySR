@@ -33,22 +33,23 @@ def run_trial(args):
         raise ValueError("Takes too long")
 
     maxTime = 60
-    ntrials = 1 #3
+    ntrials = 3 #3
     equation_file=f'hall_of_fame_{np.random.rand():f}.csv'
 
     try:
         trials = []
-        for i in range(1, 2):
-            trial = eureqa.eureqa(
-                test=f"simple{i}",
-                threads=4,
-                binary_operators=["plus", "mult", "pow", "div"],
-                unary_operators=["cos", "exp", "sin", "log"],
-                equation_file=equation_file,
-                timeout=maxTime,
-                **args)
-            if len(trial) == 0: raise ValueError
-            trials.append([np.min(trial['MSE'])])
+        for i in range(1, 6):
+            for j in range(ntrials):
+                trial = eureqa.eureqa(
+                    test=f"simple{i}",
+                    threads=4,
+                    binary_operators=["plus", "mult", "pow", "div"],
+                    unary_operators=["cos", "exp", "sin", "log"],
+                    equation_file=equation_file,
+                    timeout=maxTime,
+                    **args)
+                if len(trial) == 0: raise ValueError
+                trials.append([np.min(trial['MSE'])])
     except ValueError:
         return {
             'status': 'ok', # or 'fail' if nan loss
