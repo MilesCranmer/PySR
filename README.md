@@ -11,74 +11,17 @@ For python, you need to have Python 3, numpy, and pandas installed.
 
 ## Running:
 
-You can either call the program by calling the `eureqa` function from `eureqa.py`,
-or execute the program from the command line with, for example:
-```bash
-python eureqa.py --threads 8 --binary-operators plus mult pow --npop 200
-```
+What follows is the API reference for running the numpy interface.
+Note that nearly all parameters here
+have been tuned with ~1000 trials over several example
+equations. However, you should adjust `threads`, `niterations`,
+`binary_operators`, `unary_operators` to your requirements.
 
-Here is the full list of arguments:
-```
-usage: eureqa.py [-h] [--threads THREADS] [--parsimony PARSIMONY]
-                 [--alpha ALPHA] [--maxsize MAXSIZE]
-                 [--niterations NITERATIONS] [--npop NPOP]
-                 [--ncyclesperiteration NCYCLESPERITERATION] [--topn TOPN]
-                 [--fractionReplacedHof FRACTIONREPLACEDHOF]
-                 [--fractionReplaced FRACTIONREPLACED] [--migration MIGRATION]
-                 [--hofMigration HOFMIGRATION]
-                 [--shouldOptimizeConstants SHOULDOPTIMIZECONSTANTS]
-                 [--annealing ANNEALING] [--equation_file EQUATION_FILE]
-                 [--test TEST]
-                 [--binary-operators BINARY_OPERATORS [BINARY_OPERATORS ...]]
-                 [--unary-operators UNARY_OPERATORS]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --threads THREADS     Number of threads (default: 4)
-  --parsimony PARSIMONY
-                        How much to punish complexity (default: 0.001)
-  --alpha ALPHA         Scaling of temperature (default: 10)
-  --maxsize MAXSIZE     Max size of equation (default: 20)
-  --niterations NITERATIONS
-                        Number of total migration periods (default: 20)
-  --npop NPOP           Number of members per population (default: 100)
-  --ncyclesperiteration NCYCLESPERITERATION
-                        Number of evolutionary cycles per migration (default:
-                        5000)
-  --topn TOPN           How many best species to distribute from each
-                        population (default: 10)
-  --fractionReplacedHof FRACTIONREPLACEDHOF
-                        Fraction of population to replace with hall of fame
-                        (default: 0.1)
-  --fractionReplaced FRACTIONREPLACED
-                        Fraction of population to replace with best from other
-                        populations (default: 0.1)
-  --migration MIGRATION
-                        Whether to migrate (default: True)
-  --hofMigration HOFMIGRATION
-                        Whether to have hall of fame migration (default: True)
-  --shouldOptimizeConstants SHOULDOPTIMIZECONSTANTS
-                        Whether to use classical optimization on constants
-                        before every migration (doesn't impact performance
-                        that much) (default: True)
-  --annealing ANNEALING
-                        Whether to use simulated annealing (default: True)
-  --equation_file EQUATION_FILE
-                        File to dump best equations to (default:
-                        hall_of_fame.csv)
-  --test TEST           Which test to run (default: simple1)
-  --binary-operators BINARY_OPERATORS [BINARY_OPERATORS ...]
-                        Binary operators. Make sure they are defined in
-                        operators.jl (default: ['plus', 'mult'])
-  --unary-operators UNARY_OPERATORS
-                        Unary operators. Make sure they are defined in
-                        operators.jl (default: ['exp', 'sin', 'cos'])
-```
-
-
-
-
-## Modification
+The program will output a pandas DataFrame containing the equations,
+mean square error, and complexity. It will also dump to a csv
+at the end of every iteration,
+which is `hall_of_fame.csv` by default. It also prints the
+equations to stdout.
 
 You can add more operators in `operators.jl`, or use default
 Julia ones. Make sure all operators are defined for scalar `Float32`.
@@ -86,9 +29,61 @@ Then just specify the operator names in your call, as above.
 You can also change the dataset learned on by passing in `X` and `y` as
 numpy arrays to `eureqa(...)`.
 
-One can also adjust the relative probabilities of each mutation operation
-with the `weight...` parameters to `eureqa(...).
-inside `eureqa.jl`.
+```python
+eureqa(X=None, y=None, threads=4, niterations=20, ncyclesperiteration=int(default_ncyclesperiteration), binary_operators=["plus", "mult"], unary_operators=["cos", "exp", "sin"], alpha=default_alpha, annealing=True, fractionReplaced=default_fractionReplaced, fractionReplacedHof=default_fractionReplacedHof, npop=int(default_npop), parsimony=default_parsimony, migration=True, hofMigration=True, shouldOptimizeConstants=True, topn=int(default_topn), weightAddNode=default_weightAddNode, weightDeleteNode=default_weightDeleteNode, weightDoNothing=default_weightDoNothing, weightMutateConstant=default_weightMutateConstant, weightMutateOperator=default_weightMutateOperator, weightRandomize=default_weightRandomize, weightSimplify=default_weightSimplify, timeout=None, equation_file='hall_of_fame.csv', test='simple1', maxsize=20)
+```
+
+Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
+
+**Arguments**:
+
+- `X`: np.ndarray, 2D array. Rows are examples, columns are features.
+- `y`: np.ndarray, 1D array. Rows are examples.
+- `threads`: int, Number of threads (=number of populations running).
+You can have more threads than cores - it actually makes it more
+efficient.
+- `niterations`: int, Number of iterations of the algorithm to run. The best
+equations are printed, and migrate between populations, at the
+end of each.
+- `ncyclesperiteration`: int, Number of total mutations to run, per 10
+samples of the population, per iteration.
+- `binary_operators`: list, List of strings giving the binary operators
+in Julia's Base, or in `operator.jl`.
+- `unary_operators`: list, Same but for operators taking a single `Float32`.
+- `alpha`: float, Initial temperature.
+- `annealing`: bool, Whether to use annealing. You should (and it is default).
+- `fractionReplaced`: float, How much of population to replace with migrating
+equations from other populations.
+- `fractionReplacedHof`: float, How much of population to replace with migrating
+equations from hall of fame.
+- `npop`: int, Number of individuals in each population
+- `parsimony`: float, Multiplicative factor for how much to punish complexity.
+- `migration`: bool, Whether to migrate.
+- `hofMigration`: bool, Whether to have the hall of fame migrate.
+- `shouldOptimizeConstants`: bool, Whether to numerically optimize
+constants (Nelder-Mead/Newton) at the end of each iteration.
+- `topn`: int, How many top individuals migrate from each population.
+- `weightAddNode`: float, Relative likelihood for mutation to add a node
+- `weightDeleteNode`: float, Relative likelihood for mutation to delete a node
+- `weightDoNothing`: float, Relative likelihood for mutation to leave the individual
+- `weightMutateConstant`: float, Relative likelihood for mutation to change
+the constant slightly in a random direction.
+- `weightMutateOperator`: float, Relative likelihood for mutation to swap
+an operator.
+- `weightRandomize`: float, Relative likelihood for mutation to completely
+delete and then randomly generate the equation
+- `weightSimplify`: float, Relative likelihood for mutation to simplify
+constant parts by evaluation
+- `timeout`: float, Time in seconds to timeout search
+- `equation_file`: str, Where to save the files (.csv separated by |)
+- `test`: str, What test to run, if X,y not passed.
+- `maxsize`: int, Max size of an equation.
+
+**Returns**:
+
+pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
+(as strings).
+
 
 # TODO
 

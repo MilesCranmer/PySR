@@ -56,78 +56,49 @@ def eureqa(X=None, y=None, threads=4,
     equations, but you should adjust `threads`, `niterations`,
     `binary_operators`, `unary_operators` to your requirements.
 
-    :param X: 2D array. Rows are examples, columns are features.
-    :type X: np.ndarray, optional
-    :param y: 1D array. Rows are examples.
-    :type y: np.ndarray, optional
-    :param threads: Number of threads (=number of populations running).
+    :param X: np.ndarray, 2D array. Rows are examples, columns are features.
+    :param y: np.ndarray, 1D array. Rows are examples.
+    :param threads: int, Number of threads (=number of populations running).
         You can have more threads than cores - it actually makes it more
         efficient.
-    :type threads: int, optional
-    :param niterations: Number of iterations of the algorithm to run. The best
+    :param niterations: int, Number of iterations of the algorithm to run. The best
         equations are printed, and migrate between populations, at the
         end of each.
-    :type niterations: int, optional
-    :param ncyclesperiteration: Number of total mutations to run, per 10
+    :param ncyclesperiteration: int, Number of total mutations to run, per 10
         samples of the population, per iteration.
-    :type ncyclesperiteration: int, optional
-    :param binary_operators: List of strings giving the binary operators
+    :param binary_operators: list, List of strings giving the binary operators
         in Julia's Base, or in `operator.jl`.
-    :type binary_operators: list, optional
-    :param unary_operators: Same but for operators taking a single `Float32`.
-    :type unary_operators: list, optional
-    :param alpha: Initial temperature.
-    :type alpha: float, optional
-    :param annealing: Whether to use annealing. You should (and it is default).
-    :type annealing: bool, optional
-    :param fractionReplaced: How much of population to replace with migrating
+    :param unary_operators: list, Same but for operators taking a single `Float32`.
+    :param alpha: float, Initial temperature.
+    :param annealing: bool, Whether to use annealing. You should (and it is default).
+    :param fractionReplaced: float, How much of population to replace with migrating
         equations from other populations.
-    :type fractionReplaced: float, optional
-    :param fractionReplacedHof: How much of population to replace with migrating
+    :param fractionReplacedHof: float, How much of population to replace with migrating
         equations from hall of fame.
-    :type fractionReplacedHof: float, optional
-    :param npop: Number of individuals in each population
-    :type npop: int, optional
-    :param parsimony: Multiplicative factor for how much to punish complexity.
-    :type parsimony: float, optional
-    :param migration: Whether to migrate.
-    :type migration: bool, optional
-    :param hofMigration: Whether to have the hall of fame migrate.
-    :type hofMigration: bool, optional
-    :param shouldOptimizeConstants: Whether to numerically optimize
+    :param npop: int, Number of individuals in each population
+    :param parsimony: float, Multiplicative factor for how much to punish complexity.
+    :param migration: bool, Whether to migrate.
+    :param hofMigration: bool, Whether to have the hall of fame migrate.
+    :param shouldOptimizeConstants: bool, Whether to numerically optimize
         constants (Nelder-Mead/Newton) at the end of each iteration.
-    :type shouldOptimizeConstants: bool, optional
-    :param topn: How many top individuals migrate from each population.
-    :type topn: int, optional
-    :param weightAddNode: Relative likelihood for mutation to add a node
-    :type weightAddNode: float, optional
-    :param weightDeleteNode: Relative likelihood for mutation to delete a node
-    :type weightDeleteNode: float, optional
-    :param weightDoNothing: Relative likelihood for mutation to leave the individual
-    :type weightDoNothing: float, optional
-    :param weightMutateConstant: Relative likelihood for mutation to change
+    :param topn: int, How many top individuals migrate from each population.
+    :param weightAddNode: float, Relative likelihood for mutation to add a node
+    :param weightDeleteNode: float, Relative likelihood for mutation to delete a node
+    :param weightDoNothing: float, Relative likelihood for mutation to leave the individual
+    :param weightMutateConstant: float, Relative likelihood for mutation to change
         the constant slightly in a random direction.
-    :type weightMutateConstant: float, optional
-    :param weightMutateOperator: Relative likelihood for mutation to swap
+    :param weightMutateOperator: float, Relative likelihood for mutation to swap
         an operator.
-    :type weightMutateOperator: float, optional
-    :param weightRandomize: Relative likelihood for mutation to completely
+    :param weightRandomize: float, Relative likelihood for mutation to completely
         delete and then randomly generate the equation
-    :type weightRandomize: float, optional
-    :param weightSimplify: Relative likelihood for mutation to simplify
+    :param weightSimplify: float, Relative likelihood for mutation to simplify
         constant parts by evaluation
-    :type weightSimplify: float, optional
-    :param timeout: Time in seconds to timeout search
-    :type timeout: float, optional
-    :param equation_file: Where to save the files (.csv separated by |)
-    :type equation_file: str, optional
-    :param test: What test to run, if X,y not passed.
-    :type test: str, optional
-    :param maxsize: Max size of an equation.
-    :type maxsize: int, optional
-    :returns: Results dataframe, giving complexity, MSE, and equations
+    :param timeout: float, Time in seconds to timeout search
+    :param equation_file: str, Where to save the files (.csv separated by |)
+    :param test: str, What test to run, if X,y not passed.
+    :param maxsize: int, Max size of an equation.
+    :returns: pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
         (as strings).
-    :rtype: pd.DataFrame
 
     """
 
