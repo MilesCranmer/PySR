@@ -52,54 +52,82 @@ def eureqa(X=None, y=None, threads=4,
             maxsize=20,
         ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
-
     Note: most default parameters have been tuned over several example
     equations, but you should adjust `threads`, `niterations`,
     `binary_operators`, `unary_operators` to your requirements.
 
-    :X: np.ndarray, 2D. Rows are examples, columns are features.
-    :y: np.ndarray, 1D. Rows are examples.
-    :threads: Number of threads (=number of populations running).
+    :param X: 2D array. Rows are examples, columns are features.
+    :type X: np.ndarray, optional
+    :param y: 1D array. Rows are examples.
+    :type y: np.ndarray, optional
+    :param threads: Number of threads (=number of populations running).
         You can have more threads than cores - it actually makes it more
         efficient.
-    :niterations: Number of iterations of the algorithm to run. The best
+    :type threads: int, optional
+    :param niterations: Number of iterations of the algorithm to run. The best
         equations are printed, and migrate between populations, at the
         end of each.
-    :ncyclesperiteration: Number of total mutations to run, per 10
+    :type niterations: int, optional
+    :param ncyclesperiteration: Number of total mutations to run, per 10
         samples of the population, per iteration.
-    :binary_operators: List of strings giving the binary operators
+    :type ncyclesperiteration: int, optional
+    :param binary_operators: List of strings giving the binary operators
         in Julia's Base, or in `operator.jl`.
-    :unary_operators: Same but for operators taking a single `Float32`.
-    :alpha: Initial temperature.
-    :annealing: Whether to use annealing. You should (and it is default).
-    :fractionReplaced: How much of population to replace with migrating
+    :type binary_operators: list, optional
+    :param unary_operators: Same but for operators taking a single `Float32`.
+    :type unary_operators: list, optional
+    :param alpha: Initial temperature.
+    :type alpha: float, optional
+    :param annealing: Whether to use annealing. You should (and it is default).
+    :type annealing: bool, optional
+    :param fractionReplaced: How much of population to replace with migrating
         equations from other populations.
-    :fractionReplacedHof: How much of population to replace with migrating
+    :type fractionReplaced: float, optional
+    :param fractionReplacedHof: How much of population to replace with migrating
         equations from hall of fame.
-    :npop: Number of individuals in each population
-    :parsimony: Multiplicative factor for how much to punish complexity.
-    :migration: Whether to migrate.
-    :hofMigration: Whether to have the hall of fame migrate.
-    :shouldOptimizeConstants: Whether to numerically optimize
+    :type fractionReplacedHof: float, optional
+    :param npop: Number of individuals in each population
+    :type npop: int, optional
+    :param parsimony: Multiplicative factor for how much to punish complexity.
+    :type parsimony: float, optional
+    :param migration: Whether to migrate.
+    :type migration: bool, optional
+    :param hofMigration: Whether to have the hall of fame migrate.
+    :type hofMigration: bool, optional
+    :param shouldOptimizeConstants: Whether to numerically optimize
         constants (Nelder-Mead/Newton) at the end of each iteration.
-    :topn: How many top individuals migrate from each population.
-    :weightAddNode: Relative likelihood for mutation to add a node
-    :weightDeleteNode: Relative likelihood for mutation to delete a node
-    :weightDoNothing: Relative likelihood for mutation to leave the individual
-    :weightMutateConstant: Relative likelihood for mutation to change
+    :type shouldOptimizeConstants: bool, optional
+    :param topn: How many top individuals migrate from each population.
+    :type topn: int, optional
+    :param weightAddNode: Relative likelihood for mutation to add a node
+    :type weightAddNode: float, optional
+    :param weightDeleteNode: Relative likelihood for mutation to delete a node
+    :type weightDeleteNode: float, optional
+    :param weightDoNothing: Relative likelihood for mutation to leave the individual
+    :type weightDoNothing: float, optional
+    :param weightMutateConstant: Relative likelihood for mutation to change
         the constant slightly in a random direction.
-    :weightMutateOperator: Relative likelihood for mutation to swap
+    :type weightMutateConstant: float, optional
+    :param weightMutateOperator: Relative likelihood for mutation to swap
         an operator.
-    :weightRandomize: Relative likelihood for mutation to completely
+    :type weightMutateOperator: float, optional
+    :param weightRandomize: Relative likelihood for mutation to completely
         delete and then randomly generate the equation
-    :weightSimplify: Relative likelihood for mutation to simplify
+    :type weightRandomize: float, optional
+    :param weightSimplify: Relative likelihood for mutation to simplify
         constant parts by evaluation
-    :timeout: Time in seconds to timeout search
-    :equation_file: Where to save the files (.csv separated by |)
-    :test: What test to run, if X,y not passed.
-    :maxsize: Max size of an equation.
-    :returns: pd.DataFrame, giving complexity, MSE, and equations
+    :type weightSimplify: float, optional
+    :param timeout: Time in seconds to timeout search
+    :type timeout: float, optional
+    :param equation_file: Where to save the files (.csv separated by |)
+    :type equation_file: str, optional
+    :param test: What test to run, if X,y not passed.
+    :type test: str, optional
+    :param maxsize: Max size of an equation.
+    :type maxsize: int, optional
+    :returns: Results dataframe, giving complexity, MSE, and equations
         (as strings).
+    :rtype: pd.DataFrame
 
     """
 
