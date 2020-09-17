@@ -60,15 +60,19 @@ You can also change the dataset learned on by passing in `X` and `y` as
 numpy arrays to `eureqa(...)`.
 
 ```python
-eureqa(X=None, y=None, threads=4, niterations=20, ncyclesperiteration=int(default_ncyclesperiteration),
-binary_operators=["plus", "mult"], unary_operators=["cos", "exp", "sin"], alpha=default_alpha,
-annealing=True, fractionReplaced=default_fractionReplaced, fractionReplacedHof=default_fractionReplacedHof,
-npop=int(default_npop), parsimony=default_parsimony, migration=True, hofMigration=True
-shouldOptimizeConstants=True, topn=int(default_topn), weightAddNode=default_weightAddNode,
-weightDeleteNode=default_weightDeleteNode, weightDoNothing=default_weightDoNothing,
-weightMutateConstant=default_weightMutateConstant, weightMutateOperator=default_weightMutateOperator,
-weightRandomize=default_weightRandomize, weightSimplify=default_weightSimplify, timeout=None,
-equation_file='hall_of_fame.csv', test='simple1', maxsize=20)
+eureqa(X=None, y=None, threads=4, niterations=20,
+   ncyclesperiteration=int(default_ncyclesperiteration),
+   binary_operators=["plus", "mult"], unary_operators=["cos", "exp", "sin"],
+   alpha=default_alpha, annealing=True, fractionReplaced=default_fractionReplaced,
+   fractionReplacedHof=default_fractionReplacedHof, npop=int(default_npop),
+   parsimony=default_parsimony, migration=True, hofMigration=True
+   shouldOptimizeConstants=True, topn=int(default_topn),
+   weightAddNode=default_weightAddNode, weightDeleteNode=default_weightDeleteNode,
+   weightDoNothing=default_weightDoNothing,
+   weightMutateConstant=default_weightMutateConstant,
+   weightMutateOperator=default_weightMutateOperator,
+   weightRandomize=default_weightRandomize, weightSimplify=default_weightSimplify,
+   timeout=None, equation_file='hall_of_fame.csv', test='simple1', maxsize=20)
 ```
 
 Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
