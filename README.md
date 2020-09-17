@@ -129,9 +129,7 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 
 # TODO
 
-- [ ] Hyperparameter tune
-- [ ] Add mutation for constant<->variable
-- [ ] Create a benchmark for accuracy
+- [ ] Consider adding mutation for constant<->variable
 - [ ] Use NN to generate weights over all probability distribution conditional on error and existing equation, and train on some randomly-generated equations
 - [ ] Performance:
     - [ ] Use an enum for functions instead of storing them?
@@ -140,6 +138,8 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
             - Seems like its necessary right now. But still by far the slowest option.
         - [ ] Calculating the loss function - there is duplicate calculations happening.
         - [ ] Declaration of the weights array every iteration
+- [x] Hyperparameter tune
+- [x] Create a benchmark for accuracy
 - [x] Add interface for either defining an operation to learn, or loading in arbitrary dataset.
     - Could just write out the dataset in julia, or load it.
 - [x] Create a Python interface
