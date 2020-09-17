@@ -39,6 +39,17 @@ mutable struct Node
     Node(op, l::Union{Float32, Integer}, r::Union{Float32, Integer}) = new(2, 0.0f0, false, op, Node(l), Node(r))
 end
 
+# Copy an equation (faster than deepcopy)
+function copyNode(tree::Node)::Node
+   if tree.degree == 0
+       return Node(tree.val)
+   elseif tree.degree == 1
+       return Node(tree.op, copyNode(tree.l))
+   else
+       return Node(tree.op, copyNode(tree.l), copyNode(tree.r))
+   end
+end
+
 # Evaluate a symbolic equation:
 function evalTree(tree::Node, x::Array{Float32, 1}=Float32[])::Float32
     if tree.degree == 0
@@ -327,11 +338,11 @@ function iterate(
         annealing::Bool=true
     )::Node
     prev = tree
-    tree = deepcopy(tree)
+    tree = copyNode(tree)
 
     mutationChoice = rand()
     weightAdjustmentMutateConstant = min(8, countConstants(tree))/8.0
-    cur_weights = deepcopy(mutationWeights) .* 1.0
+    cur_weights = copy(mutationWeights) .* 1.0
     cur_weights[1] *= weightAdjustmentMutateConstant
     cur_weights /= sum(cur_weights)
     cweights = cumsum(cur_weights)
@@ -361,7 +372,7 @@ function iterate(
         probChange = exp(-delta/(T*alpha))
 
         if isnan(afterLoss) || probChange < rand()
-            return deepcopy(prev)
+            return copyNode(prev)
         end
     end
 
