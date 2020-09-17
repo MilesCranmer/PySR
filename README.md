@@ -1,7 +1,25 @@
 # Eureqa.jl
 
-Symbolic regression built on Julia, and interfaced by Python.
-Uses regularized evolution and simulated annealing.
+**Symbolic regression built on Julia, and interfaced by Python.
+Uses regularized evolution and simulated annealing.**
+
+Backstory: we used the original
+[eureqa](https://www.creativemachineslab.com/eureqa.html)
+in our [paper](https://arxiv.org/abs/2006.11287) to
+convert a graph neural network into
+an analytic equation describing dark matter overdensity. However,
+eureqa is GUI-only, doesn't allow for user-defined
+operators, has no distributed capabilities,
+and has become proprietary. Thus, the goal
+of this package is to have an open-source symbolic regression tool
+as efficient as eureqa, while also exposing a configurable
+python interface.
+
+The algorithms here implement regularized evolution, as in
+[AutoML-Zero](https://arxiv.org/abs/2003.03384),
+but with additional algorithmic changes such as simulated
+annealing, and classical optimization of constants.
+
 
 ## Installation
 
