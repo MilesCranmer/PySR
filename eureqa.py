@@ -6,23 +6,23 @@ import numpy as np
 import pandas as pd
 
 # Dumped from hyperparam optimization
-default_alpha =                      2.288229
+default_alpha =                     15.182913
 default_annealing =                  1.000000
-default_fractionReplaced =           0.121271
-default_fractionReplacedHof =        0.065129
-default_ncyclesperiteration =    15831.000000
-default_niterations =               11.000000
-default_npop =                     105.000000
-default_parsimony =                  0.000465
-default_topn =                       6.000000
-default_weightAddNode =              0.454050
-default_weightDeleteNode =           0.603670
-default_weightDoNothing =            0.141223
-default_weightMutateConstant =       3.680211
-default_weightMutateOperator =       0.660488
-default_weightRandomize =            6.759691
-default_weightSimplify =             0.010442
-default_result =                     0.687007
+default_fractionReplaced =           0.096909
+default_fractionReplacedHof =        0.116439
+default_ncyclesperiteration =    15280.000000
+default_niterations =               10.000000
+default_npop =                     101.000000
+default_parsimony =                  0.000505
+default_topn =                       7.000000
+default_weightAddNode =              0.495629
+default_weightDeleteNode =           0.652559
+default_weightDoNothing =            0.094013
+default_weightMutateConstant =       3.817843
+default_weightMutateOperator =       0.686884
+default_weightRandomize =            0.055272
+default_weightSimplify =             0.003755
+default_result =                     0.135055
 
 def eureqa(X=None, y=None, threads=4,
             niterations=20,
