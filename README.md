@@ -147,6 +147,8 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 
 # TODO
 
+- [ ] Calculate feature importances of future mutations, by looking at correlation between residual of model, and the features.
+    - Store feature importances of future, and periodically update it.
 - [ ] Consider adding mutation for constant<->variable
 - [ ] Consider adding mutation to pass an operator in through a new binary operator (e.g., exp(x3)->plus(exp(x3), ...))
 - [ ] Use NN to generate weights over all probability distribution conditional on error and existing equation, and train on some randomly-generated equations
