@@ -148,6 +148,7 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 # TODO
 
 - [ ] Consider adding mutation for constant<->variable
+- [ ] Consider adding mutation to pass an operator in through a new binary operator (e.g., exp(x3)->plus(exp(x3), ...))
 - [ ] Use NN to generate weights over all probability distribution conditional on error and existing equation, and train on some randomly-generated equations
 - [ ] Performance:
     - [ ] Use an enum for functions instead of storing them?
