@@ -94,29 +94,28 @@ def eureqa(X=None, y=None, threads=4, parsimony=1e-3, alpha=10,
         y = eval(eval_str)
         print("Running on", eval_str)
 
-    def_hyperparams = f"""
-    include("operators.jl")
-    const binops = {'[' + ', '.join(binary_operators) + ']'}
-    const unaops = {'[' + ', '.join(unary_operators) + ']'}
-    const ns=10;
-    const parsimony = {parsimony:f}f0
-    const alpha = {alpha:f}f0
-    const maxsize = {maxsize:d}
-    const migration = {'true' if migration else 'false'}
-    const hofMigration = {'true' if hofMigration else 'false'}
-    const fractionReplacedHof = {fractionReplacedHof}f0
-    const shouldOptimizeConstants = {'true' if shouldOptimizeConstants else 'false'}
-    const hofFile = "{equation_file}"
-    const nthreads = {threads:d}
-    const mutationWeights = [
-        {weightMutateConstant:f},
-        {weightMutateOperator:f},
-        {weightAddNode:f},
-        {weightDeleteNode:f},
-        {weightSimplify:f},
-        {weightRandomize:f},
-        {weightDoNothing:f}
-    ]
+    def_hyperparams = f"""include("operators.jl")
+const binops = {'[' + ', '.join(binary_operators) + ']'}
+const unaops = {'[' + ', '.join(unary_operators) + ']'}
+const ns=10;
+const parsimony = {parsimony:f}f0
+const alpha = {alpha:f}f0
+const maxsize = {maxsize:d}
+const migration = {'true' if migration else 'false'}
+const hofMigration = {'true' if hofMigration else 'false'}
+const fractionReplacedHof = {fractionReplacedHof}f0
+const shouldOptimizeConstants = {'true' if shouldOptimizeConstants else 'false'}
+const hofFile = "{equation_file}"
+const nthreads = {threads:d}
+const mutationWeights = [
+    {weightMutateConstant:f},
+    {weightMutateOperator:f},
+    {weightAddNode:f},
+    {weightDeleteNode:f},
+    {weightSimplify:f},
+    {weightRandomize:f},
+    {weightDoNothing:f}
+]
     """
 
     assert len(X.shape) == 2
@@ -125,9 +124,8 @@ def eureqa(X=None, y=None, threads=4, parsimony=1e-3, alpha=10,
     X_str = str(X.tolist()).replace('],', '];').replace(',', '')
     y_str = str(y.tolist())
 
-    def_datasets = """
-    const X = convert(Array{Float32, 2}, """f"{X_str})""""
-    const y = convert(Array{Float32, 1}, """f"{y_str})""""
+    def_datasets = """const X = convert(Array{Float32, 2}, """f"{X_str})""""
+const y = convert(Array{Float32, 1}, """f"{y_str})""""
     """
 
     starting_path = f'cd {pathlib.Path().absolute()}'
