@@ -4,7 +4,6 @@ import numpy as np
 import pickle as pkl
 import hyperopt
 from hyperopt import hp, fmin, tpe, Trials
-import signal
 import eureqa
 
 
@@ -21,29 +20,35 @@ def run_trial(args):
 
     """
 
+    print("Running on", args)
     for key in 'niterations npop ncyclesperiteration topn'.split(' '):
         args[key] = int(args[key])
 
+    if args['npop'] < 50 or args['ncyclesperiteration'] < 3:
+        print("Bad parameters")
+        return {'status': 'ok', 'loss': np.inf}
+
     def handler(signum, frame):
+        print("Took too long. Skipping.")
         raise ValueError("Takes too long")
 
-    signal.signal(signal.SIGALRM, handler)
     maxTime = 60
     ntrials = 1 #3
     equation_file=f'hall_of_fame_{np.random.rand():f}.csv'
-    signal.alarm(maxTime)
 
     try:
         trials = []
         for i in range(1, 2):
-            trials.append([np.min(eureqa.eureqa(
+            trial = eureqa.eureqa(
                 test=f"simple{i}",
-                threads=20,
+                threads=4,
                 binary_operators=["plus", "mult", "pow", "div"],
                 unary_operators=["cos", "exp", "sin", "log"],
                 equation_file=equation_file,
-                **args)['MSE']) for _ in range(ntrials)])
-        signal.alarm(0)
+                timeout=maxTime,
+                **args)
+            if len(trial) == 0: raise ValueError
+            trials.append([np.min(trial['MSE'])])
     except ValueError:
         return {
             'status': 'ok', # or 'fail' if nan loss
@@ -51,6 +56,7 @@ def run_trial(args):
         }
 
     loss = np.average(trials)
+    print(args, "got", loss)
 
     return {
         'status': 'ok', # or 'fail' if nan loss
@@ -59,9 +65,9 @@ def run_trial(args):
 
 
 space = {
-    'niterations': hp.qloguniform('niterations', np.log(10), 0.5, 1),
-    'npop': hp.qloguniform('npop', np.log(100), 0.5, 1),
-    'ncyclesperiteration': hp.qloguniform('ncyclesperiteration', np.log(5000), 0.5, 1),
+    'niterations': hp.qlognormal('niterations', np.log(10), 0.5, 1),
+    'npop': hp.qlognormal('npop', np.log(100), 0.5, 1),
+    'ncyclesperiteration': hp.qlognormal('ncyclesperiteration', np.log(5000), 0.5, 1),
     'topn': hp.quniform('topn', 1, 30, 1),
     'annealing': hp.choice('annealing', [False, True]),
     'alpha': hp.lognormal('alpha', np.log(10.0), 0.5),

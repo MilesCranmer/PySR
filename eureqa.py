@@ -23,6 +23,7 @@ def eureqa(X=None, y=None, threads=4, parsimony=1e-3, alpha=10,
             weightSimplify=0.05,
             weightRandomize=0.25,
             weightDoNothing=1.0,
+            timeout=None,
         ):
     """ Runs symbolic regression in Julia, to fit y given X.
     Either provide a 2D numpy array for X, 1D array for y, or declare a test to run.
@@ -146,10 +147,16 @@ def eureqa(X=None, y=None, threads=4, parsimony=1e-3, alpha=10,
         '-e',
         f'\'include(".hyperparams_{rand_string}.jl"); include(".dataset_{rand_string}.jl"); include("eureqa.jl"); fullRun({niterations:d}, npop={npop:d}, annealing={"true" if annealing else "false"}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, 1e9), topn={topn:d})\'',
         ]
+    if timeout is not None:
+        command = [f'timeout {timeout}'] + command
     cur_cmd = ' '.join(command)
     print("Running on", cur_cmd)
     os.system(cur_cmd)
-    output = pd.read_csv(equation_file, sep="|")
+    try:
+        output = pd.read_csv(equation_file, sep="|")
+    except FileNotFoundError:
+        print("Couldn't find equation file!")
+        output = pd.DataFrame()
     os.system(starting_path)
     return output
 
