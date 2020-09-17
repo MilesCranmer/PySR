@@ -439,7 +439,7 @@ end
 function regEvolCycle(
     pop::Population, T::Float32;
     annealing::Bool=true)::Population
-    for i=1:Integer(pop.n/ns)
+    for i=1:round(Integer, pop.n/ns)
         baby = iterateSample(pop, T, annealing=annealing)
         #printTree(baby.tree)
         oldest = argmin([pop.members[member].birth for member=1:pop.n])
@@ -611,7 +611,7 @@ function fullRun(niterations::Integer;
         # Migration
         if migration
             for j=1:nthreads
-                for k in rand(1:npop, Integer(npop*fractionReplaced))
+                for k in rand(1:npop, round(Integer, npop*fractionReplaced))
                     # Copy in case one gets used twice
                     allPops[j].members[k] = deepcopy(bestPops.members[rand(1:size(bestPops.members)[1])])
                 end
@@ -621,7 +621,7 @@ function fullRun(niterations::Integer;
         # Hall of fame migration
         if hofMigration && size(dominating)[1] > 0
             for j=1:nthreads
-                for k in rand(1:npop, Integer(npop*fractionReplacedHof))
+                for k in rand(1:npop, round(Integer, npop*fractionReplacedHof))
                     # Copy in case one gets used twice
                     allPops[j].members[k] = deepcopy(dominating[rand(1:size(dominating)[1])])
                 end
