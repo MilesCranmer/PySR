@@ -651,6 +651,7 @@ function fullRun(niterations::Integer;
         # Spawn threads to run indepdent evolutions, then gather them
         @inbounds Threads.@threads for i=1:nthreads
             allPops[i] = run(allPops[i], ncyclesperiteration, annealing, verbosity=verbosity)
+            topn = npop
             bestSubPops[i] = bestSubPop(allPops[i], topn=topn)
             for j=1:bestSubPops[i].n
                 bestSubPops[i].members[j].tree = simplifyTree(bestSubPops[i].members[j].tree)
