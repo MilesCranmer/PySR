@@ -147,10 +147,15 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 
 # TODO
 
+- [ ] Record very best individual in each population, and return at end.
+- [ ] Update hall of fame every iteration
 - [ ] Calculate feature importances of future mutations, by looking at correlation between residual of model, and the features.
     - Store feature importances of future, and periodically update it.
+- [ ] Implement more parts of the original Eureqa algorithms: https://www.creativemachineslab.com/eureqa.html
+- [ ] Sympy printing
 - [ ] Consider adding mutation for constant<->variable
 - [ ] Consider adding mutation to pass an operator in through a new binary operator (e.g., exp(x3)->plus(exp(x3), ...))
+- [ ] Hierarchical model, so can re-use functional forms. Output of one equation goes into second equation?
 - [ ] Use NN to generate weights over all probability distribution conditional on error and existing equation, and train on some randomly-generated equations
 - [ ] Performance:
     - [ ] Use an enum for functions instead of storing them?
