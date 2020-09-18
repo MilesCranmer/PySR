@@ -293,17 +293,80 @@ function appendRandomOp(tree::Node)::Node
     return tree
 end
 
-# Select a random node, and replace it an the subtree
-# with a variable or constant
-function deleteRandomOp(tree::Node)::Node
+# Add random node to the top of a tree
+function popRandomOp(tree::Node)::Node
+    node = tree
+    choice = rand()
+    makeNewBinOp = choice < nbin/nops
+    left = tree
+
+    if makeNewBinOp
+        right = randomConstantNode()
+        newnode = Node(
+            binops[rand(1:length(binops))],
+            left,
+            right
+        )
+    else
+        newnode = Node(
+            unaops[rand(1:length(unaops))],
+            left
+        )
+    end
+    node.l = newnode.l
+    node.r = newnode.r
+    node.op = newnode.op
+    node.degree = newnode.degree
+    node.val = newnode.val
+    node.constant = newnode.constant
+    return node
+end
+
+# Insert random node
+function insertRandomOp(tree::Node)::Node
     node = randomNode(tree)
-    # Can "delete" variable or constant too
+    choice = rand()
+    makeNewBinOp = choice < nbin/nops
+    left = copyNode(node)
+
+    if makeNewBinOp
+        right = randomConstantNode()
+        newnode = Node(
+            binops[rand(1:length(binops))],
+            left,
+            right
+        )
+    else
+        newnode = Node(
+            unaops[rand(1:length(unaops))],
+            left
+        )
+    end
+    node.l = newnode.l
+    node.r = newnode.r
+    node.op = newnode.op
+    node.degree = newnode.degree
+    node.val = newnode.val
+    node.constant = newnode.constant
+    return tree
+end
+
+function randomConstantNode()::Node
     if rand() > 0.5
         val = Float32(randn())
     else
         val = rand(1:nvar)
     end
     newnode = Node(val)
+    return newnode
+end
+
+# Select a random node, and replace it an the subtree
+# with a variable or constant
+function deleteRandomOp(tree::Node)::Node
+    node = randomNode(tree)
+    # Can "delete" variable or constant too
+    newnode = randomConstantNode()
     node.l = newnode.l
     node.r = newnode.r
     node.op = newnode.op
@@ -357,7 +420,12 @@ function iterate(
     elseif mutationChoice < cweights[2]
         tree = mutateOperator(tree)
     elseif mutationChoice < cweights[3] && n < maxsize
-        tree = appendRandomOp(tree)
+        toInsert = rand() < 0.1
+        if toInsert
+            tree = insertRandomOp(tree)
+        else
+            tree = appendRandomOp(tree)
+        end
     elseif mutationChoice < cweights[4]
         tree = deleteRandomOp(tree)
     elseif mutationChoice < cweights[5]
