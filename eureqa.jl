@@ -469,12 +469,23 @@ function run(
         )::Population
 
     allT = LinRange(1.0f0, 0.0f0, ncycles)
+    bestScore = Inf32
+    bestTree = Node(1f0)
     for iT in 1:size(allT)[1]
         if annealing
             pop = regEvolCycle(pop, allT[iT], annealing=true)
         else
             pop = regEvolCycle(pop, 1.0f0, annealing=true)
         end
+
+        # Save current best
+        bestCurScoreIdx = argmin([pop.members[member].score for member=1:pop.n])
+        bestCurScore = pop.members[bestCurScoreIdx].score
+        if bestCurScore < bestScore
+            bestScore = bestCurScore
+            bestTree = copyNode(pop.members[bestCurScoreIdx].tree)
+        end
+
         if verbosity > 0 && (iT % verbosity == 0)
             bestPops = bestSubPop(pop)
             bestCurScoreIdx = argmin([bestPops.members[member].score for member=1:bestPops.n])
@@ -482,6 +493,11 @@ function run(
             debug(verbosity, bestCurScore, " is the score for ", stringTree(bestPops.members[bestCurScoreIdx].tree))
         end
     end
+
+    # TODO - make this the oldest member instead of 1
+    pop.members[1].tree = bestTree
+    pop.members[1].score = bestScore
+
     return pop
 end
 
