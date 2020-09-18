@@ -5,6 +5,19 @@ import pickle as pkl
 import hyperopt
 from hyperopt import hp, fmin, tpe, Trials
 import eureqa
+import time
+
+import contextlib
+import numpy as np
+
+@contextlib.contextmanager
+def temp_seed(seed):
+    state = np.random.get_state()
+    np.random.seed(seed)
+    try:
+        yield
+    finally:
+        np.random.set_state(state)
 
 
 #Change the following code to your file
@@ -21,45 +34,68 @@ def run_trial(args):
     """
 
     print("Running on", args)
-    for key in 'niterations npop ncyclesperiteration topn'.split(' '):
+    for key in 'niterations npop'.split(' '):
         args[key] = int(args[key])
 
-    if args['npop'] < 50 or args['ncyclesperiteration'] < 3:
+    total_steps = 10*100*5000
+    niterations = args['niterations']
+    npop = args['npop']
+    args['ncyclesperiteration'] = int(total_steps / (niterations * npop))
+    args['topn'] = 10
+    args['parsimony'] = 1e-3
+    args['annealing'] = True
+
+    if args['npop'] < 20 or args['ncyclesperiteration'] < 3:
         print("Bad parameters")
         return {'status': 'ok', 'loss': np.inf}
 
-    def handler(signum, frame):
-        print("Took too long. Skipping.")
-        raise ValueError("Takes too long")
 
-    maxTime = 120
-    ntrials = 3
+    args['weightDoNothing'] = 1.0
+
+    maxTime = 2*60
+    ntrials = 2
     equation_file = f'.hall_of_fame_{np.random.rand():f}.csv'
 
+    with temp_seed(0):
+        X = np.random.randn(100, 5)*3
+
+    eval_str = ["np.sign(X[:, 2])*np.abs(X[:, 2])**2.5 + 5*np.cos(X[:, 3]) - 5",
+    "np.sign(X[:, 2])*np.abs(X[:, 2])**3.5 + 1/(np.abs(X[:, 0])+1)",
+    "np.exp(X[:, 0]/2) + 12.0 + np.log(np.abs(X[:, 0])*10 + 1)",
+    "1.0 + 3*X[:, 0]**2 - 0.5*X[:, 0]**3 + 0.1*X[:, 0]**4",
+    "(np.exp(X[:, 3]) + 3)/(np.abs(X[:, 1]) + np.cos(X[:, 0]) + 1.1)"]
+
+    print(f"Starting", str(args))
     try:
         trials = []
-        for i in range(1, 4):
-            subtrials = []
+        for i in range(1, 6):
+            print(f"Starting test {i}")
             for j in range(ntrials):
+                print(f"Starting trial {j}")
                 trial = eureqa.eureqa(
                     test=f"simple{i}",
-                    threads=4,
+                    threads=8,
                     binary_operators=["plus", "mult", "pow", "div"],
-                    unary_operators=["cos", "exp", "sin", "log"],
+                    unary_operators=["cos", "exp", "sin", "loga", "abs"],
                     equation_file=equation_file,
                     timeout=maxTime,
+                    maxsize=25,
+                    verbosity=0,
                     **args)
                 if len(trial) == 0: raise ValueError
-                subtrials.append(np.min(trial['MSE']))
-            trials.append(np.log(np.median(subtrials) + 0.1))
+                trials.append(
+                        np.min(trial['MSE'])**0.5 / np.std(eval(eval_str[i-1]))
+                )
+                print(f"Test {i} trial {j} with", str(args), f"got {trials[-1]}")
+
     except ValueError:
+        print(f"Broken", str(args))
         return {
             'status': 'ok', # or 'fail' if nan loss
             'loss': np.inf
         }
-
     loss = np.average(trials)
-    print(args, "got", loss)
+    print(f"Finished with {loss}", str(args))
 
     return {
         'status': 'ok', # or 'fail' if nan loss
@@ -68,22 +104,17 @@ def run_trial(args):
 
 
 space = {
-    'niterations': hp.qlognormal('niterations', np.log(10), 0.5, 1),
-    'npop': hp.qlognormal('npop', np.log(100), 0.5, 1),
-    'ncyclesperiteration': hp.qlognormal('ncyclesperiteration', np.log(5000), 0.5, 1),
-    'topn': hp.quniform('topn', 1, 30, 1),
-    'annealing': hp.choice('annealing', [False, True]),
-    'alpha': hp.lognormal('alpha', np.log(10.0), 0.5),
-    'parsimony': hp.lognormal('parsimony', np.log(1e-3), 0.5),
-    'fractionReplacedHof': hp.lognormal('fractionReplacedHof', np.log(0.1), 0.5),
-    'fractionReplaced': hp.lognormal('fractionReplaced', np.log(0.1), 0.5),
-    'weightMutateConstant': hp.lognormal('weightMutateConstant', np.log(4.0), 0.5),
-    'weightMutateOperator': hp.lognormal('weightMutateOperator', np.log(0.5), 0.5),
-    'weightAddNode': hp.lognormal('weightAddNode', np.log(0.5), 0.5),
-    'weightDeleteNode': hp.lognormal('weightDeleteNode', np.log(0.5), 0.5),
-    'weightSimplify': hp.lognormal('weightSimplify', np.log(0.05), 0.5),
-    'weightRandomize': hp.lognormal('weightRandomize', np.log(0.25), 0.5),
-    'weightDoNothing': hp.lognormal('weightDoNothing', np.log(1.0), 0.5),
+    'niterations': hp.qlognormal('niterations', np.log(10), 1.0, 1),
+    'npop': hp.qlognormal('npop', np.log(100), 1.0, 1),
+    'alpha': hp.lognormal('alpha', np.log(10.0), 1.0),
+    'fractionReplacedHof': hp.lognormal('fractionReplacedHof', np.log(0.1), 1.0),
+    'fractionReplaced': hp.lognormal('fractionReplaced', np.log(0.1), 1.0),
+    'weightMutateConstant': hp.lognormal('weightMutateConstant', np.log(4.0), 1.0),
+    'weightMutateOperator': hp.lognormal('weightMutateOperator', np.log(0.5), 1.0),
+    'weightAddNode': hp.lognormal('weightAddNode', np.log(0.5), 1.0),
+    'weightDeleteNode': hp.lognormal('weightDeleteNode', np.log(0.5), 1.0),
+    'weightSimplify': hp.lognormal('weightSimplify', np.log(0.05), 1.0),
+    'weightRandomize': hp.lognormal('weightRandomize', np.log(0.25), 1.0),
 }
 
 ################################################################################
@@ -165,7 +196,7 @@ while True:
 
     # Merge with empty trials dataset:
     save_trials = merge_trials(hyperopt_trial, trials.trials[-n:])
-    new_fname = TRIALS_FOLDER + '/' + str(np.random.randint(0, sys.maxsize)) + '.pkl'
+    new_fname = TRIALS_FOLDER + '/' + str(np.random.randint(0, sys.maxsize)) + str(time.time()) + '.pkl'
     pkl.dump({'trials': save_trials, 'n': n}, open(new_fname, 'wb'))
     loaded_fnames.append(new_fname)
 

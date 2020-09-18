@@ -49,6 +49,7 @@ def eureqa(X=None, y=None, threads=4,
             timeout=None,
             equation_file='hall_of_fame.csv',
             test='simple1',
+            verbosity=1e9,
             maxsize=20,
         ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
@@ -111,13 +112,13 @@ def eureqa(X=None, y=None, threads=4,
         if test == 'simple1':
             eval_str = "np.sign(X[:, 2])*np.abs(X[:, 2])**2.5 + 5*np.cos(X[:, 3]) - 5"
         elif test == 'simple2':
-            eval_str = "np.sign(X[:, 2])*np.abs(X[:, 2])**3.5 + 1/np.abs(X[:, 0])"
+            eval_str = "np.sign(X[:, 2])*np.abs(X[:, 2])**3.5 + 1/(np.abs(X[:, 0])+1)"
         elif test == 'simple3':
             eval_str = "np.exp(X[:, 0]/2) + 12.0 + np.log(np.abs(X[:, 0])*10 + 1)"
         elif test == 'simple4':
             eval_str = "1.0 + 3*X[:, 0]**2 - 0.5*X[:, 0]**3 + 0.1*X[:, 0]**4"
         elif test == 'simple5':
-            eval_str = "(np.exp(X[:, 3]) + 3)/(X[:, 1] + np.cos(X[:, 0]))"
+            eval_str = "(np.exp(X[:, 3]) + 3)/(np.abs(X[:, 1]) + np.cos(X[:, 0]) + 1.1)"
 
         X = np.random.randn(100, 5)*3
         y = eval(eval_str)
@@ -172,7 +173,7 @@ const y = convert(Array{Float32, 1}, """f"{y_str})""""
         'julia -O3',
         f'--threads {threads}',
         '-e',
-        f'\'include(".hyperparams_{rand_string}.jl"); include(".dataset_{rand_string}.jl"); include("eureqa.jl"); fullRun({niterations:d}, npop={npop:d}, annealing={"true" if annealing else "false"}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, 1e9), topn={topn:d})\'',
+        f'\'include(".hyperparams_{rand_string}.jl"); include(".dataset_{rand_string}.jl"); include("eureqa.jl"); fullRun({niterations:d}, npop={npop:d}, annealing={"true" if annealing else "false"}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})\'',
         ]
     if timeout is not None:
         command = [f'timeout {timeout}'] + command
