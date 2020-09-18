@@ -147,7 +147,6 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 
 # TODO
 
-- [ ] Record very best individual in each population, and return at end.
 - [ ] Update hall of fame every iteration
 - [ ] Calculate feature importances of future mutations, by looking at correlation between residual of model, and the features.
     - Store feature importances of future, and periodically update it.
@@ -162,6 +161,7 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
     - Current most expensive operations:
         - [ ] Calculating the loss function - there is duplicate calculations happening.
         - [x] Declaration of the weights array every iteration
+- [x] Record very best individual in each population, and return at end.
 - [x] Write our own tree copy operation; deepcopy() is the slowest operation by far.
 - [x] Hyperparameter tune
 - [x] Create a benchmark for accuracy
