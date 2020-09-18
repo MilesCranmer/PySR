@@ -6,27 +6,25 @@ import numpy as np
 import pandas as pd
 
 # Dumped from hyperparam optimization
-default_alpha =                     5.429178
-default_annealing =                 1.000000
-default_fractionReplaced =          0.415076
-default_fractionReplacedHof =       0.031713
-default_ncyclesperiteration =    1614.000000
-default_niterations =              25.000000
-default_npop =                    300.000000
-default_parsimony =                 0.001861
-default_topn =                      9.000000
-default_weightAddNode =             3.788920
-default_weightDeleteNode =          2.553399
-default_weightDoNothing =           0.498528
-default_weightMutateConstant =      2.081372
-default_weightMutateOperator =      2.003413
-default_weightRandomize =           4.679883
-default_weightSimplify =            0.009620
-default_result =                   -1.183938
+default_alpha =                    3.861222
+default_fractionReplaced =         0.057940
+default_fractionReplacedHof =      0.206182
+default_npop =                   124.000000
+default_weightAddNode =            1.599672
+default_weightDeleteNode =         0.049554
+default_weightMutateConstant =     5.295328
+default_weightMutateOperator =     0.465999
+default_weightRandomize =          0.184765
+default_weightSimplify =           0.149432
+default_weightDoNothing =          1.000000
+default_result =                   0.028084
+default_topn =                           10
+default_parsimony =                    1e-3
+
 
 def eureqa(X=None, y=None, threads=4,
             niterations=20,
-            ncyclesperiteration=int(default_ncyclesperiteration),
+            ncyclesperiteration=10000,
             binary_operators=["plus", "mult"],
             unary_operators=["cos", "exp", "sin"],
             alpha=default_alpha,
@@ -34,7 +32,7 @@ def eureqa(X=None, y=None, threads=4,
             fractionReplaced=default_fractionReplaced,
             fractionReplacedHof=default_fractionReplacedHof,
             npop=int(default_npop),
-            parsimony=default_parsimony,
+            parsimony=1e-3,
             migration=True,
             hofMigration=True,
             shouldOptimizeConstants=True,
@@ -199,7 +197,7 @@ if __name__ == "__main__":
     parser.add_argument("--maxsize", type=int, default=20, help="Max size of equation")
     parser.add_argument("--niterations", type=int, default=20, help="Number of total migration periods")
     parser.add_argument("--npop", type=int, default=int(default_npop), help="Number of members per population")
-    parser.add_argument("--ncyclesperiteration", type=int, default=int(default_ncyclesperiteration), help="Number of evolutionary cycles per migration")
+    parser.add_argument("--ncyclesperiteration", type=int, default=10000, help="Number of evolutionary cycles per migration")
     parser.add_argument("--topn", type=int, default=int(default_topn), help="How many best species to distribute from each population")
     parser.add_argument("--fractionReplacedHof", type=float, default=default_fractionReplacedHof, help="Fraction of population to replace with hall of fame")
     parser.add_argument("--fractionReplaced", type=float, default=default_fractionReplaced, help="Fraction of population to replace with best from other populations")
