@@ -3,6 +3,21 @@ import Optim
 const maxdegree = 2
 const actualMaxsize = maxsize + maxdegree
 
+
+# Sum of square error between two arrays
+function SSE(x::Array{Float32}, y::Array{Float32})::Float32
+    diff = (x - y)
+    return sum(diff .* diff)
+end
+
+# Mean of square error between two arrays
+function MSE(x::Array{Float32}, y::Array{Float32})::Float32
+    return SSE(x, y)/size(x)[1]
+end
+
+const len = size(X)[1]
+const baselineMSE = MSE(y, convert(Array{Float32, 1}, ones(len) .* sum(y)/len))
+
 id = (x,) -> x
 const nuna = size(unaops)[1]
 const nbin = size(binops)[1]
@@ -211,7 +226,6 @@ end
 
 # Evaluate an equation over an array of datapoints
 function evalTreeArray(tree::Node)::Array{Float32, 1}
-    len = size(X)[1]
     if tree.degree == 0
         if tree.constant
             return ones(Float32, len) .* tree.val
@@ -223,17 +237,6 @@ function evalTreeArray(tree::Node)::Array{Float32, 1}
     else
         return tree.op.(evalTreeArray(tree.l), evalTreeArray(tree.r))
     end
-end
-
-# Sum of square error between two arrays
-function SSE(x::Array{Float32}, y::Array{Float32})::Float32
-    diff = (x - y)
-    return sum(diff .* diff)
-end
-
-# Mean of square error between two arrays
-function MSE(x::Array{Float32}, y::Array{Float32})::Float32
-    return SSE(x, y)/size(x)[1]
 end
 
 # Score an equation
@@ -608,7 +611,7 @@ function fullRun(niterations::Integer;
             debug(verbosity, "-----------------------------------------")
             debug(verbosity, "Complexity \t MSE \t Equation")
             println(io,"Complexity|MSE|Equation")
-            for size=1:maxsize
+            for size=1:actualMaxsize
                 if hallOfFame.exists[size]
                     member = hallOfFame.members[size]
                     numberSmallerAndBetter = sum([member.score > hallOfFame.members[i].score for i=1:(size-1)])
