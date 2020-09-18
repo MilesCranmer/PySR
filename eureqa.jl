@@ -227,7 +227,8 @@ end
 
 # Sum of square error between two arrays
 function SSE(x::Array{Float32}, y::Array{Float32})::Float32
-    return sum(((cx,)->cx^2).(x - y))
+    diff = (x - y)
+    return sum(diff .* diff)
 end
 
 # Mean of square error between two arrays
