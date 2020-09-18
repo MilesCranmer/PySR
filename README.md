@@ -147,6 +147,7 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 
 # TODO
 
+- [ ] Make scaling of changes to constant a hyperparameter
 - [ ] Update hall of fame every iteration
 - [ ] Calculate feature importances of future mutations, by looking at correlation between residual of model, and the features.
     - Store feature importances of future, and periodically update it.
