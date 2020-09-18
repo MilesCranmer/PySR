@@ -11,6 +11,7 @@ default_fractionReplaced =         0.057940
 default_fractionReplacedHof =      0.206182
 default_npop =                   124.000000
 default_weightAddNode =            1.599672
+default_weightInsertNode =         1.599672
 default_weightDeleteNode =         0.049554
 default_weightMutateConstant =     5.295328
 default_weightMutateOperator =     0.465999
@@ -38,6 +39,7 @@ def eureqa(X=None, y=None, threads=4,
             shouldOptimizeConstants=True,
             topn=int(default_topn),
             weightAddNode=default_weightAddNode,
+            weightInsertNode=default_weightInsertNode,
             weightDeleteNode=default_weightDeleteNode,
             weightDoNothing=default_weightDoNothing,
             weightMutateConstant=default_weightMutateConstant,
@@ -82,6 +84,7 @@ def eureqa(X=None, y=None, threads=4,
         constants (Nelder-Mead/Newton) at the end of each iteration.
     :param topn: int, How many top individuals migrate from each population.
     :param weightAddNode: float, Relative likelihood for mutation to add a node
+    :param weightInsertNode: float, Relative likelihood for mutation to insert a node
     :param weightDeleteNode: float, Relative likelihood for mutation to delete a node
     :param weightDoNothing: float, Relative likelihood for mutation to leave the individual
     :param weightMutateConstant: float, Relative likelihood for mutation to change
@@ -139,6 +142,7 @@ const mutationWeights = [
     {weightMutateConstant:f},
     {weightMutateOperator:f},
     {weightAddNode:f},
+    {weightInsertNode:f},
     {weightDeleteNode:f},
     {weightSimplify:f},
     {weightRandomize:f},
@@ -201,6 +205,14 @@ if __name__ == "__main__":
     parser.add_argument("--topn", type=int, default=int(default_topn), help="How many best species to distribute from each population")
     parser.add_argument("--fractionReplacedHof", type=float, default=default_fractionReplacedHof, help="Fraction of population to replace with hall of fame")
     parser.add_argument("--fractionReplaced", type=float, default=default_fractionReplaced, help="Fraction of population to replace with best from other populations")
+    parser.add_argument("--weightAddNode", type=float, default=default_weightAddNode)
+    parser.add_argument("--weightInsertNode", type=float, default=default_weightInsertNode)
+    parser.add_argument("--weightDeleteNode", type=float, default=default_weightDeleteNode)
+    parser.add_argument("--weightMutateConstant", type=float, default=default_weightMutateConstant)
+    parser.add_argument("--weightMutateOperator", type=float, default=default_weightMutateOperator)
+    parser.add_argument("--weightRandomize", type=float, default=default_weightRandomize)
+    parser.add_argument("--weightSimplify", type=float, default=default_weightSimplify)
+    parser.add_argument("--weightDoNothing", type=float, default=default_weightDoNothing)
     parser.add_argument("--migration", type=bool, default=True, help="Whether to migrate")
     parser.add_argument("--hofMigration", type=bool, default=True, help="Whether to have hall of fame migration")
     parser.add_argument("--shouldOptimizeConstants", type=bool, default=True, help="Whether to use classical optimization on constants before every migration (doesn't impact performance that much)")

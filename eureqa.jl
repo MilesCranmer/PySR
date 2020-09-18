@@ -420,18 +420,15 @@ function iterate(
     elseif mutationChoice < cweights[2]
         tree = mutateOperator(tree)
     elseif mutationChoice < cweights[3] && n < maxsize
-        toInsert = rand() < 0.1
-        if toInsert
-            tree = insertRandomOp(tree)
-        else
-            tree = appendRandomOp(tree)
-        end
-    elseif mutationChoice < cweights[4]
-        tree = deleteRandomOp(tree)
+        tree = appendRandomOp(tree)
+    elseif mutationChoice < cweights[4] && n < maxsize
+        tree = insertRandomOp(tree)
     elseif mutationChoice < cweights[5]
+        tree = deleteRandomOp(tree)
+    elseif mutationChoice < cweights[6]
         tree = simplifyTree(tree) # Sometimes we simplify tree
         return tree
-    elseif mutationChoice < cweights[6]
+    elseif mutationChoice < cweights[7]
         tree = genRandomTree(5) # Sometimes we simplify tree
     else
         return tree
