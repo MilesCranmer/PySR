@@ -37,9 +37,14 @@ def run_trial(args):
     for key in 'niterations npop'.split(' '):
         args[key] = int(args[key])
 
-    total_steps = 10*100*5000
+
+    total_steps = 20*100*5000
     niterations = args['niterations']
     npop = args['npop']
+    if niterations == 0 or npop == 0: 
+        print("Bad parameters")
+        return {'status': 'ok', 'loss': np.inf}
+        
     args['ncyclesperiteration'] = int(total_steps / (niterations * npop))
     args['topn'] = 10
     args['parsimony'] = 1e-3
@@ -52,7 +57,7 @@ def run_trial(args):
 
     args['weightDoNothing'] = 1.0
 
-    maxTime = 2*60
+    maxTime = 3*60
     ntrials = 2
     equation_file = f'.hall_of_fame_{np.random.rand():f}.csv'
 
