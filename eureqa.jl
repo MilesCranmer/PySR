@@ -753,14 +753,17 @@ function fullRun(niterations::Integer;
         bestPops = deepcopy(Population([member for pop in bestSubPops for member in pop.members]))
 
         #Update hall of fame
-        for member in bestPops.members
-            size = countNodes(member.tree)
-            if member.score < hallOfFame.members[size].score
-                hallOfFame.members[size] = deepcopy(member)
-                hallOfFame.exists[size] = true
+        for pop in allPops
+            for member in pop.members
+                size = countNodes(member.tree)
+                if member.score < hallOfFame.members[size].score
+                    hallOfFame.members[size] = deepcopy(member)
+                    hallOfFame.exists[size] = true
+                end
             end
         end
 
+        # Dominating pareto curve - must be better than all simpler equations
         dominating = PopMember[]
         open(hofFile, "w") do io
             debug(verbosity, "Hall of Fame:")
