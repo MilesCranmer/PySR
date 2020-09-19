@@ -176,7 +176,7 @@ const y = convert(Array{Float32, 1}, """f"{y_str})""""
 
     command = [
         'julia -O3',
-        f'--threads {threads}',
+        '--threads auto',
         '-e',
         f'\'include(".hyperparams_{rand_string}.jl"); include(".dataset_{rand_string}.jl"); include("eureqa.jl"); fullRun({niterations:d}, npop={npop:d}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})\'',
         ]
