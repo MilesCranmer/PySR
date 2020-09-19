@@ -147,7 +147,6 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 
 # TODO
 
-- [ ] Make scaling of changes to constant a hyperparameter
 - [ ] Calculate feature importances of future mutations, by looking at correlation between residual of model, and the features.
     - Store feature importances of future, and periodically update it.
 - [ ] Implement more parts of the original Eureqa algorithms: https://www.creativemachineslab.com/eureqa.html
@@ -160,6 +159,7 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
     - Current most expensive operations:
         - [ ] Calculating the loss function - there is duplicate calculations happening.
         - [x] Declaration of the weights array every iteration
+- [x] Make scaling of changes to constant a hyperparameter
 - [x] Make deletion op join deleted subtree to parent
 - [x] Update hall of fame every iteration?
     - Seems to overfit early if we do this.
