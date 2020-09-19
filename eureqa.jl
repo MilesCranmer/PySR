@@ -16,7 +16,8 @@ function MSE(x::Array{Float32}, y::Array{Float32})::Float32
 end
 
 const len = size(X)[1]
-const baselineMSE = MSE(y, convert(Array{Float32, 1}, ones(len) .* sum(y)/len))
+const avgy = sum(y)/len
+const baselineSSE = SSE(y, convert(Array{Float32, 1}, ones(len) .* avgy))
 
 id = (x,) -> x
 const nuna = size(unaops)[1]
@@ -242,7 +243,7 @@ end
 # Score an equation
 function scoreFunc(tree::Node)::Float32
     try
-        return MSE(evalTreeArray(tree), y) + countNodes(tree)*parsimony
+        return SSE(evalTreeArray(tree), y)/baselineSSE + countNodes(tree)*parsimony
     catch error
         if isa(error, DomainError)
             return 1f9
