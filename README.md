@@ -59,11 +59,11 @@ which gives:
 ### API
 
 What follows is the API reference for running the numpy interface.
-Note that most parameters here
-have been tuned with ~1000 trials over several example
-equations, so you likely don't need to tune them yourself.
+You likely don't need to tune the hyperparameters yourself,
+but if you would like, you can use `hyperopt.py` as an example.
 However, you should adjust `threads`, `niterations`,
-`binary_operators`, `unary_operators`, and `maxsize` to your requirements.
+`binary_operators`, `unary_operators`, and `maxsize`
+to your requirements.
 
 The program will output a pandas DataFrame containing the equations,
 mean square error, and complexity. It will also dump to a csv

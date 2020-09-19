@@ -6,21 +6,21 @@ import numpy as np
 import pandas as pd
 
 # Dumped from hyperparam optimization
-default_alpha =                    3.861222
-default_fractionReplaced =         0.057940
-default_fractionReplacedHof =      0.206182
-default_npop =                   124.000000
-default_weightAddNode =            1.599672
-default_weightInsertNode =         1.599672
-default_weightDeleteNode =         0.049554
-default_weightMutateConstant =     5.295328
-default_weightMutateOperator =     0.465999
-default_weightRandomize =          0.184765
-default_weightSimplify =           0.149432
-default_weightDoNothing =          1.000000
-default_result =                   0.028084
-default_topn =                           10
-default_parsimony =                    1e-3
+default_alpha =                    5
+default_fractionReplaced =       0.1
+default_fractionReplacedHof =    0.1
+default_npop =                   200
+default_weightAddNode =            1
+default_weightInsertNode =         1
+default_weightDeleteNode =         1
+default_weightMutateConstant =    10
+default_weightMutateOperator =     1
+default_weightRandomize =          1
+default_weightSimplify =           1
+default_weightDoNothing =          1
+default_result =                   1
+default_topn =                    10
+default_parsimony =              0.0
 
 
 def eureqa(X=None, y=None, threads=4,
@@ -33,7 +33,7 @@ def eureqa(X=None, y=None, threads=4,
             fractionReplaced=default_fractionReplaced,
             fractionReplacedHof=default_fractionReplacedHof,
             npop=int(default_npop),
-            parsimony=1e-3,
+            parsimony=default_parsimony,
             migration=True,
             hofMigration=True,
             shouldOptimizeConstants=True,
