@@ -389,15 +389,47 @@ end
 # Select a random node, and replace it an the subtree
 # with a variable or constant
 function deleteRandomOp(tree::Node)::Node
-    node = randomNode(tree)
-    # Can "delete" variable or constant too
-    newnode = randomConstantNode()
-    node.l = newnode.l
-    node.r = newnode.r
-    node.op = newnode.op
-    node.degree = newnode.degree
-    node.val = newnode.val
-    node.constant = newnode.constant
+    node, parent = randomNodeAndParent(tree, nothing)
+    isroot = (parent == nothing)
+
+    if node.degree == 0
+        # Replace with new constant
+        newnode = randomConstantNode()
+        node.l = newnode.l
+        node.r = newnode.r
+        node.op = newnode.op
+        node.degree = newnode.degree
+        node.val = newnode.val
+        node.constant = newnode.constant
+    elseif node.degree == 1
+        # Join one of the children with the parent
+        if isroot
+            return node.l
+        elseif parent.l == node
+            parent.l = node.l
+        else
+            parent.r = node.l
+        end
+    else
+        # Join one of the children with the parent
+        if rand() < 0.5
+            if isroot
+                return node.l
+            elseif parent.l == node
+                parent.l = node.l
+            else
+                parent.r = node.l
+            end
+        else
+            if isroot
+                return node.r
+            elseif parent.l == node
+                parent.l = node.r
+            else
+                parent.r = node.r
+            end
+        end
+    end
     return tree
 end
 
