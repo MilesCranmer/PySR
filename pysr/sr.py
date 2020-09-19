@@ -126,7 +126,9 @@ def pysr(X=None, y=None, threads=4,
         y = eval(eval_str)
         print("Running on", eval_str)
 
-    def_hyperparams = f"""include("operators.jl")
+    pkg_directory = '/'.join(__file__.split('/')[:-2] + ['/julia'])
+
+    def_hyperparams = f"""include("{pkg_directory}/operators.jl")
 const binops = {'[' + ', '.join(binary_operators) + ']'}
 const unaops = {'[' + ', '.join(unary_operators) + ']'}
 const ns=10;
@@ -163,22 +165,18 @@ const mutationWeights = [
 const y = convert(Array{Float32, 1}, """f"{y_str})""""
     """
 
-    starting_path = f'cd {pathlib.Path().absolute()}'
-    code_path = f'cd {pathlib.Path(__file__).parent.absolute()}' #Move to filepath of code
-
-    os.system(code_path)
-
-    with open(f'.hyperparams_{rand_string}.jl', 'w') as f:
+    with open(f'/tmp/.hyperparams_{rand_string}.jl', 'w') as f:
         print(def_hyperparams, file=f)
 
-    with open(f'.dataset_{rand_string}.jl', 'w') as f:
+    with open(f'/tmp/.dataset_{rand_string}.jl', 'w') as f:
         print(def_datasets, file=f)
+
 
     command = [
         'julia -O3',
         '--threads auto',
         '-e',
-        f'\'include(".hyperparams_{rand_string}.jl"); include(".dataset_{rand_string}.jl"); include("sr.jl"); fullRun({niterations:d}, npop={npop:d}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})\'',
+        f'\'include("/tmp/.hyperparams_{rand_string}.jl"); include("/tmp/.dataset_{rand_string}.jl"); include("{pkg_directory}/sr.jl"); fullRun({niterations:d}, npop={npop:d}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})\'',
         ]
     if timeout is not None:
         command = [f'timeout {timeout}'] + command
@@ -190,46 +188,5 @@ const y = convert(Array{Float32, 1}, """f"{y_str})""""
     except FileNotFoundError:
         print("Couldn't find equation file!")
         output = pd.DataFrame()
-    os.system(starting_path)
     return output
 
-
-
-if __name__ == "__main__":
-    parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
-
-    parser.add_argument("--threads", type=int, default=4, help="Number of threads")
-    parser.add_argument("--parsimony", type=float, default=default_parsimony, help="How much to punish complexity")
-    parser.add_argument("--alpha", type=float, default=default_alpha, help="Scaling of temperature")
-    parser.add_argument("--maxsize", type=int, default=20, help="Max size of equation")
-    parser.add_argument("--niterations", type=int, default=20, help="Number of total migration periods")
-    parser.add_argument("--npop", type=int, default=int(default_npop), help="Number of members per population")
-    parser.add_argument("--ncyclesperiteration", type=int, default=10000, help="Number of evolutionary cycles per migration")
-    parser.add_argument("--topn", type=int, default=int(default_topn), help="How many best species to distribute from each population")
-    parser.add_argument("--perturbationFactor", type=float, default=default_perturbationFactor)
-    parser.add_argument("--fractionReplacedHof", type=float, default=default_fractionReplacedHof, help="Fraction of population to replace with hall of fame")
-    parser.add_argument("--fractionReplaced", type=float, default=default_fractionReplaced, help="Fraction of population to replace with best from other populations")
-    parser.add_argument("--weightAddNode", type=float, default=default_weightAddNode)
-    parser.add_argument("--weightInsertNode", type=float, default=default_weightInsertNode)
-    parser.add_argument("--weightDeleteNode", type=float, default=default_weightDeleteNode)
-    parser.add_argument("--weightMutateConstant", type=float, default=default_weightMutateConstant)
-    parser.add_argument("--weightMutateOperator", type=float, default=default_weightMutateOperator)
-    parser.add_argument("--weightRandomize", type=float, default=default_weightRandomize)
-    parser.add_argument("--weightSimplify", type=float, default=default_weightSimplify)
-    parser.add_argument("--weightDoNothing", type=float, default=default_weightDoNothing)
-    parser.add_argument("--migration", type=bool, default=True, help="Whether to migrate")
-    parser.add_argument("--hofMigration", type=bool, default=True, help="Whether to have hall of fame migration")
-    parser.add_argument("--shouldOptimizeConstants", type=bool, default=True, help="Whether to use classical optimization on constants before every migration (doesn't impact performance that much)")
-    parser.add_argument("--annealing", type=bool, default=True, help="Whether to use simulated annealing")
-    parser.add_argument("--equation_file", type=str, default='hall_of_fame.csv', help="File to dump best equations to")
-    parser.add_argument("--test", type=str, default='simple1', help="Which test to run")
-
-    parser.add_argument(
-            "--binary-operators", type=str, nargs="+", default=["plus", "mult"],
-            help="Binary operators. Make sure they are defined in operators.jl")
-    parser.add_argument(
-            "--unary-operators", type=str, nargs="+", default=["exp", "sin", "cos"],
-            help="Unary operators. Make sure they are defined in operators.jl")
-    args = vars(parser.parse_args()) #dict
-
-    pysr(**args)
