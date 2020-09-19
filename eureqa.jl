@@ -3,6 +3,22 @@ import Optim
 const maxdegree = 2
 const actualMaxsize = maxsize + maxdegree
 
+
+# Sum of square error between two arrays
+function SSE(x::Array{Float32}, y::Array{Float32})::Float32
+    diff = (x - y)
+    return sum(diff .* diff)
+end
+
+# Mean of square error between two arrays
+function MSE(x::Array{Float32}, y::Array{Float32})::Float32
+    return SSE(x, y)/size(x)[1]
+end
+
+const len = size(X)[1]
+const avgy = sum(y)/len
+const baselineSSE = SSE(y, convert(Array{Float32, 1}, ones(len) .* avgy))
+
 id = (x,) -> x
 const nuna = size(unaops)[1]
 const nbin = size(binops)[1]
@@ -211,7 +227,6 @@ end
 
 # Evaluate an equation over an array of datapoints
 function evalTreeArray(tree::Node)::Array{Float32, 1}
-    len = size(X)[1]
     if tree.degree == 0
         if tree.constant
             return ones(Float32, len) .* tree.val
@@ -225,21 +240,10 @@ function evalTreeArray(tree::Node)::Array{Float32, 1}
     end
 end
 
-# Sum of square error between two arrays
-function SSE(x::Array{Float32}, y::Array{Float32})::Float32
-    diff = (x - y)
-    return sum(diff .* diff)
-end
-
-# Mean of square error between two arrays
-function MSE(x::Array{Float32}, y::Array{Float32})::Float32
-    return SSE(x, y)/size(x)[1]
-end
-
 # Score an equation
 function scoreFunc(tree::Node)::Float32
     try
-        return MSE(evalTreeArray(tree), y) + countNodes(tree)*parsimony
+        return SSE(evalTreeArray(tree), y)/baselineSSE + countNodes(tree)*parsimony
     catch error
         if isa(error, DomainError)
             return 1f9
@@ -290,17 +294,55 @@ function appendRandomOp(tree::Node)::Node
     return tree
 end
 
-# Select a random node, and replace it an the subtree
-# with a variable or constant
-function deleteRandomOp(tree::Node)::Node
-    node = randomNode(tree)
-    # Can "delete" variable or constant too
-    if rand() > 0.5
-        val = Float32(randn())
+# Add random node to the top of a tree
+function popRandomOp(tree::Node)::Node
+    node = tree
+    choice = rand()
+    makeNewBinOp = choice < nbin/nops
+    left = tree
+
+    if makeNewBinOp
+        right = randomConstantNode()
+        newnode = Node(
+            binops[rand(1:length(binops))],
+            left,
+            right
+        )
     else
-        val = rand(1:nvar)
+        newnode = Node(
+            unaops[rand(1:length(unaops))],
+            left
+        )
     end
-    newnode = Node(val)
+    node.l = newnode.l
+    node.r = newnode.r
+    node.op = newnode.op
+    node.degree = newnode.degree
+    node.val = newnode.val
+    node.constant = newnode.constant
+    return node
+end
+
+# Insert random node
+function insertRandomOp(tree::Node)::Node
+    node = randomNode(tree)
+    choice = rand()
+    makeNewBinOp = choice < nbin/nops
+    left = copyNode(node)
+
+    if makeNewBinOp
+        right = randomConstantNode()
+        newnode = Node(
+            binops[rand(1:length(binops))],
+            left,
+            right
+        )
+    else
+        newnode = Node(
+            unaops[rand(1:length(unaops))],
+            left
+        )
+    end
     node.l = newnode.l
     node.r = newnode.r
     node.op = newnode.op
@@ -310,6 +352,120 @@ function deleteRandomOp(tree::Node)::Node
     return tree
 end
 
+function randomConstantNode()::Node
+    if rand() > 0.5
+        val = Float32(randn())
+    else
+        val = rand(1:nvar)
+    end
+    newnode = Node(val)
+    return newnode
+end
+
+# Return a random node from the tree with parent
+function randomNodeAndParent(tree::Node, parent::Union{Node, Nothing})::Tuple{Node, Union{Node, Nothing}}
+    if tree.degree == 0
+        return tree, parent
+    end
+    a = countNodes(tree)
+    b = 0
+    c = 0
+    if tree.degree >= 1
+        b = countNodes(tree.l)
+    end
+    if tree.degree == 2
+        c = countNodes(tree.r)
+    end
+
+    i = rand(1:1+b+c)
+    if i <= b
+        return randomNodeAndParent(tree.l, tree)
+    elseif i == b + 1
+        return tree, parent
+    end
+
+    return randomNodeAndParent(tree.r, tree)
+end
+
+# Select a random node, and replace it an the subtree
+# with a variable or constant
+function deleteRandomOp(tree::Node)::Node
+    node, parent = randomNodeAndParent(tree, nothing)
+    isroot = (parent == nothing)
+
+    if node.degree == 0
+        # Replace with new constant
+        newnode = randomConstantNode()
+        node.l = newnode.l
+        node.r = newnode.r
+        node.op = newnode.op
+        node.degree = newnode.degree
+        node.val = newnode.val
+        node.constant = newnode.constant
+    elseif node.degree == 1
+        # Join one of the children with the parent
+        if isroot
+            return node.l
+        elseif parent.l == node
+            parent.l = node.l
+        else
+            parent.r = node.l
+        end
+    else
+        # Join one of the children with the parent
+        if rand() < 0.5
+            if isroot
+                return node.l
+            elseif parent.l == node
+                parent.l = node.l
+            else
+                parent.r = node.l
+            end
+        else
+            if isroot
+                return node.r
+            elseif parent.l == node
+                parent.l = node.r
+            else
+                parent.r = node.r
+            end
+        end
+    end
+    return tree
+end
+
+# Simplify tree 
+function combineOperators(tree::Node)::Node
+    # (const (+*) const) already accounted for
+    # ((const + var) + const) => (const + var)
+    # ((const * var) * const) => (const * var)
+    # (anything commutative!)
+    if tree.degree == 2 && (tree.op == plus || tree.op == mult)
+        op = tree.op
+        if tree.l.constant || tree.r.constant
+            # Put the constant in r
+            if tree.l.constant
+                tmp = tree.r
+                tree.r = tree.l
+                tree.l = tmp
+            end
+            topconstant = tree.r.val
+            # Simplify down first
+            tree.l = combineOperators(tree.l)
+            below = tree.l
+            if below.degree == 2 && below.op == op
+                if below.l.constant
+                    tree = below
+                    tree.l.val = op(tree.l.val, topconstant)
+                elseif below.r.constant
+                    tree = below
+                    tree.r.val = op(tree.r.val, topconstant)
+                end
+            end
+        end
+    end
+    return tree
+end
 
 # Simplify tree 
 function simplifyTree(tree::Node)::Node
@@ -355,12 +511,15 @@ function iterate(
         tree = mutateOperator(tree)
     elseif mutationChoice < cweights[3] && n < maxsize
         tree = appendRandomOp(tree)
-    elseif mutationChoice < cweights[4]
-        tree = deleteRandomOp(tree)
+    elseif mutationChoice < cweights[4] && n < maxsize
+        tree = insertRandomOp(tree)
     elseif mutationChoice < cweights[5]
-        tree = simplifyTree(tree) # Sometimes we simplify tree
-        return tree
+        tree = deleteRandomOp(tree)
     elseif mutationChoice < cweights[6]
+        tree = simplifyTree(tree) # Sometimes we simplify tree
+        tree = combineOperators(tree) # See if repeated constants at outer levels
+        return tree
+    elseif mutationChoice < cweights[7]
         tree = genRandomTree(5) # Sometimes we simplify tree
     else
         return tree
@@ -608,14 +767,15 @@ function fullRun(niterations::Integer;
             debug(verbosity, "-----------------------------------------")
             debug(verbosity, "Complexity \t MSE \t Equation")
             println(io,"Complexity|MSE|Equation")
-            for size=1:maxsize
+            for size=1:actualMaxsize
                 if hallOfFame.exists[size]
                     member = hallOfFame.members[size]
-                    numberSmallerAndBetter = sum([member.score > hallOfFame.members[i].score for i=1:(size-1)])
+                    curMSE = MSE(evalTreeArray(member.tree), y)
+                    numberSmallerAndBetter = sum([curMSE > MSE(evalTreeArray(hallOfFame.members[i].tree), y) for i=1:(size-1)])
                     betterThanAllSmaller = (numberSmallerAndBetter == 0)
                     if betterThanAllSmaller
-                        debug(verbosity, "$size \t $(member.score-parsimony*size) \t $(stringTree(member.tree))")
-                        println(io, "$size|$(member.score-parsimony*size)|$(stringTree(member.tree))")
+                        debug(verbosity, "$size \t $(curMSE) \t $(stringTree(member.tree))")
+                        println(io, "$size|$(curMSE)|$(stringTree(member.tree))")
                         push!(dominating, member)
                     end
                 end

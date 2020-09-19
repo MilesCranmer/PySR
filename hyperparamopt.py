@@ -117,6 +117,7 @@ space = {
     'weightMutateConstant': hp.lognormal('weightMutateConstant', np.log(4.0), 1.0),
     'weightMutateOperator': hp.lognormal('weightMutateOperator', np.log(0.5), 1.0),
     'weightAddNode': hp.lognormal('weightAddNode', np.log(0.5), 1.0),
+    'weightInsertNode': hp.lognormal('weightInsertNode', np.log(0.5), 1.0),
     'weightDeleteNode': hp.lognormal('weightDeleteNode', np.log(0.5), 1.0),
     'weightSimplify': hp.lognormal('weightSimplify', np.log(0.05), 1.0),
     'weightRandomize': hp.lognormal('weightRandomize', np.log(0.25), 1.0),
