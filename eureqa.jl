@@ -361,6 +361,31 @@ function randomConstantNode()::Node
     return newnode
 end
 
+# Return a random node from the tree with parent
+function randomNodeAndParent(tree::Node, parent::Union{Node, Nothing})::Tuple{Node, Union{Node, Nothing}}
+    if tree.degree == 0
+        return tree, parent
+    end
+    a = countNodes(tree)
+    b = 0
+    c = 0
+    if tree.degree >= 1
+        b = countNodes(tree.l)
+    end
+    if tree.degree == 2
+        c = countNodes(tree.r)
+    end
+
+    i = rand(1:1+b+c)
+    if i <= b
+        return randomNodeAndParent(tree.l, tree)
+    elseif i == b + 1
+        return tree, parent
+    end
+
+    return randomNodeAndParent(tree.r, tree)
+end
+
 # Select a random node, and replace it an the subtree
 # with a variable or constant
 function deleteRandomOp(tree::Node)::Node
