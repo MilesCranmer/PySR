@@ -1,4 +1,4 @@
-# Eureqa.jl
+# PySR.jl
 
 **Symbolic regression built on Julia, and interfaced by Python.
 Uses regularized evolution and simulated annealing.**
@@ -33,14 +33,14 @@ For python, you need to have Python 3, numpy, and pandas installed.
 
 ```python
 import numpy as np
-from eureqa import eureqa
+from pysr import pysr
 
 # Dataset
 X = 2*np.random.randn(100, 5)
 y = 2*np.cos(X[:, 3]) + X[:, 0]**2 - 2
 
 # Learn equations
-equations = eureqa(X, y, niterations=5)
+equations = pysr(X, y, niterations=5)
 
 ...
 
@@ -75,10 +75,10 @@ You can add more operators in `operators.jl`, or use default
 Julia ones. Make sure all operators are defined for scalar `Float32`.
 Then just specify the operator names in your call, as above.
 You can also change the dataset learned on by passing in `X` and `y` as
-numpy arrays to `eureqa(...)`.
+numpy arrays to `pysr(...)`.
 
 ```python
-eureqa(X=None, y=None, threads=4, niterations=20,
+pysr(X=None, y=None, threads=4, niterations=20,
    ncyclesperiteration=int(default_ncyclesperiteration),
    binary_operators=["plus", "mult"], unary_operators=["cos", "exp", "sin"],
    alpha=default_alpha, annealing=True, fractionReplaced=default_fractionReplaced,
@@ -147,6 +147,8 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 
 # TODO
 
+- [ ] Rename package to avoid trademark issues
+    - PySR?
 - [ ] Calculate feature importances of future mutations, by looking at correlation between residual of model, and the features.
     - Store feature importances of future, and periodically update it.
 - [ ] Implement more parts of the original Eureqa algorithms: https://www.creativemachineslab.com/eureqa.html

@@ -23,7 +23,7 @@ default_topn =                    10
 default_parsimony =              1e-4
 default_perturbationFactor =     1.0
 
-def eureqa(X=None, y=None, threads=4,
+def pysr(X=None, y=None, threads=4,
             niterations=100,
             ncyclesperiteration=300,
             binary_operators=["plus", "mult"],
@@ -178,7 +178,7 @@ const y = convert(Array{Float32, 1}, """f"{y_str})""""
         'julia -O3',
         '--threads auto',
         '-e',
-        f'\'include(".hyperparams_{rand_string}.jl"); include(".dataset_{rand_string}.jl"); include("eureqa.jl"); fullRun({niterations:d}, npop={npop:d}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})\'',
+        f'\'include(".hyperparams_{rand_string}.jl"); include(".dataset_{rand_string}.jl"); include("sr.jl"); fullRun({niterations:d}, npop={npop:d}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})\'',
         ]
     if timeout is not None:
         command = [f'timeout {timeout}'] + command
@@ -232,4 +232,4 @@ if __name__ == "__main__":
             help="Unary operators. Make sure they are defined in operators.jl")
     args = vars(parser.parse_args()) #dict
 
-    eureqa(**args)
+    pysr(**args)

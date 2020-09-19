@@ -4,7 +4,7 @@ import numpy as np
 import pickle as pkl
 import hyperopt
 from hyperopt import hp, fmin, tpe, Trials
-import eureqa
+import pysr
 import time
 
 import contextlib
@@ -77,7 +77,7 @@ def run_trial(args):
             print(f"Starting test {i}")
             for j in range(ntrials):
                 print(f"Starting trial {j}")
-                trial = eureqa.eureqa(
+                trial = pysr.pysr(
                     test=f"simple{i}",
                     threads=4,
                     binary_operators=["plus", "mult", "pow", "div"],
