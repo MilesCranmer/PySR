@@ -208,7 +208,7 @@ function mutateConstant(
     end
 
     bottom = 0.1f0
-    maxChange = T + 1.0f0 + bottom
+    maxChange = perturbationFactor * T + 1.0f0 + bottom
     factor = maxChange^Float32(rand())
     makeConstBigger = rand() > 0.5
 
@@ -490,10 +490,7 @@ end
 
 # Go through one simulated annealing mutation cycle
 #  exp(-delta/T) defines probability of accepting a change
-function iterate(
-        tree::Node, T::Float32;
-        annealing::Bool=true
-    )::Node
+function iterate(tree::Node, T::Float32)::Node
     prev = tree
     tree = copyNode(tree)
 
@@ -592,13 +589,9 @@ function bestSubPop(pop::Population; topn::Integer=10)::Population
 end
 
 # Mutate the best sampled member of the population
-function iterateSample(
-        pop::Population, T::Float32;
-        annealing::Bool=true)::PopMember
+function iterateSample(pop::Population, T::Float32)::PopMember
     allstar = bestOfSample(pop)
-    new = iterate(
-        allstar.tree, T,
-        annealing=annealing)
+    new = iterate(allstar.tree, T)
     allstar.tree = new
     allstar.score = scoreFunc(new)
     allstar.birth = getTime()
@@ -607,11 +600,9 @@ end
 
 # Pass through the population several times, replacing the oldest
 # with the fittest of a small subsample
-function regEvolCycle(
-    pop::Population, T::Float32;
-    annealing::Bool=true)::Population
+function regEvolCycle(pop::Population, T::Float32)::Population
     for i=1:round(Integer, pop.n/ns)
-        baby = iterateSample(pop, T, annealing=annealing)
+        baby = iterateSample(pop, T)
         #printTree(baby.tree)
         oldest = argmin([pop.members[member].birth for member=1:pop.n])
         pop.members[oldest] = baby
@@ -623,17 +614,16 @@ end
 # printing the fittest equation every 10% through
 function run(
         pop::Population,
-        ncycles::Integer,
-        annealing::Bool=false;
+        ncycles::Integer;
         verbosity::Integer=0
         )::Population
 
     allT = LinRange(1.0f0, 0.0f0, ncycles)
     for iT in 1:size(allT)[1]
         if annealing
-            pop = regEvolCycle(pop, allT[iT], annealing=true)
+            pop = regEvolCycle(pop, allT[iT])
         else
-            pop = regEvolCycle(pop, 1.0f0, annealing=true)
+            pop = regEvolCycle(pop, 1.0f0)
         end
 
         if verbosity > 0 && (iT % verbosity == 0)
@@ -721,7 +711,6 @@ end
 
 function fullRun(niterations::Integer;
                 npop::Integer=300,
-                annealing::Bool=true,
                 ncyclesperiteration::Integer=3000,
                 fractionReplaced::Float32=0.1f0,
                 verbosity::Integer=0,
@@ -738,7 +727,7 @@ function fullRun(niterations::Integer;
     for k=1:niterations
         # Spawn threads to run indepdent evolutions, then gather them
         @inbounds Threads.@threads for i=1:nthreads
-            allPops[i] = run(allPops[i], ncyclesperiteration, annealing, verbosity=verbosity)
+            allPops[i] = run(allPops[i], ncyclesperiteration, verbosity=verbosity)
             bestSubPops[i] = bestSubPop(allPops[i], topn=topn)
             for j=1:bestSubPops[i].n
                 bestSubPops[i].members[j].tree = simplifyTree(bestSubPops[i].members[j].tree)

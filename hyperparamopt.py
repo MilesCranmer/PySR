@@ -38,7 +38,7 @@ def run_trial(args):
         args[key] = int(args[key])
 
 
-    total_steps = 20*100*5000
+    total_steps = 10*100*1000
     niterations = args['niterations']
     npop = args['npop']
     if niterations == 0 or npop == 0: 
@@ -57,7 +57,7 @@ def run_trial(args):
 
     args['weightDoNothing'] = 1.0
 
-    maxTime = 3*60
+    maxTime = 30
     ntrials = 2
     equation_file = f'.hall_of_fame_{np.random.rand():f}.csv'
 
@@ -73,13 +73,13 @@ def run_trial(args):
     print(f"Starting", str(args))
     try:
         trials = []
-        for i in range(1, 6):
+        for i in range(3, 6):
             print(f"Starting test {i}")
             for j in range(ntrials):
                 print(f"Starting trial {j}")
                 trial = eureqa.eureqa(
                     test=f"simple{i}",
-                    threads=8,
+                    threads=4,
                     binary_operators=["plus", "mult", "pow", "div"],
                     unary_operators=["cos", "exp", "sin", "loga", "abs"],
                     equation_file=equation_file,
@@ -114,6 +114,7 @@ space = {
     'alpha': hp.lognormal('alpha', np.log(10.0), 1.0),
     'fractionReplacedHof': hp.lognormal('fractionReplacedHof', np.log(0.1), 1.0),
     'fractionReplaced': hp.lognormal('fractionReplaced', np.log(0.1), 1.0),
+    'perturbationFactor': hp.lognormal('perturbationFactor', np.log(1.0), 1.0),
     'weightMutateConstant': hp.lognormal('weightMutateConstant', np.log(4.0), 1.0),
     'weightMutateOperator': hp.lognormal('weightMutateOperator', np.log(0.5), 1.0),
     'weightAddNode': hp.lognormal('weightAddNode', np.log(0.5), 1.0),

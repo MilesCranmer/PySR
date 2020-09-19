@@ -21,6 +21,7 @@ default_weightDoNothing =          1
 default_result =                   1
 default_topn =                    10
 default_parsimony =              0.0
+default_perturbationFactor =     1.0
 
 
 def eureqa(X=None, y=None, threads=4,
@@ -46,6 +47,7 @@ def eureqa(X=None, y=None, threads=4,
             weightMutateOperator=default_weightMutateOperator,
             weightRandomize=default_weightRandomize,
             weightSimplify=default_weightSimplify,
+            perturbationFactor=default_perturbationFactor,
             timeout=None,
             equation_file='hall_of_fame.csv',
             test='simple1',
@@ -138,6 +140,8 @@ const fractionReplacedHof = {fractionReplacedHof}f0
 const shouldOptimizeConstants = {'true' if shouldOptimizeConstants else 'false'}
 const hofFile = "{equation_file}"
 const nthreads = {threads:d}
+const perturbationFactor = {perturbationFactor:f}f0
+const annealing = {"true" if annealing else "false"}
 const mutationWeights = [
     {weightMutateConstant:f},
     {weightMutateOperator:f},
@@ -175,7 +179,7 @@ const y = convert(Array{Float32, 1}, """f"{y_str})""""
         'julia -O3',
         f'--threads {threads}',
         '-e',
-        f'\'include(".hyperparams_{rand_string}.jl"); include(".dataset_{rand_string}.jl"); include("eureqa.jl"); fullRun({niterations:d}, npop={npop:d}, annealing={"true" if annealing else "false"}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})\'',
+        f'\'include(".hyperparams_{rand_string}.jl"); include(".dataset_{rand_string}.jl"); include("eureqa.jl"); fullRun({niterations:d}, npop={npop:d}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})\'',
         ]
     if timeout is not None:
         command = [f'timeout {timeout}'] + command
@@ -203,6 +207,7 @@ if __name__ == "__main__":
     parser.add_argument("--npop", type=int, default=int(default_npop), help="Number of members per population")
     parser.add_argument("--ncyclesperiteration", type=int, default=10000, help="Number of evolutionary cycles per migration")
     parser.add_argument("--topn", type=int, default=int(default_topn), help="How many best species to distribute from each population")
+    parser.add_argument("--perturbationFactor", type=float, default=default_perturbationFactor)
     parser.add_argument("--fractionReplacedHof", type=float, default=default_fractionReplacedHof, help="Fraction of population to replace with hall of fame")
     parser.add_argument("--fractionReplaced", type=float, default=default_fractionReplaced, help="Fraction of population to replace with best from other populations")
     parser.add_argument("--weightAddNode", type=float, default=default_weightAddNode)
