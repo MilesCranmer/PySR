@@ -154,8 +154,8 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 
 # TODO
 
-- [ ] Rename package to avoid trademark issues
-    - PySR?
+- [ ] Why don't the constants continually change? It should optimize them every time the equation appears.
+- [ ] Add several common unary and binary operators; list these.
 - [ ] Calculate feature importances of future mutations, by looking at correlation between residual of model, and the features.
     - Store feature importances of future, and periodically update it.
 - [ ] Implement more parts of the original Eureqa algorithms: https://www.creativemachineslab.com/eureqa.html
@@ -195,3 +195,6 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
     - No effect
 - [x] Create struct to pass through all hyperparameters, instead of treating as constants
     - Make sure doesn't affect performance
+- [x] Rename package to avoid trademark issues
+    - PySR?
+- [x] Put on PyPI
