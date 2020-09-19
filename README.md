@@ -25,7 +25,14 @@ annealing, and classical optimization of constants.
 
 Install [Julia](https://julialang.org/downloads/). Then, at the command line,
 install the `Optim` package via: `julia -e 'import Pkg; Pkg.add("Optim")'`.
+
 For python, you need to have Python 3, numpy, and pandas installed.
+
+You can install this package from PyPI with:
+
+```
+pip install pysr
+```
 
 ## Running:
 
