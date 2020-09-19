@@ -770,11 +770,12 @@ function fullRun(niterations::Integer;
             for size=1:actualMaxsize
                 if hallOfFame.exists[size]
                     member = hallOfFame.members[size]
-                    numberSmallerAndBetter = sum([member.score > hallOfFame.members[i].score for i=1:(size-1)])
+                    curMSE = MSE(evalTreeArray(member.tree), y)
+                    numberSmallerAndBetter = sum([curMSE > MSE(evalTreeArray(hallOfFame.members[i].tree), y) for i=1:(size-1)])
                     betterThanAllSmaller = (numberSmallerAndBetter == 0)
                     if betterThanAllSmaller
-                        debug(verbosity, "$size \t $(member.score-parsimony*size) \t $(stringTree(member.tree))")
-                        println(io, "$size|$(member.score-parsimony*size)|$(stringTree(member.tree))")
+                        debug(verbosity, "$size \t $(curMSE) \t $(stringTree(member.tree))")
+                        println(io, "$size|$(curMSE)|$(stringTree(member.tree))")
                         push!(dominating, member)
                     end
                 end
