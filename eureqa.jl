@@ -433,6 +433,38 @@ function deleteRandomOp(tree::Node)::Node
     return tree
 end
 
+# Simplify tree 
+function combineOperators(tree::Node)::Node
+    # (const (+*) const) already accounted for
+    # ((const + var) + const) => (const + var)
+    # ((const * var) * const) => (const * var)
+    # (anything commutative!)
+    if tree.degree == 2 && (tree.op == plus || tree.op == mult)
+        op = tree.op
+        if tree.l.constant || tree.r.constant
+            # Put the constant in r
+            if tree.l.constant
+                tmp = tree.r
+                tree.r = tree.l
+                tree.l = tmp
+            end
+            topconstant = tree.r.val
+            # Simplify down first
+            tree.l = combineOperators(tree.l)
+            below = tree.l
+            if below.degree == 2 && below.op == op
+                if below.l.constant
+                    tree = below
+                    tree.l.val = op(tree.l.val, topconstant)
+                elseif below.r.constant
+                    tree = below
+                    tree.r.val = op(tree.r.val, topconstant)
+                end
+            end
+        end
+    end
+    return tree
+end
 
 # Simplify tree 
 function simplifyTree(tree::Node)::Node
@@ -484,6 +516,7 @@ function iterate(
         tree = deleteRandomOp(tree)
     elseif mutationChoice < cweights[6]
         tree = simplifyTree(tree) # Sometimes we simplify tree
+        tree = combineOperators(tree) # See if repeated constants at outer levels
         return tree
     elseif mutationChoice < cweights[7]
         tree = genRandomTree(5) # Sometimes we simplify tree
