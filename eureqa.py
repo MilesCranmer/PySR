@@ -7,8 +7,8 @@ import pandas as pd
 
 # Dumped from hyperparam optimization
 default_alpha =                    5
-default_fractionReplaced =       0.1
-default_fractionReplacedHof =    0.1
+default_fractionReplaced =      0.30
+default_fractionReplacedHof =   0.05
 default_npop =                   200
 default_weightAddNode =            1
 default_weightInsertNode =         1
@@ -16,7 +16,7 @@ default_weightDeleteNode =         1
 default_weightMutateConstant =    10
 default_weightMutateOperator =     1
 default_weightRandomize =          1
-default_weightSimplify =           1
+default_weightSimplify =         0.1
 default_weightDoNothing =          1
 default_result =                   1
 default_topn =                    10
