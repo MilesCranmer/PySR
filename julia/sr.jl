@@ -687,6 +687,14 @@ function optimizeConstants(member::PopMember)::PopMember
         result = Optim.optimize(f, x0, Optim.Newton(), Optim.Options(iterations=20))
     else
         result = Optim.optimize(f, x0, Optim.NelderMead(), Optim.Options(iterations=100))
+
+        # Try other initial conditions:
+        for i=1:5
+            tmpresult = Optim.optimize(f, x0 .* (1f0 .+ 5f-1*randn(Float32, size(x0)[1])), Optim.NelderMead(), Optim.Options(iterations=100))
+            if tmpresult.minimum < result.minimum
+                result = tmpresult
+            end
+        end
     end
     if Optim.converged(result)
         setConstants(member.tree, result.minimizer)
@@ -731,6 +739,7 @@ function fullRun(niterations::Integer;
             bestSubPops[i] = bestSubPop(allPops[i], topn=topn)
             for j=1:bestSubPops[i].n
                 bestSubPops[i].members[j].tree = simplifyTree(bestSubPops[i].members[j].tree)
+                bestSubPops[i].members[j].tree = combineOperators(bestSubPops[i].members[j].tree)
                 if shouldOptimizeConstants
                     bestSubPops[i].members[j] = optimizeConstants(bestSubPops[i].members[j])
                 end

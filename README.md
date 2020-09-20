@@ -207,11 +207,13 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [ ] Consider adding mutation for constant<->variable
 - [ ] Hierarchical model, so can re-use functional forms. Output of one equation goes into second equation?
 - [ ] Use NN to generate weights over all probability distribution conditional on error and existing equation, and train on some randomly-generated equations
+- [ ] Add GPU capability?
 - [ ] Performance:
     - [ ] Use an enum for functions instead of storing them?
     - Current most expensive operations:
         - [ ] Calculating the loss function - there is duplicate calculations happening.
         - [x] Declaration of the weights array every iteration
+- [x] Try other initial conditions for optimizer
 - [x] Make scaling of changes to constant a hyperparameter
 - [x] Make deletion op join deleted subtree to parent
 - [x] Update hall of fame every iteration?
