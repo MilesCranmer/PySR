@@ -70,7 +70,7 @@ You likely don't need to tune the hyperparameters yourself,
 but if you would like, you can use `hyperopt.py` as an example.
 However, you should adjust `threads`, `niterations`,
 `binary_operators`, `unary_operators`, and `maxsize`
-to your requirements.
+to your requirements. You can see a list of available operators below.
 
 The program will output a pandas DataFrame containing the equations,
 mean square error, and complexity. It will also dump to a csv
@@ -152,9 +152,52 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 (as strings).
 
 
+# Operators
+
+All Base julia operators that take 1 or 2 float32 as input,
+and output a float32 as output, are available. A selection
+of these and other valid operators are given below:
+
+## Binary
+
+`plus`, `mult`, `pow`, `div`, `greater`, `mod`, `beta`, `logical_or`,
+`logical_and`
+
+## Unary:
+
+`neg`,
+`exp`,
+`abs`,
+`logm` (=log(abs(x) + 1e-8)),
+`logm10` (=log10(abs(x) + 1e-8)),
+`logm2` (=log2(abs(x) + 1e-8)),
+`log1p`,
+`sin`,
+`cos`,
+`tan`,
+`sinh`,
+`cosh`,
+`tanh`,
+`asin`,
+`acos`,
+`atan`,
+`asinh`,
+`acosh`,
+`atanh`,
+`erf`,
+`erfc`,
+`gamma`,
+`relu`,
+`round`,
+`floor`,
+`ceil`,
+`round`.
+
+
 # TODO
 
 - [ ] Why don't the constants continually change? It should optimize them every time the equation appears.
+- [ ] Add ability to save and state from python
 - [ ] Add several common unary and binary operators; list these.
 - [ ] Calculate feature importances of future mutations, by looking at correlation between residual of model, and the features.
     - Store feature importances of future, and periodically update it.
