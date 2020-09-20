@@ -23,7 +23,10 @@ annealing, and classical optimization of constants.
 
 ## Installation
 
-Install Julia - see instructions for [mac](https://julialang.org/downloads/platform/#macos) and [linux](https://julialang.org/downloads/platform/#linux_and_freebsd). Then, at the command line,
+Install Julia - see [downloads](https://julialang.org/downloads/), and
+then instructions for [mac](https://julialang.org/downloads/platform/#macos)
+and [linux](https://julialang.org/downloads/platform/#linux_and_freebsd).
+Then, at the command line,
 install the `Optim` and `SpecialFunctions` packages via:
 `julia -e 'import Pkg; Pkg.add("Optim"); Pkg.add("SpecialFunctions")'`.
 
