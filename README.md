@@ -107,7 +107,8 @@ name as a string.
 `round`,
 `floor`,
 `ceil`,
-`round`.
+`round`,
+`sign`.
 
 ### Full API
 
@@ -197,7 +198,7 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 # TODO
 
 - [ ] Why don't the constants continually change? It should optimize them every time the equation appears.
-- [ ] Add ability to save and state from python
+- [ ] Add ability to save state from python
 - [ ] Add several common unary and binary operators; list these.
 - [ ] Calculate feature importances of future mutations, by looking at correlation between residual of model, and the features.
     - Store feature importances of future, and periodically update it.
