@@ -24,7 +24,8 @@ annealing, and classical optimization of constants.
 ## Installation
 
 Install Julia - see instructions for [mac](https://julialang.org/downloads/platform/#macos) and [linux](https://julialang.org/downloads/platform/#linux_and_freebsd). Then, at the command line,
-install the `Optim` package via: `julia -e 'import Pkg; Pkg.add("Optim")'`.
+install the `Optim` and `SpecialFunctions` packages via:
+`julia -e 'import Pkg; Pkg.add("Optim"); Pkg.add("SpecialFunctions")'`.
 
 For python, you need to have Python 3, numpy, and pandas installed.
 
