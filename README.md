@@ -196,6 +196,7 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 
 # TODO
 
+- [ ] Add error bar capability (thanks Johannes Buchner)
 - [ ] Add ability to save state from python
 - [ ] Calculate feature importances of future mutations, by looking at correlation between residual of model, and the features.
     - Store feature importances of future, and periodically update it.
