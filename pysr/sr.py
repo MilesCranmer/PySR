@@ -113,7 +113,7 @@ def pysr(X=None, y=None, threads=4,
         y = eval(eval_str)
         print("Running on", eval_str)
 
-    pkg_directory = '/'.join(__file__.split('/')[:-2] + ['/julia'])
+    pkg_directory = '/'.join(__file__.split('/')[:-2] + ['julia'])
 
     def_hyperparams = f"""include("{pkg_directory}/operators.jl")
 const binops = {'[' + ', '.join(binary_operators) + ']'}
