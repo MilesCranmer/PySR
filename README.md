@@ -1,5 +1,7 @@
 # PySR.jl
 
+[![DOI](https://zenodo.org/badge/295391759.svg)](https://zenodo.org/badge/latestdoi/295391759)
+
 **Symbolic regression built on Julia, and interfaced by Python.
 Uses regularized evolution and simulated annealing.**
 
