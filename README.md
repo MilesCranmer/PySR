@@ -129,22 +129,13 @@ which is `hall_of_fame.csv` by default. It also prints the
 equations to stdout.
 
 ```python
-pysr(X=None, y=None, threads=4, niterations=20,
-   ncyclesperiteration=int(default_ncyclesperiteration),
-   binary_operators=["plus", "mult"], unary_operators=["cos", "exp", "sin"],
-   alpha=default_alpha, annealing=True, fractionReplaced=default_fractionReplaced,
-   fractionReplacedHof=default_fractionReplacedHof, npop=int(default_npop),
-   parsimony=default_parsimony, migration=True, hofMigration=True
-   shouldOptimizeConstants=True, topn=int(default_topn),
-   weightAddNode=default_weightAddNode, weightDeleteNode=default_weightDeleteNode,
-   weightDoNothing=default_weightDoNothing,
-   weightMutateConstant=default_weightMutateConstant,
-   weightMutateOperator=default_weightMutateOperator,
-   weightRandomize=default_weightRandomize, weightSimplify=default_weightSimplify,
-   timeout=None, equation_file='hall_of_fame.csv', test='simple1', maxsize=20)
+pysr(X=None, y=None, threads=4, niterations=100, ncyclesperiteration=300, binary_operators=["plus", "mult"], unary_operators=["cos", "exp", "sin"], alpha=0.1, annealing=True, fractionReplaced=0.10, fractionReplacedHof=0.10, npop=1000, parsimony=1e-4, migration=True, hofMigration=True, shouldOptimizeConstants=True, topn=10, weightAddNode=1, weightInsertNode=3, weightDeleteNode=3, weightDoNothing=1, weightMutateConstant=10, weightMutateOperator=1, weightRandomize=1, weightSimplify=0.01, perturbationFactor=1.0, nrestarts=3, timeout=None, equation_file='hall_of_fame.csv', test='simple1', verbosity=1e9, maxsize=20)
 ```
 
 Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
+Note: most default parameters have been tuned over several example
+equations, but you should adjust `threads`, `niterations`,
+`binary_operators`, `unary_operators` to your requirements.
 
 **Arguments**:
 
@@ -174,7 +165,12 @@ equations from hall of fame.
 - `shouldOptimizeConstants`: bool, Whether to numerically optimize
 constants (Nelder-Mead/Newton) at the end of each iteration.
 - `topn`: int, How many top individuals migrate from each population.
+- `nrestarts`: int, Number of times to restart the constant optimizer
+- `perturbationFactor`: float, Constants are perturbed by a max
+factor of (perturbationFactor\*T + 1). Either multiplied by this
+or divided by this.
 - `weightAddNode`: float, Relative likelihood for mutation to add a node
+- `weightInsertNode`: float, Relative likelihood for mutation to insert a node
 - `weightDeleteNode`: float, Relative likelihood for mutation to delete a node
 - `weightDoNothing`: float, Relative likelihood for mutation to leave the individual
 - `weightMutateConstant`: float, Relative likelihood for mutation to change
@@ -194,8 +190,6 @@ constant parts by evaluation
 
 pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 (as strings).
-
-
 
 
 # TODO

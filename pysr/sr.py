@@ -68,6 +68,9 @@ def pysr(X=None, y=None, threads=4,
         constants (Nelder-Mead/Newton) at the end of each iteration.
     :param topn: int, How many top individuals migrate from each population.
     :param nrestarts: int, Number of times to restart the constant optimizer
+    :param perturbationFactor: float, Constants are perturbed by a max
+        factor of (perturbationFactor*T + 1). Either multiplied by this
+        or divided by this.
     :param weightAddNode: float, Relative likelihood for mutation to add a node
     :param weightInsertNode: float, Relative likelihood for mutation to insert a node
     :param weightDeleteNode: float, Relative likelihood for mutation to delete a node
