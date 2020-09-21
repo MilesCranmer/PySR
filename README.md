@@ -131,7 +131,7 @@ which is `hall_of_fame.csv` by default. It also prints the
 equations to stdout.
 
 ```python
-pysr(X=None, y=None, threads=4, niterations=100, ncyclesperiteration=300, binary_operators=["plus", "mult"], unary_operators=["cos", "exp", "sin"], alpha=0.1, annealing=True, fractionReplaced=0.10, fractionReplacedHof=0.10, npop=1000, parsimony=1e-4, migration=True, hofMigration=True, shouldOptimizeConstants=True, topn=10, weightAddNode=1, weightInsertNode=3, weightDeleteNode=3, weightDoNothing=1, weightMutateConstant=10, weightMutateOperator=1, weightRandomize=1, weightSimplify=0.01, perturbationFactor=1.0, nrestarts=3, timeout=None, equation_file='hall_of_fame.csv', test='simple1', verbosity=1e9, maxsize=20)
+pysr(X=None, y=None, weights=None, threads=4, niterations=100, ncyclesperiteration=300, binary_operators=["plus", "mult"], unary_operators=["cos", "exp", "sin"], alpha=0.1, annealing=True, fractionReplaced=0.10, fractionReplacedHof=0.10, npop=1000, parsimony=1e-4, migration=True, hofMigration=True, shouldOptimizeConstants=True, topn=10, weightAddNode=1, weightInsertNode=3, weightDeleteNode=3, weightDoNothing=1, weightMutateConstant=10, weightMutateOperator=1, weightRandomize=1, weightSimplify=0.01, perturbationFactor=1.0, nrestarts=3, timeout=None, equation_file='hall_of_fame.csv', test='simple1', verbosity=1e9, maxsize=20)
 ```
 
 Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
@@ -143,6 +143,7 @@ equations, but you should adjust `threads`, `niterations`,
 
 - `X`: np.ndarray, 2D array. Rows are examples, columns are features.
 - `y`: np.ndarray, 1D array. Rows are examples.
+- `weights`: np.ndarray, 1D array. Same shape as `y`. Optional weighted sum (e.g., 1/error^2).
 - `threads`: int, Number of threads (=number of populations running).
 You can have more threads than cores - it actually makes it more
 efficient.
@@ -196,7 +197,6 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 
 # TODO
 
-- [ ] Add error bar capability (thanks Johannes Buchner)
 - [ ] Add ability to save state from python
 - [ ] Calculate feature importances of future mutations, by looking at correlation between residual of model, and the features.
     - Store feature importances of future, and periodically update it.
@@ -211,6 +211,7 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
     - Current most expensive operations:
         - [ ] Calculating the loss function - there is duplicate calculations happening.
         - [x] Declaration of the weights array every iteration
+- [x] Add error bar capability (thanks Johannes Buchner for suggestion)
 - [x] Why don't the constants continually change? It should optimize them every time the equation appears.
     - Restart the optimizer to help with this.
 - [x] Add several common unary and binary operators; list these.

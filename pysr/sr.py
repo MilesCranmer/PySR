@@ -5,7 +5,7 @@ import pathlib
 import numpy as np
 import pandas as pd
 
-def pysr(X=None, y=None, threads=4,
+def pysr(X=None, y=None, weights=None, threads=4,
             niterations=100,
             ncyclesperiteration=300,
             binary_operators=["plus", "mult"],
@@ -131,6 +131,7 @@ const nthreads = {threads:d}
 const nrestarts = {nrestarts:d}
 const perturbationFactor = {perturbationFactor:f}f0
 const annealing = {"true" if annealing else "false"}
+const weighted = {"true" if weights is not None else "false"}
 const mutationWeights = [
     {weightMutateConstant:f},
     {weightMutateOperator:f},
@@ -145,13 +146,21 @@ const mutationWeights = [
 
     assert len(X.shape) == 2
     assert len(y.shape) == 1
+    assert X.shape[0] == y.shape[0]
+    if weights is not None:
+        assert len(weights.shape) == 1
+        assert X.shape[0] == weights.shape[0]
 
     X_str = str(X.tolist()).replace('],', '];').replace(',', '')
     y_str = str(y.tolist())
 
     def_datasets = """const X = convert(Array{Float32, 2}, """f"{X_str})""""
-const y = convert(Array{Float32, 1}, """f"{y_str})""""
-    """
+const y = convert(Array{Float32, 1}, """f"{y_str})"
+
+    if weights is not None:
+        weight_str = str(weights.tolist())
+        def_datasets += """
+const weights = convert(Array{Float32, 1}, """f"{weight_str})"
 
     with open(f'/tmp/.hyperparams_{rand_string}.jl', 'w') as f:
         print(def_hyperparams, file=f)

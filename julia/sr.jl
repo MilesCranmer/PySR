@@ -6,7 +6,11 @@ const actualMaxsize = maxsize + maxdegree
 
 # Sum of square error between two arrays
 function SSE(x::Array{Float32}, y::Array{Float32})::Float32
-    diff = (x - y)
+    if weighted
+        diff = (x - y) .* weights
+    else
+        diff = (x - y)
+    end
     return sum(diff .* diff)
 end
 
