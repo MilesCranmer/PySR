@@ -5,48 +5,31 @@ import pathlib
 import numpy as np
 import pandas as pd
 
-# Dumped from hyperparam optimization
-default_alpha =                  1.0#0.1
-default_fractionReplaced =      0.10
-default_fractionReplacedHof =   0.10
-default_npop =                  1000
-default_weightAddNode =            1
-default_weightInsertNode =         3
-default_weightDeleteNode =         3
-default_weightMutateConstant =    10
-default_weightMutateOperator =     1
-default_weightRandomize =          1
-default_weightSimplify =        0.01
-default_weightDoNothing =          1
-default_result =                   1
-default_topn =                    10
-default_parsimony =              1e-4
-default_perturbationFactor =     1.0
-
 def pysr(X=None, y=None, threads=4,
             niterations=100,
             ncyclesperiteration=300,
             binary_operators=["plus", "mult"],
             unary_operators=["cos", "exp", "sin"],
-            alpha=default_alpha,
+            alpha=0.1,
             annealing=True,
-            fractionReplaced=default_fractionReplaced,
-            fractionReplacedHof=default_fractionReplacedHof,
-            npop=int(default_npop),
-            parsimony=default_parsimony,
+            fractionReplaced=0.10,
+            fractionReplacedHof=0.10,
+            npop=1000,
+            parsimony=1e-4,
             migration=True,
             hofMigration=True,
             shouldOptimizeConstants=True,
-            topn=int(default_topn),
-            weightAddNode=default_weightAddNode,
-            weightInsertNode=default_weightInsertNode,
-            weightDeleteNode=default_weightDeleteNode,
-            weightDoNothing=default_weightDoNothing,
-            weightMutateConstant=default_weightMutateConstant,
-            weightMutateOperator=default_weightMutateOperator,
-            weightRandomize=default_weightRandomize,
-            weightSimplify=default_weightSimplify,
-            perturbationFactor=default_perturbationFactor,
+            topn=10,
+            weightAddNode=1,
+            weightInsertNode=3,
+            weightDeleteNode=3,
+            weightDoNothing=1,
+            weightMutateConstant=10,
+            weightMutateOperator=1,
+            weightRandomize=1,
+            weightSimplify=0.01,
+            perturbationFactor=1.0,
+            nrestarts=3,
             timeout=None,
             equation_file='hall_of_fame.csv',
             test='simple1',
@@ -84,6 +67,7 @@ def pysr(X=None, y=None, threads=4,
     :param shouldOptimizeConstants: bool, Whether to numerically optimize
         constants (Nelder-Mead/Newton) at the end of each iteration.
     :param topn: int, How many top individuals migrate from each population.
+    :param nrestarts: int, Number of times to restart the constant optimizer
     :param weightAddNode: float, Relative likelihood for mutation to add a node
     :param weightInsertNode: float, Relative likelihood for mutation to insert a node
     :param weightDeleteNode: float, Relative likelihood for mutation to delete a node
@@ -141,6 +125,7 @@ const fractionReplacedHof = {fractionReplacedHof}f0
 const shouldOptimizeConstants = {'true' if shouldOptimizeConstants else 'false'}
 const hofFile = "{equation_file}"
 const nthreads = {threads:d}
+const nrestarts = {nrestarts:d}
 const perturbationFactor = {perturbationFactor:f}f0
 const annealing = {"true" if annealing else "false"}
 const mutationWeights = [

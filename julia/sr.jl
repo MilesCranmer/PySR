@@ -684,18 +684,20 @@ function optimizeConstants(member::PopMember)::PopMember
     x0 = getConstants(member.tree)
     f(x::Array{Float32,1})::Float32 = optFunc(x, member.tree)
     if size(x0)[1] == 1
-        result = Optim.optimize(f, x0, Optim.Newton(), Optim.Options(iterations=20))
+        algorithm = Optim.Newton
     else
-        result = Optim.optimize(f, x0, Optim.NelderMead(), Optim.Options(iterations=100))
+        algorithm = Optim.NelderMead
+    end
 
-        # Try other initial conditions:
-        for i=1:5
-            tmpresult = Optim.optimize(f, x0 .* (1f0 .+ 5f-1*randn(Float32, size(x0)[1])), Optim.NelderMead(), Optim.Options(iterations=100))
-            if tmpresult.minimum < result.minimum
-                result = tmpresult
-            end
+    result = Optim.optimize(f, x0, algorithm(), Optim.Options(iterations=100))
+    # Try other initial conditions:
+    for i=1:nrestarts
+        tmpresult = Optim.optimize(f, x0 .* (1f0 .+ 5f-1*randn(Float32, size(x0)[1])), algorithm(), Optim.Options(iterations=100))
+        if tmpresult.minimum < result.minimum
+            result = tmpresult
         end
     end
+
     if Optim.converged(result)
         setConstants(member.tree, result.minimizer)
         member.score = convert(Float32, result.minimum)
@@ -736,14 +738,16 @@ function fullRun(niterations::Integer;
         # Spawn threads to run indepdent evolutions, then gather them
         @inbounds Threads.@threads for i=1:nthreads
             allPops[i] = run(allPops[i], ncyclesperiteration, verbosity=verbosity)
-            bestSubPops[i] = bestSubPop(allPops[i], topn=topn)
-            for j=1:bestSubPops[i].n
-                bestSubPops[i].members[j].tree = simplifyTree(bestSubPops[i].members[j].tree)
-                bestSubPops[i].members[j].tree = combineOperators(bestSubPops[i].members[j].tree)
-                if shouldOptimizeConstants
-                    bestSubPops[i].members[j] = optimizeConstants(bestSubPops[i].members[j])
+            for j=1:allPops[i].n
+                if rand() < 0.1
+                    allPops[i].members[j].tree = simplifyTree(allPops[i].members[j].tree)
+                    allPops[i].members[j].tree = combineOperators(allPops[i].members[j].tree)
+                    if shouldOptimizeConstants
+                        allPops[i].members[j] = optimizeConstants(allPops[i].members[j])
+                    end
                 end
             end
+            bestSubPops[i] = bestSubPop(allPops[i], topn=topn)
         end
 
         # Get best 10 models from each evolution. Copy because we re-assign later.
