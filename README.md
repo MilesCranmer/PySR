@@ -194,9 +194,7 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 
 # TODO
 
-- [ ] Why don't the constants continually change? It should optimize them every time the equation appears.
 - [ ] Add ability to save state from python
-- [ ] Add several common unary and binary operators; list these.
 - [ ] Calculate feature importances of future mutations, by looking at correlation between residual of model, and the features.
     - Store feature importances of future, and periodically update it.
 - [ ] Implement more parts of the original Eureqa algorithms: https://www.creativemachineslab.com/eureqa.html
@@ -210,6 +208,9 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
     - Current most expensive operations:
         - [ ] Calculating the loss function - there is duplicate calculations happening.
         - [x] Declaration of the weights array every iteration
+- [x] Why don't the constants continually change? It should optimize them every time the equation appears.
+    - Restart the optimizer to help with this.
+- [x] Add several common unary and binary operators; list these.
 - [x] Try other initial conditions for optimizer
 - [x] Make scaling of changes to constant a hyperparameter
 - [x] Make deletion op join deleted subtree to parent
