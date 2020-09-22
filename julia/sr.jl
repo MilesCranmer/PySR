@@ -6,12 +6,12 @@ const actualMaxsize = maxsize + maxdegree
 
 # Sum of square error between two arrays
 function SSE(x::Array{Float32}, y::Array{Float32})::Float32
+    diff = (x - y)
     if weighted
-        diff = (x - y) .* weights
+        return sum(diff .* diff .* weights)
     else
-        diff = (x - y)
+        return sum(diff .* diff)
     end
-    return sum(diff .* diff)
 end
 
 # Mean of square error between two arrays
@@ -20,7 +20,13 @@ function MSE(x::Array{Float32}, y::Array{Float32})::Float32
 end
 
 const len = size(X)[1]
-const avgy = sum(y)/len
+
+if weighted
+    const avgy = sum(y .* weights)/len/sum(weights)
+else
+    const avgy = sum(y)/len
+end
+
 const baselineSSE = SSE(y, convert(Array{Float32, 1}, ones(len) .* avgy))
 
 id = (x,) -> x
