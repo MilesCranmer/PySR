@@ -198,14 +198,19 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 # TODO
 
 - [ ] Add ability to save state from python
+- [ ] Calculate feature importances based on features we've already seen, then weight those features up in all random generations.
 - [ ] Calculate feature importances of future mutations, by looking at correlation between residual of model, and the features.
     - Store feature importances of future, and periodically update it.
 - [ ] Implement more parts of the original Eureqa algorithms: https://www.creativemachineslab.com/eureqa.html
+- [ ] Add ability to pass an operator as an anonymous function string. E.g., `binary_operators=["g(x, y) = x+y"]`.
+- [ ] Experiment with freezing parts of model; then we only append/delete at end of tree.
 - [ ] Sympy printing
+- [ ] Sympy evaluation
 - [ ] Consider adding mutation for constant<->variable
 - [ ] Hierarchical model, so can re-use functional forms. Output of one equation goes into second equation?
 - [ ] Use NN to generate weights over all probability distribution conditional on error and existing equation, and train on some randomly-generated equations
 - [ ] Add GPU capability?
+     - Not sure if possible, as binary trees are the real bottleneck.
 - [ ] Performance:
     - [ ] Use an enum for functions instead of storing them?
     - Current most expensive operations:
