@@ -196,6 +196,7 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 # TODO
 
 - [ ] Add ability to save state from python
+- [ ] Add true multi-node processing, with MPI, or just file sharing. Multiple populations per core.
 - [ ] Calculate feature importances based on features we've already seen, then weight those features up in all random generations.
 - [ ] Calculate feature importances of future mutations, by looking at correlation between residual of model, and the features.
     - Store feature importances of future, and periodically update it.
