@@ -151,7 +151,10 @@ const mutationWeights = [
         assert len(weights.shape) == 1
         assert X.shape[0] == weights.shape[0]
 
-    X_str = str(X.tolist()).replace('],', '];').replace(',', '')
+    if X.shape[1] == 1:
+        X_str = 'transpose([' + str(X.tolist()).replace(']', '').replace(',', '').replace('[', '') + '])'
+    else:
+        X_str = str(X.tolist()).replace('],', '];').replace(',', '')
     y_str = str(y.tolist())
 
     def_datasets = """const X = convert(Array{Float32, 2}, """f"{X_str})""""
