@@ -23,7 +23,7 @@ but with additional algorithmic changes such as simulated
 annealing, and classical optimization of constants.
 
 
-## Installation
+# Installation
 
 Install Julia - see [downloads](https://julialang.org/downloads/), and
 then instructions for [mac](https://julialang.org/downloads/platform/#macos)
@@ -40,9 +40,7 @@ You can install this package from PyPI with:
 pip install pysr
 ```
 
-## Running:
-
-### Quickstart
+# Quickstart
 
 ```python
 import numpy as np
@@ -71,7 +69,7 @@ which gives:
 2          11  0.000000  plus(plus(mult(x0, x0), cos(x3)), plus(-2.0, cos(x3)))
 ```
 
-### Operators
+# Operators
 
 All Base julia operators that take 1 or 2 float32 as input,
 and output a float32 as output, are available. A selection
@@ -115,7 +113,7 @@ name as a string.
 `round`,
 `sign`.
 
-### Full API
+# Full API
 
 What follows is the API reference for running the numpy interface.
 You likely don't need to tune the hyperparameters yourself,
