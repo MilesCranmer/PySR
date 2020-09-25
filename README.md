@@ -227,6 +227,9 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 
 # TODO
 
+- [ ] Async threading, and have a server of equations. So that threads aren't waiting for others to finish.
+    - This is a huge bottleneck right now.
+- [ ] Use @fastmath
 - [ ] Refresh screen rather than dumping to stdout?
 - [ ] Test suite
 - [ ] Add ability to save state from python
