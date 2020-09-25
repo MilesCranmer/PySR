@@ -195,13 +195,16 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 
 # TODO
 
+- [ ] Print out speed of equation evaluation over time. Measure time it takes per 
+- [ ] Refresh screen rather than dumping to stdout
+- [ ] Add ability to pass an operator as an anonymous function string. E.g., `binary_operators=["g(x, y) = x+y"]`.
+- [ ] Test suite
 - [ ] Add ability to save state from python
 - [ ] Add true multi-node processing, with MPI, or just file sharing. Multiple populations per core.
 - [ ] Calculate feature importances based on features we've already seen, then weight those features up in all random generations.
 - [ ] Calculate feature importances of future mutations, by looking at correlation between residual of model, and the features.
     - Store feature importances of future, and periodically update it.
 - [ ] Implement more parts of the original Eureqa algorithms: https://www.creativemachineslab.com/eureqa.html
-- [ ] Add ability to pass an operator as an anonymous function string. E.g., `binary_operators=["g(x, y) = x+y"]`.
 - [ ] Experiment with freezing parts of model; then we only append/delete at end of tree.
 - [ ] Sympy printing
 - [ ] Sympy evaluation
