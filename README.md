@@ -69,7 +69,7 @@ which gives:
 2          11  0.000000  plus(plus(mult(x0, x0), cos(x3)), plus(-2.0, cos(x3)))
 ```
 
-**Custom operators:**
+### Custom operators
 
 One can define custom operators in Julia by passing a string:
 ```python
@@ -86,11 +86,11 @@ are automatically vectorized.
 
 One can also edit `operators.jl`. See below for more options.
 
-**Weighted data**
+### Weighted data
 
 Here, we assign weights to each row of data
 using inverse uncertainty squared. We also use 10 threads
-instead of the usual 4, which creates more population
+instead of the usual 4, which creates more populations
 (one population per thread).
 ```python
 sigma = ...
