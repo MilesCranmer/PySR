@@ -69,6 +69,38 @@ which gives:
 2          11  0.000000  plus(plus(mult(x0, x0), cos(x3)), plus(-2.0, cos(x3)))
 ```
 
+**Custom operators:**
+
+One can define custom operators in Julia by passing a string:
+```python
+equations = pysr.pysr(X, y, niterations=100,
+    binary_operators=["mult", "plus", "special(x, y) = x^2 + y"],
+    unary_operators=["cos"])
+```
+
+Now, the symbolic regression code can search using this `special` function
+that squares its left argument and adds it to its right. Make sure
+all passed functions are valid Julia code, and take one (unary)
+or two (binary) float32 scalars as input, and output a float32. Operators
+are automatically vectorized.
+
+One can also edit `operators.jl`. See below for more options.
+
+**Weighted data**
+
+Here, we assign weights to each row of data
+using inverse uncertainty squared. We also use 10 threads
+instead of the usual 4, which creates more population
+(one population per thread).
+```python
+sigma = ...
+weights = 1/sigma**2
+
+equations = pysr.pysr(X, y, weights=weights, threads=10)
+```
+
+
+
 # Operators
 
 All Base julia operators that take 1 or 2 float32 as input,
