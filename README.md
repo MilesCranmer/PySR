@@ -227,9 +227,7 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 
 # TODO
 
-- [ ] Print out speed of equation evaluation over time. Measure time it takes per 
-- [ ] Refresh screen rather than dumping to stdout
-- [ ] Add ability to pass an operator as an anonymous function string. E.g., `binary_operators=["g(x, y) = x+y"]`.
+- [ ] Refresh screen rather than dumping to stdout?
 - [ ] Test suite
 - [ ] Add ability to save state from python
 - [ ] Add true multi-node processing, with MPI, or just file sharing. Multiple populations per core.
@@ -250,6 +248,8 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
     - Current most expensive operations:
         - [ ] Calculating the loss function - there is duplicate calculations happening.
         - [x] Declaration of the weights array every iteration
+- [x] Print out speed of equation evaluation over time. Measure time it takes per cycle
+- [x] Add ability to pass an operator as an anonymous function string. E.g., `binary_operators=["g(x, y) = x+y"]`.
 - [x] Add error bar capability (thanks Johannes Buchner for suggestion)
 - [x] Why don't the constants continually change? It should optimize them every time the equation appears.
     - Restart the optimizer to help with this.

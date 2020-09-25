@@ -755,6 +755,7 @@ function fullRun(niterations::Integer;
 
     for k=1:niterations
         # Spawn threads to run indepdent evolutions, then gather them
+        start_time = time()
         @inbounds Threads.@threads for i=1:nthreads
             allPops[i] = run(allPops[i], ncyclesperiteration, verbosity=verbosity)
             for j=1:allPops[i].n
@@ -768,6 +769,10 @@ function fullRun(niterations::Integer;
             end
             bestSubPops[i] = bestSubPop(allPops[i], topn=topn)
         end
+        total_time = time() - start_time
+
+        number_equations_created = ncyclesperiteration * nthreads * npop / ns
+        equations_created_per_second = number_equations_created / total_time
 
         # Get best 10 models from each evolution. Copy because we re-assign later.
         # bestPops = deepcopy(Population([member for pop in allPops for member in bestSubPop(pop).members]))
@@ -787,6 +792,8 @@ function fullRun(niterations::Integer;
         # Dominating pareto curve - must be better than all simpler equations
         dominating = PopMember[]
         open(hofFile, "w") do io
+            debug(verbosity, "\n")
+            debug(verbosity, "Total cycles per second: $(round(Int, equations_created_per_second, sigdigits=3))\n")
             debug(verbosity, "Hall of Fame:")
             debug(verbosity, "-----------------------------------------")
             debug(verbosity, "Complexity \t MSE \t Equation")
