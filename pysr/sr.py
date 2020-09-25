@@ -92,6 +92,17 @@ def pysr(X=None, y=None, weights=None, threads=4,
 
     """
 
+    # Check for potential errors before they happen
+    assert len(binary_operators) > 0
+    assert len(unary_operators) > 0
+    assert len(X.shape) == 2
+    assert len(y.shape) == 1
+    assert X.shape[0] == y.shape[0]
+    if weights is not None:
+        assert len(weights.shape) == 1
+        assert X.shape[0] == weights.shape[0]
+
+
     rand_string = f'{"".join([str(np.random.rand())[2] for i in range(20)])}'
 
     if isinstance(binary_operators, str): binary_operators = [binary_operators]
@@ -115,7 +126,24 @@ def pysr(X=None, y=None, weights=None, threads=4,
 
     pkg_directory = '/'.join(__file__.split('/')[:-2] + ['julia'])
 
-    def_hyperparams = f"""include("{pkg_directory}/operators.jl")
+    def_hyperparams = ""
+
+    # Add pre-defined functions to Julia
+    for op_list in [binary_operators, unary_operators]:
+        for i in range(len(op_list)):
+            op = op_list[i]
+            if '(' not in op:
+                continue
+
+            def_hyperparams += op + "\n"
+            first_non_char = [
+                    j for j in range(len(op))
+                    if not (op[j].isalpha() or op[j].isdigit())][0]
+            function_name = op[:first_non_char]
+            op_list[i] = function_name
+            print(op_list)
+
+    def_hyperparams += f"""include("{pkg_directory}/operators.jl")
 const binops = {'[' + ', '.join(binary_operators) + ']'}
 const unaops = {'[' + ', '.join(unary_operators) + ']'}
 const ns=10;
@@ -143,13 +171,6 @@ const mutationWeights = [
     {weightDoNothing:f}
 ]
     """
-
-    assert len(X.shape) == 2
-    assert len(y.shape) == 1
-    assert X.shape[0] == y.shape[0]
-    if weights is not None:
-        assert len(weights.shape) == 1
-        assert X.shape[0] == weights.shape[0]
 
     if X.shape[1] == 1:
         X_str = 'transpose([' + str(X.tolist()).replace(']', '').replace(',', '').replace('[', '') + '])'
