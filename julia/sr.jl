@@ -793,7 +793,11 @@ function fullRun(niterations::Integer;
         dominating = PopMember[]
         open(hofFile, "w") do io
             debug(verbosity, "\n")
-            debug(verbosity, "Total cycles per second: $(round(Int, equations_created_per_second, sigdigits=3))\n")
+            if k == 1
+                debug(verbosity, "Total cycles per second (first round is slower due to compilation): $(round(equations_created_per_second, sigdigits=3))\n")
+            else
+                debug(verbosity, "Total cycles per second: $(round(equations_created_per_second, sigdigits=3))\n")
+            end
             debug(verbosity, "Hall of Fame:")
             debug(verbosity, "-----------------------------------------")
             debug(verbosity, "Complexity \t MSE \t Equation")
