@@ -3,24 +3,34 @@
 [![DOI](https://zenodo.org/badge/295391759.svg)](https://zenodo.org/badge/latestdoi/295391759)
 
 **Symbolic regression built on Julia, and interfaced by Python.
-Uses regularized evolution and simulated annealing.**
+Uses regularized evolution, simulated annealing, and gradient-free optimization.**
 
-Backstory: we used the original
-[eureqa](https://www.creativemachineslab.com/eureqa.html)
-in our [paper](https://arxiv.org/abs/2006.11287) to
-convert a graph neural network into
-an analytic equation describing dark matter overdensity. However,
+Symbolic regression is a very interpretable machine learning algorithm
+for low-dimensional problems: these tools search equation space
+to find algebraic relations that approximate a dataset.
+
+One can also
+extend these approaches to higher-dimensional
+spaces by using a neural network as proxy, as explained in 
+https://arxiv.org/abs/2006.11287, where we apply
+it to N-body problems. Here, one essentially uses
+symbolic regression to convert a neural net
+to an analytic equation. Thus, these tools simultaneously present
+an explicit and powerful way to interpret deep models.
+
+
+*Backstory:*
+
+Previously, we have used
+[eureqa](https://www.creativemachineslab.com/eureqa.html),
+which is a very efficient and user-friendly tool. However,
 eureqa is GUI-only, doesn't allow for user-defined
 operators, has no distributed capabilities,
-and has become proprietary. Thus, the goal
+and has become proprietary (and recently been merged into an online
+service). Thus, the goal
 of this package is to have an open-source symbolic regression tool
 as efficient as eureqa, while also exposing a configurable
 python interface.
-
-The algorithms here implement regularized evolution, as in
-[AutoML-Zero](https://arxiv.org/abs/2003.03384),
-but with additional algorithmic changes such as simulated
-annealing, and classical optimization of constants.
 
 
 # Installation
