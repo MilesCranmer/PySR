@@ -1,0 +1,11 @@
+language: julia
+os: linux
+dist: bionic
+
+addons:
+    apt:
+        packages:
+            - python3-pip
+
+script:
+    - ./test/travis.sh
