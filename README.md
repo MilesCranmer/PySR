@@ -272,6 +272,8 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [x] Rename package to avoid trademark issues
     - PySR?
 - [x] Put on PyPI
+- [x] Treat baseline as a solution.
+- [x] Print score alongside MSE: \delta \log(MSE)/\delta \log(complexity)
 - [ ] Use @fastmath
 - [ ] Refresh screen rather than dumping to stdout?
 - [ ] Test suite

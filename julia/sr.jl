@@ -1,4 +1,5 @@
 import Optim
+using Printf
 
 const maxdegree = 2
 const actualMaxsize = maxsize + maxdegree
@@ -844,11 +845,16 @@ function fullRun(niterations::Integer;
         elapsed = time() - last_print_time
         if elapsed > print_every_n_seconds
             # Dominating pareto curve - must be better than all simpler equations
-            debug(verbosity, "\n")
-            debug(verbosity, "Cycles per second: $(round(num_equations/elapsed, sigdigits=3))")
-            debug(verbosity, "Hall of Fame:")
-            debug(verbosity, "-----------------------------------------")
-            debug(verbosity, "Complexity \t MSE \t Equation")
+            @printf("\n")
+            @printf("Cycles per second: %.3e\n", round(num_equations/elapsed, sigdigits=3))
+            @printf("Hall of Fame:\n")
+            @printf("-----------------------------------------\n")
+            @printf("%-10s  %-8s  %-8s  %-8s\n", "Complexity", "MSE", "Score", "Equation")
+            curMSE = baselineSSE ./ len
+            @printf("%-10d  %-5.3e  %-8s  %-.f\n", 0, curMSE, "NaN", avgy)
+            lastMSE = curMSE
+            lastComplexity = size
+
             for size=1:actualMaxsize
                 if hallOfFame.exists[size]
                     member = hallOfFame.members[size]
@@ -856,7 +862,12 @@ function fullRun(niterations::Integer;
                     numberSmallerAndBetter = sum([curMSE > MSE(evalTreeArray(hallOfFame.members[i].tree), y) for i=1:(size-1)])
                     betterThanAllSmaller = (numberSmallerAndBetter == 0)
                     if betterThanAllSmaller
-                        debug(verbosity, "$size \t $(curMSE) \t $(stringTree(member.tree))")
+                        delta_c = size - lastComplexity
+                        delta_l_mse = log(curMSE) - log(lastMSE)
+                        score = convert(Float32, -delta_l_mse/log(delta_c))
+                        @printf("%-10d  %-5.3e  %-5.3e  %-s\n" , size, curMSE, score, stringTree(member.tree))
+                        lastMSE = curMSE
+                        lastComplexity = size
                     end
                 end
             end
