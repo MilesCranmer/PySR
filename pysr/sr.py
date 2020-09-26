@@ -197,7 +197,7 @@ const weights = convert(Array{Float32, 1}, """f"{weight_str})"
     with open(f'/tmp/.runfile_{rand_string}.jl', 'w') as f:
         print(f'@everywhere include("/tmp/.hyperparams_{rand_string}.jl")', file=f)
         print(f'@everywhere include("/tmp/.dataset_{rand_string}.jl")', file=f)
-        print(f'include("{pkg_directory}/sr.jl")', file=f)
+        print(f'@everywhere include("{pkg_directory}/sr.jl")', file=f)
         print(f'fullRun({niterations:d}, npop={npop:d}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})', file=f)
         print(f'rmprocs(nprocs)', file=f)
 
