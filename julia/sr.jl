@@ -761,7 +761,7 @@ function fullRun(niterations::Integer;
         allPops[i] = @spawnat :any run(fetch(allPops[i]), ncyclesperiteration, verbosity=verbosity)
     end
     println("Started!")
-    cycles_complete = nprocs * 10
+    cycles_complete = nprocs * niterations
 
     last_print_time = time()
     num_equations = 0.0
@@ -845,7 +845,7 @@ function fullRun(niterations::Integer;
         if elapsed > print_every_n_seconds
             # Dominating pareto curve - must be better than all simpler equations
             debug(verbosity, "\n")
-            debug(verbosity, "Cycles per second: $(num_equations/elapsed)")
+            debug(verbosity, "Cycles per second: $(round(num_equations/elapsed, sigdigits=3))")
             debug(verbosity, "Hall of Fame:")
             debug(verbosity, "-----------------------------------------")
             debug(verbosity, "Complexity \t MSE \t Equation")

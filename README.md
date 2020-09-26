@@ -233,7 +233,6 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 # TODO
 
 - [x] Async threading, and have a server of equations. So that threads aren't waiting for others to finish.
-    - This is a huge bottleneck right now.
 - [x] Print out speed of equation evaluation over time. Measure time it takes per cycle
 - [x] Add ability to pass an operator as an anonymous function string. E.g., `binary_operators=["g(x, y) = x+y"]`.
 - [x] Add error bar capability (thanks Johannes Buchner for suggestion)
