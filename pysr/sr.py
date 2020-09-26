@@ -147,6 +147,9 @@ def pysr(X=None, y=None, weights=None,
             function_name = op[:first_non_char]
             op_list[i] = function_name
 
+    number_total_procs = procs
+    if slurm_cluster:
+        number_total_procs *= cluster_nodes
     def_hyperparams += f"""include("{pkg_directory}/operators.jl")
 const binops = {'[' + ', '.join(binary_operators) + ']'}
 const unaops = {'[' + ', '.join(unary_operators) + ']'}
@@ -159,7 +162,7 @@ const hofMigration = {'true' if hofMigration else 'false'}
 const fractionReplacedHof = {fractionReplacedHof}f0
 const shouldOptimizeConstants = {'true' if shouldOptimizeConstants else 'false'}
 const hofFile = "{equation_file}"
-const nprocs = {procs:d}
+const nprocs = {number_total_procs:d}
 const nrestarts = {nrestarts:d}
 const perturbationFactor = {perturbationFactor:f}f0
 const annealing = {"true" if annealing else "false"}
@@ -198,13 +201,14 @@ const weights = convert(Array{Float32, 1}, """f"{weight_str})"
 
     with open(f'{pkg_directory}/.runfile_{rand_string}.jl', 'w') as f:
         if slurm_cluster:
+            print(f'const cpus_per = {procs:d}', file=f)
             print(f'const np = {cluster_nodes}', file=f)
             print(f'include("{pkg_directory}/slurm.jl")', file=f)
         print(f'@everywhere include("{pkg_directory}/.hyperparams_{rand_string}.jl")', file=f)
         print(f'@everywhere include("{pkg_directory}/.dataset_{rand_string}.jl")', file=f)
         print(f'@everywhere include("{pkg_directory}/sr.jl")', file=f)
         print(f'fullRun({niterations:d}, npop={npop:d}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})', file=f)
-        print(f'rmprocs(nprocs)', file=f)
+        print(f'rmprocs()', file=f)
 
     if not slurm_cluster:
         command = [

@@ -2,7 +2,7 @@ using Distributed
 using ClusterManagers
 
 addprocs(SlurmManager(np))
-addprocs()
+addprocs(cpus_per)
 
 hosts = []
 pids = []
