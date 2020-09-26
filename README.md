@@ -292,3 +292,4 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
     - Current most expensive operations:
         - [ ] Calculating the loss function - there is duplicate calculations happening.
         - [x] Declaration of the weights array every iteration
+- [ ] Idea: use gradient of equation with respect to each operator (perhaps simply add to each operator) to tell which part is the most "sensitive" to changes. Then, perhaps insert/delete/mutate on that part of the tree?
