@@ -762,6 +762,11 @@ function fullRun(niterations::Integer;
     end
     println("Started!")
     cycles_complete = nprocs * 10
+
+    last_print_time = time()
+    num_equations = 0.0
+    print_every_n_seconds = 1
+
     while cycles_complete > 0
         for i=1:nprocs
             if isready(allPops[i])
@@ -782,10 +787,6 @@ function fullRun(niterations::Integer;
                 # Dominating pareto curve - must be better than all simpler equations
                 dominating = PopMember[]
                 open(hofFile, "w") do io
-                    debug(verbosity, "\n")
-                    debug(verbosity, "Hall of Fame:")
-                    debug(verbosity, "-----------------------------------------")
-                    debug(verbosity, "Complexity \t MSE \t Equation")
                     println(io,"Complexity|MSE|Equation")
                     for size=1:actualMaxsize
                         if hallOfFame.exists[size]
@@ -794,13 +795,11 @@ function fullRun(niterations::Integer;
                             numberSmallerAndBetter = sum([curMSE > MSE(evalTreeArray(hallOfFame.members[i].tree), y) for i=1:(size-1)])
                             betterThanAllSmaller = (numberSmallerAndBetter == 0)
                             if betterThanAllSmaller
-                                debug(verbosity, "$size \t $(curMSE) \t $(stringTree(member.tree))")
                                 println(io, "$size|$(curMSE)|$(stringTree(member.tree))")
                                 push!(dominating, member)
                             end
                         end
                     end
-                    debug(verbosity, "")
                 end
 
                 # Try normal copy otherwise.
@@ -838,9 +837,33 @@ function fullRun(niterations::Integer;
                 end
 
                 cycles_complete -= 1
+                num_equations += ncyclesperiteration * npop / 10.0
             end
         end
         sleep(1e-3)
+        elapsed = time() - last_print_time
+        if elapsed > print_every_n_seconds
+            # Dominating pareto curve - must be better than all simpler equations
+            debug(verbosity, "\n")
+            debug(verbosity, "Cycles per second: $(num_equations/elapsed)")
+            debug(verbosity, "Hall of Fame:")
+            debug(verbosity, "-----------------------------------------")
+            debug(verbosity, "Complexity \t MSE \t Equation")
+            for size=1:actualMaxsize
+                if hallOfFame.exists[size]
+                    member = hallOfFame.members[size]
+                    curMSE = MSE(evalTreeArray(member.tree), y)
+                    numberSmallerAndBetter = sum([curMSE > MSE(evalTreeArray(hallOfFame.members[i].tree), y) for i=1:(size-1)])
+                    betterThanAllSmaller = (numberSmallerAndBetter == 0)
+                    if betterThanAllSmaller
+                        debug(verbosity, "$size \t $(curMSE) \t $(stringTree(member.tree))")
+                    end
+                end
+            end
+            debug(verbosity, "")
+            last_print_time = time()
+            num_equations = 0.0
+        end
     end
 end
 
