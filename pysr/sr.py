@@ -5,7 +5,8 @@ import pathlib
 import numpy as np
 import pandas as pd
 
-def pysr(X=None, y=None, weights=None, threads=4,
+def pysr(X=None, y=None, weights=None,
+            procs=4,
             niterations=100,
             ncyclesperiteration=300,
             binary_operators=["plus", "mult"],
@@ -35,6 +36,7 @@ def pysr(X=None, y=None, weights=None, threads=4,
             test='simple1',
             verbosity=1e9,
             maxsize=20,
+            threads=None, #deprecated
         ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
@@ -43,9 +45,7 @@ def pysr(X=None, y=None, weights=None, threads=4,
 
     :param X: np.ndarray, 2D array. Rows are examples, columns are features.
     :param y: np.ndarray, 1D array. Rows are examples.
-    :param threads: int, Number of threads (=number of populations running).
-        You can have more threads than cores - it actually makes it more
-        efficient.
+    :param procs: int, Number of processes (=number of populations running).
     :param niterations: int, Number of iterations of the algorithm to run. The best
         equations are printed, and migrate between populations, at the
         end of each.
@@ -91,6 +91,8 @@ def pysr(X=None, y=None, weights=None, threads=4,
         (as strings).
 
     """
+    if threads is not None:
+        raise ValueError("The threads kwarg is deprecated. Use procs.")
 
     # Check for potential errors before they happen
     assert len(binary_operators) > 0
@@ -155,7 +157,7 @@ const hofMigration = {'true' if hofMigration else 'false'}
 const fractionReplacedHof = {fractionReplacedHof}f0
 const shouldOptimizeConstants = {'true' if shouldOptimizeConstants else 'false'}
 const hofFile = "{equation_file}"
-const nthreads = {threads:d}
+const nprocs = {procs:d}
 const nrestarts = {nrestarts:d}
 const perturbationFactor = {perturbationFactor:f}f0
 const annealing = {"true" if annealing else "false"}
@@ -192,12 +194,18 @@ const weights = convert(Array{Float32, 1}, """f"{weight_str})"
     with open(f'/tmp/.dataset_{rand_string}.jl', 'w') as f:
         print(def_datasets, file=f)
 
+    with open(f'/tmp/.runfile_{rand_string}.jl', 'w') as f:
+        print(f'@everywhere include("/tmp/.hyperparams_{rand_string}.jl")', file=f)
+        print(f'@everywhere include("/tmp/.dataset_{rand_string}.jl")', file=f)
+        print(f'include("{pkg_directory}/sr.jl")', file=f)
+        print(f'fullRun({niterations:d}, npop={npop:d}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})', file=f)
+        print(f'rmprocs(nprocs)', file=f)
+
 
     command = [
         'julia -O3',
-        '--threads auto',
-        '-e',
-        f'\'include("/tmp/.hyperparams_{rand_string}.jl"); include("/tmp/.dataset_{rand_string}.jl"); include("{pkg_directory}/sr.jl"); fullRun({niterations:d}, npop={npop:d}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})\'',
+        f'-p {procs}',
+        f'/tmp/.runfile_{rand_string}.jl',
         ]
     if timeout is not None:
         command = [f'timeout {timeout}'] + command
