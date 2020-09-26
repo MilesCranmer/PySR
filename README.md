@@ -237,30 +237,8 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 
 # TODO
 
-- [ ] Async threading, and have a server of equations. So that threads aren't waiting for others to finish.
+- [x] Async threading, and have a server of equations. So that threads aren't waiting for others to finish.
     - This is a huge bottleneck right now.
-- [ ] Use @fastmath
-- [ ] Refresh screen rather than dumping to stdout?
-- [ ] Test suite
-- [ ] Add ability to save state from python
-- [ ] Add true multi-node processing, with MPI, or just file sharing. Multiple populations per core.
-- [ ] Calculate feature importances based on features we've already seen, then weight those features up in all random generations.
-- [ ] Calculate feature importances of future mutations, by looking at correlation between residual of model, and the features.
-    - Store feature importances of future, and periodically update it.
-- [ ] Implement more parts of the original Eureqa algorithms: https://www.creativemachineslab.com/eureqa.html
-- [ ] Experiment with freezing parts of model; then we only append/delete at end of tree.
-- [ ] Sympy printing
-- [ ] Sympy evaluation
-- [ ] Consider adding mutation for constant<->variable
-- [ ] Hierarchical model, so can re-use functional forms. Output of one equation goes into second equation?
-- [ ] Use NN to generate weights over all probability distribution conditional on error and existing equation, and train on some randomly-generated equations
-- [ ] Add GPU capability?
-     - Not sure if possible, as binary trees are the real bottleneck.
-- [ ] Performance:
-    - [ ] Use an enum for functions instead of storing them?
-    - Current most expensive operations:
-        - [ ] Calculating the loss function - there is duplicate calculations happening.
-        - [x] Declaration of the weights array every iteration
 - [x] Print out speed of equation evaluation over time. Measure time it takes per cycle
 - [x] Add ability to pass an operator as an anonymous function string. E.g., `binary_operators=["g(x, y) = x+y"]`.
 - [x] Add error bar capability (thanks Johannes Buchner for suggestion)
@@ -298,3 +276,25 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [x] Rename package to avoid trademark issues
     - PySR?
 - [x] Put on PyPI
+- [ ] Use @fastmath
+- [ ] Refresh screen rather than dumping to stdout?
+- [ ] Test suite
+- [ ] Add ability to save state from python
+- [ ] Add true multi-node processing, with MPI, or just file sharing. Multiple populations per core.
+- [ ] Calculate feature importances based on features we've already seen, then weight those features up in all random generations.
+- [ ] Calculate feature importances of future mutations, by looking at correlation between residual of model, and the features.
+    - Store feature importances of future, and periodically update it.
+- [ ] Implement more parts of the original Eureqa algorithms: https://www.creativemachineslab.com/eureqa.html
+- [ ] Experiment with freezing parts of model; then we only append/delete at end of tree.
+- [ ] Sympy printing
+- [ ] Sympy evaluation
+- [ ] Consider adding mutation for constant<->variable
+- [ ] Hierarchical model, so can re-use functional forms. Output of one equation goes into second equation?
+- [ ] Use NN to generate weights over all probability distribution conditional on error and existing equation, and train on some randomly-generated equations
+- [ ] Add GPU capability?
+     - Not sure if possible, as binary trees are the real bottleneck.
+- [ ] Performance:
+    - [ ] Use an enum for functions instead of storing them?
+    - Current most expensive operations:
+        - [ ] Calculating the loss function - there is duplicate calculations happening.
+        - [x] Declaration of the weights array every iteration
