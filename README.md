@@ -99,14 +99,14 @@ One can also edit `operators.jl`. See below for more options.
 ### Weighted data
 
 Here, we assign weights to each row of data
-using inverse uncertainty squared. We also use 10 threads
+using inverse uncertainty squared. We also use 10 processes
 instead of the usual 4, which creates more populations
 (one population per thread).
 ```python
 sigma = ...
 weights = 1/sigma**2
 
-equations = pysr.pysr(X, y, weights=weights, threads=10)
+equations = pysr.pysr(X, y, weights=weights, procs=10)
 ```
 
 
@@ -160,7 +160,7 @@ name as a string.
 What follows is the API reference for running the numpy interface.
 You likely don't need to tune the hyperparameters yourself,
 but if you would like, you can use `hyperopt.py` as an example.
-However, you should adjust `threads`, `niterations`,
+However, you should adjust `procs`, `niterations`,
 `binary_operators`, `unary_operators`, and `maxsize`
 to your requirements.
 
@@ -171,22 +171,17 @@ which is `hall_of_fame.csv` by default. It also prints the
 equations to stdout.
 
 ```python
-pysr(X=None, y=None, weights=None, threads=4, niterations=100, ncyclesperiteration=300, binary_operators=["plus", "mult"], unary_operators=["cos", "exp", "sin"], alpha=0.1, annealing=True, fractionReplaced=0.10, fractionReplacedHof=0.10, npop=1000, parsimony=1e-4, migration=True, hofMigration=True, shouldOptimizeConstants=True, topn=10, weightAddNode=1, weightInsertNode=3, weightDeleteNode=3, weightDoNothing=1, weightMutateConstant=10, weightMutateOperator=1, weightRandomize=1, weightSimplify=0.01, perturbationFactor=1.0, nrestarts=3, timeout=None, equation_file='hall_of_fame.csv', test='simple1', verbosity=1e9, maxsize=20)
+pysr(X=None, y=None, weights=None, procs=4, niterations=100, ncyclesperiteration=300, binary_operators=["plus", "mult"], unary_operators=["cos", "exp", "sin"], alpha=0.1, annealing=True, fractionReplaced=0.10, fractionReplacedHof=0.10, npop=1000, parsimony=1e-4, migration=True, hofMigration=True, shouldOptimizeConstants=True, topn=10, weightAddNode=1, weightInsertNode=3, weightDeleteNode=3, weightDoNothing=1, weightMutateConstant=10, weightMutateOperator=1, weightRandomize=1, weightSimplify=0.01, perturbationFactor=1.0, nrestarts=3, timeout=None, equation_file='hall_of_fame.csv', test='simple1', verbosity=1e9, maxsize=20)
 ```
 
 Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
-Note: most default parameters have been tuned over several example
-equations, but you should adjust `threads`, `niterations`,
-`binary_operators`, `unary_operators` to your requirements.
 
 **Arguments**:
 
 - `X`: np.ndarray, 2D array. Rows are examples, columns are features.
 - `y`: np.ndarray, 1D array. Rows are examples.
 - `weights`: np.ndarray, 1D array. Same shape as `y`. Optional weighted sum (e.g., 1/error^2).
-- `threads`: int, Number of threads (=number of populations running).
-You can have more threads than cores - it actually makes it more
-efficient.
+- `procs`: int, Number of processes running (=number of populations running).
 - `niterations`: int, Number of iterations of the algorithm to run. The best
 equations are printed, and migrate between populations, at the
 end of each.
