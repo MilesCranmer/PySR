@@ -37,6 +37,7 @@ def pysr(X=None, y=None, weights=None,
             verbosity=1e9,
             maxsize=20,
             threads=None, #deprecated
+            julia_optimization=3,
         ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
@@ -45,6 +46,8 @@ def pysr(X=None, y=None, weights=None,
 
     :param X: np.ndarray, 2D array. Rows are examples, columns are features.
     :param y: np.ndarray, 1D array. Rows are examples.
+    :param weights: np.ndarray, 1D array. Each row is how to weight the
+        mean-square-error loss on weights.
     :param procs: int, Number of processes (=number of populations running).
     :param niterations: int, Number of iterations of the algorithm to run. The best
         equations are printed, and migrate between populations, at the
@@ -87,6 +90,7 @@ def pysr(X=None, y=None, weights=None,
     :param equation_file: str, Where to save the files (.csv separated by |)
     :param test: str, What test to run, if X,y not passed.
     :param maxsize: int, Max size of an equation.
+    :param julia_optimization: int, Optimization level (0, 1, 2, 3)
     :returns: pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
         (as strings).
 
@@ -203,7 +207,7 @@ const weights = convert(Array{Float32, 1}, """f"{weight_str})"
 
 
     command = [
-        'julia -O3',
+        f'julia -O{julia_optimization:d}',
         f'-p {procs}',
         f'/tmp/.runfile_{rand_string}.jl',
         ]
