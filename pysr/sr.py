@@ -36,6 +36,8 @@ def pysr(X=None, y=None, weights=None,
             test='simple1',
             verbosity=1e9,
             maxsize=20,
+            slurm_cluster=False,
+            cluster_nodes=4,
             threads=None, #deprecated
         ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
@@ -188,34 +190,42 @@ const y = convert(Array{Float32, 1}, """f"{y_str})"
         def_datasets += """
 const weights = convert(Array{Float32, 1}, """f"{weight_str})"
 
-    with open(f'/tmp/.hyperparams_{rand_string}.jl', 'w') as f:
+    with open(f'{pkg_directory}/.hyperparams_{rand_string}.jl', 'w') as f:
         print(def_hyperparams, file=f)
 
-    with open(f'/tmp/.dataset_{rand_string}.jl', 'w') as f:
+    with open(f'{pkg_directory}/.dataset_{rand_string}.jl', 'w') as f:
         print(def_datasets, file=f)
 
-    with open(f'/tmp/.runfile_{rand_string}.jl', 'w') as f:
-        print(f'@everywhere include("/tmp/.hyperparams_{rand_string}.jl")', file=f)
-        print(f'@everywhere include("/tmp/.dataset_{rand_string}.jl")', file=f)
+    with open(f'{pkg_directory}/.runfile_{rand_string}.jl', 'w') as f:
+        if slurm_cluster:
+            print(f'const np = {cluster_nodes}', file=f)
+            print(f'include("{pkg_directory}/slurm.jl")', file=f)
+        print(f'@everywhere include("{pkg_directory}/.hyperparams_{rand_string}.jl")', file=f)
+        print(f'@everywhere include("{pkg_directory}/.dataset_{rand_string}.jl")', file=f)
         print(f'@everywhere include("{pkg_directory}/sr.jl")', file=f)
         print(f'fullRun({niterations:d}, npop={npop:d}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})', file=f)
         print(f'rmprocs(nprocs)', file=f)
 
+    if not slurm_cluster:
+        command = [
+            'julia -O3',
+            f'-p {procs}',
+            f'{pkg_directory}/.runfile_{rand_string}.jl',
+            ]
 
-    command = [
-        'julia -O3',
-        f'-p {procs}',
-        f'/tmp/.runfile_{rand_string}.jl',
-        ]
-    if timeout is not None:
-        command = [f'timeout {timeout}'] + command
-    cur_cmd = ' '.join(command)
-    print("Running on", cur_cmd)
-    os.system(cur_cmd)
-    try:
-        output = pd.read_csv(equation_file, sep="|")
-    except FileNotFoundError:
-        print("Couldn't find equation file!")
-        output = pd.DataFrame()
-    return output
+        if timeout is not None:
+            command = [f'timeout {timeout}'] + command
+
+        cur_cmd = ' '.join(command)
+        print("Running on", cur_cmd)
+        os.system(cur_cmd)
+        try:
+            output = pd.read_csv(equation_file, sep="|")
+        except FileNotFoundError:
+            print("Couldn't find equation file!")
+            output = pd.DataFrame()
+        return output
+    else:
+        # Don't run from python.
+        return f'{pkg_directory}/.runfile_{rand_string}.jl'
 
