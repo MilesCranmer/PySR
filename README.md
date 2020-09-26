@@ -1,6 +1,8 @@
 # PySR.jl
 
 [![DOI](https://zenodo.org/badge/295391759.svg)](https://zenodo.org/badge/latestdoi/295391759)
+[![PyPI version](https://badge.fury.io/py/pysr.svg)](https://badge.fury.io/py/pysr)
+[![Build Status](https://travis-ci.com/MilesCranmer/PySR.svg?branch=master)](https://travis-ci.com/MilesCranmer/PySR)
 
 **Symbolic regression built on Julia, and interfaced by Python.
 Uses regularized evolution, simulated annealing, and gradient-free optimization.**
