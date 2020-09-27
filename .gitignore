@@ -1,3 +1,4 @@
 .dataset*.jl
 .hyperparams*.jl
 *.csv
+.runfile*
