@@ -7,6 +7,7 @@ import pandas as pd
 
 def pysr(X=None, y=None, weights=None,
             procs=4,
+            populations=None,
             niterations=100,
             ncyclesperiteration=300,
             binary_operators=["plus", "mult"],
@@ -49,6 +50,7 @@ def pysr(X=None, y=None, weights=None,
     :param weights: np.ndarray, 1D array. Each row is how to weight the
         mean-square-error loss on weights.
     :param procs: int, Number of processes (=number of populations running).
+    :param populations: int, Number of populations running; by default=procs.
     :param niterations: int, Number of iterations of the algorithm to run. The best
         equations are printed, and migrate between populations, at the
         end of each.
@@ -108,6 +110,8 @@ def pysr(X=None, y=None, weights=None,
         assert len(weights.shape) == 1
         assert X.shape[0] == weights.shape[0]
 
+    if populations is None:
+        populations = procs
 
     rand_string = f'{"".join([str(np.random.rand())[2] for i in range(20)])}'
 
@@ -162,6 +166,7 @@ const fractionReplacedHof = {fractionReplacedHof}f0
 const shouldOptimizeConstants = {'true' if shouldOptimizeConstants else 'false'}
 const hofFile = "{equation_file}"
 const nprocs = {procs:d}
+const npopulations = {populations:d}
 const nrestarts = {nrestarts:d}
 const perturbationFactor = {perturbationFactor:f}f0
 const annealing = {"true" if annealing else "false"}

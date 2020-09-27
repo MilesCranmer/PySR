@@ -748,28 +748,27 @@ function fullRun(niterations::Integer;
                )
     # 1. Start a population on every process
     allPops = Future[]
-    bestSubPops = [Population(1) for j=1:nprocs]
+    bestSubPops = [Population(1) for j=1:npopulations]
     hallOfFame = HallOfFame()
 
-    for i=1:nprocs
-        npop=300
-        future = @spawnat :any Population(npop, 3)
+    for i=1:npopulations
+        future = @spawn Population(npop, 3)
         push!(allPops, future)
     end
 
     # # 2. Start the cycle on every process:
-    for i=1:nprocs
-        allPops[i] = @spawnat :any run(fetch(allPops[i]), ncyclesperiteration, verbosity=verbosity)
+    @sync for i=1:npopulations
+        @async allPops[i] = @spawn run(fetch(allPops[i]), ncyclesperiteration, verbosity=verbosity)
     end
     println("Started!")
-    cycles_complete = nprocs * niterations
+    cycles_complete = npopulations * niterations
 
     last_print_time = time()
     num_equations = 0.0
     print_every_n_seconds = 1
 
     while cycles_complete > 0
-        for i=1:nprocs
+        for i=1:npopulations
             if isready(allPops[i])
                 cur_pop = fetch(allPops[i])
                 bestSubPops[i] = bestSubPop(cur_pop, topn=topn)
@@ -828,7 +827,7 @@ function fullRun(niterations::Integer;
                     end
                 end
 
-                allPops[i] = @spawnat :any let
+                @async allPops[i] = @spawn let
                     tmp_pop = run(cur_pop, ncyclesperiteration, verbosity=verbosity)
                     for j=1:tmp_pop.n
                         if rand() < 0.1
