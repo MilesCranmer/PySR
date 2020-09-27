@@ -768,6 +768,7 @@ function fullRun(niterations::Integer;
     last_print_time = time()
     num_equations = 0.0
     print_every_n_seconds = 5
+    equation_speed = Float32[]
 
     for i=1:npopulations
         # Start listening for each population to finish:
@@ -857,10 +858,18 @@ function fullRun(niterations::Integer;
         end
         sleep(1e-3)
         elapsed = time() - last_print_time
-        if elapsed > print_every_n_seconds
+        #Update if time has passed, and some new equations generated.
+        if elapsed > print_every_n_seconds && num_equations > 0.0
             # Dominating pareto curve - must be better than all simpler equations
+            current_speed = num_equations/elapsed
+            average_over_m_measurements = 10 #for print_every...=5, this gives 50 second running average
+            push!(equation_speed, current_speed)
+            if length(equation_speed) > average_over_m_measurements
+                deleteat!(equation_speed, 1)
+            end
+            average_speed = sum(equation_speed)/length(equation_speed)
             @printf("\n")
-            @printf("Cycles per second: %.3e\n", round(num_equations/elapsed, sigdigits=3))
+            @printf("Cycles per second: %.3e\n", round(average_speed, sigdigits=3))
             @printf("Hall of Fame:\n")
             @printf("-----------------------------------------\n")
             @printf("%-10s  %-8s   %-8s  %-8s\n", "Complexity", "MSE", "Score", "Equation")
