@@ -3,7 +3,7 @@ os: linux
 dist: bionic
 
 julia:
-    - nightly
+    - 1
 
 addons:
     apt:
