@@ -1,4 +1,5 @@
 import Optim
+using Printf
 
 const maxdegree = 2
 const actualMaxsize = maxsize + maxdegree
@@ -747,30 +748,39 @@ function fullRun(niterations::Integer;
                )
     # 1. Start a population on every process
     allPops = Future[]
-    bestSubPops = [Population(1) for j=1:nprocs]
+    # Set up a channel to send finished populations back to head node
+    channels = [RemoteChannel(1) for j=1:npopulations]
+    bestSubPops = [Population(1) for j=1:npopulations]
     hallOfFame = HallOfFame()
 
-    for i=1:nprocs
-        npop=300
-        future = @spawnat :any Population(npop, 3)
+    for i=1:npopulations
+        future = @spawn Population(npop, 3)
         push!(allPops, future)
     end
 
     # # 2. Start the cycle on every process:
-    for i=1:nprocs
-        allPops[i] = @spawnat :any run(fetch(allPops[i]), ncyclesperiteration, verbosity=verbosity)
+    @sync for i=1:npopulations
+        @async allPops[i] = @spawnat :any run(fetch(allPops[i]), ncyclesperiteration, verbosity=verbosity)
     end
     println("Started!")
-    cycles_complete = nprocs * niterations
+    cycles_complete = npopulations * niterations
 
     last_print_time = time()
     num_equations = 0.0
-    print_every_n_seconds = 1
+    print_every_n_seconds = 5
+    equation_speed = Float32[]
+
+    for i=1:npopulations
+        # Start listening for each population to finish:
+        @async put!(channels[i], fetch(allPops[i]))
+    end
 
     while cycles_complete > 0
-        for i=1:nprocs
-            if isready(allPops[i])
-                cur_pop = fetch(allPops[i])
+        for i=1:npopulations
+            # Non-blocking check if a population is ready:
+            if isready(channels[i])
+                # Take the fetch operation from the channel since its ready
+                cur_pop = take!(channels[i])
                 bestSubPops[i] = bestSubPop(cur_pop, topn=topn)
 
                 #Try normal copy...
@@ -792,7 +802,12 @@ function fullRun(niterations::Integer;
                         if hallOfFame.exists[size]
                             member = hallOfFame.members[size]
                             curMSE = MSE(evalTreeArray(member.tree), y)
-                            numberSmallerAndBetter = sum([curMSE > MSE(evalTreeArray(hallOfFame.members[i].tree), y) for i=1:(size-1)])
+                            numberSmallerAndBetter = 0
+                            for i=1:(size-1)
+                                if (hallOfFame.exists[size] && curMSE > MSE(evalTreeArray(hallOfFame.members[i].tree), y))
+                                    numberSmallerAndBetter += 1
+                                end
+                            end
                             betterThanAllSmaller = (numberSmallerAndBetter == 0)
                             if betterThanAllSmaller
                                 println(io, "$size|$(curMSE)|$(stringTree(member.tree))")
@@ -835,6 +850,7 @@ function fullRun(niterations::Integer;
                     end
                     tmp_pop
                 end
+                @async put!(channels[i], fetch(allPops[i]))
 
                 cycles_complete -= 1
                 num_equations += ncyclesperiteration * npop / 10.0
@@ -842,21 +858,44 @@ function fullRun(niterations::Integer;
         end
         sleep(1e-3)
         elapsed = time() - last_print_time
-        if elapsed > print_every_n_seconds
+        #Update if time has passed, and some new equations generated.
+        if elapsed > print_every_n_seconds && num_equations > 0.0
             # Dominating pareto curve - must be better than all simpler equations
-            debug(verbosity, "\n")
-            debug(verbosity, "Cycles per second: $(round(num_equations/elapsed, sigdigits=3))")
-            debug(verbosity, "Hall of Fame:")
-            debug(verbosity, "-----------------------------------------")
-            debug(verbosity, "Complexity \t MSE \t Equation")
+            current_speed = num_equations/elapsed
+            average_over_m_measurements = 10 #for print_every...=5, this gives 50 second running average
+            push!(equation_speed, current_speed)
+            if length(equation_speed) > average_over_m_measurements
+                deleteat!(equation_speed, 1)
+            end
+            average_speed = sum(equation_speed)/length(equation_speed)
+            @printf("\n")
+            @printf("Cycles per second: %.3e\n", round(average_speed, sigdigits=3))
+            @printf("Hall of Fame:\n")
+            @printf("-----------------------------------------\n")
+            @printf("%-10s  %-8s   %-8s  %-8s\n", "Complexity", "MSE", "Score", "Equation")
+            curMSE = baselineSSE / len
+            @printf("%-10d  %-8.3e  %-8.3e  %-.f\n", 0, curMSE, 0f0, avgy)
+            lastMSE = curMSE
+            lastComplexity = 0
+
             for size=1:actualMaxsize
                 if hallOfFame.exists[size]
                     member = hallOfFame.members[size]
                     curMSE = MSE(evalTreeArray(member.tree), y)
-                    numberSmallerAndBetter = sum([curMSE > MSE(evalTreeArray(hallOfFame.members[i].tree), y) for i=1:(size-1)])
+                    numberSmallerAndBetter = 0
+                    for i=1:(size-1)
+                        if (hallOfFame.exists[size] && curMSE > MSE(evalTreeArray(hallOfFame.members[i].tree), y))
+                            numberSmallerAndBetter += 1
+                        end
+                    end
                     betterThanAllSmaller = (numberSmallerAndBetter == 0)
                     if betterThanAllSmaller
-                        debug(verbosity, "$size \t $(curMSE) \t $(stringTree(member.tree))")
+                        delta_c = size - lastComplexity
+                        delta_l_mse = log(curMSE/lastMSE)
+                        score = convert(Float32, -delta_l_mse/delta_c)
+                        @printf("%-10d  %-8.3e  %-8.3e  %-s\n" , size, curMSE, score, stringTree(member.tree))
+                        lastMSE = curMSE
+                        lastComplexity = size
                     end
                 end
             end

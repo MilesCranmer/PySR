@@ -79,7 +79,7 @@ def run_trial(args):
                 print(f"Starting trial {j}")
                 trial = pysr.pysr(
                     test=f"simple{i}",
-                    threads=4,
+                    procs=4,
                     binary_operators=["plus", "mult", "pow", "div"],
                     unary_operators=["cos", "exp", "sin", "loga", "abs"],
                     equation_file=equation_file,

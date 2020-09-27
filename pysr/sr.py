@@ -7,6 +7,7 @@ import pandas as pd
 
 def pysr(X=None, y=None, weights=None,
             procs=4,
+            populations=None,
             niterations=100,
             ncyclesperiteration=300,
             binary_operators=["plus", "mult"],
@@ -39,6 +40,7 @@ def pysr(X=None, y=None, weights=None,
             slurm_cluster=False,
             cluster_nodes=4,
             threads=None, #deprecated
+            julia_optimization=3,
         ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
@@ -47,7 +49,10 @@ def pysr(X=None, y=None, weights=None,
 
     :param X: np.ndarray, 2D array. Rows are examples, columns are features.
     :param y: np.ndarray, 1D array. Rows are examples.
+    :param weights: np.ndarray, 1D array. Each row is how to weight the
+        mean-square-error loss on weights.
     :param procs: int, Number of processes (=number of populations running).
+    :param populations: int, Number of populations running; by default=procs.
     :param niterations: int, Number of iterations of the algorithm to run. The best
         equations are printed, and migrate between populations, at the
         end of each.
@@ -89,6 +94,7 @@ def pysr(X=None, y=None, weights=None,
     :param equation_file: str, Where to save the files (.csv separated by |)
     :param test: str, What test to run, if X,y not passed.
     :param maxsize: int, Max size of an equation.
+    :param julia_optimization: int, Optimization level (0, 1, 2, 3)
     :returns: pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
         (as strings).
 
@@ -106,6 +112,8 @@ def pysr(X=None, y=None, weights=None,
         assert len(weights.shape) == 1
         assert X.shape[0] == weights.shape[0]
 
+    if populations is None:
+        populations = procs
 
     rand_string = f'{"".join([str(np.random.rand())[2] for i in range(20)])}'
 
@@ -163,6 +171,7 @@ const fractionReplacedHof = {fractionReplacedHof}f0
 const shouldOptimizeConstants = {'true' if shouldOptimizeConstants else 'false'}
 const hofFile = "{equation_file}"
 const nprocs = {number_total_procs:d}
+const npopulations = {populations:d}
 const nrestarts = {nrestarts:d}
 const perturbationFactor = {perturbationFactor:f}f0
 const annealing = {"true" if annealing else "false"}
@@ -212,7 +221,7 @@ const weights = convert(Array{Float32, 1}, """f"{weight_str})"
 
     if not slurm_cluster:
         command = [
-            'julia -O3',
+            f'julia -O{julia_optimization:d}',
             f'-p {procs}',
             f'{pkg_directory}/.runfile_{rand_string}.jl',
             ]
@@ -232,4 +241,3 @@ const weights = convert(Array{Float32, 1}, """f"{weight_str})"
     else:
         # Don't run from python.
         return f'{pkg_directory}/.runfile_{rand_string}.jl'
-

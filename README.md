@@ -1,6 +1,8 @@
 # PySR.jl
 
 [![DOI](https://zenodo.org/badge/295391759.svg)](https://zenodo.org/badge/latestdoi/295391759)
+[![PyPI version](https://badge.fury.io/py/pysr.svg)](https://badge.fury.io/py/pysr)
+[![Build Status](https://travis-ci.com/MilesCranmer/PySR.svg?branch=master)](https://travis-ci.com/MilesCranmer/PySR)
 
 **Symbolic regression built on Julia, and interfaced by Python.
 Uses regularized evolution, simulated annealing, and gradient-free optimization.**
@@ -159,7 +161,7 @@ name as a string.
 
 What follows is the API reference for running the numpy interface.
 You likely don't need to tune the hyperparameters yourself,
-but if you would like, you can use `hyperopt.py` as an example.
+but if you would like, you can use `hyperparamopt.py` as an example.
 However, you should adjust `procs`, `niterations`,
 `binary_operators`, `unary_operators`, and `maxsize`
 to your requirements.
@@ -270,11 +272,16 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [x] Rename package to avoid trademark issues
     - PySR?
 - [x] Put on PyPI
+- [x] Treat baseline as a solution.
+- [x] Print score alongside MSE: \delta \log(MSE)/\delta \log(complexity)
+- [ ] Add true multi-node processing, with MPI, or just file sharing. Multiple populations per core.
+    - Ongoing in cluster branch
+- [ ] Dump scores alongside MSE to .csv (and return with Pandas).
+- [ ] Consider returning only the equation of interest; rather than all equations.
 - [ ] Use @fastmath
 - [ ] Refresh screen rather than dumping to stdout?
 - [ ] Test suite
 - [ ] Add ability to save state from python
-- [ ] Add true multi-node processing, with MPI, or just file sharing. Multiple populations per core.
 - [ ] Calculate feature importances based on features we've already seen, then weight those features up in all random generations.
 - [ ] Calculate feature importances of future mutations, by looking at correlation between residual of model, and the features.
     - Store feature importances of future, and periodically update it.
@@ -293,3 +300,7 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
         - [ ] Calculating the loss function - there is duplicate calculations happening.
         - [x] Declaration of the weights array every iteration
 - [ ] Idea: use gradient of equation with respect to each operator (perhaps simply add to each operator) to tell which part is the most "sensitive" to changes. Then, perhaps insert/delete/mutate on that part of the tree?
+- [ ] For hierarchical idea: after running some number of iterations, do a search for "most common pattern". Then, turn that subtree into its own operator.
+- [ ] Additional degree operators?
+- [ ] Tree crossover? I.e., can take as input a part of the same equation, so long as it is the same level or below?
+- [ ] Create flexible way of providing "simplification recipes." I.e., plus(plus(T, C), C) => plus(T, +(C, C)). The user could pass these.
