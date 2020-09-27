@@ -300,3 +300,7 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
         - [ ] Calculating the loss function - there is duplicate calculations happening.
         - [x] Declaration of the weights array every iteration
 - [ ] Idea: use gradient of equation with respect to each operator (perhaps simply add to each operator) to tell which part is the most "sensitive" to changes. Then, perhaps insert/delete/mutate on that part of the tree?
+- [ ] For hierarchical idea: after running some number of iterations, do a search for "most common pattern". Then, turn that subtree into its own operator.
+- [ ] Additional degree operators?
+- [ ] Tree crossover? I.e., can take as input a part of the same equation, so long as it is the same level or below?
+- [ ] Create flexible way of providing "simplification recipes." I.e., plus(plus(T, C), C) => plus(T, +(C, C)). The user could pass these.
