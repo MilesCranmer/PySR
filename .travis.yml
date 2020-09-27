@@ -2,11 +2,19 @@ language: julia
 os: linux
 dist: bionic
 
+julia:
+    - nightly
+
 addons:
     apt:
         packages:
             - python3-pip
             - python3-setuptools
 
+
+before_script:
+    - export PATH=$HOME/.local/bin:$PATH
+
 script:
+    - julia --color=yes -e 'import Pkg; Pkg.add("Optim"); Pkg.add("SpecialFunctions")'
     - ./test/travis.sh
