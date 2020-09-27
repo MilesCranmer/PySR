@@ -855,7 +855,7 @@ function fullRun(niterations::Integer;
             @printf("Hall of Fame:\n")
             @printf("-----------------------------------------\n")
             @printf("%-10s  %-8s   %-8s  %-8s\n", "Complexity", "MSE", "Score", "Equation")
-            curMSE = baselineSSE ./ len
+            curMSE = baselineSSE / len
             @printf("%-10d  %-8.3e  %-8s   %-.f\n", 0, curMSE, "NaN", avgy)
             lastMSE = curMSE
             lastComplexity = 0
@@ -873,8 +873,8 @@ function fullRun(niterations::Integer;
                     betterThanAllSmaller = (numberSmallerAndBetter == 0)
                     if betterThanAllSmaller
                         delta_c = size - lastComplexity
-                        delta_l_mse = log(curMSE) - log(lastMSE)
-                        score = convert(Float32, -delta_l_mse/log(delta_c))
+                        delta_l_mse = log(curMSE/lastMSE)
+                        score = convert(Float32, -delta_l_mse/delta_c)
                         @printf("%-10d  %-8.3e  %-8.3e  %-s\n" , size, curMSE, score, stringTree(member.tree))
                         lastMSE = curMSE
                         lastComplexity = size
