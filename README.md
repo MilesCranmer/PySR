@@ -274,11 +274,14 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [x] Put on PyPI
 - [x] Treat baseline as a solution.
 - [x] Print score alongside MSE: \delta \log(MSE)/\delta \log(complexity)
+- [ ] Add true multi-node processing, with MPI, or just file sharing. Multiple populations per core.
+    - Ongoing in cluster branch
+- [ ] Dump scores alongside MSE to .csv (and return with Pandas).
+- [ ] Consider returning only the equation of interest; rather than all equations.
 - [ ] Use @fastmath
 - [ ] Refresh screen rather than dumping to stdout?
 - [ ] Test suite
 - [ ] Add ability to save state from python
-- [ ] Add true multi-node processing, with MPI, or just file sharing. Multiple populations per core.
 - [ ] Calculate feature importances based on features we've already seen, then weight those features up in all random generations.
 - [ ] Calculate feature importances of future mutations, by looking at correlation between residual of model, and the features.
     - Store feature importances of future, and periodically update it.
