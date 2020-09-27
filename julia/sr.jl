@@ -748,6 +748,8 @@ function fullRun(niterations::Integer;
                )
     # 1. Start a population on every process
     allPops = Future[]
+    # Set up a channel to send finished populations back to head node
+    channels = [RemoteChannel(1) for j=1:npopulations]
     bestSubPops = [Population(1) for j=1:npopulations]
     hallOfFame = HallOfFame()
 
@@ -758,19 +760,26 @@ function fullRun(niterations::Integer;
 
     # # 2. Start the cycle on every process:
     @sync for i=1:npopulations
-        @async allPops[i] = @spawn run(fetch(allPops[i]), ncyclesperiteration, verbosity=verbosity)
+        @async allPops[i] = @spawnat :any run(fetch(allPops[i]), ncyclesperiteration, verbosity=verbosity)
     end
     println("Started!")
     cycles_complete = npopulations * niterations
 
     last_print_time = time()
     num_equations = 0.0
-    print_every_n_seconds = 1
+    print_every_n_seconds = 5
+
+    for i=1:npopulations
+        # Start listening for each population to finish:
+        @async put!(channels[i], fetch(allPops[i]))
+    end
 
     while cycles_complete > 0
         for i=1:npopulations
-            if isready(allPops[i])
-                cur_pop = fetch(allPops[i])
+            # Non-blocking check if a population is ready:
+            if isready(channels[i])
+                # Take the fetch operation from the channel since its ready
+                cur_pop = take!(channels[i])
                 bestSubPops[i] = bestSubPop(cur_pop, topn=topn)
 
                 #Try normal copy...
@@ -827,7 +836,7 @@ function fullRun(niterations::Integer;
                     end
                 end
 
-                @async allPops[i] = @spawn let
+                allPops[i] = @spawnat :any let
                     tmp_pop = run(cur_pop, ncyclesperiteration, verbosity=verbosity)
                     for j=1:tmp_pop.n
                         if rand() < 0.1
@@ -840,6 +849,7 @@ function fullRun(niterations::Integer;
                     end
                     tmp_pop
                 end
+                @async put!(channels[i], fetch(allPops[i]))
 
                 cycles_complete -= 1
                 num_equations += ncyclesperiteration * npop / 10.0
