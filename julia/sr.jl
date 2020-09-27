@@ -793,7 +793,12 @@ function fullRun(niterations::Integer;
                         if hallOfFame.exists[size]
                             member = hallOfFame.members[size]
                             curMSE = MSE(evalTreeArray(member.tree), y)
-                            numberSmallerAndBetter = sum([curMSE > MSE(evalTreeArray(hallOfFame.members[i].tree), y) for i=1:(size-1)])
+                            numberSmallerAndBetter = 0
+                            for i=1:(size-1)
+                                if (hallOfFame.exists[size] && curMSE > MSE(evalTreeArray(hallOfFame.members[i].tree), y))
+                                    numberSmallerAndBetter += 1
+                                end
+                            end
                             betterThanAllSmaller = (numberSmallerAndBetter == 0)
                             if betterThanAllSmaller
                                 println(io, "$size|$(curMSE)|$(stringTree(member.tree))")
@@ -849,9 +854,9 @@ function fullRun(niterations::Integer;
             @printf("Cycles per second: %.3e\n", round(num_equations/elapsed, sigdigits=3))
             @printf("Hall of Fame:\n")
             @printf("-----------------------------------------\n")
-            @printf("%-10s  %-8s  %-8s  %-8s\n", "Complexity", "MSE", "Score", "Equation")
+            @printf("%-10s  %-8s   %-8s  %-8s\n", "Complexity", "MSE", "Score", "Equation")
             curMSE = baselineSSE ./ len
-            @printf("%-10d  %-5.3e  %-8s   %-.f\n", 0, curMSE, "NaN", avgy)
+            @printf("%-10d  %-8.3e  %-8s   %-.f\n", 0, curMSE, "NaN", avgy)
             lastMSE = curMSE
             lastComplexity = 0
 
@@ -859,13 +864,18 @@ function fullRun(niterations::Integer;
                 if hallOfFame.exists[size]
                     member = hallOfFame.members[size]
                     curMSE = MSE(evalTreeArray(member.tree), y)
-                    numberSmallerAndBetter = sum([curMSE > MSE(evalTreeArray(hallOfFame.members[i].tree), y) for i=1:(size-1)])
+                    numberSmallerAndBetter = 0
+                    for i=1:(size-1)
+                        if (hallOfFame.exists[size] && curMSE > MSE(evalTreeArray(hallOfFame.members[i].tree), y))
+                            numberSmallerAndBetter += 1
+                        end
+                    end
                     betterThanAllSmaller = (numberSmallerAndBetter == 0)
                     if betterThanAllSmaller
                         delta_c = size - lastComplexity
                         delta_l_mse = log(curMSE) - log(lastMSE)
                         score = convert(Float32, -delta_l_mse/log(delta_c))
-                        @printf("%-10d  %-5.3e  %-5.3e  %-s\n" , size, curMSE, score, stringTree(member.tree))
+                        @printf("%-10d  %-8.3e  %-8.3e  %-s\n" , size, curMSE, score, stringTree(member.tree))
                         lastMSE = curMSE
                         lastComplexity = size
                     end
