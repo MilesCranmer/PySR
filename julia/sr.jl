@@ -856,7 +856,7 @@ function fullRun(niterations::Integer;
             @printf("-----------------------------------------\n")
             @printf("%-10s  %-8s   %-8s  %-8s\n", "Complexity", "MSE", "Score", "Equation")
             curMSE = baselineSSE / len
-            @printf("%-10d  %-8.3e  %-8s   %-.f\n", 0, curMSE, "NaN", avgy)
+            @printf("%-10d  %-8.3e  %-8.3e  %-.f\n", 0, curMSE, 0f0, avgy)
             lastMSE = curMSE
             lastComplexity = 0
 
