@@ -853,7 +853,7 @@ function fullRun(niterations::Integer;
             curMSE = baselineSSE ./ len
             @printf("%-10d  %-5.3e  %-8s  %-.f\n", 0, curMSE, "NaN", avgy)
             lastMSE = curMSE
-            lastComplexity = size
+            lastComplexity = 0
 
             for size=1:actualMaxsize
                 if hallOfFame.exists[size]
