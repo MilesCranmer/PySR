@@ -161,7 +161,7 @@ name as a string.
 
 What follows is the API reference for running the numpy interface.
 You likely don't need to tune the hyperparameters yourself,
-but if you would like, you can use `hyperopt.py` as an example.
+but if you would like, you can use `hyperparamopt.py` as an example.
 However, you should adjust `procs`, `niterations`,
 `binary_operators`, `unary_operators`, and `maxsize`
 to your requirements.
