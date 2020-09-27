@@ -13,3 +13,4 @@ for i in workers()
 	push!(hosts, host)
 	push!(pids, pid)
 end
+flush(stdout)

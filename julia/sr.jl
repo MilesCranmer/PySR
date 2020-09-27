@@ -763,6 +763,7 @@ function fullRun(niterations::Integer;
         @async allPops[i] = @spawnat :any run(fetch(allPops[i]), ncyclesperiteration, verbosity=verbosity)
     end
     println("Started!")
+    flush(stdout)
     cycles_complete = npopulations * niterations
 
     last_print_time = time()
@@ -899,6 +900,7 @@ function fullRun(niterations::Integer;
                     end
                 end
             end
+            flush(stdout)
             debug(verbosity, "")
             last_print_time = time()
             num_equations = 0.0
