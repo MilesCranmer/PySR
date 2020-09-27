@@ -202,19 +202,19 @@ const y = convert(Array{Float32, 1}, """f"{y_str})"
         def_datasets += """
 const weights = convert(Array{Float32, 1}, """f"{weight_str})"
 
-    with open(f'{pkg_directory}/.hyperparams_{rand_string}.jl', 'w') as f:
+    with open(f'.hyperparams_{rand_string}.jl', 'w') as f:
         print(def_hyperparams, file=f)
 
-    with open(f'{pkg_directory}/.dataset_{rand_string}.jl', 'w') as f:
+    with open(f'.dataset_{rand_string}.jl', 'w') as f:
         print(def_datasets, file=f)
 
-    with open(f'{pkg_directory}/.runfile_{rand_string}.jl', 'w') as f:
+    with open(f'.runfile_{rand_string}.jl', 'w') as f:
         if slurm_cluster:
             print(f'const cpus_per = {procs:d}', file=f)
             print(f'const np = {cluster_nodes}', file=f)
             print(f'include("{pkg_directory}/slurm.jl")', file=f)
-        print(f'@everywhere include("{pkg_directory}/.hyperparams_{rand_string}.jl")', file=f)
-        print(f'@everywhere include("{pkg_directory}/.dataset_{rand_string}.jl")', file=f)
+        print(f'@everywhere include(".hyperparams_{rand_string}.jl")', file=f)
+        print(f'@everywhere include(".dataset_{rand_string}.jl")', file=f)
         print(f'@everywhere include("{pkg_directory}/sr.jl")', file=f)
         print('println("Loaded all files!")', file=f)
         print(f'fullRun({niterations:d}, npop={npop:d}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})', file=f)
@@ -224,7 +224,7 @@ const weights = convert(Array{Float32, 1}, """f"{weight_str})"
         command = [
             f'julia -O{julia_optimization:d}',
             f'-p {procs}',
-            f'{pkg_directory}/.runfile_{rand_string}.jl',
+            f'.runfile_{rand_string}.jl',
             ]
 
         if timeout is not None:
@@ -241,4 +241,4 @@ const weights = convert(Array{Float32, 1}, """f"{weight_str})"
         return output
     else:
         # Don't run from python.
-        return f'{pkg_directory}/.runfile_{rand_string}.jl'
+        return f'.runfile_{rand_string}.jl'
