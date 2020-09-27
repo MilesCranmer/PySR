@@ -112,6 +112,13 @@ equations = pysr.pysr(X, y, weights=weights, procs=10)
 ```
 
 
+### Running on a cluster
+
+Here, you will have to modify `slurm_example.py`
+to your cluster environment and job options. If you aren't
+using slurm, you will have to also modify `julia/slurm.jl`
+with the equivalent worker manager in Julia.
+
 
 # Operators
 
@@ -274,7 +281,7 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [x] Put on PyPI
 - [x] Treat baseline as a solution.
 - [x] Print score alongside MSE: \delta \log(MSE)/\delta \log(complexity)
-- [ ] Add true multi-node processing, with MPI, or just file sharing. Multiple populations per core.
+- [x] Add true multi-node processing, with MPI, or just file sharing. Multiple populations per core.
     - Ongoing in cluster branch
 - [ ] Dump scores alongside MSE to .csv (and return with Pandas).
 - [ ] Consider returning only the equation of interest; rather than all equations.
