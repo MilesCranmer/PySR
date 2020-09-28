@@ -305,3 +305,5 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [ ] Additional degree operators?
 - [ ] Tree crossover? I.e., can take as input a part of the same equation, so long as it is the same level or below?
 - [ ] Create flexible way of providing "simplification recipes." I.e., plus(plus(T, C), C) => plus(T, +(C, C)). The user could pass these.
+- [ ] Can we cache calculations, or does the compiler do that? E.g., I should only have to run exp(x0) once; after that it should be read from memory.
+    - Maybe I could store the result of calculations in a tree (or an index to a massive array that does this). And only when something in the subtree updates, does the rest of the tree update!
