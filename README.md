@@ -44,7 +44,7 @@ Then, at the command line,
 install the `Optim` and `SpecialFunctions` packages via:
 `julia -e 'import Pkg; Pkg.add("Optim"); Pkg.add("SpecialFunctions")'`.
 
-For python, you need to have Python 3, numpy, and pandas installed.
+For python, you need to have Python 3, numpy, sympy, and pandas installed.
 
 You can install this package from PyPI with:
 
@@ -80,6 +80,12 @@ which gives:
 1           8  0.486858           plus(-1.8710494, plus(cos(x3), mult(x0, x0)))
 2          11  0.000000  plus(plus(mult(x0, x0), cos(x3)), plus(-2.0, cos(x3)))
 ```
+
+The newest version of PySR also returns three additional columns:
+
+- `score` - a metric akin to Occam's razor; you should use this to help select the "true" equation.
+- `sympy_format` - sympy equation.
+- `lambda_format` - a lambda function for that equation, that you can pass values through.
 
 ### Custom operators
 
@@ -309,4 +315,5 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
     - Maybe I could store the result of calculations in a tree (or an index to a massive array that does this). And only when something in the subtree updates, does the rest of the tree update!
 - [ ] Try Memoize.jl instead of manually caching.
 - [ ] Try threading over population. Do random sort, compute mutation for each, then replace 10% oldest.
+- [ ] Call function to read from csv after running
 

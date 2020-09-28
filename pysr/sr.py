@@ -4,6 +4,41 @@ from collections import namedtuple
 import pathlib
 import numpy as np
 import pandas as pd
+import sympy
+from sympy import sympify, Symbol, lambdify
+
+sympy_mappings = {
+    'div':  lambda x, y : x/y,
+    'mult': lambda x, y : x*y,
+    'plus': lambda x, y : x + y,
+    'neg':  lambda x    : -x,
+    'pow':  lambda x, y : sympy.sign(x)*sympy.Abs(x)**y,
+    'cos':  lambda x    : sympy.cos(x),
+    'sin':  lambda x    : sympy.sin(x),
+    'tan':  lambda x    : sympy.tan(x),
+    'cosh': lambda x    : sympy.cosh(x),
+    'sinh': lambda x    : sympy.sinh(x),
+    'tanh': lambda x    : sympy.tanh(x),
+    'exp':  lambda x    : sympy.exp(x),
+    'acos': lambda x    : sympy.acos(x),
+    'asin': lambda x    : sympy.asin(x),
+    'atan': lambda x    : sympy.atan(x),
+    'acosh':lambda x    : sympy.acosh(x),
+    'asinh':lambda x    : sympy.asinh(x),
+    'atanh':lambda x    : sympy.atanh(x),
+    'abs':  lambda x    : sympy.Abs(x),
+    'mod':  lambda x, y : sympy.Mod(x, y),
+    'erf':  lambda x    : sympy.erf(x),
+    'erfc': lambda x    : sympy.erfc(x),
+    'logm': lambda x    : sympy.log(sympy.Abs(x)),
+    'logm10':lambda x    : sympy.log10(sympy.Abs(x)),
+    'logm2': lambda x    : sympy.log2(sympy.Abs(x)),
+    'log1p': lambda x    : sympy.log(x + 1),
+    'floor': lambda x    : sympy.floor(x),
+    'ceil': lambda x    : sympy.ceil(x),
+    'sign': lambda x    : sympy.sign(x),
+    'round': lambda x    : sympy.round(x),
+}
 
 def pysr(X=None, y=None, weights=None,
             procs=4,
@@ -33,6 +68,7 @@ def pysr(X=None, y=None, weights=None,
             perturbationFactor=1.0,
             nrestarts=3,
             timeout=None,
+            extra_sympy_mappings={},
             equation_file='hall_of_fame.csv',
             test='simple1',
             verbosity=1e9,
@@ -111,6 +147,11 @@ def pysr(X=None, y=None, weights=None,
 
     if populations is None:
         populations = procs
+
+    local_sympy_mappings = {
+            **extra_sympy_mappings,
+            **sympy_mappings
+    }
 
     rand_string = f'{"".join([str(np.random.rand())[2] for i in range(20)])}'
 
@@ -225,6 +266,34 @@ const weights = convert(Array{Float32, 1}, """f"{weight_str})"
         output = pd.read_csv(equation_file, sep="|")
     except FileNotFoundError:
         print("Couldn't find equation file!")
-        output = pd.DataFrame()
-    return output
+        return pd.DataFrame()
+
+    scores = []
+    lastMSE = None
+    lastComplexity = 0
+    sympy_format = []
+    lambda_format = []
+    sympy_symbols = [sympy.Symbol('x%d'%i) for i in range(X.shape[1])]
+    for i in range(len(output)):
+        eqn = sympify(output.loc[i, 'Equation'], locals=local_sympy_mappings)
+        sympy_format.append(eqn)
+        lambda_format.append(lambdify(sympy_symbols, eqn))
+        curMSE = output.loc[i, 'MSE']
+        curComplexity = output.loc[i, 'Complexity']
+
+        if lastMSE is None:
+            cur_score = 0.0
+        else:
+            cur_score = np.log(curMSE/lastMSE)/(curComplexity - lastComplexity)
+
+        scores.append(cur_score)
+        lastMSE = curMSE
+        lastComplexity = curComplexity
+
+
+    output['score'] = np.array(scores)
+    output['sympy_format'] = sympy_format
+    output['lambda_format'] = lambda_format
+    return output[['Complexity', 'MSE', 'score', 'Equation', 'sympy_format', 'lambda_format']]
+
 

@@ -14,7 +14,8 @@ setuptools.setup(
     url="https://github.com/MilesCranmer/pysr",
     install_requires=[
         "numpy",
-        "pandas"
+        "pandas",
+        "sympy"
         ],
     packages=setuptools.find_packages(),
     package_data={
