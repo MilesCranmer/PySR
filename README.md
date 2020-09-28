@@ -278,6 +278,12 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
     - Need to worry about race conditions
     - Only want to store most-used hash calculations. How to do that?
 - [x] Calculate statistics on how often the cache is used. Could store this in the cache object itself.
+- [x] Calculating the loss function - there is duplicate calculations happening.
+- [x] Declaration of the weights array every iteration
+- [x] Try Memoize.jl instead of manually caching.
+    - Seems unmaintained
+- [x] Can we cache calculations, or does the compiler do that? E.g., I should only have to run exp(x0) once; after that it should be read from memory.
+    - Maybe I could store the result of calculations in a tree (or an index to a massive array that does this). And only when something in the subtree updates, does the rest of the tree update!
 - [ ] Figure out how we can use the caching to actually speed up calculations; right now it gives similar speed.
 - [ ] Add true multi-node processing, with MPI, or just file sharing. Multiple populations per core.
     - Ongoing in cluster branch
@@ -301,12 +307,11 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [ ] Add GPU capability?
      - Not sure if possible, as binary trees are the real bottleneck.
 - [ ] Performance:
-    - [ ] Use an enum for functions instead of storing them?
-    - Current most expensive operations:
-        - [ ] Calculating the loss function - there is duplicate calculations happening.
-        - [x] Declaration of the weights array every iteration
+    - Use an enum for functions instead of storing them?
+    - Threaded recursion?
 - [ ] Idea: use gradient of equation with respect to each operator (perhaps simply add to each operator) to tell which part is the most "sensitive" to changes. Then, perhaps insert/delete/mutate on that part of the tree?
 - [ ] For hierarchical idea: after running some number of iterations, do a search for "most common pattern". Then, turn that subtree into its own operator.
 - [ ] Additional degree operators?
 - [ ] Tree crossover? I.e., can take as input a part of the same equation, so long as it is the same level or below?
 - [ ] Create flexible way of providing "simplification recipes." I.e., plus(plus(T, C), C) => plus(T, +(C, C)). The user could pass these.
+- [ ] Try threading over population. Do random sort, compute mutation for each, then replace 10% oldest.

@@ -219,6 +219,7 @@ const weights = convert(Array{Float32, 1}, """f"{weight_str})"
     command = [
         f'julia -O{julia_optimization:d}',
         f'-p {procs}',
+        f'--threads 2', #Threading within each worker
         f'/tmp/.runfile_{rand_string}.jl',
         ]
     if timeout is not None:

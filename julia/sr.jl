@@ -1,5 +1,5 @@
 import Optim
-using Printf
+import Printf: @printf
 
 const maxdegree = 2
 const actualMaxsize = maxsize + maxdegree
@@ -80,8 +80,9 @@ function copyNode(tree::Node)::Node
        return Node(tree.val)
    elseif tree.degree == 1
        return Node(tree.op, copyNode(tree.l))
-   else
-       return Node(tree.op, copyNode(tree.l), copyNode(tree.r))
+    else
+        right = Threads.@spawn copyNode(tree.r)
+        return Node(tree.op, copyNode(tree.l), fetch(right))
    end
 end
 
@@ -96,7 +97,8 @@ function evalTree(tree::Node, x::Array{Float32, 1}=Float32[])::Float32
     elseif tree.degree == 1
         return tree.op(evalTree(tree.l, x))
     else
-        return tree.op(evalTree(tree.l, x), evalTree(tree.r, x))
+        right = Threads.@spawn evalTree(tree.r, x)
+        return tree.op(evalTree(tree.l, x), fetch(right))
     end
 end
 
@@ -107,7 +109,8 @@ function countNodes(tree::Node)::Integer
     elseif tree.degree == 1
         return 1 + countNodes(tree.l)
     else
-        return 1 + countNodes(tree.l) + countNodes(tree.r)
+        right = Threads.@spawn countNodes(tree.r)
+        return 1 + countNodes(tree.l) + fetch(right)
     end
 end
 
@@ -122,7 +125,8 @@ function stringTree(tree::Node)::String
     elseif tree.degree == 1
         return "$(tree.op)($(stringTree(tree.l)))"
     else
-        return "$(tree.op)($(stringTree(tree.l)), $(stringTree(tree.r)))"
+        right = Threads.@spawn stringTree(tree.r)
+        return "$(tree.op)($(stringTree(tree.l)), $(fetch(right)))"
     end
 end
 
@@ -163,7 +167,8 @@ function countUnaryOperators(tree::Node)::Integer
     elseif tree.degree == 1
         return 1 + countUnaryOperators(tree.l)
     else
-        return 0 + countUnaryOperators(tree.l) + countUnaryOperators(tree.r)
+        right = Threads.@spawn countUnaryOperators(tree.r)
+        return 0 + countUnaryOperators(tree.l) + fetch(right)
     end
 end
 
@@ -174,7 +179,8 @@ function countBinaryOperators(tree::Node)::Integer
     elseif tree.degree == 1
         return 0 + countBinaryOperators(tree.l)
     else
-        return 1 + countBinaryOperators(tree.l) + countBinaryOperators(tree.r)
+        right = Threads.@spawn countBinaryOperators(tree.r)
+        return 1 + countBinaryOperators(tree.l) + fetch(right)
     end
 end
 
@@ -212,7 +218,8 @@ function countConstants(tree::Node)::Integer
     elseif tree.degree == 1
         return 0 + countConstants(tree.l)
     else
-        return 0 + countConstants(tree.l) + countConstants(tree.r)
+        right = Threads.@spawn countConstants(tree.r)
+        return 0 + countConstants(tree.l) + fetch(right)
     end
 end
 
@@ -324,7 +331,8 @@ function evalTreeArray(tree::Node)::Array{Float32, 1}
     elseif tree.degree == 1
         output = tree.op.(evalTreeArray(tree.l))
     else
-        output = tree.op.(evalTreeArray(tree.l), evalTreeArray(tree.r))
+        right = Threads.@spawn evalTreeArray(tree.r)
+        return tree.op.(evalTreeArray(tree.l), fetch(right))
     end
     return output
 end
@@ -536,7 +544,7 @@ function deleteRandomOp(tree::Node)::Node
     return tree
 end
 
-# Simplify tree 
+# Simplify tree
 function combineOperators(tree::Node)::Node
     # (const (+*) const) already accounted for
     # ((const + var) + const) => (const + var)
@@ -569,7 +577,7 @@ function combineOperators(tree::Node)::Node
     return tree
 end
 
-# Simplify tree 
+# Simplify tree
 function simplifyTree(tree::Node)::Node
     if tree.degree == 1
         tree.l = simplifyTree(tree.l)
@@ -577,8 +585,9 @@ function simplifyTree(tree::Node)::Node
             return Node(tree.op(tree.l.val))
         end
     elseif tree.degree == 2
-        tree.r = simplifyTree(tree.r)
+        right = Threads.@spawn simplifyTree(tree.r)
         tree.l = simplifyTree(tree.l)
+        tree.r = fetch(right)
         constantsBelow = (
              tree.l.degree == 0 && tree.l.constant &&
              tree.r.degree == 0 && tree.r.constant
@@ -590,11 +599,23 @@ function simplifyTree(tree::Node)::Node
     return tree
 end
 
+# Define a member of population by equation, score, and age
+mutable struct PopMember
+    tree::Node
+    score::Float32
+    birth::Int32
+
+    PopMember(t::Node) = new(t, scoreFunc(t), getTime())
+    PopMember(t::Node, score::Float32) = new(t, score, getTime())
+
+end
+
 # Go through one simulated annealing mutation cycle
 #  exp(-delta/T) defines probability of accepting a change
 function iterate(tree::Node, T::Float32, cacheCalc::cacheCalcType)::Node
-    prev = tree
-    tree = copyNode(tree)
+    prev = member.tree
+    tree = copyNode(prev)
+    beforeLoss = member.score
 
     mutationChoice = rand()
     weightAdjustmentMutateConstant = min(8, countConstants(tree))/8.0
@@ -617,30 +638,29 @@ function iterate(tree::Node, T::Float32, cacheCalc::cacheCalcType)::Node
     elseif mutationChoice < cweights[6]
         tree = simplifyTree(tree) # Sometimes we simplify tree
         tree = combineOperators(tree) # See if repeated constants at outer levels
-        return tree
+        return PopMember(tree, beforeLoss)
     elseif mutationChoice < cweights[7]
         tree = genRandomTree(5) # Sometimes we simplify tree
     else
-        return tree
+        return PopMember(tree, beforeLoss)
+    end
+
+    if functionCaching
+        afterLoss = scoreFunc(tree, cacheCalc)
+    else
+        afterLoss = scoreFunc(tree)
     end
 
     if annealing
-        if functionCaching
-            beforeLoss = scoreFunc(prev, cacheCalc)
-            afterLoss = scoreFunc(tree, cacheCalc)
-        else
-            beforeLoss = scoreFunc(prev)
-            afterLoss = scoreFunc(tree)
-        end
         delta = afterLoss - beforeLoss
         probChange = exp(-delta/(T*alpha))
 
-        if isnan(afterLoss) || probChange < rand()
-            return copyNode(prev)
+        return_unaltered = (isnan(afterLoss) || probChange < rand())
+        if return_unaltered
+            return PopMember(copyNode(prev), beforeLoss)
         end
     end
-
-    return tree
+    return PopMember(tree, afterLoss)
 end
 
 # Create a random equation by appending random operators
@@ -652,17 +672,6 @@ function genRandomTree(length::Integer)::Node
     return tree
 end
 
-
-# Define a member of population by equation, score, and age
-mutable struct PopMember
-    tree::Node
-    score::Float32
-    birth::Int32
-
-    PopMember(t::Node) = new(t, scoreFunc(t), getTime())
-    PopMember(t::Node, score::Float32) = new(t, score, getTime())
-
-end
 
 # A list of members of the population, with easy constructors,
 #  which allow for random generation of new populations
@@ -698,11 +707,7 @@ end
 # Mutate the best sampled member of the population
 function iterateSample(pop::Population, T::Float32, cacheCalc::cacheCalcType)::PopMember
     allstar = bestOfSample(pop)
-    new = iterate(allstar.tree, T, cacheCalc)
-    allstar.tree = new
-    allstar.score = scoreFunc(new)
-    allstar.birth = getTime()
-    return allstar
+    return iterate(allstar, T, cacheCalc)
 end
 
 # Pass through the population several times, replacing the oldest
@@ -1004,4 +1009,3 @@ function fullRun(niterations::Integer;
         end
     end
 end
-
