@@ -3,8 +3,6 @@ using Printf
 
 const maxdegree = 2
 const actualMaxsize = maxsize + maxdegree
-const maxCacheSize = 1000
-
 
 # Sum of square error between two arrays
 function SSE(x::Array{Float32}, y::Array{Float32})::Float32
@@ -623,8 +621,13 @@ function iterate(tree::Node, T::Float32, cacheCalc::cacheCalcType)::Node
     end
 
     if annealing
-        beforeLoss = scoreFunc(prev, cacheCalc)
-        afterLoss = scoreFunc(tree, cacheCalc)
+        if functionCaching
+            beforeLoss = scoreFunc(prev, cacheCalc)
+            afterLoss = scoreFunc(tree, cacheCalc)
+        else
+            beforeLoss = scoreFunc(prev)
+            afterLoss = scoreFunc(tree)
+        end
         delta = afterLoss - beforeLoss
         probChange = exp(-delta/(T*alpha))
 

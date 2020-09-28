@@ -37,6 +37,8 @@ def pysr(X=None, y=None, weights=None,
             test='simple1',
             verbosity=1e9,
             maxsize=20,
+            maxCacheSize=10000,
+            functionCaching=False,
             threads=None, #deprecated
             julia_optimization=3,
         ):
@@ -90,6 +92,8 @@ def pysr(X=None, y=None, weights=None,
         constant parts by evaluation
     :param timeout: float, Time in seconds to timeout search
     :param equation_file: str, Where to save the files (.csv separated by |)
+    :param functionCaching: bool, Whether to use function caching
+    :param maxCacheSize: int, How many functions to cache for each population
     :param test: str, What test to run, if X,y not passed.
     :param maxsize: int, Max size of an equation.
     :param julia_optimization: int, Optimization level (0, 1, 2, 3)
@@ -170,6 +174,8 @@ const nrestarts = {nrestarts:d}
 const perturbationFactor = {perturbationFactor:f}f0
 const annealing = {"true" if annealing else "false"}
 const weighted = {"true" if weights is not None else "false"}
+const maxCacheSize = {maxCacheSize:d}
+const functionCaching = {"true" if functionCaching else "false"}
 const mutationWeights = [
     {weightMutateConstant:f},
     {weightMutateOperator:f},
