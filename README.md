@@ -93,6 +93,7 @@ One can define custom operators in Julia by passing a string:
 ```python
 equations = pysr.pysr(X, y, niterations=100,
     binary_operators=["mult", "plus", "special(x, y) = x^2 + y"],
+    extra_sympy_mappings={'special': lambda x, y: x**2 + y},
     unary_operators=["cos"])
 ```
 
@@ -100,7 +101,8 @@ Now, the symbolic regression code can search using this `special` function
 that squares its left argument and adds it to its right. Make sure
 all passed functions are valid Julia code, and take one (unary)
 or two (binary) float32 scalars as input, and output a float32. Operators
-are automatically vectorized.
+are automatically vectorized. We also define `extra_sympy_mappings`,
+so that the SymPy code can understand the output equation from Julia.
 
 One can also edit `operators.jl`. See below for more options.
 
