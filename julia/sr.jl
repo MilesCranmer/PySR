@@ -72,8 +72,9 @@ function copyNode(tree::Node)::Node
        return Node(tree.val)
    elseif tree.degree == 1
        return Node(tree.op, copyNode(tree.l))
-   else
-       return Node(tree.op, copyNode(tree.l), copyNode(tree.r))
+    else
+        right = Threads.@spawn copyNode(tree.r)
+        return Node(tree.op, copyNode(tree.l), fetch(right))
    end
 end
 
@@ -88,7 +89,8 @@ function evalTree(tree::Node, x::Array{Float32, 1}=Float32[])::Float32
     elseif tree.degree == 1
         return tree.op(evalTree(tree.l, x))
     else
-        return tree.op(evalTree(tree.l, x), evalTree(tree.r, x))
+        right = Threads.@spawn evalTree(tree.r, x)
+        return tree.op(evalTree(tree.l, x), fetch(right))
     end
 end
 
@@ -99,7 +101,8 @@ function countNodes(tree::Node)::Integer
     elseif tree.degree == 1
         return 1 + countNodes(tree.l)
     else
-        return 1 + countNodes(tree.l) + countNodes(tree.r)
+        right = Threads.@spawn countNodes(tree.r)
+        return 1 + countNodes(tree.l) + fetch(right)
     end
 end
 
@@ -114,7 +117,8 @@ function stringTree(tree::Node)::String
     elseif tree.degree == 1
         return "$(tree.op)($(stringTree(tree.l)))"
     else
-        return "$(tree.op)($(stringTree(tree.l)), $(stringTree(tree.r)))"
+        right = Threads.@spawn stringTree(tree.r)
+        return "$(tree.op)($(stringTree(tree.l)), $(fetch(right)))"
     end
 end
 
@@ -155,7 +159,8 @@ function countUnaryOperators(tree::Node)::Integer
     elseif tree.degree == 1
         return 1 + countUnaryOperators(tree.l)
     else
-        return 0 + countUnaryOperators(tree.l) + countUnaryOperators(tree.r)
+        right = Threads.@spawn countUnaryOperators(tree.r)
+        return 0 + countUnaryOperators(tree.l) + fetch(right)
     end
 end
 
@@ -166,7 +171,8 @@ function countBinaryOperators(tree::Node)::Integer
     elseif tree.degree == 1
         return 0 + countBinaryOperators(tree.l)
     else
-        return 1 + countBinaryOperators(tree.l) + countBinaryOperators(tree.r)
+        right = Threads.@spawn countBinaryOperators(tree.r)
+        return 1 + countBinaryOperators(tree.l) + fetch(right)
     end
 end
 
@@ -200,7 +206,8 @@ function countConstants(tree::Node)::Integer
     elseif tree.degree == 1
         return 0 + countConstants(tree.l)
     else
-        return 0 + countConstants(tree.l) + countConstants(tree.r)
+        right = Threads.@spawn countConstants(tree.r)
+        return 0 + countConstants(tree.l) + fetch(right)
     end
 end
 
@@ -247,7 +254,8 @@ function evalTreeArray(tree::Node)::Array{Float32, 1}
     elseif tree.degree == 1
         return tree.op.(evalTreeArray(tree.l))
     else
-        return tree.op.(evalTreeArray(tree.l), evalTreeArray(tree.r))
+        right = Threads.@spawn evalTreeArray(tree.r)
+        return tree.op.(evalTreeArray(tree.l), fetch(right))
     end
 end
 
@@ -486,8 +494,9 @@ function simplifyTree(tree::Node)::Node
             return Node(tree.op(tree.l.val))
         end
     elseif tree.degree == 2
-        tree.r = simplifyTree(tree.r)
+        right = Threads.@spawn simplifyTree(tree.r)
         tree.l = simplifyTree(tree.l)
+        tree.r = fetch(right)
         constantsBelow = (
              tree.l.degree == 0 && tree.l.constant &&
              tree.r.degree == 0 && tree.r.constant
