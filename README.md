@@ -307,3 +307,7 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [ ] Create flexible way of providing "simplification recipes." I.e., plus(plus(T, C), C) => plus(T, +(C, C)). The user could pass these.
 - [ ] Can we cache calculations, or does the compiler do that? E.g., I should only have to run exp(x0) once; after that it should be read from memory.
     - Maybe I could store the result of calculations in a tree (or an index to a massive array that does this). And only when something in the subtree updates, does the rest of the tree update!
+    - Each time a mutation happens, want to walk up tree, and remove each pre-calculated array, and tick "calculate" to on.
+        - Can I store all calculations in a hash table? Have them be accessible by the string of the tree? I.e., stringTree(subtree) => check hash for pre-calculated parts.
+            - Can have a max size of this hash table. Once it is too large, stop adding new elements to it.
+    - Need to worry about race conditions
