@@ -50,20 +50,20 @@ mutable struct Node
     degree::Integer #0 for constant/variable, 1 for cos/sin, 2 for +/* etc.
     val::Union{Float32, Integer} #Either const value, or enumerates variable
     constant::Bool #false if variable
-    op::Function #enumerates operator (for degree=1,2)
+    op::Integer #enumerates operator (separately for degree=1,2)
     l::Union{Node, Nothing}
     r::Union{Node, Nothing}
 
-    Node(val::Float32) = new(0, val, true, id, nothing, nothing)
-    Node(val::Integer) = new(0, val, false, id, nothing, nothing)
-    Node(op, l::Node) = new(1, 0.0f0, false, op, l, nothing)
-    Node(op, l::Union{Float32, Integer}) = new(1, 0.0f0, false, op, Node(l), nothing)
-    Node(op, l::Node, r::Node) = new(2, 0.0f0, false, op, l, r)
+    Node(val::Float32) = new(0, val, true, 1, nothing, nothing)
+    Node(val::Integer) = new(0, val, false, 1, nothing, nothing)
+    Node(op::Integer, l::Node) = new(1, 0.0f0, false, op, l, nothing)
+    Node(op::Integer, l::Union{Float32, Integer}) = new(1, 0.0f0, false, op, Node(l), nothing)
+    Node(op::Integer, l::Node, r::Node) = new(2, 0.0f0, false, op, l, r)
 
     #Allow to pass the leaf value without additional node call:
-    Node(op, l::Union{Float32, Integer}, r::Node) = new(2, 0.0f0, false, op, Node(l), r)
-    Node(op, l::Node, r::Union{Float32, Integer}) = new(2, 0.0f0, false, op, l, Node(r))
-    Node(op, l::Union{Float32, Integer}, r::Union{Float32, Integer}) = new(2, 0.0f0, false, op, Node(l), Node(r))
+    Node(op::Integer, l::Union{Float32, Integer}, r::Node) = new(2, 0.0f0, false, op, Node(l), r)
+    Node(op::Integer, l::Node, r::Union{Float32, Integer}) = new(2, 0.0f0, false, op, l, Node(r))
+    Node(op::Integer, l::Union{Float32, Integer}, r::Union{Float32, Integer}) = new(2, 0.0f0, false, op, Node(l), Node(r))
 end
 
 # Copy an equation (faster than deepcopy)
@@ -87,10 +87,10 @@ function evalTree(tree::Node, x::Array{Float32, 1}=Float32[])::Float32
             return x[tree.val]
         end
     elseif tree.degree == 1
-        return tree.op(evalTree(tree.l, x))
+        return unaops[tree.op](evalTree(tree.l, x))
     else
         right = Threads.@spawn evalTree(tree.r, x)
-        return tree.op(evalTree(tree.l, x), fetch(right))
+        return binops[tree.op](evalTree(tree.l, x), fetch(right))
     end
 end
 
@@ -115,10 +115,10 @@ function stringTree(tree::Node)::String
             return "x$(tree.val - 1)"
         end
     elseif tree.degree == 1
-        return "$(tree.op)($(stringTree(tree.l)))"
+        return "$(unaops[tree.op])($(stringTree(tree.l)))"
     else
         right = Threads.@spawn stringTree(tree.r)
-        return "$(tree.op)($(stringTree(tree.l)), $(fetch(right)))"
+        return "$(binops[tree.op])($(stringTree(tree.l)), $(fetch(right)))"
     end
 end
 
@@ -192,9 +192,9 @@ function mutateOperator(tree::Node)::Node
         node = randomNode(tree)
     end
     if node.degree == 1
-        node.op = unaops[rand(1:length(unaops))]
+        node.op = rand(1:length(unaops))
     else
-        node.op = binops[rand(1:length(binops))]
+        node.op = rand(1:length(binops))
     end
     return tree
 end
@@ -252,10 +252,10 @@ function evalTreeArray(tree::Node)::Array{Float32, 1}
             return ones(Float32, len) .* X[:, tree.val]
         end
     elseif tree.degree == 1
-        return tree.op.(evalTreeArray(tree.l))
+        return unaops[tree.op].(evalTreeArray(tree.l))
     else
         right = Threads.@spawn evalTreeArray(tree.r)
-        return tree.op.(evalTreeArray(tree.l), fetch(right))
+        return binops[tree.op].(evalTreeArray(tree.l), fetch(right))
     end
 end
 
@@ -294,13 +294,13 @@ function appendRandomOp(tree::Node)::Node
 
     if makeNewBinOp
         newnode = Node(
-            binops[rand(1:length(binops))],
+            rand(1:length(binops)),
             left,
             right
         )
     else
         newnode = Node(
-            unaops[rand(1:length(unaops))],
+            rand(1:length(unaops)),
             left
         )
     end
@@ -323,13 +323,13 @@ function popRandomOp(tree::Node)::Node
     if makeNewBinOp
         right = randomConstantNode()
         newnode = Node(
-            binops[rand(1:length(binops))],
+            rand(1:length(binops)),
             left,
             right
         )
     else
         newnode = Node(
-            unaops[rand(1:length(unaops))],
+            rand(1:length(unaops)),
             left
         )
     end
@@ -352,13 +352,13 @@ function insertRandomOp(tree::Node)::Node
     if makeNewBinOp
         right = randomConstantNode()
         newnode = Node(
-            binops[rand(1:length(binops))],
+            rand(1:length(binops)),
             left,
             right
         )
     else
         newnode = Node(
-            unaops[rand(1:length(unaops))],
+            rand(1:length(unaops)),
             left
         )
     end
@@ -459,7 +459,7 @@ function combineOperators(tree::Node)::Node
     # ((const + var) + const) => (const + var)
     # ((const * var) * const) => (const * var)
     # (anything commutative!)
-    if tree.degree == 2 && (tree.op == plus || tree.op == mult)
+    if tree.degree == 2 && (binops[tree.op] == plus || binops[tree.op] == mult)
         op = tree.op
         if tree.l.constant || tree.r.constant
             # Put the constant in r
@@ -475,10 +475,10 @@ function combineOperators(tree::Node)::Node
             if below.degree == 2 && below.op == op
                 if below.l.constant
                     tree = below
-                    tree.l.val = op(tree.l.val, topconstant)
+                    tree.l.val = binops[op](tree.l.val, topconstant)
                 elseif below.r.constant
                     tree = below
-                    tree.r.val = op(tree.r.val, topconstant)
+                    tree.r.val = binops[op](tree.r.val, topconstant)
                 end
             end
         end
@@ -491,7 +491,7 @@ function simplifyTree(tree::Node)::Node
     if tree.degree == 1
         tree.l = simplifyTree(tree.l)
         if tree.l.degree == 0 && tree.l.constant
-            return Node(tree.op(tree.l.val))
+            return Node(unaops[tree.op](tree.l.val))
         end
     elseif tree.degree == 2
         right = Threads.@spawn simplifyTree(tree.r)
@@ -502,7 +502,7 @@ function simplifyTree(tree::Node)::Node
              tree.r.degree == 0 && tree.r.constant
         )
         if constantsBelow
-            return Node(tree.op(tree.l.val, tree.r.val))
+            return Node(binops[tree.op](tree.l.val, tree.r.val))
         end
     end
     return tree
