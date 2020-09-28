@@ -307,3 +307,5 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [ ] Create flexible way of providing "simplification recipes." I.e., plus(plus(T, C), C) => plus(T, +(C, C)). The user could pass these.
 - [ ] Can I store all calculations in a hash table? Have them be accessible by the string of the tree? I.e., stringTree(subtree) => check hash for pre-calculated parts. Can have a max size of this hash table. Once it is too large, stop adding new elements to it.
     - Need to worry about race conditions
+    - Only want to store most-used hash calculations. How to do that?
+- [ ] Calculate statistics on how often the cache is used. Could store this in the cache object itself.

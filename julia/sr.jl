@@ -45,7 +45,14 @@ function getTime()::Int32
     return round(Int32, 1e3*(time()-1.6e9))
 end
 
-cacheCalcType = Dict{String, Array{Float32, 1}}
+hashtable = Dict{String, Array{Float32, 1}}
+
+mutable struct cacheCalcType
+    cache::hashtable
+    n_used::Int64
+
+    cacheCalcType() = new(hashtable(), 0)
+end
 
 # Define a serialization format for the symbolic equations:
 mutable struct Node
@@ -261,17 +268,23 @@ end
 # Evaluate an equation over an array of datapoints
 function evalTreeArray(tree::Node, cacheCalc::cacheCalcType)::Array{Float32, 1}
     # Check if key is small enough:
+    n = countNodes(tree)
     n_v = countVariables(tree)
     n_c = countConstants(tree)
 
     key = ""
     # Only cache if we think this will appear again
     # constants are likely to change slightly, so shouldn't cache those.
-    use_cache = n_c < 3 && n_v >= 1
+    use_cache = n > 1 && n < 4 && n_c == 0 #n_v >= 1 && n > 1 && n < 4 #n_c < 3 && n_v >= 1
     if use_cache
         key = stringTree(tree)
-        if haskey(cacheCalc, key)
-            return getindex(cacheCalc, key)
+        if haskey(cacheCalc.cache, key)
+            cacheCalc.n_used += 1
+            if rand() < 0.001
+                @printf("Using cached value for %s, uses=%d\n", key, cacheCalc.n_used)
+                flush(stdout)
+            end
+            return getindex(cacheCalc.cache, key)
         end
     end
 
@@ -291,14 +304,13 @@ function evalTreeArray(tree::Node, cacheCalc::cacheCalcType)::Array{Float32, 1}
     # Add to cache tree if small enough
     # TODO: delete oldest element of cache
     # TODO: Save this cache by thread, rather than global, perhaps?
-    len_cache = length(cacheCalc)
-    if len_cache >= maxCacheSize
-        # Delete random part of cache
-        del_key = collect(keys(cacheCalc))[rand(1:len_cache)]
-        delete!(cacheCalc, del_key)
-    end
     if use_cache
-        setindex!(cacheCalc, output, key)
+        len_cache = length(cacheCalc.cache)
+        if len_cache < maxCacheSize
+            # If not in cache and cache is full, only sometimes we update it.
+            setindex!(cacheCalc.cache, output, key)
+            # Can't shrink a dictionary in Julia; so TODO - need to reallocate it. Right now, fix the size.
+        end
     end
     return output
 end
@@ -695,7 +707,6 @@ end
 function regEvolCycle(pop::Population, T::Float32, cacheCalc::cacheCalcType)::Population
     for i=1:round(Integer, pop.n/ns)
         baby = iterateSample(pop, T, cacheCalc)
-        #printTree(baby.tree)
         oldest = argmin([pop.members[member].birth for member=1:pop.n])
         pop.members[oldest] = baby
     end
@@ -706,14 +717,19 @@ end
 # printing the fittest equation every 10% through
 function run(
         pop::Population,
-        ncycles::Integer,
-        cacheCalc::cacheCalcType;
+        ncycles::Integer;
         verbosity::Integer=0
        )::Population
+
+    # Create a cache on the processor
+    cacheCalc = cacheCalcType()
+    sizehint!(cacheCalc.cache, maxCacheSize*2)
 
     allT = LinRange(1.0f0, 0.0f0, ncycles)
     for iT in 1:size(allT)[1]
         if annealing
+            @printf("Starting cycle at step %d", iT)
+            flush(stdout)
             pop = regEvolCycle(pop, allT[iT], cacheCalc)
         else
             pop = regEvolCycle(pop, 1.0f0, cacheCalc)
@@ -835,11 +851,6 @@ function fullRun(niterations::Integer;
     bestSubPops = [Population(1) for j=1:npopulations]
     hallOfFame = HallOfFame()
 
-    # Cache results of binary trees by their string. Then don't need
-    # to recalculate subtrees.
-    cacheCalc = cacheCalcType()
-    sizehint!(cacheCalc, maxCacheSize)
-
     for i=1:npopulations
         future = @spawn Population(npop, 3)
         push!(allPops, future)
@@ -847,7 +858,7 @@ function fullRun(niterations::Integer;
 
     # # 2. Start the cycle on every process:
     @sync for i=1:npopulations
-        @async allPops[i] = @spawnat :any run(fetch(allPops[i]), ncyclesperiteration, cacheCalc, verbosity=verbosity)
+        @async allPops[i] = @spawnat :any run(fetch(allPops[i]), ncyclesperiteration, verbosity=verbosity)
     end
     println("Started!")
     cycles_complete = npopulations * niterations
@@ -888,10 +899,10 @@ function fullRun(niterations::Integer;
                     for size=1:actualMaxsize
                         if hallOfFame.exists[size]
                             member = hallOfFame.members[size]
-                            curMSE = MSE(evalTreeArray(member.tree, cacheCalc), y)
+                            curMSE = MSE(evalTreeArray(member.tree), y)
                             numberSmallerAndBetter = 0
                             for i=1:(size-1)
-                                if (hallOfFame.exists[size] && curMSE > MSE(evalTreeArray(hallOfFame.members[i].tree, cacheCalc), y))
+                                if (hallOfFame.exists[size] && curMSE > MSE(evalTreeArray(hallOfFame.members[i].tree), y))
                                     numberSmallerAndBetter += 1
                                 end
                             end
@@ -943,7 +954,10 @@ function fullRun(niterations::Integer;
                 num_equations += ncyclesperiteration * npop / 10.0
             end
         end
-        sleep(1e-3)
+        if rand()<0.01
+            @printf("Sleeping")
+        end
+        sleep(1e-3);
         elapsed = time() - last_print_time
         #Update if time has passed, and some new equations generated.
         if elapsed > print_every_n_seconds && num_equations > 0.0
@@ -968,10 +982,10 @@ function fullRun(niterations::Integer;
             for size=1:actualMaxsize
                 if hallOfFame.exists[size]
                     member = hallOfFame.members[size]
-                    curMSE = MSE(evalTreeArray(member.tree, cacheCalc), y)
+                    curMSE = MSE(evalTreeArray(member.tree), y)
                     numberSmallerAndBetter = 0
                     for i=1:(size-1)
-                        if (hallOfFame.exists[size] && curMSE > MSE(evalTreeArray(hallOfFame.members[i].tree, cacheCalc), y))
+                        if (hallOfFame.exists[size] && curMSE > MSE(evalTreeArray(hallOfFame.members[i].tree), y))
                             numberSmallerAndBetter += 1
                         end
                     end
@@ -986,7 +1000,7 @@ function fullRun(niterations::Integer;
                     end
                 end
             end
-            debug(verbosity, "")
+            @printf("\n")
             last_print_time = time()
             num_equations = 0.0
         end
