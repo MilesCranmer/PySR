@@ -272,52 +272,21 @@ end
 
 # Evaluate an equation over an array of datapoints
 function evalTreeArray(tree::Node, cacheCalc::cacheCalcType)::Array{Float32, 1}
-    # Check if key is small enough:
-    n = countNodes(tree)
-    # n_v = countVariables(tree)
-    n_c = countConstants(tree)
-
-    key = ""
-    # Only cache if we think this will appear again
-    # constants are likely to change slightly, so shouldn't cache those.
-    use_cache = n > 2 && n < 14 && n_c <= 1
-    if use_cache
-        key = stringTree(tree)
-        if haskey(cacheCalc.cache, key)
-            cacheCalc.n_used += 1
-            return getindex(cacheCalc.cache, key)
-        end
-    end
-
-    # Actually calculate
-    if tree.degree == 0
-        if tree.constant
-            output = ones(Float32, len) .* tree.val
+    get!(cacheCalc.cache, stringTree(tree)) do
+        # Actually calculate
+        if tree.degree == 0
+            if tree.constant
+                output = ones(Float32, len) .* tree.val
+            else
+                output = ones(Float32, len) .* X[:, tree.val]
+            end
+        elseif tree.degree == 1
+            output = tree.op.(evalTreeArray(tree.l, cacheCalc))
         else
-            output = ones(Float32, len) .* X[:, tree.val]
+            output = tree.op.(evalTreeArray(tree.l, cacheCalc), evalTreeArray(tree.r, cacheCalc))
         end
-    elseif tree.degree == 1
-        output = tree.op.(evalTreeArray(tree.l, cacheCalc))
-    else
-        output = tree.op.(evalTreeArray(tree.l, cacheCalc), evalTreeArray(tree.r, cacheCalc))
+        output
     end
-
-    # Add to cache tree if small enough
-    # TODO: delete oldest element of cache
-    # TODO: Save this cache by thread, rather than global, perhaps?
-    if use_cache
-        len_cache = length(cacheCalc.cache)
-        if len_cache < maxCacheSize
-            # If not in cache and cache is full, only sometimes we update it.
-            setindex!(cacheCalc.cache, output, key)
-            # Can't shrink a dictionary in Julia; so TODO - need to reallocate it. Right now, fix the size.
-        elseif rand() < 0.1 #Randomly delete from the cache; so we can introduce the latest functions
-            del_key = collect(keys(cacheCalc.cache))[rand(1:maxCacheSize)]
-            delete!(cacheCalc.cache, del_key)
-            setindex!(cacheCalc.cache, output, key)
-        end
-    end
-    return output
 end
 
 # Evaluate an equation over an array of datapoints
@@ -612,7 +581,7 @@ end
 
 # Go through one simulated annealing mutation cycle
 #  exp(-delta/T) defines probability of accepting a change
-function iterate(tree::Node, T::Float32, cacheCalc::cacheCalcType)::Node
+function iterate(member::PopMember, T::Float32, cacheCalc::cacheCalcType)::PopMember
     prev = member.tree
     tree = copyNode(prev)
     beforeLoss = member.score
@@ -731,7 +700,7 @@ function run(
 
     # Create a cache on the processor
     cacheCalc = cacheCalcType()
-    sizehint!(cacheCalc.cache, maxCacheSize)
+    # sizehint!(cacheCalc.cache, maxCacheSize)
 
     allT = LinRange(1.0f0, 0.0f0, ncycles)
     for iT in 1:size(allT)[1]
