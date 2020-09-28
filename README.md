@@ -289,14 +289,16 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [x] Declaration of the weights array every iteration
 - [x] Sympy evaluation
 - [x] Threaded recursion
+- [x] Test suite
 - [ ] Add true multi-node processing, with MPI, or just file sharing. Multiple populations per core.
     - Ongoing in cluster branch
+- [x] Performance: - Use an enum for functions instead of storing them?
+    - Gets ~40% speedup on small test.
 - [ ] Consider allowing multi-threading turned off, for faster testing (cache issue on travis). Or could simply fix the caching issue there.
 - [ ] Dump scores alongside MSE to .csv (and return with Pandas).
 - [ ] Consider returning only the equation of interest; rather than all equations.
 - [ ] Use @fastmath
 - [ ] Refresh screen rather than dumping to stdout?
-- [ ] Test suite
 - [ ] Add ability to save state from python
 - [ ] Calculate feature importances based on features we've already seen, then weight those features up in all random generations.
 - [ ] Calculate feature importances of future mutations, by looking at correlation between residual of model, and the features.
@@ -309,8 +311,6 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [ ] Use NN to generate weights over all probability distribution conditional on error and existing equation, and train on some randomly-generated equations
 - [ ] Add GPU capability?
      - Not sure if possible, as binary trees are the real bottleneck.
-- [ ] Performance:
-    - Use an enum for functions instead of storing them?
 - [ ] Idea: use gradient of equation with respect to each operator (perhaps simply add to each operator) to tell which part is the most "sensitive" to changes. Then, perhaps insert/delete/mutate on that part of the tree?
 - [ ] For hierarchical idea: after running some number of iterations, do a search for "most common pattern". Then, turn that subtree into its own operator.
 - [ ] Additional degree operators?
@@ -321,4 +321,6 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [ ] Try Memoize.jl instead of manually caching.
 - [ ] Try threading over population. Do random sort, compute mutation for each, then replace 10% oldest.
 - [ ] Call function to read from csv after running
+- [ ] Add function to plot equations
+- [ ] Sort this todo list by priority
 
