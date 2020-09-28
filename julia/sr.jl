@@ -445,7 +445,7 @@ function deleteRandomOp(tree::Node)::Node
     return tree
 end
 
-# Simplify tree 
+# Simplify tree
 function combineOperators(tree::Node)::Node
     # (const (+*) const) already accounted for
     # ((const + var) + const) => (const + var)
@@ -478,7 +478,7 @@ function combineOperators(tree::Node)::Node
     return tree
 end
 
-# Simplify tree 
+# Simplify tree
 function simplifyTree(tree::Node)::Node
     if tree.degree == 1
         tree.l = simplifyTree(tree.l)
@@ -499,11 +499,23 @@ function simplifyTree(tree::Node)::Node
     return tree
 end
 
+# Define a member of population by equation, score, and age
+mutable struct PopMember
+    tree::Node
+    score::Float32
+    birth::Int32
+
+    PopMember(t::Node) = new(t, scoreFunc(t), getTime())
+    PopMember(t::Node, score::Float32) = new(t, score, getTime())
+
+end
+
 # Go through one simulated annealing mutation cycle
 #  exp(-delta/T) defines probability of accepting a change
-function iterate(tree::Node, T::Float32)::Node
-    prev = tree
-    tree = copyNode(tree)
+function iterate(member::PopMember, T::Float32)::PopMember
+    prev = member.tree
+    tree = copyNode(prev)
+    beforeLoss = member.score
 
     mutationChoice = rand()
     weightAdjustmentMutateConstant = min(8, countConstants(tree))/8.0
@@ -526,25 +538,25 @@ function iterate(tree::Node, T::Float32)::Node
     elseif mutationChoice < cweights[6]
         tree = simplifyTree(tree) # Sometimes we simplify tree
         tree = combineOperators(tree) # See if repeated constants at outer levels
-        return tree
+        return PopMember(tree, beforeLoss)
     elseif mutationChoice < cweights[7]
         tree = genRandomTree(5) # Sometimes we simplify tree
     else
-        return tree
+        return PopMember(tree, beforeLoss)
     end
 
+    afterLoss = scoreFunc(tree)
+
     if annealing
-        beforeLoss = scoreFunc(prev)
-        afterLoss = scoreFunc(tree)
         delta = afterLoss - beforeLoss
         probChange = exp(-delta/(T*alpha))
 
-        if isnan(afterLoss) || probChange < rand()
-            return copyNode(prev)
+        return_unaltered = (isnan(afterLoss) || probChange < rand())
+        if return_unaltered
+            return PopMember(copyNode(prev), beforeLoss)
         end
     end
-
-    return tree
+    return PopMember(tree, afterLoss)
 end
 
 # Create a random equation by appending random operators
@@ -556,17 +568,6 @@ function genRandomTree(length::Integer)::Node
     return tree
 end
 
-
-# Define a member of population by equation, score, and age
-mutable struct PopMember
-    tree::Node
-    score::Float32
-    birth::Int32
-
-    PopMember(t::Node) = new(t, scoreFunc(t), getTime())
-    PopMember(t::Node, score::Float32) = new(t, score, getTime())
-
-end
 
 # A list of members of the population, with easy constructors,
 #  which allow for random generation of new populations
@@ -602,11 +603,7 @@ end
 # Mutate the best sampled member of the population
 function iterateSample(pop::Population, T::Float32)::PopMember
     allstar = bestOfSample(pop)
-    new = iterate(allstar.tree, T)
-    allstar.tree = new
-    allstar.score = scoreFunc(new)
-    allstar.birth = getTime()
-    return allstar
+    return iterate(allstar, T)
 end
 
 # Pass through the population several times, replacing the oldest
@@ -905,4 +902,3 @@ function fullRun(niterations::Integer;
         end
     end
 end
-

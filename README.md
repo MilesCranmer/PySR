@@ -274,6 +274,8 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [x] Put on PyPI
 - [x] Treat baseline as a solution.
 - [x] Print score alongside MSE: \delta \log(MSE)/\delta \log(complexity)
+- [x] Calculating the loss function - there is duplicate calculations happening.
+- [x] Declaration of the weights array every iteration
 - [ ] Add true multi-node processing, with MPI, or just file sharing. Multiple populations per core.
     - Ongoing in cluster branch
 - [ ] Consider allowing multi-threading turned off, for faster testing (cache issue on travis). Or could simply fix the caching issue there.
@@ -296,10 +298,8 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [ ] Add GPU capability?
      - Not sure if possible, as binary trees are the real bottleneck.
 - [ ] Performance:
-    - [ ] Use an enum for functions instead of storing them?
-    - Current most expensive operations:
-        - [ ] Calculating the loss function - there is duplicate calculations happening.
-        - [x] Declaration of the weights array every iteration
+    - Use an enum for functions instead of storing them?
+    - Threaded recursion?
 - [ ] Idea: use gradient of equation with respect to each operator (perhaps simply add to each operator) to tell which part is the most "sensitive" to changes. Then, perhaps insert/delete/mutate on that part of the tree?
 - [ ] For hierarchical idea: after running some number of iterations, do a search for "most common pattern". Then, turn that subtree into its own operator.
 - [ ] Additional degree operators?
