@@ -276,6 +276,7 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [x] Print score alongside MSE: \delta \log(MSE)/\delta \log(complexity)
 - [ ] Add true multi-node processing, with MPI, or just file sharing. Multiple populations per core.
     - Ongoing in cluster branch
+- [ ] Consider allowing multi-threading turned off, for faster testing (cache issue on travis). Or could simply fix the caching issue there.
 - [ ] Dump scores alongside MSE to .csv (and return with Pandas).
 - [ ] Consider returning only the equation of interest; rather than all equations.
 - [ ] Use @fastmath
