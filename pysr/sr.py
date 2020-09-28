@@ -101,7 +101,7 @@ def pysr(X=None, y=None, weights=None,
         raise ValueError("The threads kwarg is deprecated. Use procs.")
 
     # Check for potential errors before they happen
-    assert len(binary_operators) > 0
+    assert len(unary_operators) + len(binary_operators) > 0
     assert len(X.shape) == 2
     assert len(y.shape) == 1
     assert X.shape[0] == y.shape[0]
