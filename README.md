@@ -274,6 +274,11 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [x] Put on PyPI
 - [x] Treat baseline as a solution.
 - [x] Print score alongside MSE: \delta \log(MSE)/\delta \log(complexity)
+- [x] Can I store all calculations in a hash table? Have them be accessible by the string of the tree? I.e., stringTree(subtree) => check hash for pre-calculated parts. Can have a max size of this hash table. Once it is too large, stop adding new elements to it.
+    - Need to worry about race conditions
+    - Only want to store most-used hash calculations. How to do that?
+- [x] Calculate statistics on how often the cache is used. Could store this in the cache object itself.
+- [ ] Figure out how we can use the caching to actually speed up calculations; right now it gives similar speed.
 - [ ] Add true multi-node processing, with MPI, or just file sharing. Multiple populations per core.
     - Ongoing in cluster branch
 - [ ] Consider allowing multi-threading turned off, for faster testing (cache issue on travis). Or could simply fix the caching issue there.
@@ -305,7 +310,3 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [ ] Additional degree operators?
 - [ ] Tree crossover? I.e., can take as input a part of the same equation, so long as it is the same level or below?
 - [ ] Create flexible way of providing "simplification recipes." I.e., plus(plus(T, C), C) => plus(T, +(C, C)). The user could pass these.
-- [ ] Can I store all calculations in a hash table? Have them be accessible by the string of the tree? I.e., stringTree(subtree) => check hash for pre-calculated parts. Can have a max size of this hash table. Once it is too large, stop adding new elements to it.
-    - Need to worry about race conditions
-    - Only want to store most-used hash calculations. How to do that?
-- [ ] Calculate statistics on how often the cache is used. Could store this in the cache object itself.
