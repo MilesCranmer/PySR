@@ -264,7 +264,7 @@ function scoreFunc(tree::Node)::Float32
     try
         return SSE(evalTreeArray(tree), y)/baselineSSE + countNodes(tree)*parsimony
     catch error
-        if isa(error, DomainError)
+        if isa(error, DomainError) || isa(error, LoadError) || isa(error, TaskFailedException)
             return 1f9
         else
             throw(error)
