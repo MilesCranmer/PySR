@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pysr", # Replace with your own username
-    version="0.3.9",
+    version="0.3.10",
     author="Miles Cranmer",
     author_email="miles.cranmer@gmail.com",
     description="Simple and efficient symbolic regression",
@@ -14,7 +14,8 @@ setuptools.setup(
     url="https://github.com/MilesCranmer/pysr",
     install_requires=[
         "numpy",
-        "pandas"
+        "pandas",
+        "sympy"
         ],
     packages=setuptools.find_packages(),
     package_data={

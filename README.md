@@ -42,13 +42,16 @@ then instructions for [mac](https://julialang.org/downloads/platform/#macos)
 and [linux](https://julialang.org/downloads/platform/#linux_and_freebsd).
 Then, at the command line,
 install the `Optim` and `SpecialFunctions` packages via:
-`julia -e 'import Pkg; Pkg.add("Optim"); Pkg.add("SpecialFunctions")'`.
 
-For python, you need to have Python 3, numpy, and pandas installed.
+```bash
+julia -e 'import Pkg; Pkg.add("Optim"); Pkg.add("SpecialFunctions")'
+```
+
+For python, you need to have Python 3, numpy, sympy, and pandas installed.
 
 You can install this package from PyPI with:
 
-```
+```bash
 pip install pysr
 ```
 
@@ -81,12 +84,19 @@ which gives:
 2          11  0.000000  plus(plus(mult(x0, x0), cos(x3)), plus(-2.0, cos(x3)))
 ```
 
+The newest version of PySR also returns three additional columns:
+
+- `score` - a metric akin to Occam's razor; you should use this to help select the "true" equation.
+- `sympy_format` - sympy equation.
+- `lambda_format` - a lambda function for that equation, that you can pass values through.
+
 ### Custom operators
 
 One can define custom operators in Julia by passing a string:
 ```python
 equations = pysr.pysr(X, y, niterations=100,
     binary_operators=["mult", "plus", "special(x, y) = x^2 + y"],
+    extra_sympy_mappings={'special': lambda x, y: x**2 + y},
     unary_operators=["cos"])
 ```
 
@@ -94,7 +104,8 @@ Now, the symbolic regression code can search using this `special` function
 that squares its left argument and adds it to its right. Make sure
 all passed functions are valid Julia code, and take one (unary)
 or two (binary) float32 scalars as input, and output a float32. Operators
-are automatically vectorized.
+are automatically vectorized. We also define `extra_sympy_mappings`,
+so that the SymPy code can understand the output equation from Julia.
 
 One can also edit `operators.jl`. See below for more options.
 
@@ -284,6 +295,11 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
     - Seems unmaintained
 - [x] Can we cache calculations, or does the compiler do that? E.g., I should only have to run exp(x0) once; after that it should be read from memory.
     - Maybe I could store the result of calculations in a tree (or an index to a massive array that does this). And only when something in the subtree updates, does the rest of the tree update!
+- [x] Sympy evaluation
+- [x] Threaded recursion
+- [x] Test suite
+- [x] Performance: - Use an enum for functions instead of storing them?
+    - Gets ~40% speedup on small test.
 - [ ] Figure out how we can use the caching to actually speed up calculations; right now it gives similar speed.
 - [ ] Add true multi-node processing, with MPI, or just file sharing. Multiple populations per core.
     - Ongoing in cluster branch
@@ -292,7 +308,6 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [ ] Consider returning only the equation of interest; rather than all equations.
 - [ ] Use @fastmath
 - [ ] Refresh screen rather than dumping to stdout?
-- [ ] Test suite
 - [ ] Add ability to save state from python
 - [ ] Calculate feature importances based on features we've already seen, then weight those features up in all random generations.
 - [ ] Calculate feature importances of future mutations, by looking at correlation between residual of model, and the features.
@@ -300,18 +315,18 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [ ] Implement more parts of the original Eureqa algorithms: https://www.creativemachineslab.com/eureqa.html
 - [ ] Experiment with freezing parts of model; then we only append/delete at end of tree.
 - [ ] Sympy printing
-- [ ] Sympy evaluation
 - [ ] Consider adding mutation for constant<->variable
 - [ ] Hierarchical model, so can re-use functional forms. Output of one equation goes into second equation?
 - [ ] Use NN to generate weights over all probability distribution conditional on error and existing equation, and train on some randomly-generated equations
 - [ ] Add GPU capability?
      - Not sure if possible, as binary trees are the real bottleneck.
-- [ ] Performance:
-    - Use an enum for functions instead of storing them?
-    - Threaded recursion?
 - [ ] Idea: use gradient of equation with respect to each operator (perhaps simply add to each operator) to tell which part is the most "sensitive" to changes. Then, perhaps insert/delete/mutate on that part of the tree?
 - [ ] For hierarchical idea: after running some number of iterations, do a search for "most common pattern". Then, turn that subtree into its own operator.
 - [ ] Additional degree operators?
 - [ ] Tree crossover? I.e., can take as input a part of the same equation, so long as it is the same level or below?
 - [ ] Create flexible way of providing "simplification recipes." I.e., plus(plus(T, C), C) => plus(T, +(C, C)). The user could pass these.
 - [ ] Try threading over population. Do random sort, compute mutation for each, then replace 10% oldest.
+- [ ] Call function to read from csv after running
+- [ ] Add function to plot equations
+- [ ] Sort this todo list by priority
+
