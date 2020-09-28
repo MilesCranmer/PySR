@@ -300,7 +300,7 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [x] Test suite
 - [x] Performance: - Use an enum for functions instead of storing them?
     - Gets ~40% speedup on small test.
-- [ ] Figure out how we can use the caching to actually speed up calculations; right now it gives similar speed.
+- [x] Figure out how we can use the caching to actually speed up calculations; right now it gives similar speed. Using object itself as key! Not separately converting to string.
 - [ ] Add true multi-node processing, with MPI, or just file sharing. Multiple populations per core.
     - Ongoing in cluster branch
 - [ ] Consider allowing multi-threading turned off, for faster testing (cache issue on travis). Or could simply fix the caching issue there.

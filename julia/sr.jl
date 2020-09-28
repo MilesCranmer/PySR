@@ -43,14 +43,6 @@ function getTime()::Int32
     return round(Int32, 1e3*(time()-1.6e9))
 end
 
-hashtable = Dict{String, Array{Float32, 1}}
-
-mutable struct cacheCalcType
-    cache::hashtable
-    n_used::Int64
-
-    cacheCalcType() = new(hashtable(), 0)
-end
 
 # Define a serialization format for the symbolic equations:
 mutable struct Node
@@ -72,6 +64,15 @@ mutable struct Node
     Node(op::Integer, l::Union{Float32, Integer}, r::Node) = new(2, 0.0f0, false, op, Node(l), r)
     Node(op::Integer, l::Node, r::Union{Float32, Integer}) = new(2, 0.0f0, false, op, l, Node(r))
     Node(op::Integer, l::Union{Float32, Integer}, r::Union{Float32, Integer}) = new(2, 0.0f0, false, op, Node(l), Node(r))
+end
+
+hashtable = Dict{Node, Array{Float32, 1}}
+
+mutable struct cacheCalcType
+    cache::hashtable
+    n_used::Int64
+
+    cacheCalcType() = new(hashtable(), 0)
 end
 
 # Copy an equation (faster than deepcopy)
@@ -272,7 +273,7 @@ end
 
 # Evaluate an equation over an array of datapoints
 function evalTreeArray(tree::Node, cacheCalc::cacheCalcType)::Array{Float32, 1}
-    get!(cacheCalc.cache, stringTree(tree)) do
+    get!(cacheCalc.cache, tree) do
         # Actually calculate
         if tree.degree == 0
             if tree.constant
