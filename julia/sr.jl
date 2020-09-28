@@ -275,15 +275,11 @@ function evalTreeArray(tree::Node, cacheCalc::cacheCalcType)::Array{Float32, 1}
     key = ""
     # Only cache if we think this will appear again
     # constants are likely to change slightly, so shouldn't cache those.
-    use_cache = n > 1 && n < 4 && n_c == 0 #n_v >= 1 && n > 1 && n < 4 #n_c < 3 && n_v >= 1
+    use_cache = n > 1 && n < 5 && n_c == 0
     if use_cache
         key = stringTree(tree)
         if haskey(cacheCalc.cache, key)
             cacheCalc.n_used += 1
-            if rand() < 0.001
-                @printf("Using cached value for %s, uses=%d\n", key, cacheCalc.n_used)
-                flush(stdout)
-            end
             return getindex(cacheCalc.cache, key)
         end
     end
@@ -723,13 +719,11 @@ function run(
 
     # Create a cache on the processor
     cacheCalc = cacheCalcType()
-    sizehint!(cacheCalc.cache, maxCacheSize*2)
+    sizehint!(cacheCalc.cache, maxCacheSize)
 
     allT = LinRange(1.0f0, 0.0f0, ncycles)
     for iT in 1:size(allT)[1]
         if annealing
-            @printf("Starting cycle at step %d", iT)
-            flush(stdout)
             pop = regEvolCycle(pop, allT[iT], cacheCalc)
         else
             pop = regEvolCycle(pop, 1.0f0, cacheCalc)
@@ -779,13 +773,13 @@ end
 
 
 # Proxy function for optimization
-function optFunc(x::Array{Float32, 1}, tree::Node, cacheCalc::cacheCalcType)::Float32
+function optFunc(x::Array{Float32, 1}, tree::Node)::Float32
     setConstants(tree, x)
     return scoreFunc(tree)
 end
 
 # Use Nelder-Mead to optimize the constants in an equation
-function optimizeConstants(member::PopMember, cacheCalc::cacheCalcType)::PopMember
+function optimizeConstants(member::PopMember)::PopMember
     nconst = countConstants(member.tree)
     if nconst == 0
         return member
