@@ -267,13 +267,13 @@ end
 function evalTreeArray(tree::Node, cacheCalc::cacheCalcType)::Array{Float32, 1}
     # Check if key is small enough:
     n = countNodes(tree)
-    n_v = countVariables(tree)
+    # n_v = countVariables(tree)
     n_c = countConstants(tree)
 
     key = ""
     # Only cache if we think this will appear again
     # constants are likely to change slightly, so shouldn't cache those.
-    use_cache = n > 1 && n < 5 && n_c == 0
+    use_cache = n > 2 && n < 14 && n_c <= 1
     if use_cache
         key = stringTree(tree)
         if haskey(cacheCalc.cache, key)
@@ -304,6 +304,10 @@ function evalTreeArray(tree::Node, cacheCalc::cacheCalcType)::Array{Float32, 1}
             # If not in cache and cache is full, only sometimes we update it.
             setindex!(cacheCalc.cache, output, key)
             # Can't shrink a dictionary in Julia; so TODO - need to reallocate it. Right now, fix the size.
+        elseif rand() < 0.1 #Randomly delete from the cache; so we can introduce the latest functions
+            del_key = collect(keys(cacheCalc.cache))[rand(1:maxCacheSize)]
+            delete!(cacheCalc.cache, del_key)
+            setindex!(cacheCalc.cache, output, key)
         end
     end
     return output
