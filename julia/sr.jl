@@ -951,9 +951,6 @@ function fullRun(niterations::Integer;
                 num_equations += ncyclesperiteration * npop / 10.0
             end
         end
-        if rand()<0.01
-            @printf("Sleeping")
-        end
         sleep(1e-3);
         elapsed = time() - last_print_time
         #Update if time has passed, and some new equations generated.
