@@ -3,6 +3,7 @@ using Printf
 
 const maxdegree = 2
 const actualMaxsize = maxsize + maxdegree
+const maxCacheSize = 1000
 
 
 # Sum of square error between two arrays
@@ -43,6 +44,8 @@ end
 function getTime()::Int32
     return round(Int32, 1e3*(time()-1.6e9))
 end
+
+cacheCalcType = Dict{String, Array{Float32, 1}}
 
 # Define a serialization format for the symbolic equations:
 mutable struct Node
@@ -196,11 +199,30 @@ end
 # Count the number of constants in an equation
 function countConstants(tree::Node)::Integer
     if tree.degree == 0
-        return convert(Integer, tree.constant)
+        if tree.constant
+            return 1
+        else
+            return 0
+        end
     elseif tree.degree == 1
         return 0 + countConstants(tree.l)
     else
         return 0 + countConstants(tree.l) + countConstants(tree.r)
+    end
+end
+
+# Count the number of variables in an equation
+function countVariables(tree::Node)::Integer
+    if tree.degree == 0
+        if ~tree.constant
+            return 1
+        else
+            return 0
+        end
+    elseif tree.degree == 1
+        return 0 + countVariables(tree.l)
+    else
+        return 0 + countVariables(tree.l) + countVariables(tree.r)
     end
 end
 
@@ -237,21 +259,80 @@ function mutateConstant(
 end
 
 # Evaluate an equation over an array of datapoints
+function evalTreeArray(tree::Node, cacheCalc::cacheCalcType)::Array{Float32, 1}
+    # Check if key is small enough:
+    n_v = countVariables(tree)
+    n_c = countConstants(tree)
+
+    key = ""
+    # Only cache if we think this will appear again
+    # constants are likely to change slightly, so shouldn't cache those.
+    use_cache = n_c < 3 && n_v >= 1
+    if use_cache
+        key = stringTree(tree)
+        if haskey(cacheCalc, key)
+            return getindex(cacheCalc, key)
+        end
+    end
+
+    # Actually calculate
+    if tree.degree == 0
+        if tree.constant
+            output = ones(Float32, len) .* tree.val
+        else
+            output = ones(Float32, len) .* X[:, tree.val]
+        end
+    elseif tree.degree == 1
+        output = tree.op.(evalTreeArray(tree.l, cacheCalc))
+    else
+        output = tree.op.(evalTreeArray(tree.l, cacheCalc), evalTreeArray(tree.r, cacheCalc))
+    end
+
+    # Add to cache tree if small enough
+    # TODO: delete oldest element of cache
+    # TODO: Save this cache by thread, rather than global, perhaps?
+    len_cache = length(cacheCalc)
+    if len_cache >= maxCacheSize
+        # Delete random part of cache
+        del_key = collect(keys(cacheCalc))[rand(1:len_cache)]
+        delete!(cacheCalc, del_key)
+    end
+    if use_cache
+        setindex!(cacheCalc, output, key)
+    end
+    return output
+end
+
+# Evaluate an equation over an array of datapoints
 function evalTreeArray(tree::Node)::Array{Float32, 1}
     if tree.degree == 0
         if tree.constant
-            return ones(Float32, len) .* tree.val
+            output = ones(Float32, len) .* tree.val
         else
-            return ones(Float32, len) .* X[:, tree.val]
+            output = ones(Float32, len) .* X[:, tree.val]
         end
     elseif tree.degree == 1
-        return tree.op.(evalTreeArray(tree.l))
+        output = tree.op.(evalTreeArray(tree.l))
     else
-        return tree.op.(evalTreeArray(tree.l), evalTreeArray(tree.r))
+        output = tree.op.(evalTreeArray(tree.l), evalTreeArray(tree.r))
     end
+    return output
 end
 
 # Score an equation
+function scoreFunc(tree::Node, cacheCalc::cacheCalcType)::Float32
+    try
+        return SSE(evalTreeArray(tree, cacheCalc), y)/baselineSSE + countNodes(tree)*parsimony
+    catch error
+        if isa(error, DomainError)
+            return 1f9
+        else
+            throw(error)
+        end
+    end
+end
+
+# And, without a cache:
 function scoreFunc(tree::Node)::Float32
     try
         return SSE(evalTreeArray(tree), y)/baselineSSE + countNodes(tree)*parsimony
@@ -501,7 +582,7 @@ end
 
 # Go through one simulated annealing mutation cycle
 #  exp(-delta/T) defines probability of accepting a change
-function iterate(tree::Node, T::Float32)::Node
+function iterate(tree::Node, T::Float32, cacheCalc::cacheCalcType)::Node
     prev = tree
     tree = copyNode(tree)
 
@@ -534,8 +615,8 @@ function iterate(tree::Node, T::Float32)::Node
     end
 
     if annealing
-        beforeLoss = scoreFunc(prev)
-        afterLoss = scoreFunc(tree)
+        beforeLoss = scoreFunc(prev, cacheCalc)
+        afterLoss = scoreFunc(tree, cacheCalc)
         delta = afterLoss - beforeLoss
         probChange = exp(-delta/(T*alpha))
 
@@ -600,9 +681,9 @@ function bestSubPop(pop::Population; topn::Integer=10)::Population
 end
 
 # Mutate the best sampled member of the population
-function iterateSample(pop::Population, T::Float32)::PopMember
+function iterateSample(pop::Population, T::Float32, cacheCalc::cacheCalcType)::PopMember
     allstar = bestOfSample(pop)
-    new = iterate(allstar.tree, T)
+    new = iterate(allstar.tree, T, cacheCalc)
     allstar.tree = new
     allstar.score = scoreFunc(new)
     allstar.birth = getTime()
@@ -611,9 +692,9 @@ end
 
 # Pass through the population several times, replacing the oldest
 # with the fittest of a small subsample
-function regEvolCycle(pop::Population, T::Float32)::Population
+function regEvolCycle(pop::Population, T::Float32, cacheCalc::cacheCalcType)::Population
     for i=1:round(Integer, pop.n/ns)
-        baby = iterateSample(pop, T)
+        baby = iterateSample(pop, T, cacheCalc)
         #printTree(baby.tree)
         oldest = argmin([pop.members[member].birth for member=1:pop.n])
         pop.members[oldest] = baby
@@ -625,16 +706,17 @@ end
 # printing the fittest equation every 10% through
 function run(
         pop::Population,
-        ncycles::Integer;
+        ncycles::Integer,
+        cacheCalc::cacheCalcType;
         verbosity::Integer=0
-        )::Population
+       )::Population
 
     allT = LinRange(1.0f0, 0.0f0, ncycles)
     for iT in 1:size(allT)[1]
         if annealing
-            pop = regEvolCycle(pop, allT[iT])
+            pop = regEvolCycle(pop, allT[iT], cacheCalc)
         else
-            pop = regEvolCycle(pop, 1.0f0)
+            pop = regEvolCycle(pop, 1.0f0, cacheCalc)
         end
 
         if verbosity > 0 && (iT % verbosity == 0)
@@ -681,13 +763,13 @@ end
 
 
 # Proxy function for optimization
-function optFunc(x::Array{Float32, 1}, tree::Node)::Float32
+function optFunc(x::Array{Float32, 1}, tree::Node, cacheCalc::cacheCalcType)::Float32
     setConstants(tree, x)
     return scoreFunc(tree)
 end
 
 # Use Nelder-Mead to optimize the constants in an equation
-function optimizeConstants(member::PopMember)::PopMember
+function optimizeConstants(member::PopMember, cacheCalc::cacheCalcType)::PopMember
     nconst = countConstants(member.tree)
     if nconst == 0
         return member
@@ -753,6 +835,11 @@ function fullRun(niterations::Integer;
     bestSubPops = [Population(1) for j=1:npopulations]
     hallOfFame = HallOfFame()
 
+    # Cache results of binary trees by their string. Then don't need
+    # to recalculate subtrees.
+    cacheCalc = cacheCalcType()
+    sizehint!(cacheCalc, maxCacheSize)
+
     for i=1:npopulations
         future = @spawn Population(npop, 3)
         push!(allPops, future)
@@ -760,7 +847,7 @@ function fullRun(niterations::Integer;
 
     # # 2. Start the cycle on every process:
     @sync for i=1:npopulations
-        @async allPops[i] = @spawnat :any run(fetch(allPops[i]), ncyclesperiteration, verbosity=verbosity)
+        @async allPops[i] = @spawnat :any run(fetch(allPops[i]), ncyclesperiteration, cacheCalc, verbosity=verbosity)
     end
     println("Started!")
     cycles_complete = npopulations * niterations
@@ -801,10 +888,10 @@ function fullRun(niterations::Integer;
                     for size=1:actualMaxsize
                         if hallOfFame.exists[size]
                             member = hallOfFame.members[size]
-                            curMSE = MSE(evalTreeArray(member.tree), y)
+                            curMSE = MSE(evalTreeArray(member.tree, cacheCalc), y)
                             numberSmallerAndBetter = 0
                             for i=1:(size-1)
-                                if (hallOfFame.exists[size] && curMSE > MSE(evalTreeArray(hallOfFame.members[i].tree), y))
+                                if (hallOfFame.exists[size] && curMSE > MSE(evalTreeArray(hallOfFame.members[i].tree, cacheCalc), y))
                                     numberSmallerAndBetter += 1
                                 end
                             end
@@ -881,10 +968,10 @@ function fullRun(niterations::Integer;
             for size=1:actualMaxsize
                 if hallOfFame.exists[size]
                     member = hallOfFame.members[size]
-                    curMSE = MSE(evalTreeArray(member.tree), y)
+                    curMSE = MSE(evalTreeArray(member.tree, cacheCalc), y)
                     numberSmallerAndBetter = 0
                     for i=1:(size-1)
-                        if (hallOfFame.exists[size] && curMSE > MSE(evalTreeArray(hallOfFame.members[i].tree), y))
+                        if (hallOfFame.exists[size] && curMSE > MSE(evalTreeArray(hallOfFame.members[i].tree, cacheCalc), y))
                             numberSmallerAndBetter += 1
                         end
                     end
