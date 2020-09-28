@@ -1,5 +1,5 @@
 import Optim
-using Printf
+import Printf: @printf
 
 const maxdegree = 2
 const actualMaxsize = maxsize + maxdegree
