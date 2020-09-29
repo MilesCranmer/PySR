@@ -807,7 +807,7 @@ function fullRun(niterations::Integer;
     end
 
     while cycles_complete > 0
-        for i=1:npopulations
+        @inbounds for i=1:npopulations
             # Non-blocking check if a population is ready:
             if isready(channels[i])
                 # Take the fetch operation from the channel since its ready
