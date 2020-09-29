@@ -10,8 +10,6 @@ with this API call in `benchmark.sh`
 eq = pysr(X, y, binary_operators=["plus", "mult", "div", "pow"], unary_operators=["sin"], niterations=20, procs=4, parsimony=1e-10, npop=1000, ncyclesperiteration=1000)
 ```
 
-(with threads switched with procs in <v0.3.2)
-
 
 Version | Cycles/second
 --- | ---
