@@ -745,6 +745,28 @@ mutable struct HallOfFame
 end
 
 
+# Check for errors before they happen
+function testConfiguration()
+    test_input = LinRange(-100f0, 100f0, 99)
+
+    try
+        for left in test_input
+            for right in test_input
+                for binop in binops
+                    test_output = binop.(left, right)
+                end
+            end
+            for unaop in unaops
+                test_output = unaop.(left)
+            end
+        end
+    catch
+        @printf("\n\nYour configuration is invalid - one of your operators is not well-defined over the real line.\n\n\n")
+        throw(error)
+    end
+end
+
+
 function fullRun(niterations::Integer;
                 npop::Integer=300,
                 ncyclesperiteration::Integer=3000,
@@ -752,6 +774,9 @@ function fullRun(niterations::Integer;
                 verbosity::Integer=0,
                 topn::Integer=10
                )
+
+    testConfiguration()
+
     # 1. Start a population on every process
     allPops = Future[]
     # Set up a channel to send finished populations back to head node
