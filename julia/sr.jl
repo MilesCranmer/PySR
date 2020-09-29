@@ -791,7 +791,7 @@ function fullRun(niterations::Integer;
 
     # # 2. Start the cycle on every process:
     @sync for i=1:npopulations
-        @async allPops[i] = @spawnat :any run(fetch(allPops[i]), ncyclesperiteration, verbosity=verbosity)
+        @async allPops[i] = @spawn run(fetch(allPops[i]), ncyclesperiteration, verbosity=verbosity)
     end
     println("Started!")
     cycles_complete = npopulations * niterations
@@ -868,20 +868,22 @@ function fullRun(niterations::Integer;
                     end
                 end
 
-                allPops[i] = @spawnat :any let
-                    tmp_pop = run(cur_pop, ncyclesperiteration, verbosity=verbosity)
-                    for j=1:tmp_pop.n
-                        if rand() < 0.1
-                            tmp_pop.members[j].tree = simplifyTree(tmp_pop.members[j].tree)
-                            tmp_pop.members[j].tree = combineOperators(tmp_pop.members[j].tree)
-                            if shouldOptimizeConstants
-                                tmp_pop.members[j] = optimizeConstants(tmp_pop.members[j])
+                @async begin
+                    allPops[i] = @spawn let
+                        tmp_pop = run(cur_pop, ncyclesperiteration, verbosity=verbosity)
+                        for j=1:tmp_pop.n
+                            if rand() < 0.1
+                                tmp_pop.members[j].tree = simplifyTree(tmp_pop.members[j].tree)
+                                tmp_pop.members[j].tree = combineOperators(tmp_pop.members[j].tree)
+                                if shouldOptimizeConstants
+                                    tmp_pop.members[j] = optimizeConstants(tmp_pop.members[j])
+                                end
                             end
                         end
+                        tmp_pop
                     end
-                    tmp_pop
+                    put!(channels[i], fetch(allPops[i]))
                 end
-                @async put!(channels[i], fetch(allPops[i]))
 
                 cycles_complete -= 1
                 num_equations += ncyclesperiteration * npop / 10.0
