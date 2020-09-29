@@ -104,8 +104,12 @@ Now, the symbolic regression code can search using this `special` function
 that squares its left argument and adds it to its right. Make sure
 all passed functions are valid Julia code, and take one (unary)
 or two (binary) float32 scalars as input, and output a float32. Operators
-are automatically vectorized. We also define `extra_sympy_mappings`,
-so that the SymPy code can understand the output equation from Julia.
+are automatically vectorized.
+
+We also define `extra_sympy_mappings`,
+so that the SymPy code can understand the output equation from Julia,
+when constructing a useable function. This step is optional, but
+is necessary for the `lambda_format` to work.
 
 One can also edit `operators.jl`. See below for more options.
 
@@ -132,6 +136,10 @@ of these and other valid operators are stated below. You can also
 define your own in `operators.jl`, and pass the function
 name as a string.
 
+Your operator should work with the entire real line (you can use
+abs(x) - see `logm`); otherwise
+the search code will be slowed down with domain errors.
+
 **Binary**
 
 `plus`, `mult`, `pow`, `div`, `greater`, `mod`, `beta`, `logical_or`,
@@ -145,6 +153,7 @@ name as a string.
 `logm` (=log(abs(x) + 1e-8)),
 `logm10` (=log10(abs(x) + 1e-8)),
 `logm2` (=log2(abs(x) + 1e-8)),
+`sqrtm` (=sqrt(abs(x)))
 `log1p`,
 `sin`,
 `cos`,

@@ -8,7 +8,9 @@ div(x::Float32, y::Float32)::Float32 = x/y
 logm(x::Float32)::Float32 = log(abs(x) + 1f-8)
 logm2(x::Float32)::Float32 = log2(abs(x) + 1f-8)
 logm10(x::Float32)::Float32 = log10(abs(x) + 1f-8)
+sqrtm(x::Float32)::Float32 = sqrt(abs(x))
 neg(x::Float32)::Float32 = -x
+
 function greater(x::Float32, y::Float32)::Float32
     if x > y
         return 1f0
