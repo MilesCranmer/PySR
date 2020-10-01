@@ -301,40 +301,49 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [x] Test suite
 - [x] Performance: - Use an enum for functions instead of storing them?
     - Gets ~40% speedup on small test.
-- [ ] Add true multi-node processing, with MPI, or just file sharing. Multiple populations per core.
-    - Ongoing in cluster branch
-- [ ] Consider allowing multi-threading turned off, for faster testing (cache issue on travis). Or could simply fix the caching issue there.
-- [ ] Dump scores alongside MSE to .csv (and return with Pandas).
-- [ ] Consider returning only the equation of interest; rather than all equations.
-- [ ] Use @fastmath
+- [x] Use @fastmath
+- [ ] Sort these todo lists by priority
+
+## Feature ideas
+
+- [ ] Sympy printing
+- [ ] Hierarchical model, so can re-use functional forms. Output of one equation goes into second equation?
+- [ ] Call function to read from csv after running
+- [ ] Add function to plot equations
 - [ ] Refresh screen rather than dumping to stdout?
 - [ ] Add ability to save state from python
+- [ ] Additional degree operators?
+- [ ] Multi targets (vector ops)
+- [ ] Tree crossover? I.e., can take as input a part of the same equation, so long as it is the same level or below?
+- [ ] Consider printing output sorted by score, not by complexity.
+- [ ] Dump scores alongside MSE to .csv (and return with Pandas).
+- [ ] Create flexible way of providing "simplification recipes." I.e., plus(plus(T, C), C) => plus(T, +(C, C)). The user could pass these.
+- [ ] Consider allowing multi-threading turned off, for faster testing (cache issue on travis). Or could simply fix the caching issue there.
+- [ ] Consider returning only the equation of interest; rather than all equations.
+
+## Algorithmic performance ideas:
+
+- [ ] Idea: use gradient of equation with respect to each operator (perhaps simply add to each operator) to tell which part is the most "sensitive" to changes. Then, perhaps insert/delete/mutate on that part of the tree?
+- [ ] Consider adding mutation for constant<->variable
+- [ ] Implement more parts of the original Eureqa algorithms: https://www.creativemachineslab.com/eureqa.html
+- [ ] Experiment with freezing parts of model; then we only append/delete at end of tree.
+- [ ] Use NN to generate weights over all probability distribution conditional on error and existing equation, and train on some randomly-generated equations
+- [ ] For hierarchical idea: after running some number of iterations, do a search for "most common pattern". Then, turn that subtree into its own operator.
 - [ ] Calculate feature importances based on features we've already seen, then weight those features up in all random generations.
 - [ ] Calculate feature importances of future mutations, by looking at correlation between residual of model, and the features.
     - Store feature importances of future, and periodically update it.
-- [ ] Implement more parts of the original Eureqa algorithms: https://www.creativemachineslab.com/eureqa.html
-- [ ] Experiment with freezing parts of model; then we only append/delete at end of tree.
-- [ ] Sympy printing
-- [ ] Consider adding mutation for constant<->variable
-- [ ] Hierarchical model, so can re-use functional forms. Output of one equation goes into second equation?
-- [ ] Use NN to generate weights over all probability distribution conditional on error and existing equation, and train on some randomly-generated equations
+
+
+## Code performance ideas:
+
+- [ ] Add true multi-node processing, with MPI, or just file sharing. Multiple populations per core.
+    - Ongoing in cluster branch
+- [ ] Try @spawn over each sub-population. Do random sort, compute mutation for each, then replace 10% oldest.
+- [ ] Performance: try inling things?
+- [ ] Try defining a binary tree as an array, rather than a linked list. See https://stackoverflow.com/a/6384714/2689923
+
+- [ ] Can we cache calculations, or does the compiler do that? E.g., I should only have to run exp(x0) once; after that it should be read from memory.
+    - Done on caching branch. Currently am finding that this is quiet slow (presumably because memory allocation is the main issue).
 - [ ] Add GPU capability?
      - Not sure if possible, as binary trees are the real bottleneck.
      - Could generate on CPU, evaluate score on GPU?
-- [ ] Idea: use gradient of equation with respect to each operator (perhaps simply add to each operator) to tell which part is the most "sensitive" to changes. Then, perhaps insert/delete/mutate on that part of the tree?
-- [ ] For hierarchical idea: after running some number of iterations, do a search for "most common pattern". Then, turn that subtree into its own operator.
-- [ ] Additional degree operators?
-- [ ] Tree crossover? I.e., can take as input a part of the same equation, so long as it is the same level or below?
-- [ ] Create flexible way of providing "simplification recipes." I.e., plus(plus(T, C), C) => plus(T, +(C, C)). The user could pass these.
-- [ ] Can we cache calculations, or does the compiler do that? E.g., I should only have to run exp(x0) once; after that it should be read from memory.
-    - Maybe I could store the result of calculations in a tree (or an index to a massive array that does this). And only when something in the subtree updates, does the rest of the tree update!
-- [ ] Try Memoize.jl instead of manually caching.
-- [ ] Try threading over population. Do random sort, compute mutation for each, then replace 10% oldest.
-- [ ] Call function to read from csv after running
-- [ ] Add function to plot equations
-- [ ] Sort this todo list by priority
-- [ ] Consider printing output sorted by score, not by complexity.
-- [ ] Performance: try inling things?
-- [ ] Multi targets (vector ops)
-
-
