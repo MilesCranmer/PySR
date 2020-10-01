@@ -341,6 +341,17 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [ ] Try @spawn over each sub-population. Do random sort, compute mutation for each, then replace 10% oldest.
 - [ ] Performance: try inling things?
 - [ ] Try defining a binary tree as an array, rather than a linked list. See https://stackoverflow.com/a/6384714/2689923
+```julia
+mutable struct Tree
+    degree::Array{Integer, 1}
+    val::Array{Float32, 1}
+    constant::Array{Bool, 1}
+    op::Array{Integer, 1}
+    Tree(s::Integer) = new(zeros(Integer, s), zeros(Float32, s), zeros(Bool, s), zeros(Integer, s))
+end
+```
+    - Then, we could even work with trees on the GPU, since they are all pre-allocated arrays.
+    - A population could be a Tree, but with degree 2 on all the degrees. So a slice of population arrays forms a tree.
 
 - [ ] Can we cache calculations, or does the compiler do that? E.g., I should only have to run exp(x0) once; after that it should be read from memory.
     - Done on caching branch. Currently am finding that this is quiet slow (presumably because memory allocation is the main issue).
