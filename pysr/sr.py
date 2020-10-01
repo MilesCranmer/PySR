@@ -253,6 +253,7 @@ const weights = convert(Array{Float32, 1}, """f"{weight_str})"
 
     command = [
         f'julia -O{julia_optimization:d}',
+        f'--math-mode=fast',
         f'-p {procs}',
         f'/tmp/.runfile_{rand_string}.jl',
         ]

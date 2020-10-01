@@ -247,7 +247,7 @@ function evalTreeArray(tree::Node)::Array{Float32, 1}
     elseif tree.degree == 1
         return unaops[tree.op].(evalTreeArray(tree.l))
     else
-        return @fastmath binops[tree.op].(evalTreeArray(tree.l), evalTreeArray(tree.r))
+        return binops[tree.op].(evalTreeArray(tree.l), evalTreeArray(tree.r))
     end
 end
 
