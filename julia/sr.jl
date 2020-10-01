@@ -245,9 +245,20 @@ function evalTreeArray(tree::Node)::Array{Float32, 1}
             return copy(X[:, tree.val])
         end
     elseif tree.degree == 1
-        return unaops[tree.op].(evalTreeArray(tree.l))
+        cumulator = evalTreeArray(tree.l)
+        op = unaops[tree.op]
+        @inbounds for i=1:len
+            cumulator[i] = op(cumulator[i])
+        end
+        return cumulator
     else
-        return binops[tree.op].(evalTreeArray(tree.l), evalTreeArray(tree.r))
+        op = binops[tree.op]
+        cumulator = evalTreeArray(tree.l)
+        array2 = evalTreeArray(tree.r)
+        @inbounds for i=1:len
+            cumulator[i] = op(cumulator[i], array2[i])
+        end
+        return cumulator
     end
 end
 
