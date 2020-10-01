@@ -240,9 +240,9 @@ end
 function evalTreeArray(tree::Node)::Array{Float32, 1}
     if tree.degree == 0
         if tree.constant
-            return ones(Float32, len) .* tree.val
+            return fill(tree.val, len)
         else
-            return ones(Float32, len) .* X[:, tree.val]
+            return copy(X[:, tree.val])
         end
     elseif tree.degree == 1
         return unaops[tree.op].(evalTreeArray(tree.l))
