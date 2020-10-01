@@ -320,6 +320,7 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [ ] Create flexible way of providing "simplification recipes." I.e., plus(plus(T, C), C) => plus(T, +(C, C)). The user could pass these.
 - [ ] Consider allowing multi-threading turned off, for faster testing (cache issue on travis). Or could simply fix the caching issue there.
 - [ ] Consider returning only the equation of interest; rather than all equations.
+- [x] Control max depth, rather than max number of nodes?
 
 ## Algorithmic performance ideas:
 
@@ -332,15 +333,18 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [ ] Calculate feature importances based on features we've already seen, then weight those features up in all random generations.
 - [ ] Calculate feature importances of future mutations, by looking at correlation between residual of model, and the features.
     - Store feature importances of future, and periodically update it.
+- [ ] Punish depth rather than size, as depth really hurts during optimization.
 
 
 ## Code performance ideas:
 
+- [ ] **Try @spawn over each sub-population. Do random sort, compute mutation for each, then replace 10% oldest.**
+- [ ] **Try defining a binary tree as an array, rather than a linked list. See https://stackoverflow.com/a/6384714/2689923**
 - [ ] Add true multi-node processing, with MPI, or just file sharing. Multiple populations per core.
     - Ongoing in cluster branch
-- [ ] Try @spawn over each sub-population. Do random sort, compute mutation for each, then replace 10% oldest.
 - [ ] Performance: try inling things?
-- [ ] Try defining a binary tree as an array, rather than a linked list. See https://stackoverflow.com/a/6384714/2689923
+- [ ] Try storing things like number nodes in a tree; then can iterate instead of counting
+
 ```julia
 mutable struct Tree
     degree::Array{Integer, 1}
@@ -350,8 +354,14 @@ mutable struct Tree
     Tree(s::Integer) = new(zeros(Integer, s), zeros(Float32, s), zeros(Bool, s), zeros(Integer, s))
 end
 ```
-    - Then, we could even work with trees on the GPU, since they are all pre-allocated arrays.
-    - A population could be a Tree, but with degree 2 on all the degrees. So a slice of population arrays forms a tree.
+
+- Then, we could even work with trees on the GPU, since they are all pre-allocated arrays.
+- A population could be a Tree, but with degree 2 on all the degrees. So a slice of population arrays forms a tree.
+- How many operations can we do via matrix ops? Mutate node=>easy.
+- Can probably batch and do many operations at once across a population.
+    - Or, across all populations! Mutate operator: index 2D array and set it to random vector? But the indexing might hurt.
+- The big advantage: can evaluate all new mutated trees at once; as massive matrix operation.
+    - Can control depth, rather than maxsize. Then just pretend all trees are full and same depth. Then we really don't need to care about depth.
 
 - [ ] Can we cache calculations, or does the compiler do that? E.g., I should only have to run exp(x0) once; after that it should be read from memory.
     - Done on caching branch. Currently am finding that this is quiet slow (presumably because memory allocation is the main issue).

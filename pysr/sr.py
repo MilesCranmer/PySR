@@ -73,6 +73,7 @@ def pysr(X=None, y=None, weights=None,
             test='simple1',
             verbosity=1e9,
             maxsize=20,
+            maxdepth=None,
             threads=None, #deprecated
             julia_optimization=3,
         ):
@@ -135,6 +136,8 @@ def pysr(X=None, y=None, weights=None,
     """
     if threads is not None:
         raise ValueError("The threads kwarg is deprecated. Use procs.")
+    if maxdepth is None:
+        maxdepth = maxsize
 
     # Check for potential errors before they happen
     assert len(unary_operators) + len(binary_operators) > 0
@@ -200,6 +203,7 @@ const ns=10;
 const parsimony = {parsimony:f}f0
 const alpha = {alpha:f}f0
 const maxsize = {maxsize:d}
+const maxdepth = {maxdepth:d}
 const migration = {'true' if migration else 'false'}
 const hofMigration = {'true' if hofMigration else 'false'}
 const fractionReplacedHof = {fractionReplacedHof}f0

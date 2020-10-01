@@ -103,6 +103,17 @@ function countNodes(tree::Node)::Integer
     end
 end
 
+# Count the max depth of a tree
+function countDepth(tree::Node)::Integer
+    if tree.degree == 0
+        return 1
+    elseif tree.degree == 1
+        return 1 + countDepth(tree.l)
+    else
+        return 1 + max(countDepth(tree.l), countDepth(tree.r))
+    end
+end
+
 # Convert an equation to a string
 function stringTree(tree::Node)::String
     if tree.degree == 0
@@ -535,14 +546,15 @@ function iterate(member::PopMember, T::Float32)::PopMember
     cur_weights /= sum(cur_weights)
     cweights = cumsum(cur_weights)
     n = countNodes(tree)
+    depth = countDepth(tree)
 
     if mutationChoice < cweights[1]
         tree = mutateConstant(tree, T)
     elseif mutationChoice < cweights[2]
         tree = mutateOperator(tree)
-    elseif mutationChoice < cweights[3] && n < maxsize
+    elseif mutationChoice < cweights[3] && n < maxsize && depth < maxdepth
         tree = appendRandomOp(tree)
-    elseif mutationChoice < cweights[4] && n < maxsize
+    elseif mutationChoice < cweights[4] && n < maxsize && depth < maxdepth
         tree = insertRandomOp(tree)
     elseif mutationChoice < cweights[5]
         tree = deleteRandomOp(tree)
@@ -551,7 +563,7 @@ function iterate(member::PopMember, T::Float32)::PopMember
         tree = combineOperators(tree) # See if repeated constants at outer levels
         return PopMember(tree, beforeLoss)
     elseif mutationChoice < cweights[7]
-        tree = genRandomTree(5) # Sometimes we simplify tree
+        tree = genRandomTree(5) # Sometimes we generate a new tree completely tree
     else
         return PopMember(tree, beforeLoss)
     end
