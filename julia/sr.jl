@@ -634,7 +634,7 @@ function regEvolCycle(pop::Population, T::Float32)::Population
     # Batch over each subsample. Can give 15% improvement in speed; probably moreso for large pops.
     # but is ultimately a different algorithm than regularized evolution, and might not be
     # as good.
-    if fast_cycle:
+    if fast_cycle
         shuffle!(pop.members)
         n_evol_cycles = round(Integer, pop.n/ns)
         babies = Array{PopMember}(undef, n_evol_cycles)
@@ -830,13 +830,13 @@ function fullRun(niterations::Integer;
     hallOfFame = HallOfFame()
 
     for i=1:npopulations
-        future = @spawn Population(npop, 3)
+        future = @spawnat :any Population(npop, 3)
         push!(allPops, future)
     end
 
     # # 2. Start the cycle on every process:
     @sync for i=1:npopulations
-        @async allPops[i] = @spawn run(fetch(allPops[i]), ncyclesperiteration, verbosity=verbosity)
+        @async allPops[i] = @spawnat :any run(fetch(allPops[i]), ncyclesperiteration, verbosity=verbosity)
     end
     println("Started!")
     cycles_complete = npopulations * niterations
@@ -914,7 +914,7 @@ function fullRun(niterations::Integer;
                 end
 
                 @async begin
-                    allPops[i] = @spawn let
+                    allPops[i] = @spawnat :any let
                         tmp_pop = run(cur_pop, ncyclesperiteration, verbosity=verbosity)
                         for j=1:tmp_pop.n
                             if rand() < 0.1
