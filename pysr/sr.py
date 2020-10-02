@@ -73,6 +73,7 @@ def pysr(X=None, y=None, weights=None,
             test='simple1',
             verbosity=1e9,
             maxsize=20,
+            fast_cycle=False,
             maxdepth=None,
             threads=None, #deprecated
             julia_optimization=3,
@@ -129,6 +130,11 @@ def pysr(X=None, y=None, weights=None,
     :param equation_file: str, Where to save the files (.csv separated by |)
     :param test: str, What test to run, if X,y not passed.
     :param maxsize: int, Max size of an equation.
+    :param maxdepth: int, Max depth of an equation. You can use both maxsize and maxdepth.
+        maxdepth is by default set to = maxsize, which means that it is redundant.
+    :param fast_cycle: bool, (experimental) - batch over population subsamples. This
+        is a slightly different algorithm than regularized evolution, but does cycles
+        15% faster. May be algorithmically less efficient.
     :param julia_optimization: int, Optimization level (0, 1, 2, 3)
     :returns: pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
         (as strings).
@@ -204,6 +210,7 @@ const parsimony = {parsimony:f}f0
 const alpha = {alpha:f}f0
 const maxsize = {maxsize:d}
 const maxdepth = {maxdepth:d}
+const fast_cycle = {'true' if fast_cycle else 'false'}
 const migration = {'true' if migration else 'false'}
 const hofMigration = {'true' if hofMigration else 'false'}
 const fractionReplacedHof = {fractionReplacedHof}f0
