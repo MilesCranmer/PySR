@@ -1,3 +1,9 @@
 .dataset*.jl
 .hyperparams*.jl
 *.csv
+performance*txt
+*.out
+trials*
+**/__pycache__
+build
+dist
