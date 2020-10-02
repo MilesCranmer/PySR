@@ -1,5 +1,6 @@
 import Optim
 import Printf: @printf
+import Random: shuffle!
 
 const maxdegree = 2
 const actualMaxsize = maxsize + maxdegree
@@ -623,21 +624,47 @@ function bestSubPop(pop::Population; topn::Integer=10)::Population
     return Population(pop.members[best_idx[1:topn]])
 end
 
-# Mutate the best sampled member of the population
-function iterateSample(pop::Population, T::Float32)::PopMember
-    allstar = bestOfSample(pop)
-    return iterate(allstar, T)
-end
-
 # Pass through the population several times, replacing the oldest
 # with the fittest of a small subsample
 function regEvolCycle(pop::Population, T::Float32)::Population
-    for i=1:round(Integer, pop.n/ns)
-        baby = iterateSample(pop, T)
-        #printTree(baby.tree)
-        oldest = argmin([pop.members[member].birth for member=1:pop.n])
-        pop.members[oldest] = baby
+    # Batch over each subsample. Can give 15% improvement in speed; probably moreso for large pops.
+    # but is ultimately a different algorithm than regularized evolution, and might not be
+    # as good.
+    if fast_cycle
+        shuffle!(pop.members)
+        n_evol_cycles = round(Integer, pop.n/ns)
+        babies = Array{PopMember}(undef, n_evol_cycles)
+
+        # Iterate each ns-member sub-sample
+        @inbounds Threads.@threads for i=1:n_evol_cycles
+            best_score = Inf32
+            best_idx = 1+(i-1)*ns
+            # Calculate best member of the subsample:
+            for sub_i=1+(i-1)*ns:i*ns
+                if pop.members[sub_i].score < best_score
+                    best_score = pop.members[sub_i].score
+                    best_idx = sub_i
+                end
+            end
+            allstar = pop.members[best_idx]
+            babies[i] = iterate(allstar, T)
+        end
+
+        # Replace the n_evol_cycles-oldest members of each population
+        @inbounds for i=1:n_evol_cycles
+            oldest = argmin([pop.members[member].birth for member=1:pop.n])
+            pop.members[oldest] = babies[i]
+        end
+    else
+        for i=1:round(Integer, pop.n/ns)
+            allstar = bestOfSample(pop)
+            baby = iterate(allstar, T)
+            #printTree(baby.tree)
+            oldest = argmin([pop.members[member].birth for member=1:pop.n])
+            pop.members[oldest] = baby
+        end
     end
+
     return pop
 end
 
@@ -799,13 +826,13 @@ function fullRun(niterations::Integer;
     hallOfFame = HallOfFame()
 
     for i=1:npopulations
-        future = @spawn Population(npop, 3)
+        future = @spawnat :any Population(npop, 3)
         push!(allPops, future)
     end
 
     # # 2. Start the cycle on every process:
     @sync for i=1:npopulations
-        @async allPops[i] = @spawn run(fetch(allPops[i]), ncyclesperiteration, verbosity=verbosity)
+        @async allPops[i] = @spawnat :any run(fetch(allPops[i]), ncyclesperiteration, verbosity=verbosity)
     end
     println("Started!")
     cycles_complete = npopulations * niterations
@@ -883,7 +910,7 @@ function fullRun(niterations::Integer;
                 end
 
                 @async begin
-                    allPops[i] = @spawn let
+                    allPops[i] = @spawnat :any let
                         tmp_pop = run(cur_pop, ncyclesperiteration, verbosity=verbosity)
                         for j=1:tmp_pop.n
                             if rand() < 0.1
