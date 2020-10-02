@@ -302,6 +302,8 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [x] Performance: - Use an enum for functions instead of storing them?
     - Gets ~40% speedup on small test.
 - [x] Use @fastmath
+- [x] Try @spawn over each sub-population. Do random sort, compute mutation for each, then replace 10% oldest.
+- [x] Control max depth, rather than max number of nodes?
 - [ ] Sort these todo lists by priority
 
 ## Feature ideas
@@ -320,7 +322,6 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [ ] Create flexible way of providing "simplification recipes." I.e., plus(plus(T, C), C) => plus(T, +(C, C)). The user could pass these.
 - [ ] Consider allowing multi-threading turned off, for faster testing (cache issue on travis). Or could simply fix the caching issue there.
 - [ ] Consider returning only the equation of interest; rather than all equations.
-- [x] Control max depth, rather than max number of nodes?
 
 ## Algorithmic performance ideas:
 
@@ -338,8 +339,7 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 
 ## Code performance ideas:
 
-- [ ] **Try @spawn over each sub-population. Do random sort, compute mutation for each, then replace 10% oldest.**
-- [ ] **Try defining a binary tree as an array, rather than a linked list. See https://stackoverflow.com/a/6384714/2689923**
+- [ ] Try defining a binary tree as an array, rather than a linked list. See https://stackoverflow.com/a/6384714/2689923
 - [ ] Add true multi-node processing, with MPI, or just file sharing. Multiple populations per core.
     - Ongoing in cluster branch
 - [ ] Performance: try inling things?
