@@ -309,6 +309,7 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 ## Feature ideas
 
 - [ ] Sympy printing
+- [ ] Allow user to pass names for variables - use these when printing
 - [ ] Hierarchical model, so can re-use functional forms. Output of one equation goes into second equation?
 - [ ] Call function to read from csv after running
 - [ ] Add function to plot equations
