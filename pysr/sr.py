@@ -293,7 +293,10 @@ const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
     lastComplexity = 0
     sympy_format = []
     lambda_format = []
-    sympy_symbols = [sympy.Symbol('x%d'%i) for i in range(X.shape[1])]
+    if len(variable_names) != 0:
+        sympy_symbols = [sympy.Symbol(variable_names[i]) for i in range(X.shape[1])]
+    else:
+        sympy_symbols = [sympy.Symbol('x%d'%i) for i in range(X.shape[1])]
     for i in range(len(output)):
         eqn = sympify(output.loc[i, 'Equation'], locals=local_sympy_mappings)
         sympy_format.append(eqn)
