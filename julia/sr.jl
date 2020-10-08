@@ -121,7 +121,11 @@ function stringTree(tree::Node)::String
         if tree.constant
             return string(tree.val)
         else
-            return "x$(tree.val - 1)"
+            if useVarMap
+                return varMap[tree.val]
+            else
+                return "x$(tree.val - 1)"
+            end
         end
     elseif tree.degree == 1
         return "$(unaops[tree.op])($(stringTree(tree.l)))"

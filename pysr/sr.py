@@ -75,6 +75,7 @@ def pysr(X=None, y=None, weights=None,
             maxsize=20,
             fast_cycle=False,
             maxdepth=None,
+            variable_names=[],
             threads=None, #deprecated
             julia_optimization=3,
         ):
@@ -135,6 +136,8 @@ def pysr(X=None, y=None, weights=None,
     :param fast_cycle: bool, (experimental) - batch over population subsamples. This
         is a slightly different algorithm than regularized evolution, but does cycles
         15% faster. May be algorithmically less efficient.
+    :param variable_names: list, a list of names for the variables, other
+        than "x0", "x1", etc.
     :param julia_optimization: int, Optimization level (0, 1, 2, 3)
     :returns: pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
         (as strings).
@@ -153,6 +156,8 @@ def pysr(X=None, y=None, weights=None,
     if weights is not None:
         assert len(weights.shape) == 1
         assert X.shape[0] == weights.shape[0]
+    if len(variable_names) != 0:
+        assert len(variable_names) == X.shape[1]
 
     if populations is None:
         populations = procs
@@ -222,6 +227,7 @@ const nrestarts = {nrestarts:d}
 const perturbationFactor = {perturbationFactor:f}f0
 const annealing = {"true" if annealing else "false"}
 const weighted = {"true" if weights is not None else "false"}
+const useVarMap = {"false" if len(variable_names) == 0 else "true"}
 const mutationWeights = [
     {weightMutateConstant:f},
     {weightMutateOperator:f},
@@ -247,6 +253,10 @@ const y = convert(Array{Float32, 1}, """f"{y_str})"
         weight_str = str(weights.tolist())
         def_datasets += """
 const weights = convert(Array{Float32, 1}, """f"{weight_str})"
+
+    if len(variable_names) != 0:
+        def_hyperparams += f"""
+const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
 
     with open(f'/tmp/.hyperparams_{rand_string}.jl', 'w') as f:
         print(def_hyperparams, file=f)

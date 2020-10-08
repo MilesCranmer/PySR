@@ -304,14 +304,14 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [x] Use @fastmath
 - [x] Try @spawn over each sub-population. Do random sort, compute mutation for each, then replace 10% oldest.
 - [x] Control max depth, rather than max number of nodes?
+- [x] Allow user to pass names for variables - use these when printing
 - [ ] Sort these todo lists by priority
 
 ## Feature ideas
 
 - [ ] Sympy printing
-- [ ] Allow user to pass names for variables - use these when printing
 - [ ] Hierarchical model, so can re-use functional forms. Output of one equation goes into second equation?
-- [ ] Call function to read from csv after running
+- [ ] Call function to read from csv after running, so dont need to run again
 - [ ] Add function to plot equations
 - [ ] Refresh screen rather than dumping to stdout?
 - [ ] Add ability to save state from python
