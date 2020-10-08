@@ -41,8 +41,8 @@ function debug(verbosity, string...)
     verbosity > 0 ? println(string...) : nothing
 end
 
-function getTime()::Int32
-    return round(Int32, 1e3*(time()-1.6e9))
+function getTime()::Integer
+    return round(Integer, 1e3*(time()-1.6e9))
 end
 
 # Define a serialization format for the symbolic equations:
@@ -526,7 +526,7 @@ end
 mutable struct PopMember
     tree::Node
     score::Float32
-    birth::Int32
+    birth::Integer
 
     PopMember(t::Node) = new(t, scoreFunc(t), getTime())
     PopMember(t::Node, score::Float32) = new(t, score, getTime())
