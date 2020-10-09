@@ -104,8 +104,10 @@ equations = pysr.pysr(X, y, niterations=100,
 Now, the symbolic regression code can search using this `special` function
 that squares its left argument and adds it to its right. Make sure
 all passed functions are valid Julia code, and take one (unary)
-or two (binary) float32 scalars as input, and output a float32. Operators
-are automatically vectorized.
+or two (binary) float32 scalars as input, and output a float32. This means if you
+write any real constants in your operator, like `2.5`, you have to write them
+instead as `2.5f0`, which defines it as `Float32`.
+Operators are automatically vectorized.
 
 We also define `extra_sympy_mappings`,
 so that the SymPy code can understand the output equation from Julia,
