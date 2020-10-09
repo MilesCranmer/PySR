@@ -317,13 +317,14 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [ ] Refresh screen rather than dumping to stdout?
 - [ ] Add ability to save state from python
 - [ ] Additional degree operators?
-- [ ] Multi targets (vector ops)
+- [ ] Multi targets (vector ops). Idea 1: Node struct contains argument for which registers it is applied to. Then, can work with multiple components simultaneously. Though this may be tricky to get right. Idea 2: each op is defined by input/output space. Some operators are flexible, and the spaces should be adjusted automatically. Otherwise, only consider ops that make a tree possible. But will need additional ops here to get it to work.
 - [ ] Tree crossover? I.e., can take as input a part of the same equation, so long as it is the same level or below?
 - [ ] Consider printing output sorted by score, not by complexity.
 - [ ] Dump scores alongside MSE to .csv (and return with Pandas).
 - [ ] Create flexible way of providing "simplification recipes." I.e., plus(plus(T, C), C) => plus(T, +(C, C)). The user could pass these.
 - [ ] Consider allowing multi-threading turned off, for faster testing (cache issue on travis). Or could simply fix the caching issue there.
 - [ ] Consider returning only the equation of interest; rather than all equations.
+- [ ] Enable derivative operators. These would differentiate their right argument wrt their left argument, some input variable.
 
 ## Algorithmic performance ideas:
 
