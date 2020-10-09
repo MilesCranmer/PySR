@@ -1,0 +1,19 @@
+loaders:
+  - type: python
+processors:
+  - type: filter
+  - type: smart
+  - type: crossref
+renderer:
+  type: mkdocs
+  pages:
+    - title: Home
+      name: index
+      source: README.md
+    - title: API Documentation
+      contents:
+        - '*'
+  mkdocs_config:
+    mkdocs_config:
+      site_name: My Project
+      theme: readthedocs
