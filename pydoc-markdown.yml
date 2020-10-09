@@ -15,5 +15,5 @@ renderer:
         - '*'
   mkdocs_config:
     mkdocs_config:
-      site_name: My Project
+      site_name: PySR
       theme: readthedocs
