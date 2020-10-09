@@ -196,17 +196,24 @@ which is `hall_of_fame.csv` by default. It also prints the
 equations to stdout.
 
 ```python
-pysr(X=None, y=None, weights=None, procs=4, niterations=100, ncyclesperiteration=300, binary_operators=["plus", "mult"], unary_operators=["cos", "exp", "sin"], alpha=0.1, annealing=True, fractionReplaced=0.10, fractionReplacedHof=0.10, npop=1000, parsimony=1e-4, migration=True, hofMigration=True, shouldOptimizeConstants=True, topn=10, weightAddNode=1, weightInsertNode=3, weightDeleteNode=3, weightDoNothing=1, weightMutateConstant=10, weightMutateOperator=1, weightRandomize=1, weightSimplify=0.01, perturbationFactor=1.0, nrestarts=3, timeout=None, equation_file='hall_of_fame.csv', test='simple1', verbosity=1e9, maxsize=20)
+pysr(X=None, y=None, weights=None, procs=4, populations=None, niterations=100, ncyclesperiteration=300, binary_operators=["plus", "mult"], unary_operators=["cos", "exp", "sin"], alpha=0.1, annealing=True, fractionReplaced=0.10, fractionReplacedHof=0.10, npop=1000, parsimony=1e-4, migration=True, hofMigration=True, shouldOptimizeConstants=True, topn=10, weightAddNode=1, weightInsertNode=3, weightDeleteNode=3, weightDoNothing=1, weightMutateConstant=10, weightMutateOperator=1, weightRandomize=1, weightSimplify=0.01, perturbationFactor=1.0, nrestarts=3, timeout=None, extra_sympy_mappings={}, equation_file='hall_of_fame.csv', test='simple1', verbosity=1e9, maxsize=20, fast_cycle=False, maxdepth=None, variable_names=[], select_k_features=None, threads=None, julia_optimization=3)
 ```
 
 Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
+Note: most default parameters have been tuned over several example
+equations, but you should adjust `threads`, `niterations`,
+`binary_operators`, `unary_operators` to your requirements.
 
 **Arguments**:
 
-- `X`: np.ndarray, 2D array. Rows are examples, columns are features.
+- `X`: np.ndarray or pandas.DataFrame, 2D array. Rows are examples,
+columns are features. If pandas DataFrame, the columns are used
+for variable names (so make sure they don't contain spaces).
 - `y`: np.ndarray, 1D array. Rows are examples.
-- `weights`: np.ndarray, 1D array. Same shape as `y`. Optional weighted sum (e.g., 1/error^2).
-- `procs`: int, Number of processes running (=number of populations running).
+- `weights`: np.ndarray, 1D array. Each row is how to weight the
+mean-square-error loss on weights.
+- `procs`: int, Number of processes (=number of populations running).
+- `populations`: int, Number of populations running; by default=procs.
 - `niterations`: int, Number of iterations of the algorithm to run. The best
 equations are printed, and migrate between populations, at the
 end of each.
@@ -248,6 +255,18 @@ constant parts by evaluation
 - `equation_file`: str, Where to save the files (.csv separated by |)
 - `test`: str, What test to run, if X,y not passed.
 - `maxsize`: int, Max size of an equation.
+- `maxdepth`: int, Max depth of an equation. You can use both maxsize and maxdepth.
+maxdepth is by default set to = maxsize, which means that it is redundant.
+- `fast_cycle`: bool, (experimental) - batch over population subsamples. This
+is a slightly different algorithm than regularized evolution, but does cycles
+15% faster. May be algorithmically less efficient.
+- `variable_names`: list, a list of names for the variables, other
+than "x0", "x1", etc.
+- `select_k_features`: (None, int), whether to run feature selection in
+Python using random forests, before passing to the symbolic regression
+code. None means no feature selection; an int means select that many
+features.
+- `julia_optimization`: int, Optimization level (0, 1, 2, 3)
 
 **Returns**:
 
