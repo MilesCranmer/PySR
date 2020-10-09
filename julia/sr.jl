@@ -761,7 +761,7 @@ function testConfiguration()
                 test_output = unaop.(left)
             end
         end
-    catch
+    catch error
         @printf("\n\nYour configuration is invalid - one of your operators is not well-defined over the real line.\n\n\n")
         throw(error)
     end
