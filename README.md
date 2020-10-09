@@ -36,6 +36,7 @@ python interface.
 
 
 # Installation
+PySR uses both Julia and Python, so you need to have both installed.
 
 Install Julia - see [downloads](https://julialang.org/downloads/), and
 then instructions for [mac](https://julialang.org/downloads/platform/#macos)
