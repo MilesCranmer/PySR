@@ -78,21 +78,6 @@ function copyNode(tree::Node)::Node
    end
 end
 
-# Evaluate a symbolic equation:
-function evalTree(tree::Node, x::Array{Float32, 1}=Float32[])::Float32
-    if tree.degree == 0
-        if tree.constant
-            return tree.val
-        else
-            return x[tree.val]
-        end
-    elseif tree.degree == 1
-        return unaops[tree.op](evalTree(tree.l, x))
-    else
-        return binops[tree.op](evalTree(tree.l, x), evalTree(tree.r, x))
-    end
-end
-
 # Count the operators, constants, variables in an equation
 function countNodes(tree::Node)::Integer
     if tree.degree == 0
@@ -330,35 +315,6 @@ function appendRandomOp(tree::Node)::Node
     node.val = newnode.val
     node.constant = newnode.constant
     return tree
-end
-
-# Add random node to the top of a tree
-function popRandomOp(tree::Node)::Node
-    node = tree
-    choice = rand()
-    makeNewBinOp = choice < nbin/nops
-    left = tree
-
-    if makeNewBinOp
-        right = randomConstantNode()
-        newnode = Node(
-            rand(1:length(binops)),
-            left,
-            right
-        )
-    else
-        newnode = Node(
-            rand(1:length(unaops)),
-            left
-        )
-    end
-    node.l = newnode.l
-    node.r = newnode.r
-    node.op = newnode.op
-    node.degree = newnode.degree
-    node.val = newnode.val
-    node.constant = newnode.constant
-    return node
 end
 
 # Insert random node
