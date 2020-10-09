@@ -141,7 +141,6 @@ def pysr(X=None, y=None, weights=None,
         15% faster. May be algorithmically less efficient.
     :param variable_names: list, a list of names for the variables, other
         than "x0", "x1", etc.
-    :param feature_selection: bool, 
     :param select_k_features: (None, int), whether to run feature selection in
         Python using random forests, before passing to the symbolic regression
         code. None means no feature selection; an int means select that many
