@@ -84,7 +84,9 @@ def pysr(X=None, y=None, weights=None,
     equations, but you should adjust `threads`, `niterations`,
     `binary_operators`, `unary_operators` to your requirements.
 
-    :param X: np.ndarray, 2D array. Rows are examples, columns are features.
+    :param X: np.ndarray or pandas.DataFrame, 2D array. Rows are examples,
+        columns are features. If pandas DataFrame, the columns are used
+        for variable names (so make sure they don't contain spaces).
     :param y: np.ndarray, 1D array. Rows are examples.
     :param weights: np.ndarray, 1D array. Each row is how to weight the
         mean-square-error loss on weights.
@@ -147,6 +149,10 @@ def pysr(X=None, y=None, weights=None,
         raise ValueError("The threads kwarg is deprecated. Use procs.")
     if maxdepth is None:
         maxdepth = maxsize
+
+    if isinstance(X, pd.DataFrame):
+        variable_names = list(X.columns)
+        X = np.array(X)
 
     # Check for potential errors before they happen
     assert len(unary_operators) + len(binary_operators) > 0
