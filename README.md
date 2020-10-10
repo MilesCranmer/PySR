@@ -41,6 +41,7 @@ PySR uses both Julia and Python, so you need to have both installed.
 Install Julia - see [downloads](https://julialang.org/downloads/), and
 then instructions for [mac](https://julialang.org/downloads/platform/#macos)
 and [linux](https://julialang.org/downloads/platform/#linux_and_freebsd).
+(Don't use the `conda-forge` version; it doesn't seem to work properly.)
 Then, at the command line,
 install the `Optim` and `SpecialFunctions` packages via:
 
