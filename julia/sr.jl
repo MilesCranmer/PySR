@@ -424,7 +424,7 @@ function prependRandomOp(tree::Node)::Node
     node = tree
     choice = rand()
     makeNewBinOp = choice < nbin/nops
-    left = tree
+    left = copyNode(tree)
 
     if makeNewBinOp
         right = randomConstantNode()
