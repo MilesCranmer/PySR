@@ -982,6 +982,7 @@ function fullRun(niterations::Integer;
                         end
                     end
                 end
+                cp(hofFile, hofFile*".bkup", force=true)
 
                 # Try normal copy otherwise.
                 if migration
