@@ -36,12 +36,15 @@ renderer:
       name: index
       source: README.md
       directory: '..'
-    - title: API Documentation
-      contents:
-        - pysr.sr.pysr
-    - title: Operators
-      name: operators
-      source: docs/operators.md
+    - title: Getting started
+      name: getting-started
+      source: docs/start.md
     - title: Options
       name: options
       source: docs/options.md
+    - title: Operators
+      name: operators
+      source: docs/operators.md
+    - title: API Documentation
+      contents:
+        - pysr.sr.pysr
