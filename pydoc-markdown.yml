@@ -39,12 +39,16 @@ renderer:
     - title: Getting started
       name: getting-started
       source: docs/start.md
+      preamble: {weight: 1}
     - title: Options
       name: options
       source: docs/options.md
+      preamble: {weight: 2}
     - title: Operators
       name: operators
       source: docs/operators.md
+      preamble: {weight: 3}
     - title: API Documentation
       contents:
         - pysr.sr.pysr
+      preamble: {weight: 4}
