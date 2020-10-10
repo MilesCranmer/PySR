@@ -1,9 +1,10 @@
-# Common Options
+# Features and Options
 
 You likely don't need to tune the hyperparameters yourself,
 but if you would like, you can use `hyperparamopt.py` as an example.
 
-Common options to `PySR` include:
+Some configurable features and options in `PySR` which you
+may find useful include:
 - `binary_operators`, `unary_operators`
 - `niterations`
 - `procs`
@@ -12,7 +13,7 @@ Common options to `PySR` include:
 - `maxsize`, `maxdepth`
 - `batching`, `batchSize`
 - `variable_names` (or pandas input)
-- SymPy output
+- LaTeX, SymPy, and callable equation output
 
 These are described below
 
@@ -105,19 +106,18 @@ You can pass a list of strings naming each column of `X` with
 and the columns will be used as variable names. Make sure only
 alphabetical characters and `_` are used in these names.
 
-## SymPy output
+## LaTeX, SymPy, callables
 
 The `pysr` command will return a pandas dataframe. The `sympy_format`
-column gives sympy equations. You can use this to get LaTeX format, with,
-e.g.,
+column gives sympy equations, and the `lambda_format` gives callable
+functions. These use the variable names you have provided.
 
-```python
-simplified = equations.iloc[-1]['sympy_format'].simplify()
-print(sympy.latex(simplified))
-```
+There are also some helper functions for doing this quickly.
+You can call `get_hof()` (or pass an equation file explicitly to this)
+to get this pandas dataframe.
 
-If you have set variable names with `variable_names` or a Pandas
-dataframe as input for `X`, this will use the same names for each
-input column instead of `x0`.
-
+You can call the functions `best()` to get the sympy format
+for the best equation, using the `score` column to sort equations.
+`best_latex()` returns the LaTeX form of this, and `best_callable()`
+returns a callable function.
 
