@@ -52,16 +52,16 @@
 - [x] Control max depth, rather than max number of nodes?
 - [x] Allow user to pass names for variables - use these when printing
 - [x] Check for domain errors in an equation quickly before actually running the entire array over it. (We do this now recursively - every single equation is checked for nans/infs when being computed.)
+- [x] read the docs page
 - [ ] Sort these todo lists by priority
 
 ## Feature ideas
 
+- [ ] Create backup csv file so always something to copy from for `PySR`. Also use random hall of fame file by default. Call function to read from csv after running, so dont need to run again. Dump scores alongside MSE to .csv (and return with Pandas).
 - [ ] Cross-validation
-- [ ] read the docs page
 - [ ] Sympy printing
 - [ ] Better cleanup of zombie processes after <ctl-c>
 - [ ] Hierarchical model, so can re-use functional forms. Output of one equation goes into second equation?
-- [ ] Call function to read from csv after running, so dont need to run again
 - [ ] Add function to plot equations
 - [ ] Refresh screen rather than dumping to stdout?
 - [ ] Add ability to save state from python
@@ -69,7 +69,6 @@
 - [ ] Multi targets (vector ops). Idea 1: Node struct contains argument for which registers it is applied to. Then, can work with multiple components simultaneously. Though this may be tricky to get right. Idea 2: each op is defined by input/output space. Some operators are flexible, and the spaces should be adjusted automatically. Otherwise, only consider ops that make a tree possible. But will need additional ops here to get it to work. Idea 3: define each equation in 2 parts: one part that is shared between all outputs, and one that is different between all outputs. Maybe this could be an array of nodes corresponding to each output. And those nodes would define their functions.
 - [ ] Tree crossover? I.e., can take as input a part of the same equation, so long as it is the same level or below?
 - [ ] Consider printing output sorted by score, not by complexity.
-- [ ] Dump scores alongside MSE to .csv (and return with Pandas).
 - [ ] Create flexible way of providing "simplification recipes." I.e., plus(plus(T, C), C) => plus(T, +(C, C)). The user could pass these.
 - [ ] Consider allowing multi-threading turned off, for faster testing (cache issue on travis). Or could simply fix the caching issue there.
 - [ ] Consider returning only the equation of interest; rather than all equations.
