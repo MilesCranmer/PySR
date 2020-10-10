@@ -419,6 +419,35 @@ function insertRandomOp(tree::Node)::Node
     return tree
 end
 
+# Add random node to the top of a tree
+function prependRandomOp(tree::Node)::Node
+    node = tree
+    choice = rand()
+    makeNewBinOp = choice < nbin/nops
+    left = tree
+
+    if makeNewBinOp
+        right = randomConstantNode()
+        newnode = Node(
+            rand(1:length(binops)),
+            left,
+            right
+        )
+    else
+        newnode = Node(
+            rand(1:length(unaops)),
+            left
+        )
+    end
+    node.l = newnode.l
+    node.r = newnode.r
+    node.op = newnode.op
+    node.degree = newnode.degree
+    node.val = newnode.val
+    node.constant = newnode.constant
+    return node
+end
+
 function randomConstantNode()::Node
     if rand() > 0.5
         val = Float32(randn())
@@ -592,7 +621,11 @@ function iterate(member::PopMember, T::Float32)::PopMember
     elseif mutationChoice < cweights[2]
         tree = mutateOperator(tree)
     elseif mutationChoice < cweights[3] && n < maxsize && depth < maxdepth
-        tree = appendRandomOp(tree)
+        if rand() < 0.5
+            tree = appendRandomOp(tree)
+        else
+            tree = prependRandomOp(tree)
+        end
     elseif mutationChoice < cweights[4] && n < maxsize && depth < maxdepth
         tree = insertRandomOp(tree)
     elseif mutationChoice < cweights[5]
