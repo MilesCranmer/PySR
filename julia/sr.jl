@@ -297,11 +297,11 @@ function evalTreeArray(tree::Node, cX::Array{Float32, 2})::Union{Array{Float32, 
             return nothing
         end
         op = unaops[tree.op]
-        @inbounds @simd for i=1:clen
+        @fastmath @inbounds @simd for i=1:clen
             cumulator[i] = op(cumulator[i])
         end
-        @inbounds for i=1:clen
-            if isinf(cumulator[i])
+        @inbounds @simd for i=1:clen
+            if isinf(cumulator[i]) || isnan(cumulator[i])
                 return nothing
             end
         end
@@ -317,11 +317,11 @@ function evalTreeArray(tree::Node, cX::Array{Float32, 2})::Union{Array{Float32, 
             return nothing
         end
 
-        @inbounds @simd for i=1:clen
+        @fastmath @inbounds @simd for i=1:clen
             cumulator[i] = op(cumulator[i], array2[i])
         end
-        @inbounds for i=1:clen
-            if isinf(cumulator[i])
+        @inbounds @simd for i=1:clen
+            if isinf(cumulator[i]) || isnan(cumulator[i])
                 return nothing
             end
         end
