@@ -404,31 +404,41 @@ def get_hof(equation_file=None, n_features=None, variable_names=None, extra_symp
     return output[['Complexity', 'MSE', 'score', 'Equation', 'sympy_format', 'lambda_format']]
 
 def best_row(equations=None):
-    """Return the best columns of a hall of fame file using the score column."""
+    """Return the best row of a hall of fame file using the score column.
+    By default this uses the last equation file.
+    """
     if equations is None: equations = get_hof()
     best_idx = np.argmax(equations['score'])
     return equations.iloc[best_idx]
 
 def best_tex(equations=None):
-    """Return the equation with the best score, in latex format"""
+    """Return the equation with the best score, in latex format
+    By default this uses the last equation file.
+    """
     if equations is None: equations = get_hof()
     best_sympy = best_row(equations)['sympy_format']
     return sympy.latex(best_sympy.simplify())
 
 def best(equations=None):
-    """Return the equation with the best score, in latex format"""
+    """Return the equation with the best score, in latex format
+    By default this uses the last equation file.
+    """
     if equations is None: equations = get_hof()
     best_sympy = best_row(equations)['sympy_format']
     return best_sympy.simplify()
 
 def best_tex(equations=None):
-    """Return the equation with the best score, in latex format"""
+    """Return the equation with the best score, in latex format
+    By default this uses the last equation file.
+    """
     if equations is None: equations = get_hof()
     best_sympy = best_row(equations)['sympy_format']
     return sympy.latex(best_sympy.simplify())
 
 def best_callable(equations=None):
-    """Return the equation with the best score, in callable format"""
+    """Return the equation with the best score, in callable format
+    By default this uses the last equation file.
+    """
     if equations is None: equations = get_hof()
     return best_row(equations)['lambda_format']
 
