@@ -1,19 +1,25 @@
 loaders:
   - type: python
+    #search_path: [pysr]
 processors:
   - type: filter
   - type: smart
   - type: crossref
 renderer:
-  type: mkdocs
+  type: hugo
+  config:
+    title: My Project
+    theme: {clone_url: "https://github.com/alex-shpak/hugo-book.git"}
+  # The "book" theme only renders pages in "content/docs" into the nav.
+  content_directory: content/docs
+  default_preamble: {menu: main}
   pages:
     - title: Home
       name: index
       source: README.md
+    - title: Operators
+      name: operators
+      source: docs/operators.md
     - title: API Documentation
       contents:
-        - '*'
-  mkdocs_config:
-    mkdocs_config:
-      site_name: PySR
-      theme: readthedocs
+        - pysr.sr.pysr
