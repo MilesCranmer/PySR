@@ -1,11 +1,15 @@
 # PySR.jl
 
-[![DOI](https://zenodo.org/badge/295391759.svg)](https://zenodo.org/badge/latestdoi/295391759)
+[![Documentation Status](https://readthedocs.org/projects/pysr/badge/?version=latest)](https://pysr.readthedocs.io/en/latest/?badge=latest)
 [![PyPI version](https://badge.fury.io/py/pysr.svg)](https://badge.fury.io/py/pysr)
 [![Build Status](https://travis-ci.com/MilesCranmer/PySR.svg?branch=master)](https://travis-ci.com/MilesCranmer/PySR)
 
 **Symbolic regression built on Julia, and interfaced by Python.
 Uses regularized evolution, simulated annealing, and gradient-free optimization.**
+
+[Cite this software](https://github.com/MilesCranmer/PySR/blob/master/CITATION.md)
+
+[Documentation](https://pysr.readthedocs.io/en/latest)
 
 Symbolic regression is a very interpretable machine learning algorithm
 for low-dimensional problems: these tools search equation space
