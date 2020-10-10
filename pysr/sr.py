@@ -227,6 +227,7 @@ const nrestarts = {nrestarts:d}
 const perturbationFactor = {perturbationFactor:f}f0
 const annealing = {"true" if annealing else "false"}
 const weighted = {"true" if weights is not None else "false"}
+const batchSize = {min([50, len(X)]):d}
 const useVarMap = {"false" if len(variable_names) == 0 else "true"}
 const mutationWeights = [
     {weightMutateConstant:f},

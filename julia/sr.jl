@@ -1,6 +1,6 @@
 import Optim
 import Printf: @printf
-import Random: shuffle!
+import Random: shuffle!, randperm
 
 const maxdegree = 2
 const actualMaxsize = maxsize + maxdegree
@@ -9,11 +9,13 @@ const actualMaxsize = maxsize + maxdegree
 # Sum of square error between two arrays
 function SSE(x::Array{Float32}, y::Array{Float32})::Float32
     diff = (x - y)
-    if weighted
-        return sum(diff .* diff .* weights)
-    else
-        return sum(diff .* diff)
-    end
+    return sum(diff .* diff)
+end
+
+# Sum of square error between two arrays, with weights
+function SSE(x::Array{Float32}, y::Array{Float32}, w::Array{Float32})::Float32
+    diff = (x - y)
+    return sum(diff .* diff .* w)
 end
 
 # Mean of square error between two arrays
@@ -21,15 +23,21 @@ function MSE(x::Array{Float32}, y::Array{Float32})::Float32
     return SSE(x, y)/size(x)[1]
 end
 
+# Mean of square error between two arrays
+function MSE(x::Array{Float32}, y::Array{Float32}, w::Array{Float32})::Float32
+    return SSE(x, y, w)/sum(w)
+end
+
 const len = size(X)[1]
 
 if weighted
-    const avgy = sum(y .* weights)/len/sum(weights)
+    const avgy = sum(y .* weights)/sum(weights)
+    const baselineMSE = MSE(y, convert(Array{Float32, 1}, ones(len) .* avgy), weights)
 else
     const avgy = sum(y)/len
+    const baselineMSE = MSE(y, convert(Array{Float32, 1}, ones(len) .* avgy))
 end
 
-const baselineSSE = SSE(y, convert(Array{Float32, 1}, ones(len) .* avgy))
 
 id = (x,) -> x
 const nuna = size(unaops)[1]
@@ -278,10 +286,70 @@ function evalTreeArray(tree::Node)::Array{Float32, 1}
     end
 end
 
+
+# Evaluate an equation over an array of datapoints
+function evalTreeArray(tree::Node, cX::Array{Float32, 2})::Array{Float32, 1}
+    clen = size(cX)[1]
+    if tree.degree == 0
+        if tree.constant
+            return fill(tree.val, clen)
+        else
+            return copy(cX[:, tree.val])
+        end
+    elseif tree.degree == 1
+        cumulator = evalTreeArray(tree.l, cX)
+        op = unaops[tree.op]
+        @inbounds for i=1:clen
+            cumulator[i] = op(cumulator[i])
+        end
+        return cumulator
+    else
+        op = binops[tree.op]
+        cumulator = evalTreeArray(tree.l, cX)
+        array2 = evalTreeArray(tree.r, cX)
+        @inbounds for i=1:clen
+            cumulator[i] = op(cumulator[i], array2[i])
+        end
+        return cumulator
+    end
+end
+
 # Score an equation
 function scoreFunc(tree::Node)::Float32
     try
-        return SSE(evalTreeArray(tree), y)/baselineSSE + countNodes(tree)*parsimony
+        prediction = evalTreeArray(tree)
+        if weighted
+            mse = MSE(prediction, y, weights)
+        else
+            mse = MSE(prediction, y)
+        end
+        return mse / baselineMSE + countNodes(tree)*parsimony
+    catch error
+        if isa(error, DomainError) || isa(error, LoadError) || isa(error, TaskFailedException)
+            return 1f9
+        else
+            throw(error)
+        end
+    end
+end
+
+# Score an equation with a small batch
+function scoreFuncBatch(tree::Node)::Float32
+    try
+        # batchSize
+        batch_idx = randperm(len)[1:batchSize]
+        batch_X = X[batch_idx, :]
+        batch_y = y[batch_idx]
+        prediction = evalTreeArray(tree, batch_X)
+        size_adjustment = 1
+        if weighted
+            batch_w = weights[batch_idx]
+            mse = MSE(prediction, batch_y, batch_w)
+            size_adjustment = 1f0 * len / batchSize
+        else
+            mse = MSE(prediction, batch_y)
+        end
+        return size_adjustment * mse / baselineMSE + countNodes(tree)*parsimony
     catch error
         if isa(error, DomainError) || isa(error, LoadError) || isa(error, TaskFailedException)
             return 1f9
@@ -542,7 +610,9 @@ end
 function iterate(member::PopMember, T::Float32)::PopMember
     prev = member.tree
     tree = copyNode(prev)
-    beforeLoss = member.score
+    #TODO - reconsider this
+    # beforeLoss = member.score
+    beforeLoss = scoreFuncBatch(member.tree)
 
     mutationChoice = rand()
     weightAdjustmentMutateConstant = min(8, countConstants(tree))/8.0
@@ -573,7 +643,7 @@ function iterate(member::PopMember, T::Float32)::PopMember
         return PopMember(tree, beforeLoss)
     end
 
-    afterLoss = scoreFunc(tree)
+    afterLoss = scoreFuncBatch(tree)
 
     if annealing
         delta = afterLoss - beforeLoss
@@ -877,10 +947,19 @@ function fullRun(niterations::Integer;
                     for size=1:actualMaxsize
                         if hallOfFame.exists[size]
                             member = hallOfFame.members[size]
-                            curMSE = MSE(evalTreeArray(member.tree), y)
+                            if weighted
+                                curMSE = MSE(evalTreeArray(member.tree), y, weights)
+                            else
+                                curMSE = MSE(evalTreeArray(member.tree), y)
+                            end
                             numberSmallerAndBetter = 0
                             for i=1:(size-1)
-                                if (hallOfFame.exists[size] && curMSE > MSE(evalTreeArray(hallOfFame.members[i].tree), y))
+                                if weighted
+                                    hofMSE = MSE(evalTreeArray(hallOfFame.members[i].tree), y, weights)
+                                else
+                                    hofMSE = MSE(evalTreeArray(hallOfFame.members[i].tree), y)
+                                end
+                                if (hallOfFame.exists[size] && curMSE > hofMSE)
                                     numberSmallerAndBetter += 1
                                 end
                             end
@@ -951,7 +1030,7 @@ function fullRun(niterations::Integer;
             @printf("Hall of Fame:\n")
             @printf("-----------------------------------------\n")
             @printf("%-10s  %-8s   %-8s  %-8s\n", "Complexity", "MSE", "Score", "Equation")
-            curMSE = baselineSSE / len
+            curMSE = baselineMSE
             @printf("%-10d  %-8.3e  %-8.3e  %-.f\n", 0, curMSE, 0f0, avgy)
             lastMSE = curMSE
             lastComplexity = 0
@@ -959,10 +1038,19 @@ function fullRun(niterations::Integer;
             for size=1:actualMaxsize
                 if hallOfFame.exists[size]
                     member = hallOfFame.members[size]
-                    curMSE = MSE(evalTreeArray(member.tree), y)
+                    if weighted
+                        curMSE = MSE(evalTreeArray(member.tree), y, weights)
+                    else
+                        curMSE = MSE(evalTreeArray(member.tree), y)
+                    end
                     numberSmallerAndBetter = 0
                     for i=1:(size-1)
-                        if (hallOfFame.exists[size] && curMSE > MSE(evalTreeArray(hallOfFame.members[i].tree), y))
+                        if weighted
+                            hofMSE = MSE(evalTreeArray(hallOfFame.members[i].tree), y, weights)
+                        else
+                            hofMSE = MSE(evalTreeArray(hallOfFame.members[i].tree), y)
+                        end
+                        if (hallOfFame.exists[size] && curMSE > hofMSE)
                             numberSmallerAndBetter += 1
                         end
                     end
