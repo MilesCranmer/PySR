@@ -335,13 +335,6 @@ function scoreFunc(tree::Node)::Float32
     if prediction == nothing
         return 1f9
     end
-    for i=1:len
-        # Do this when using fastmath, to check for domain errors
-        # TODO: Is this needed?
-        if prediction[i] > 1f20 || prediction[i] < -1f20
-            return 1f9
-        end
-    end
     if weighted
         mse = MSE(prediction, y, weights)
     else
@@ -358,12 +351,6 @@ function scoreFuncBatch(tree::Node)::Float32
     prediction = evalTreeArray(tree, batch_X)
     if prediction == nothing
         return 1f9
-    end
-    for i=1:batchSize
-        # Do this when using fastmath, to check for domain errors
-        if prediction[i] > 1f20 || prediction[i] < -1f20
-            return 1f9
-        end
     end
     size_adjustment = 1f0
     batch_y = y[batch_idx]
