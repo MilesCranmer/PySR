@@ -11,16 +11,32 @@ function SSE(x::Array{Float32}, y::Array{Float32})::Float32
     diff = (x - y)
     return sum(diff .* diff)
 end
+function SSE(x::Nothing, y::Array{Float32})::Float32
+    return 1f9
+end
 
 # Sum of square error between two arrays, with weights
 function SSE(x::Array{Float32}, y::Array{Float32}, w::Array{Float32})::Float32
     diff = (x - y)
     return sum(diff .* diff .* w)
 end
+function SSE(x::Nothing, y::Array{Float32}, w::Array{Float32})::Float32
+    return Nothing
+end
+
+# Mean of square error between two arrays
+function MSE(x::Nothing, y::Array{Float32})::Float32
+    return 1f9
+end
 
 # Mean of square error between two arrays
 function MSE(x::Array{Float32}, y::Array{Float32})::Float32
     return SSE(x, y)/size(x)[1]
+end
+
+# Mean of square error between two arrays
+function MSE(x::Nothing, y::Array{Float32}, w::Array{Float32})::Float32
+    return 1f9
 end
 
 # Mean of square error between two arrays
@@ -261,34 +277,13 @@ function mutateConstant(
 end
 
 # Evaluate an equation over an array of datapoints
-function evalTreeArray(tree::Node)::Array{Float32, 1}
-    if tree.degree == 0
-        if tree.constant
-            return fill(tree.val, len)
-        else
-            return copy(X[:, tree.val])
-        end
-    elseif tree.degree == 1
-        cumulator = evalTreeArray(tree.l)
-        op = unaops[tree.op]
-        @inbounds for i=1:len
-            cumulator[i] = op(cumulator[i])
-        end
-        return cumulator
-    else
-        op = binops[tree.op]
-        cumulator = evalTreeArray(tree.l)
-        array2 = evalTreeArray(tree.r)
-        @inbounds for i=1:len
-            cumulator[i] = op(cumulator[i], array2[i])
-        end
-        return cumulator
-    end
+function evalTreeArray(tree::Node)::Union{Array{Float32, 1}, Nothing}
+    return evalTreeArray(tree, X)
 end
 
 
 # Evaluate an equation over an array of datapoints
-function evalTreeArray(tree::Node, cX::Array{Float32, 2})::Array{Float32, 1}
+function evalTreeArray(tree::Node, cX::Array{Float32, 2})::Union{Array{Float32, 1}, Nothing}
     clen = size(cX)[1]
     if tree.degree == 0
         if tree.constant
@@ -298,17 +293,37 @@ function evalTreeArray(tree::Node, cX::Array{Float32, 2})::Array{Float32, 1}
         end
     elseif tree.degree == 1
         cumulator = evalTreeArray(tree.l, cX)
+        if cumulator == nothing
+            return nothing
+        end
         op = unaops[tree.op]
-        @inbounds for i=1:clen
+        @inbounds @simd for i=1:clen
             cumulator[i] = op(cumulator[i])
+        end
+        @inbounds for i=1:clen
+            if isinf(cumulator[i])
+                return nothing
+            end
         end
         return cumulator
     else
         op = binops[tree.op]
         cumulator = evalTreeArray(tree.l, cX)
+        if cumulator == nothing
+            return nothing
+        end
         array2 = evalTreeArray(tree.r, cX)
-        @inbounds for i=1:clen
+        if array2 == nothing
+            return nothing
+        end
+
+        @inbounds @simd for i=1:clen
             cumulator[i] = op(cumulator[i], array2[i])
+        end
+        @inbounds for i=1:clen
+            if isinf(cumulator[i])
+                return nothing
+            end
         end
         return cumulator
     end
@@ -316,13 +331,15 @@ end
 
 # Score an equation
 function scoreFunc(tree::Node)::Float32
-    prediction = try
-        evalTreeArray(tree)
-    catch error
-        if isa(error, DomainError) || isa(error, LoadError) || isa(error, TaskFailedException)
+    prediction = evalTreeArray(tree)
+    if prediction == nothing
+        return 1f9
+    end
+    for i=1:len
+        # Do this when using fastmath, to check for domain errors
+        # TODO: Is this needed?
+        if prediction[i] > 1f20 || prediction[i] < -1f20
             return 1f9
-        else
-            throw(error)
         end
     end
     if weighted
@@ -338,13 +355,14 @@ function scoreFuncBatch(tree::Node)::Float32
     # batchSize
     batch_idx = randperm(len)[1:batchSize]
     batch_X = X[batch_idx, :]
-    prediction = try
-        evalTreeArray(tree, batch_X)
-    catch error
-        if isa(error, DomainError) || isa(error, LoadError) || isa(error, TaskFailedException)
+    prediction = evalTreeArray(tree, batch_X)
+    if prediction == nothing
+        return 1f9
+    end
+    for i=1:batchSize
+        # Do this when using fastmath, to check for domain errors
+        if prediction[i] > 1f20 || prediction[i] < -1f20
             return 1f9
-        else
-            throw(error)
         end
     end
     size_adjustment = 1f0
