@@ -196,7 +196,7 @@ which is `hall_of_fame.csv` by default. It also prints the
 equations to stdout.
 
 ```python
-pysr(X=None, y=None, weights=None, procs=4, populations=None, niterations=100, ncyclesperiteration=300, binary_operators=["plus", "mult"], unary_operators=["cos", "exp", "sin"], alpha=0.1, annealing=True, fractionReplaced=0.10, fractionReplacedHof=0.10, npop=1000, parsimony=1e-4, migration=True, hofMigration=True, shouldOptimizeConstants=True, topn=10, weightAddNode=1, weightInsertNode=3, weightDeleteNode=3, weightDoNothing=1, weightMutateConstant=10, weightMutateOperator=1, weightRandomize=1, weightSimplify=0.01, perturbationFactor=1.0, nrestarts=3, timeout=None, extra_sympy_mappings={}, equation_file='hall_of_fame.csv', test='simple1', verbosity=1e9, maxsize=20, fast_cycle=False, maxdepth=None, variable_names=[], select_k_features=None, threads=None, julia_optimization=3)
+pysr(X=None, y=None, weights=None, procs=4, populations=None, niterations=100, ncyclesperiteration=300, binary_operators=["plus", "mult"], unary_operators=["cos", "exp", "sin"], alpha=0.1, annealing=True, fractionReplaced=0.10, fractionReplacedHof=0.10, npop=1000, parsimony=1e-4, migration=True, hofMigration=True, shouldOptimizeConstants=True, topn=10, weightAddNode=1, weightInsertNode=3, weightDeleteNode=3, weightDoNothing=1, weightMutateConstant=10, weightMutateOperator=1, weightRandomize=1, weightSimplify=0.01, perturbationFactor=1.0, nrestarts=3, timeout=None, extra_sympy_mappings={}, equation_file='hall_of_fame.csv', test='simple1', verbosity=1e9, maxsize=20, fast_cycle=False, maxdepth=None, variable_names=[], batching=False, batchSize=50, select_k_features=None, threads=None, julia_optimization=3)
 ```
 
 Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
@@ -262,6 +262,10 @@ is a slightly different algorithm than regularized evolution, but does cycles
 15% faster. May be algorithmically less efficient.
 - `variable_names`: list, a list of names for the variables, other
 than "x0", "x1", etc.
+- `batching`: bool, whether to compare population members on small batches
+during evolution. Still uses full dataset for comparing against
+hall of fame.
+- `batchSize`: int, the amount of data to use if doing batching.
 - `select_k_features`: (None, int), whether to run feature selection in
 Python using random forests, before passing to the symbolic regression
 code. None means no feature selection; an int means select that many
