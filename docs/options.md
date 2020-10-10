@@ -1,0 +1,123 @@
+# Common Options
+
+You likely don't need to tune the hyperparameters yourself,
+but if you would like, you can use `hyperparamopt.py` as an example.
+
+Common options that you can try include:
+- `niterations`
+- `procs`
+- `populations`
+- `binary_operators`, `unary_operators`
+- `weights`
+- `maxsize`, `maxdepth`
+- `batching`, `batchSize`
+- `variable_names` (or pandas input)
+- SymPy output
+
+These are described below
+
+The program will output a pandas DataFrame containing the equations,
+mean square error, and complexity. It will also dump to a csv
+at the end of every iteration,
+which is `hall_of_fame.csv` by default. It also prints the
+equations to stdout.
+
+## Iterations
+
+This is the total number of generations that `pysr` will run for.
+I usually set this to a large number, and exit when I am satisfied
+with the equations.
+
+## Processors
+
+One can adjust the number of workers used by Julia with the
+`procs` option. You should set this equal to the number of cores
+you want `pysr` to use. This will also run `procs` number of
+populations simultaneously by default.
+
+## Populations
+
+By default, `populations=procs`, but you can set a different
+number of populations with this option. More populations may increase
+the diversity of equations discovered, though will take longer to train.
+However, it may be more efficient to have `populations>procs`,
+as there are multiple populations running
+on each core.
+
+## Custom operators
+
+A list of operators can be found on the operators page.
+One can define custom operators in Julia by passing a string:
+```python
+equations = pysr.pysr(X, y, niterations=100,
+    binary_operators=["mult", "plus", "special(x, y) = x^2 + y"],
+    extra_sympy_mappings={'special': lambda x, y: x**2 + y},
+    unary_operators=["cos"])
+```
+
+Now, the symbolic regression code can search using this `special` function
+that squares its left argument and adds it to its right. Make sure
+all passed functions are valid Julia code, and take one (unary)
+or two (binary) float32 scalars as input, and output a float32. This means if you
+write any real constants in your operator, like `2.5`, you have to write them
+instead as `2.5f0`, which defines it as `Float32`.
+Operators are automatically vectorized.
+
+One should also define `extra_sympy_mappings`,
+so that the SymPy code can understand the output equation from Julia,
+when constructing a useable function. This step is optional, but
+is necessary for the `lambda_format` to work.
+
+One can also edit `operators.jl`. See below for more options.
+
+## Weighted data
+
+Here, we assign weights to each row of data
+using inverse uncertainty squared. We also use 10 processes
+instead of the usual 4, which creates more populations
+(one population per thread).
+```python
+sigma = ...
+weights = 1/sigma**2
+
+equations = pysr.pysr(X, y, weights=weights, procs=10)
+```
+
+## Max size
+
+`maxsize` controls the maximum size of equation (number of operators,
+constants, variables). `maxdepth` is by default not used, but can be set
+to control the maximum depth of an equation. These will make processing
+faster, as longer equations take longer to test.
+
+
+## Batching
+One can turn on mini-batching, with the `batching` flag,
+and control the batch size with `batchSize`. This will make
+evolution faster for large datasets. Equations are still evaluated
+on the entire dataset at the end of each iteration to compare to the hall
+of fame, but only on a random subset during mutations and annealing.
+
+## Variable Names
+
+You can pass a list of strings naming each column of `X` with
+`variable_names`. Alternatively, you can pass `X` as a pandas dataframe
+and the columns will be used as variable names. Make sure only
+alphabetical characters and `_` are used in these names.
+
+## SymPy output
+
+The `pysr` command will return a pandas dataframe. The `sympy_format`
+column gives sympy equations. You can use this to get LaTeX format, with,
+e.g.,
+
+```python
+simplified = equations.iloc[-1]['sympy_format'].simplify()
+print(sympy.latex(simplified))
+```
+
+If you have set variable names with `variable_names` or a Pandas
+dataframe as input for `X`, this will use the same names for each
+input column instead of `x0`.
+
+

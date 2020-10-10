@@ -1,6 +1,6 @@
 loaders:
   - type: python
-    #search_path: [pysr]
+
 processors:
   - type: filter
   - type: smart
@@ -8,18 +8,25 @@ processors:
 renderer:
   type: hugo
   config:
-    title: My Project
+    title: PySR
     theme: {clone_url: "https://github.com/alex-shpak/hugo-book.git"}
   # The "book" theme only renders pages in "content/docs" into the nav.
+
+  build_directory: docs/build
   content_directory: content/docs
+
   default_preamble: {menu: main}
   pages:
     - title: Home
       name: index
       source: README.md
-    - title: Operators
-      name: operators
-      source: docs/operators.md
+      directory: '..'
     - title: API Documentation
       contents:
         - pysr.sr.pysr
+    - title: Operators
+      name: operators
+      source: docs/operators.md
+    - title: Options
+      name: options
+      source: docs/options.md
