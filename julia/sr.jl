@@ -316,14 +316,8 @@ end
 
 # Score an equation
 function scoreFunc(tree::Node)::Float32
-    try
-        prediction = evalTreeArray(tree)
-        if weighted
-            mse = MSE(prediction, y, weights)
-        else
-            mse = MSE(prediction, y)
-        end
-        return mse / baselineMSE + countNodes(tree)*parsimony
+    prediction = try
+        evalTreeArray(tree)
     catch error
         if isa(error, DomainError) || isa(error, LoadError) || isa(error, TaskFailedException)
             return 1f9
@@ -331,25 +325,21 @@ function scoreFunc(tree::Node)::Float32
             throw(error)
         end
     end
+    if weighted
+        mse = MSE(prediction, y, weights)
+    else
+        mse = MSE(prediction, y)
+    end
+    return mse / baselineMSE + countNodes(tree)*parsimony
 end
 
 # Score an equation with a small batch
 function scoreFuncBatch(tree::Node)::Float32
-    try
-        # batchSize
-        batch_idx = randperm(len)[1:batchSize]
-        batch_X = X[batch_idx, :]
-        batch_y = y[batch_idx]
-        prediction = evalTreeArray(tree, batch_X)
-        size_adjustment = 1
-        if weighted
-            batch_w = weights[batch_idx]
-            mse = MSE(prediction, batch_y, batch_w)
-            size_adjustment = 1f0 * len / batchSize
-        else
-            mse = MSE(prediction, batch_y)
-        end
-        return size_adjustment * mse / baselineMSE + countNodes(tree)*parsimony
+    # batchSize
+    batch_idx = randperm(len)[1:batchSize]
+    batch_X = X[batch_idx, :]
+    prediction = try
+        evalTreeArray(tree, batch_X)
     catch error
         if isa(error, DomainError) || isa(error, LoadError) || isa(error, TaskFailedException)
             return 1f9
@@ -357,6 +347,16 @@ function scoreFuncBatch(tree::Node)::Float32
             throw(error)
         end
     end
+    size_adjustment = 1f0
+    batch_y = y[batch_idx]
+    if weighted
+        batch_w = weights[batch_idx]
+        mse = MSE(prediction, batch_y, batch_w)
+        size_adjustment = 1f0 * len / batchSize
+    else
+        mse = MSE(prediction, batch_y)
+    end
+    return size_adjustment * mse / baselineMSE + countNodes(tree)*parsimony
 end
 
 # Add a random unary/binary operation to the end of a tree
