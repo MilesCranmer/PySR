@@ -616,8 +616,11 @@ function iterate(member::PopMember, T::Float32)::PopMember
     prev = member.tree
     tree = copyNode(prev)
     #TODO - reconsider this
-    # beforeLoss = member.score
-    beforeLoss = scoreFuncBatch(member.tree)
+    if batching
+        beforeLoss = scoreFuncBatch(member.tree)
+    else
+        beforeLoss = member.score
+    end
 
     mutationChoice = rand()
     weightAdjustmentMutateConstant = min(8, countConstants(tree))/8.0
@@ -648,7 +651,11 @@ function iterate(member::PopMember, T::Float32)::PopMember
         return PopMember(tree, beforeLoss)
     end
 
-    afterLoss = scoreFuncBatch(tree)
+    if batching
+        afterLoss = scoreFuncBatch(tree)
+    else
+        afterLoss = scoreFunc(tree)
+    end
 
     if annealing
         delta = afterLoss - beforeLoss
@@ -695,6 +702,16 @@ function bestOfSample(pop::Population)::PopMember
     sample = samplePop(pop)
     best_idx = argmin([sample.members[member].score for member=1:sample.n])
     return sample.members[best_idx]
+end
+
+function finalizeScores(pop::Population)::Population
+    need_recalculate = batching
+    if need_recalculate
+        @inbounds @simd for member=1:pop.n
+            pop.members[member].score = scoreFunc(pop.members[member].tree)
+        end
+    end
+    return pop
 end
 
 # Return best 10 examples
@@ -1000,7 +1017,7 @@ function fullRun(niterations::Integer;
                 @async begin
                     allPops[i] = @spawnat :any let
                         tmp_pop = run(cur_pop, ncyclesperiteration, verbosity=verbosity)
-                        for j=1:tmp_pop.n
+                        @inbounds @simd for j=1:tmp_pop.n
                             if rand() < 0.1
                                 tmp_pop.members[j].tree = simplifyTree(tmp_pop.members[j].tree)
                                 tmp_pop.members[j].tree = combineOperators(tmp_pop.members[j].tree)
@@ -1008,6 +1025,11 @@ function fullRun(niterations::Integer;
                                     tmp_pop.members[j] = optimizeConstants(tmp_pop.members[j])
                                 end
                             end
+                        end
+                        if shouldOptimizeConstants
+                            #pass #(We already calculate full scores in the optimizer)
+                        else
+                            tmp_pop = finalizeScores(tmp_pop)
                         end
                         tmp_pop
                     end

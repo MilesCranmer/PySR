@@ -76,6 +76,8 @@ def pysr(X=None, y=None, weights=None,
             fast_cycle=False,
             maxdepth=None,
             variable_names=[],
+            batching=False,
+            batchSize=50,
             threads=None, #deprecated
             julia_optimization=3,
         ):
@@ -138,6 +140,10 @@ def pysr(X=None, y=None, weights=None,
         15% faster. May be algorithmically less efficient.
     :param variable_names: list, a list of names for the variables, other
         than "x0", "x1", etc.
+    :param batching: bool, whether to compare population members on small batches
+        during evolution. Still uses full dataset for comparing against
+        hall of fame.
+    :param batchSize: int, the amount of data to use if doing batching.
     :param julia_optimization: int, Optimization level (0, 1, 2, 3)
     :returns: pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
         (as strings).
@@ -227,7 +233,8 @@ const nrestarts = {nrestarts:d}
 const perturbationFactor = {perturbationFactor:f}f0
 const annealing = {"true" if annealing else "false"}
 const weighted = {"true" if weights is not None else "false"}
-const batchSize = {min([50, len(X)]):d}
+const batching = {"true" if batching else "false"}
+const batchSize = {min([batchSize, len(X)]) if batching else len(X):d}
 const useVarMap = {"false" if len(variable_names) == 0 else "true"}
 const mutationWeights = [
     {weightMutateConstant:f},
