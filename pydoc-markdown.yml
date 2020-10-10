@@ -50,5 +50,5 @@ renderer:
       preamble: {weight: 3}
     - title: API Documentation
       contents:
-        - pysr.sr.pysr
+        - pysr.sr.*
       preamble: {weight: 4}
