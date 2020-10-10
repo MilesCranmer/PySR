@@ -6,13 +6,19 @@ import numpy as np
 import pandas as pd
 import sympy
 from sympy import sympify, Symbol, lambdify
+import subprocess
+
+global_equation_file = 'hall_of_fame.csv'
+global_n_features = None
+global_variable_names = []
+global_extra_sympy_mappings = {}
 
 sympy_mappings = {
     'div':  lambda x, y : x/y,
     'mult': lambda x, y : x*y,
     'plus': lambda x, y : x + y,
     'neg':  lambda x    : -x,
-    'pow':  lambda x, y : sympy.sign(x)*sympy.Abs(x)**y,
+    'pow':  lambda x, y : sympy.sign(x)*abs(x)**y,
     'cos':  lambda x    : sympy.cos(x),
     'sin':  lambda x    : sympy.sin(x),
     'tan':  lambda x    : sympy.tan(x),
@@ -26,13 +32,13 @@ sympy_mappings = {
     'acosh':lambda x    : sympy.acosh(x),
     'asinh':lambda x    : sympy.asinh(x),
     'atanh':lambda x    : sympy.atanh(x),
-    'abs':  lambda x    : sympy.Abs(x),
+    'abs':  lambda x    : abs(x),
     'mod':  lambda x, y : sympy.Mod(x, y),
     'erf':  lambda x    : sympy.erf(x),
     'erfc': lambda x    : sympy.erfc(x),
-    'logm': lambda x    : sympy.log(sympy.Abs(x)),
-    'logm10':lambda x    : sympy.log10(sympy.Abs(x)),
-    'logm2': lambda x    : sympy.log2(sympy.Abs(x)),
+    'logm': lambda x    : sympy.log(abs(x)),
+    'logm10':lambda x    : sympy.log10(abs(x)),
+    'logm2': lambda x    : sympy.log2(abs(x)),
     'log1p': lambda x    : sympy.log(x + 1),
     'floor': lambda x    : sympy.floor(x),
     'ceil': lambda x    : sympy.ceil(x),
@@ -189,11 +195,6 @@ def pysr(X=None, y=None, weights=None,
     if populations is None:
         populations = procs
 
-    local_sympy_mappings = {
-            **extra_sympy_mappings,
-            **sympy_mappings
-    }
-
     rand_string = f'{"".join([str(np.random.rand())[2] for i in range(20)])}'
 
     if isinstance(binary_operators, str): binary_operators = [binary_operators]
@@ -302,17 +303,64 @@ const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
 
 
     command = [
-        f'julia -O{julia_optimization:d}',
-        f'-p {procs}',
+        f'julia', f'-O{julia_optimization:d}',
+        f'-p', f'{procs}',
         f'/tmp/.runfile_{rand_string}.jl',
         ]
     if timeout is not None:
-        command = [f'timeout {timeout}'] + command
-    cur_cmd = ' '.join(command)
-    print("Running on", cur_cmd)
-    os.system(cur_cmd)
+        command = [f'timeout', f'{timeout}'] + command
+
+    global global_n_features
+    global global_equation_file
+    global global_variable_names
+    global global_extra_sympy_mappings
+
+    global_n_features = X.shape[1]
+    global_equation_file = equation_file
+    global_variable_names = variable_names
+    global_extra_sympy_mappings = extra_sympy_mappings
+
+    print("Running on", ' '.join(command))
+    process = subprocess.Popen(command)
+    while True:
+        try:
+            process.wait()
+        except KeyboardInterrupt:
+            process.kill()
+
+    return get_hof()
+
+
+def run_feature_selection(X, y, select_k_features):
+    """Use a gradient boosting tree regressor as a proxy for finding
+        the k most important features in X, returning indices for those
+        features as output."""
+
+    from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+    from sklearn.feature_selection import SelectFromModel, SelectKBest
+
+    clf = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth=1, random_state=0, loss='ls') #RandomForestRegressor()
+    clf.fit(X, y)
+    selector = SelectFromModel(clf, threshold=-np.inf,
+            max_features=select_k_features, prefit=True)
+    return selector.get_support(indices=True)
+
+def get_hof(equation_file=None, n_features=None, variable_names=None, extra_sympy_mappings=None):
+    """Get the equations from a hall of fame file. If no arguments
+    entered, the ones used previously from a call to PySR will be used."""
+
+    global global_n_features
+    global global_equation_file
+    global global_variable_names
+    global global_extra_sympy_mappings
+
+    if equation_file is None: equation_file = global_equation_file
+    if n_features is None: n_features = global_n_features
+    if variable_names is None: variable_names = global_variable_names
+    if extra_sympy_mappings is None: extra_sympy_mappings = global_extra_sympy_mappings
+
     try:
-        output = pd.read_csv(equation_file, sep="|")
+        output = pd.read_csv(equation_file + '.bkup', sep="|")
     except FileNotFoundError:
         print("Couldn't find equation file!")
         return pd.DataFrame()
@@ -322,10 +370,17 @@ const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
     lastComplexity = 0
     sympy_format = []
     lambda_format = []
+    use_custom_variable_names = (len(variable_names) != 0)
+    local_sympy_mappings = {
+            **extra_sympy_mappings,
+            **sympy_mappings
+    }
+
     if use_custom_variable_names:
-        sympy_symbols = [sympy.Symbol(variable_names[i]) for i in range(X.shape[1])]
+        sympy_symbols = [sympy.Symbol(variable_names[i]) for i in range(n_features)]
     else:
-        sympy_symbols = [sympy.Symbol('x%d'%i) for i in range(X.shape[1])]
+        sympy_symbols = [sympy.Symbol('x%d'%i) for i in range(n_features)]
+
     for i in range(len(output)):
         eqn = sympify(output.loc[i, 'Equation'], locals=local_sympy_mappings)
         sympy_format.append(eqn)
@@ -342,25 +397,39 @@ const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
         lastMSE = curMSE
         lastComplexity = curComplexity
 
-
     output['score'] = np.array(scores)
     output['sympy_format'] = sympy_format
     output['lambda_format'] = lambda_format
+
     return output[['Complexity', 'MSE', 'score', 'Equation', 'sympy_format', 'lambda_format']]
 
+def best_row(equations=None):
+    """Return the best columns of a hall of fame file using the score column."""
+    if equations is None: equations = get_hof()
+    best_idx = np.argmax(equations['score'])
+    return equations.iloc[best_idx]
 
-def run_feature_selection(X, y, select_k_features):
-    """Use a gradient boosting tree regressor as a proxy for finding
-        the k most important features in X, returning indices for those
-        features as output."""
+def best_tex(equations=None):
+    """Return the equation with the best score, in latex format"""
+    if equations is None: equations = get_hof()
+    best_sympy = best_row(equations)['sympy_format']
+    return sympy.latex(best_sympy.simplify())
 
-    from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-    from sklearn.feature_selection import SelectFromModel, SelectKBest
+def best(equations=None):
+    """Return the equation with the best score, in latex format"""
+    if equations is None: equations = get_hof()
+    best_sympy = best_row(equations)['sympy_format']
+    return best_sympy.simplify()
 
-    clf = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth=1, random_state=0, loss='ls') #RandomForestRegressor()
-    clf.fit(X, y)
-    selector = SelectFromModel(clf, threshold=-np.inf,
-            max_features=select_k_features, prefit=True)
-    return selector.get_support(indices=True)
+def best_tex(equations=None):
+    """Return the equation with the best score, in latex format"""
+    if equations is None: equations = get_hof()
+    best_sympy = best_row(equations)['sympy_format']
+    return sympy.latex(best_sympy.simplify())
+
+def best_function(equations=None):
+    """Return the equation with the best score, in callable format"""
+    if equations is None: equations = get_hof()
+    return best_row(equations)['lambda_format']
 
 
