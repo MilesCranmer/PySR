@@ -305,6 +305,7 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [x] Try @spawn over each sub-population. Do random sort, compute mutation for each, then replace 10% oldest.
 - [x] Control max depth, rather than max number of nodes?
 - [x] Allow user to pass names for variables - use these when printing
+- [x] Check for domain errors in an equation quickly before actually running the entire array over it. (We do this now recursively - every single equation is checked for nans/infs when being computed.)
 - [ ] Sort these todo lists by priority
 
 ## Feature ideas
