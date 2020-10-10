@@ -3,11 +3,11 @@
 You likely don't need to tune the hyperparameters yourself,
 but if you would like, you can use `hyperparamopt.py` as an example.
 
-Common options that you can try include:
+Common options to `PySR` include:
+- `binary_operators`, `unary_operators`
 - `niterations`
 - `procs`
 - `populations`
-- `binary_operators`, `unary_operators`
 - `weights`
 - `maxsize`, `maxdepth`
 - `batching`, `batchSize`
@@ -22,29 +22,7 @@ at the end of every iteration,
 which is `hall_of_fame.csv` by default. It also prints the
 equations to stdout.
 
-## Iterations
-
-This is the total number of generations that `pysr` will run for.
-I usually set this to a large number, and exit when I am satisfied
-with the equations.
-
-## Processors
-
-One can adjust the number of workers used by Julia with the
-`procs` option. You should set this equal to the number of cores
-you want `pysr` to use. This will also run `procs` number of
-populations simultaneously by default.
-
-## Populations
-
-By default, `populations=procs`, but you can set a different
-number of populations with this option. More populations may increase
-the diversity of equations discovered, though will take longer to train.
-However, it may be more efficient to have `populations>procs`,
-as there are multiple populations running
-on each core.
-
-## Custom operators
+## Operators
 
 A list of operators can be found on the operators page.
 One can define custom operators in Julia by passing a string:
@@ -68,7 +46,29 @@ so that the SymPy code can understand the output equation from Julia,
 when constructing a useable function. This step is optional, but
 is necessary for the `lambda_format` to work.
 
-One can also edit `operators.jl`. See below for more options.
+One can also edit `operators.jl`.
+
+## Iterations
+
+This is the total number of generations that `pysr` will run for.
+I usually set this to a large number, and exit when I am satisfied
+with the equations.
+
+## Processors
+
+One can adjust the number of workers used by Julia with the
+`procs` option. You should set this equal to the number of cores
+you want `pysr` to use. This will also run `procs` number of
+populations simultaneously by default.
+
+## Populations
+
+By default, `populations=procs`, but you can set a different
+number of populations with this option. More populations may increase
+the diversity of equations discovered, though will take longer to train.
+However, it may be more efficient to have `populations>procs`,
+as there are multiple populations running
+on each core.
 
 ## Weighted data
 
