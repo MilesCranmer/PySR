@@ -36,6 +36,7 @@ python interface.
 
 
 # Installation
+PySR uses both Julia and Python, so you need to have both installed.
 
 Install Julia - see [downloads](https://julialang.org/downloads/), and
 then instructions for [mac](https://julialang.org/downloads/platform/#macos)
@@ -103,8 +104,10 @@ equations = pysr.pysr(X, y, niterations=100,
 Now, the symbolic regression code can search using this `special` function
 that squares its left argument and adds it to its right. Make sure
 all passed functions are valid Julia code, and take one (unary)
-or two (binary) float32 scalars as input, and output a float32. Operators
-are automatically vectorized.
+or two (binary) float32 scalars as input, and output a float32. This means if you
+write any real constants in your operator, like `2.5`, you have to write them
+instead as `2.5f0`, which defines it as `Float32`.
+Operators are automatically vectorized.
 
 We also define `extra_sympy_mappings`,
 so that the SymPy code can understand the output equation from Julia,
@@ -193,17 +196,24 @@ which is `hall_of_fame.csv` by default. It also prints the
 equations to stdout.
 
 ```python
-pysr(X=None, y=None, weights=None, procs=4, niterations=100, ncyclesperiteration=300, binary_operators=["plus", "mult"], unary_operators=["cos", "exp", "sin"], alpha=0.1, annealing=True, fractionReplaced=0.10, fractionReplacedHof=0.10, npop=1000, parsimony=1e-4, migration=True, hofMigration=True, shouldOptimizeConstants=True, topn=10, weightAddNode=1, weightInsertNode=3, weightDeleteNode=3, weightDoNothing=1, weightMutateConstant=10, weightMutateOperator=1, weightRandomize=1, weightSimplify=0.01, perturbationFactor=1.0, nrestarts=3, timeout=None, equation_file='hall_of_fame.csv', test='simple1', verbosity=1e9, maxsize=20)
+pysr(X=None, y=None, weights=None, procs=4, populations=None, niterations=100, ncyclesperiteration=300, binary_operators=["plus", "mult"], unary_operators=["cos", "exp", "sin"], alpha=0.1, annealing=True, fractionReplaced=0.10, fractionReplacedHof=0.10, npop=1000, parsimony=1e-4, migration=True, hofMigration=True, shouldOptimizeConstants=True, topn=10, weightAddNode=1, weightInsertNode=3, weightDeleteNode=3, weightDoNothing=1, weightMutateConstant=10, weightMutateOperator=1, weightRandomize=1, weightSimplify=0.01, perturbationFactor=1.0, nrestarts=3, timeout=None, extra_sympy_mappings={}, equation_file='hall_of_fame.csv', test='simple1', verbosity=1e9, maxsize=20, fast_cycle=False, maxdepth=None, variable_names=[], select_k_features=None, threads=None, julia_optimization=3)
 ```
 
 Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
+Note: most default parameters have been tuned over several example
+equations, but you should adjust `threads`, `niterations`,
+`binary_operators`, `unary_operators` to your requirements.
 
 **Arguments**:
 
-- `X`: np.ndarray, 2D array. Rows are examples, columns are features.
+- `X`: np.ndarray or pandas.DataFrame, 2D array. Rows are examples,
+columns are features. If pandas DataFrame, the columns are used
+for variable names (so make sure they don't contain spaces).
 - `y`: np.ndarray, 1D array. Rows are examples.
-- `weights`: np.ndarray, 1D array. Same shape as `y`. Optional weighted sum (e.g., 1/error^2).
-- `procs`: int, Number of processes running (=number of populations running).
+- `weights`: np.ndarray, 1D array. Each row is how to weight the
+mean-square-error loss on weights.
+- `procs`: int, Number of processes (=number of populations running).
+- `populations`: int, Number of populations running; by default=procs.
 - `niterations`: int, Number of iterations of the algorithm to run. The best
 equations are printed, and migrate between populations, at the
 end of each.
@@ -245,6 +255,18 @@ constant parts by evaluation
 - `equation_file`: str, Where to save the files (.csv separated by |)
 - `test`: str, What test to run, if X,y not passed.
 - `maxsize`: int, Max size of an equation.
+- `maxdepth`: int, Max depth of an equation. You can use both maxsize and maxdepth.
+maxdepth is by default set to = maxsize, which means that it is redundant.
+- `fast_cycle`: bool, (experimental) - batch over population subsamples. This
+is a slightly different algorithm than regularized evolution, but does cycles
+15% faster. May be algorithmically less efficient.
+- `variable_names`: list, a list of names for the variables, other
+than "x0", "x1", etc.
+- `select_k_features`: (None, int), whether to run feature selection in
+Python using random forests, before passing to the symbolic regression
+code. None means no feature selection; an int means select that many
+features.
+- `julia_optimization`: int, Optimization level (0, 1, 2, 3)
 
 **Returns**:
 
@@ -311,6 +333,7 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 ## Feature ideas
 
 - [ ] Cross-validation
+- [ ] read the docs page
 - [ ] Sympy printing
 - [ ] Better cleanup of zombie processes after <ctl-c>
 - [ ] Hierarchical model, so can re-use functional forms. Output of one equation goes into second equation?
@@ -319,13 +342,14 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 - [ ] Refresh screen rather than dumping to stdout?
 - [ ] Add ability to save state from python
 - [ ] Additional degree operators?
-- [ ] Multi targets (vector ops)
+- [ ] Multi targets (vector ops). Idea 1: Node struct contains argument for which registers it is applied to. Then, can work with multiple components simultaneously. Though this may be tricky to get right. Idea 2: each op is defined by input/output space. Some operators are flexible, and the spaces should be adjusted automatically. Otherwise, only consider ops that make a tree possible. But will need additional ops here to get it to work. Idea 3: define each equation in 2 parts: one part that is shared between all outputs, and one that is different between all outputs. Maybe this could be an array of nodes corresponding to each output. And those nodes would define their functions.
 - [ ] Tree crossover? I.e., can take as input a part of the same equation, so long as it is the same level or below?
 - [ ] Consider printing output sorted by score, not by complexity.
 - [ ] Dump scores alongside MSE to .csv (and return with Pandas).
 - [ ] Create flexible way of providing "simplification recipes." I.e., plus(plus(T, C), C) => plus(T, +(C, C)). The user could pass these.
 - [ ] Consider allowing multi-threading turned off, for faster testing (cache issue on travis). Or could simply fix the caching issue there.
 - [ ] Consider returning only the equation of interest; rather than all equations.
+- [ ] Enable derivative operators. These would differentiate their right argument wrt their left argument, some input variable.
 
 ## Algorithmic performance ideas:
 

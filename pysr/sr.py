@@ -78,6 +78,7 @@ def pysr(X=None, y=None, weights=None,
             variable_names=[],
             batching=False,
             batchSize=50,
+            select_k_features=None,
             threads=None, #deprecated
             julia_optimization=3,
         ):
@@ -86,7 +87,9 @@ def pysr(X=None, y=None, weights=None,
     equations, but you should adjust `threads`, `niterations`,
     `binary_operators`, `unary_operators` to your requirements.
 
-    :param X: np.ndarray, 2D array. Rows are examples, columns are features.
+    :param X: np.ndarray or pandas.DataFrame, 2D array. Rows are examples,
+        columns are features. If pandas DataFrame, the columns are used
+        for variable names (so make sure they don't contain spaces).
     :param y: np.ndarray, 1D array. Rows are examples.
     :param weights: np.ndarray, 1D array. Each row is how to weight the
         mean-square-error loss on weights.
@@ -144,6 +147,10 @@ def pysr(X=None, y=None, weights=None,
         during evolution. Still uses full dataset for comparing against
         hall of fame.
     :param batchSize: int, the amount of data to use if doing batching.
+    :param select_k_features: (None, int), whether to run feature selection in
+        Python using random forests, before passing to the symbolic regression
+        code. None means no feature selection; an int means select that many
+        features.
     :param julia_optimization: int, Optimization level (0, 1, 2, 3)
     :returns: pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
         (as strings).
@@ -154,6 +161,12 @@ def pysr(X=None, y=None, weights=None,
     if maxdepth is None:
         maxdepth = maxsize
 
+    if isinstance(X, pd.DataFrame):
+        variable_names = list(X.columns)
+        X = np.array(X)
+
+    use_custom_variable_names = (len(variable_names) != 0)
+
     # Check for potential errors before they happen
     assert len(unary_operators) + len(binary_operators) > 0
     assert len(X.shape) == 2
@@ -162,8 +175,16 @@ def pysr(X=None, y=None, weights=None,
     if weights is not None:
         assert len(weights.shape) == 1
         assert X.shape[0] == weights.shape[0]
-    if len(variable_names) != 0:
+    if use_custom_variable_names:
         assert len(variable_names) == X.shape[1]
+
+    if select_k_features is not None:
+        selection = run_feature_selection(X, y, select_k_features)
+        print(f"Using features {selection}")
+        X = X[:, selection]
+
+        if use_custom_variable_names:
+            variable_names = variable_names[selection]
 
     if populations is None:
         populations = procs
@@ -235,7 +256,7 @@ const annealing = {"true" if annealing else "false"}
 const weighted = {"true" if weights is not None else "false"}
 const batching = {"true" if batching else "false"}
 const batchSize = {min([batchSize, len(X)]) if batching else len(X):d}
-const useVarMap = {"false" if len(variable_names) == 0 else "true"}
+const useVarMap = {"true" if use_custom_variable_names else "false"}
 const mutationWeights = [
     {weightMutateConstant:f},
     {weightMutateOperator:f},
@@ -262,7 +283,7 @@ const y = convert(Array{Float32, 1}, """f"{y_str})"
         def_datasets += """
 const weights = convert(Array{Float32, 1}, """f"{weight_str})"
 
-    if len(variable_names) != 0:
+    if use_custom_variable_names:
         def_hyperparams += f"""
 const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
 
@@ -301,7 +322,7 @@ const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
     lastComplexity = 0
     sympy_format = []
     lambda_format = []
-    if len(variable_names) != 0:
+    if use_custom_variable_names:
         sympy_symbols = [sympy.Symbol(variable_names[i]) for i in range(X.shape[1])]
     else:
         sympy_symbols = [sympy.Symbol('x%d'%i) for i in range(X.shape[1])]
@@ -326,5 +347,20 @@ const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
     output['sympy_format'] = sympy_format
     output['lambda_format'] = lambda_format
     return output[['Complexity', 'MSE', 'score', 'Equation', 'sympy_format', 'lambda_format']]
+
+
+def run_feature_selection(X, y, select_k_features):
+    """Use a gradient boosting tree regressor as a proxy for finding
+        the k most important features in X, returning indices for those
+        features as output."""
+
+    from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+    from sklearn.feature_selection import SelectFromModel, SelectKBest
+
+    clf = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth=1, random_state=0, loss='ls') #RandomForestRegressor()
+    clf.fit(X, y)
+    selector = SelectFromModel(clf, threshold=-np.inf,
+            max_features=select_k_features, prefit=True)
+    return selector.get_support(indices=True)
 
 
