@@ -310,6 +310,7 @@ pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
 ## Feature ideas
 
 - [ ] Sympy printing
+- [ ] Better cleanup of zombie processes after <ctl-c>
 - [ ] Hierarchical model, so can re-use functional forms. Output of one equation goes into second equation?
 - [ ] Call function to read from csv after running, so dont need to run again
 - [ ] Add function to plot equations
