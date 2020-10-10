@@ -58,6 +58,7 @@
 ## Feature ideas
 
 - [ ] Create backup csv file so always something to copy from for `PySR`. Also use random hall of fame file by default. Call function to read from csv after running, so dont need to run again. Dump scores alongside MSE to .csv (and return with Pandas).
+- [ ] Do printing from Python side. Then we can do simplification and pretty-printing.
 - [ ] Cross-validation
 - [ ] Sympy printing
 - [ ] Better cleanup of zombie processes after <ctl-c>

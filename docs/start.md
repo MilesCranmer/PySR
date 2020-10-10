@@ -26,7 +26,7 @@ pip install pysr
 
 ```python
 import numpy as np
-from pysr import pysr
+from pysr import pysr, best, get_hof
 
 # Dataset
 X = 2*np.random.randn(100, 5)
@@ -34,25 +34,30 @@ y = 2*np.cos(X[:, 3]) + X[:, 0]**2 - 2
 
 # Learn equations
 equations = pysr(X, y, niterations=5,
-            binary_operators=["plus", "mult"],
-            unary_operators=["cos", "exp", "sin"])
+        binary_operators=["plus", "mult"],
+        unary_operators=["cos", "exp", "sin"])
 
-...
+...# (you can use ctl-c to exit early)
 
-print(equations)
+print(best())
 ```
 
 which gives:
 
-```
-   Complexity       MSE                                                Equation
-0           5  1.947431                          plus(-1.7420927, mult(x0, x0))
-1           8  0.486858           plus(-1.8710494, plus(cos(x3), mult(x0, x0)))
-2          11  0.000000  plus(plus(mult(x0, x0), cos(x3)), plus(-2.0, cos(x3)))
+```python
+x0**2 + 2.000016*cos(x3) - 1.9999845
 ```
 
-The newest version of PySR also returns three additional columns:
+One can also use `best_tex` to get the LaTeX form,
+or `best_callable` to get a function you can call.
+This uses a score which balances complexity and error;
+however, one can see the full list of equations with:
+```python
+print(get_hof())
+```
+This is a pandas table, with additional columns:
 
+- `MSE` - the mean square error of the formula
 - `score` - a metric akin to Occam's razor; you should use this to help select the "true" equation.
 - `sympy_format` - sympy equation.
 - `lambda_format` - a lambda function for that equation, that you can pass values through.

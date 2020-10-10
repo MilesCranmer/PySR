@@ -391,7 +391,7 @@ def get_hof(equation_file=None, n_features=None, variable_names=None, extra_symp
         if lastMSE is None:
             cur_score = 0.0
         else:
-            cur_score = np.log(curMSE/lastMSE)/(curComplexity - lastComplexity)
+            cur_score = - np.log(curMSE/lastMSE)/(curComplexity - lastComplexity)
 
         scores.append(cur_score)
         lastMSE = curMSE
@@ -427,7 +427,7 @@ def best_tex(equations=None):
     best_sympy = best_row(equations)['sympy_format']
     return sympy.latex(best_sympy.simplify())
 
-def best_function(equations=None):
+def best_callable(equations=None):
     """Return the equation with the best score, in callable format"""
     if equations is None: equations = get_hof()
     return best_row(equations)['lambda_format']
