@@ -79,6 +79,8 @@
 ## Algorithmic performance ideas:
 
 - [ ] Use package compiler and compile sr.jl into a standalone binary that can be used by pysr.
+- [ ] When doing equation warmup, only migrate those equations with almost the same complexity. Rather than having to consider simple equations later in the game.
+- [ ] Right now we only update the score based on some. Need to update score based on entire data! Note that optimizer only is used sometimes.
 - [ ] Idea: use gradient of equation with respect to each operator (perhaps simply add to each operator) to tell which part is the most "sensitive" to changes. Then, perhaps insert/delete/mutate on that part of the tree?
 - [ ] Start populations staggered; so that there is more frequent printing (and pops that start a bit later get hall of fame already)?
 - [ ] Consider adding mutation for constant<->variable
@@ -94,6 +96,7 @@
 
 ## Code performance ideas:
 
+- [ ] How hard is it to turn the recursive array evaluation into a for loop?
 - [ ] Try defining a binary tree as an array, rather than a linked list. See https://stackoverflow.com/a/6384714/2689923
 - [ ] Add true multi-node processing, with MPI, or just file sharing. Multiple populations per core.
     - Ongoing in cluster branch

@@ -13,6 +13,7 @@ import Base.FastMath: sqrt_llvm_fast, neg_float_fast,
 # Use some fast operators from https://github.com/JuliaLang/julia/blob/81597635c4ad1e8c2e1c5753fda4ec0e7397543f/base/fastmath.jl
 # Define allowed operators. Any julia operator can also be used.
 plus(x::Float32, y::Float32)::Float32 = add_float_fast(x, y) #Do not change the name of this operator.
+sub(x::Float32, y::Float32)::Float32 = sub_float_fast(x, y) #Do not change the name of this operator.
 mult(x::Float32, y::Float32)::Float32 = mul_float_fast(x, y) #Do not change the name of this operator.
 pow(x::Float32, y::Float32)::Float32 = sign_fast(x)*ccall(("powf",libm), Float32, (Float32,Float32), abs_fast(x), y)
 div(x::Float32, y::Float32)::Float32 = div_float_fast(x, y)
