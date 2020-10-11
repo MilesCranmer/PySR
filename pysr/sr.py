@@ -460,23 +460,15 @@ def best_tex(equations=None):
     return sympy.latex(best_sympy.simplify())
 
 def best(equations=None):
-    """Return the equation with the best score, in latex format
+    """Return the equation with the best score, in sympy format.
     By default this uses the last equation file.
     """
     if equations is None: equations = get_hof()
     best_sympy = best_row(equations)['sympy_format']
     return best_sympy.simplify()
 
-def best_tex(equations=None):
-    """Return the equation with the best score, in latex format
-    By default this uses the last equation file.
-    """
-    if equations is None: equations = get_hof()
-    best_sympy = best_row(equations)['sympy_format']
-    return sympy.latex(best_sympy.simplify())
-
 def best_callable(equations=None):
-    """Return the equation with the best score, in callable format
+    """Return the equation with the best score, in callable format.
     By default this uses the last equation file.
     """
     if equations is None: equations = get_hof()
