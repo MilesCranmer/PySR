@@ -7,6 +7,7 @@ Some configurable features and options in `PySR` which you
 may find useful include:
 - `binary_operators`, `unary_operators`
 - `niterations`
+- `ncyclesperiteration`
 - `procs`
 - `populations`
 - `weights`
@@ -54,6 +55,21 @@ One can also edit `operators.jl`.
 This is the total number of generations that `pysr` will run for.
 I usually set this to a large number, and exit when I am satisfied
 with the equations.
+
+## Cycles per iteration
+
+Each cycle considers every 10-equation subsample (re-sampled for each individual 10,
+unless `fast_cycle` is set in which case the subsamples are separate groups of equations)
+a single time, producing one mutated equation for each.
+The parameter `ncyclesperiteration` defines how many times this
+occurs before the equations are compared to the hall of fame,
+and new equations are migrated from the hall of fame, or from other populations.
+It also controls how slowly annealing occurs. You may find that increasing
+`ncyclesperiteration` results in a higher cycles-per-second, as the head
+worker needs to reduce and distribute new equations less often, and also increases
+diversity. But at the same
+time, a smaller number it might be that migrating equations from the hall of fame helps
+each population stay closer to the best current equations.
 
 ## Processors
 
