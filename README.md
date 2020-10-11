@@ -1,4 +1,4 @@
-# PySR.jl
+# [PySR.jl](https://github.com/MilesCranmer/PySR)
 
 [![Documentation Status](https://readthedocs.org/projects/pysr/badge/?version=latest)](https://pysr.readthedocs.io/en/latest/?badge=latest)
 [![PyPI version](https://badge.fury.io/py/pysr.svg)](https://badge.fury.io/py/pysr)
