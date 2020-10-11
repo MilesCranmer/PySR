@@ -17,6 +17,7 @@ sympy_mappings = {
     'div':  lambda x, y : x/y,
     'mult': lambda x, y : x*y,
     'plus': lambda x, y : x + y,
+    'sub':  lambda x, y : x - y,
     'neg':  lambda x    : -x,
     'pow':  lambda x, y : sympy.sign(x)*abs(x)**y,
     'cos':  lambda x    : sympy.cos(x),
