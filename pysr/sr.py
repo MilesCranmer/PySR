@@ -322,11 +322,10 @@ const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
 
     print("Running on", ' '.join(command))
     process = subprocess.Popen(command)
-    while True:
-        try:
-            process.wait()
-        except KeyboardInterrupt:
-            process.kill()
+    try:
+        process.wait()
+    except KeyboardInterrupt:
+        process.kill()
 
     return get_hof()
 
