@@ -281,7 +281,7 @@ function evalTreeArray(tree::Node, cX::Array{Float32, 2})::Union{Array{Float32, 
         end
     elseif tree.degree == 1
         cumulator = evalTreeArray(tree.l, cX)
-        if cumulator == nothing
+        if cumulator === nothing
             return nothing
         end
         op_idx = tree.op
@@ -296,11 +296,11 @@ function evalTreeArray(tree::Node, cX::Array{Float32, 2})::Union{Array{Float32, 
         return cumulator
     else
         cumulator = evalTreeArray(tree.l, cX)
-        if cumulator == nothing
+        if cumulator === nothing
             return nothing
         end
         array2 = evalTreeArray(tree.r, cX)
-        if array2 == nothing
+        if array2 === nothing
             return nothing
         end
 
@@ -321,7 +321,7 @@ end
 # Score an equation
 function scoreFunc(tree::Node)::Float32
     prediction = evalTreeArray(tree)
-    if prediction == nothing
+    if prediction === nothing
         return 1f9
     end
     if weighted
@@ -338,7 +338,7 @@ function scoreFuncBatch(tree::Node)::Float32
     batch_idx = randperm(len)[1:batchSize]
     batch_X = X[batch_idx, :]
     prediction = evalTreeArray(tree, batch_X)
-    if prediction == nothing
+    if prediction === nothing
         return 1f9
     end
     size_adjustment = 1f0
@@ -491,7 +491,7 @@ end
 # with a variable or constant
 function deleteRandomOp(tree::Node)::Node
     node, parent = randomNodeAndParent(tree, nothing)
-    isroot = (parent == nothing)
+    isroot = (parent === nothing)
 
     if node.degree == 0
         # Replace with new constant
