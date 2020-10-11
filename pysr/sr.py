@@ -16,6 +16,8 @@ global_extra_sympy_mappings = {}
 sympy_mappings = {
     'div':  lambda x, y : x/y,
     'mult': lambda x, y : x*y,
+    'square':lambda x   : x**2,
+    'cube': lambda x    : x**3,
     'plus': lambda x, y : x + y,
     'sub':  lambda x, y : x - y,
     'neg':  lambda x    : -x,

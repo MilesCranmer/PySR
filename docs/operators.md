@@ -14,6 +14,8 @@ of these and other valid operators are stated below.
 **Unary**
 
 `neg`,
+`square`,
+`cube`,
 `exp`,
 `abs`,
 `logm` (=log(abs(x) + 1e-8)),
