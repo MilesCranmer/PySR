@@ -87,6 +87,7 @@ def pysr(X=None, y=None, weights=None,
             batchSize=50,
             select_k_features=None,
             warmupMaxsize=0,
+            limitPowComplexity=False,
             threads=None, #deprecated
             julia_optimization=3,
         ):
@@ -163,6 +164,9 @@ def pysr(X=None, y=None, weights=None,
         a small number up to the maxsize (if greater than 0).
         If greater than 0, says how many cycles before the maxsize
         is increased.
+    :param limitPowComplexity: bool, whether to prevent pow from having
+        complex right arguments. I.e., 3.0^(x+y) becomes impossible,
+        but 3.0^x is possible.
     :param julia_optimization: int, Optimization level (0, 1, 2, 3)
     :returns: pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
         (as strings).
@@ -275,6 +279,7 @@ const mutationWeights = [
     {weightDoNothing:f}
 ]
 const warmupMaxsize = {warmupMaxsize:d}
+const limitPowComplexity = {"true" if limitPowComplexity else "false"}
 """
 
     op_runner = ""

@@ -599,6 +599,27 @@ mutable struct PopMember
 
 end
 
+# Check if any power operator is to the power of a complex expression
+function deepPow(tree::Node)::Integer
+    if tree.degree == 0
+        return 0
+    elseif tree.degree == 1
+        return 0 + deepPow(tree.l)
+    else
+        if binops[tree.op] == pow
+            complexity_in_power = countNodes(tree.r)
+            is_deep_pow = (complexity_in_power > 1)
+            if is_deep_pow
+                return 1 + deepPow(tree.l)
+            else
+                return 0 + deepPow(tree.l)
+            end
+        else
+            return 0 + deepPow(tree.l) + deepPow(tree.r)
+        end
+    end
+end
+
 # Go through one simulated annealing mutation cycle
 #  exp(-delta/T) defines probability of accepting a change
 function iterate(member::PopMember, T::Float32, curmaxsize::Integer)::PopMember
@@ -651,6 +672,13 @@ function iterate(member::PopMember, T::Float32, curmaxsize::Integer)::PopMember
     else
         return PopMember(tree, beforeLoss)
     end
+
+
+    # Check for illegal functions
+    if limitPowComplexity && (deepPow(tree) > 0)
+        return PopMember(copyNode(prev), beforeLoss)
+    end
+
 
     if batching
         afterLoss = scoreFuncBatch(tree)
