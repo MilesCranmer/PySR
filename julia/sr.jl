@@ -1034,12 +1034,7 @@ function fullRun(niterations::Integer;
                                 end
                             end
                         end
-                        if shouldOptimizeConstants
-                            #pass #(We already calculate full scores in the optimizer)
-                            #TODO - not correct. only randomly calculate!
-                        else
-                            tmp_pop = finalizeScores(tmp_pop)
-                        end
+                        tmp_pop = finalizeScores(tmp_pop)
                         tmp_pop
                     end
                     put!(channels[i], fetch(allPops[i]))
