@@ -78,6 +78,7 @@
 
 ## Algorithmic performance ideas:
 
+- [ ] Use package compiler and compile sr.jl into a standalone binary that can be used by pysr.
 - [ ] Idea: use gradient of equation with respect to each operator (perhaps simply add to each operator) to tell which part is the most "sensitive" to changes. Then, perhaps insert/delete/mutate on that part of the tree?
 - [ ] Start populations staggered; so that there is more frequent printing (and pops that start a bit later get hall of fame already)?
 - [ ] Consider adding mutation for constant<->variable

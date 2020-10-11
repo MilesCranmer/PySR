@@ -282,10 +282,10 @@ function evalTreeArray(tree::Node, cX::Array{Float32, 2})::Union{Array{Float32, 
             return nothing
         end
         op = unaops[tree.op]
-        @fastmath @inbounds @simd for i=1:clen
+        @inbounds @simd for i=1:clen
             cumulator[i] = op(cumulator[i])
         end
-        @inbounds @simd for i=1:clen
+        @inbounds for i=1:clen
             if isinf(cumulator[i]) || isnan(cumulator[i])
                 return nothing
             end
@@ -302,10 +302,10 @@ function evalTreeArray(tree::Node, cX::Array{Float32, 2})::Union{Array{Float32, 
             return nothing
         end
 
-        @fastmath @inbounds @simd for i=1:clen
+        @inbounds @simd for i=1:clen
             cumulator[i] = op(cumulator[i], array2[i])
         end
-        @inbounds @simd for i=1:clen
+        @inbounds for i=1:clen
             if isinf(cumulator[i]) || isnan(cumulator[i])
                 return nothing
             end
@@ -1032,6 +1032,7 @@ function fullRun(niterations::Integer;
                         end
                         if shouldOptimizeConstants
                             #pass #(We already calculate full scores in the optimizer)
+                            #TODO - not correct. only randomly calculate!
                         else
                             tmp_pop = finalizeScores(tmp_pop)
                         end

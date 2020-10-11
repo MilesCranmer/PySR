@@ -241,8 +241,8 @@ def pysr(X=None, y=None, weights=None,
             op_list[i] = function_name
 
     def_hyperparams += f"""include("{pkg_directory}/operators.jl")
-const binops = {'[' + ', '.join(binary_operators) + ']'}
-const unaops = {'[' + ', '.join(unary_operators) + ']'}
+const binops = @fastmath {'[' + ', '.join(binary_operators) + ']'}
+const unaops = @fastmath {'[' + ', '.join(unary_operators) + ']'}
 const ns=10;
 const parsimony = {parsimony:f}f0
 const alpha = {alpha:f}f0
