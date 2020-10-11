@@ -107,6 +107,10 @@ constants, variables). `maxdepth` is by default not used, but can be set
 to control the maximum depth of an equation. These will make processing
 faster, as longer equations take longer to test.
 
+One can warm up the maxsize from a small number to encourage
+PySR to start simple, by using the `warmupMaxsize` argument.
+This specifies that maxsize increases every `warmupMaxsize`.
+
 
 ## Batching
 One can turn on mini-batching, with the `batching` flag,

@@ -56,6 +56,7 @@
 - [x] Create backup csv file so always something to copy from for `PySR`. Also use random hall of fame file by default. Call function to read from csv after running, so dont need to run again. Dump scores alongside MSE to .csv (and return with Pandas).
 - [x] Better cleanup of zombie processes after <ctl-c>
 - [x] Consider printing output sorted by score, not by complexity.
+- [x] Increase max complexity slowly over time up to the actual max.
 - [ ] Sort these todo lists by priority
 
 ## Feature ideas

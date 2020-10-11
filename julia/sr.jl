@@ -597,7 +597,7 @@ end
 
 # Go through one simulated annealing mutation cycle
 #  exp(-delta/T) defines probability of accepting a change
-function iterate(member::PopMember, T::Float32)::PopMember
+function iterate(member::PopMember, T::Float32, curmaxsize::Integer)::PopMember
     prev = member.tree
     tree = copyNode(prev)
     #TODO - reconsider this
@@ -610,23 +610,31 @@ function iterate(member::PopMember, T::Float32)::PopMember
     mutationChoice = rand()
     weightAdjustmentMutateConstant = min(8, countConstants(tree))/8.0
     cur_weights = copy(mutationWeights) .* 1.0
+    #More constants => more likely to do constant mutation
     cur_weights[1] *= weightAdjustmentMutateConstant
-    cur_weights /= sum(cur_weights)
-    cweights = cumsum(cur_weights)
     n = countNodes(tree)
     depth = countDepth(tree)
+
+    # If equation too big, don't add new operators
+    if n >= curmaxsize || depth >= maxdepth
+        cur_weights[3] = 0.0
+        cur_weights[4] = 0.0
+    end
+
+    cur_weights /= sum(cur_weights)
+    cweights = cumsum(cur_weights)
 
     if mutationChoice < cweights[1]
         tree = mutateConstant(tree, T)
     elseif mutationChoice < cweights[2]
         tree = mutateOperator(tree)
-    elseif mutationChoice < cweights[3] && n < maxsize && depth < maxdepth
+    elseif mutationChoice < cweights[3]
         if rand() < 0.5
             tree = appendRandomOp(tree)
         else
             tree = prependRandomOp(tree)
         end
-    elseif mutationChoice < cweights[4] && n < maxsize && depth < maxdepth
+    elseif mutationChoice < cweights[4]
         tree = insertRandomOp(tree)
     elseif mutationChoice < cweights[5]
         tree = deleteRandomOp(tree)
@@ -711,7 +719,7 @@ end
 
 # Pass through the population several times, replacing the oldest
 # with the fittest of a small subsample
-function regEvolCycle(pop::Population, T::Float32)::Population
+function regEvolCycle(pop::Population, T::Float32, curmaxsize::Integer)::Population
     # Batch over each subsample. Can give 15% improvement in speed; probably moreso for large pops.
     # but is ultimately a different algorithm than regularized evolution, and might not be
     # as good.
@@ -732,7 +740,7 @@ function regEvolCycle(pop::Population, T::Float32)::Population
                 end
             end
             allstar = pop.members[best_idx]
-            babies[i] = iterate(allstar, T)
+            babies[i] = iterate(allstar, T, curmaxsize)
         end
 
         # Replace the n_evol_cycles-oldest members of each population
@@ -743,7 +751,7 @@ function regEvolCycle(pop::Population, T::Float32)::Population
     else
         for i=1:round(Integer, pop.n/ns)
             allstar = bestOfSample(pop)
-            baby = iterate(allstar, T)
+            baby = iterate(allstar, T, curmaxsize)
             #printTree(baby.tree)
             oldest = argmin([pop.members[member].birth for member=1:pop.n])
             pop.members[oldest] = baby
@@ -757,16 +765,17 @@ end
 # printing the fittest equation every 10% through
 function run(
         pop::Population,
-        ncycles::Integer;
+        ncycles::Integer,
+        curmaxsize::Integer;
         verbosity::Integer=0
-        )::Population
+       )::Population
 
     allT = LinRange(1.0f0, 0.0f0, ncycles)
     for iT in 1:size(allT)[1]
         if annealing
-            pop = regEvolCycle(pop, allT[iT])
+            pop = regEvolCycle(pop, allT[iT], curmaxsize)
         else
-            pop = regEvolCycle(pop, 1.0f0)
+            pop = regEvolCycle(pop, 1.0f0, curmaxsize)
         end
 
         if verbosity > 0 && (iT % verbosity == 0)
@@ -909,6 +918,10 @@ function fullRun(niterations::Integer;
     channels = [RemoteChannel(1) for j=1:npopulations]
     bestSubPops = [Population(1) for j=1:npopulations]
     hallOfFame = HallOfFame()
+    curmaxsize = 3
+    if warmupMaxsize == 0
+        curmaxsize = maxsize
+    end
 
     for i=1:npopulations
         future = @spawnat :any Population(npop, 3)
@@ -917,10 +930,11 @@ function fullRun(niterations::Integer;
 
     # # 2. Start the cycle on every process:
     @sync for i=1:npopulations
-        @async allPops[i] = @spawnat :any run(fetch(allPops[i]), ncyclesperiteration, verbosity=verbosity)
+        @async allPops[i] = @spawnat :any run(fetch(allPops[i]), ncyclesperiteration, curmaxsize, verbosity=verbosity)
     end
     println("Started!")
     cycles_complete = npopulations * niterations
+    curmaxsize += 1
 
     last_print_time = time()
     num_equations = 0.0
@@ -1006,7 +1020,7 @@ function fullRun(niterations::Integer;
 
                 @async begin
                     allPops[i] = @spawnat :any let
-                        tmp_pop = run(cur_pop, ncyclesperiteration, verbosity=verbosity)
+                        tmp_pop = run(cur_pop, ncyclesperiteration, curmaxsize, verbosity=verbosity)
                         @inbounds @simd for j=1:tmp_pop.n
                             if rand() < 0.1
                                 tmp_pop.members[j].tree = simplifyTree(tmp_pop.members[j].tree)
@@ -1027,6 +1041,13 @@ function fullRun(niterations::Integer;
                 end
 
                 cycles_complete -= 1
+                cycles_elapsed = npopulations * niterations - cycles_complete
+                if warmupMaxsize != 0 && cycles_elapsed % warmupMaxsize == 0
+                    curmaxsize += 1
+                    if curmaxsize > maxsize
+                        curmaxsize = maxsize
+                    end
+                end
                 num_equations += ncyclesperiteration * npop / 10.0
             end
         end

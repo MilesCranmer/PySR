@@ -85,6 +85,7 @@ def pysr(X=None, y=None, weights=None,
             batching=False,
             batchSize=50,
             select_k_features=None,
+            warmupMaxsize=0,
             threads=None, #deprecated
             julia_optimization=3,
         ):
@@ -157,6 +158,10 @@ def pysr(X=None, y=None, weights=None,
         Python using random forests, before passing to the symbolic regression
         code. None means no feature selection; an int means select that many
         features.
+    :param warmupMaxsize: int, whether to slowly increase max size from
+        a small number up to the maxsize (if greater than 0).
+        If greater than 0, says how many cycles before the maxsize
+        is increased.
     :param julia_optimization: int, Optimization level (0, 1, 2, 3)
     :returns: pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
         (as strings).
@@ -268,6 +273,7 @@ const mutationWeights = [
     {weightRandomize:f},
     {weightDoNothing:f}
 ]
+const warmupMaxsize = {warmupMaxsize:d}
     """
 
     if X.shape[1] == 1:
