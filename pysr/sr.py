@@ -358,6 +358,11 @@ def get_hof(equation_file=None, n_features=None, variable_names=None, extra_symp
     if variable_names is None: variable_names = global_variable_names
     if extra_sympy_mappings is None: extra_sympy_mappings = global_extra_sympy_mappings
 
+    global_equation_file = equation_file
+    global_n_features = n_features
+    global_variable_names = variable_names
+    global_extra_sympy_mappings = extra_sympy_mappings
+
     try:
         output = pd.read_csv(equation_file + '.bkup', sep="|")
     except FileNotFoundError:
