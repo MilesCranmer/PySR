@@ -55,7 +55,10 @@ else
 end
 
 
-id = (x,) -> x
+function id(x::Float32)::Float32
+    x
+end
+
 const nuna = size(unaops)[1]
 const nbin = size(binops)[1]
 const nops = nuna + nbin
