@@ -282,33 +282,27 @@ const warmupMaxsize = {warmupMaxsize:d}
         op_runner += f"""
 @inline function BINOP(i::Int, x::Float32, y::Float32)::Float32
     if i == 1
-        return @fastmath {binary_operators[0]}(x, y)
-"""
+        return @fastmath {binary_operators[0]}(x, y)"""
         for i in range(1, len(binary_operators)):
             op_runner += f"""
     elseif i == {i+1}
-        return @fastmath {binary_operators[i]}(x, y)
-"""
+        return @fastmath {binary_operators[i]}(x, y)"""
         op_runner += """
     end
-end
-"""
+end"""
 
     if len(unary_operators) > 0:
         op_runner += f"""
 @inline function UNAOP(i::Int, x::Float32)::Float32
     if i == 1
-        return @fastmath {unary_operators[0]}(x)
-"""
+        return @fastmath {unary_operators[0]}(x)"""
         for i in range(1, len(unary_operators)):
             op_runner += f"""
     elseif i == {i+1}
-        return @fastmath {unary_operators[i]}(x)
-"""
+        return @fastmath {unary_operators[i]}(x)"""
         op_runner += """
     end
-end
-"""
+end"""
 
     def_hyperparams += op_runner
 
