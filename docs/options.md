@@ -14,6 +14,7 @@ may find useful include:
 - `maxsize`, `maxdepth`
 - `batching`, `batchSize`
 - `variable_names` (or pandas input)
+- Limiting pow complexity
 - LaTeX, SymPy, and callable equation output
 
 These are described below
@@ -125,6 +126,16 @@ You can pass a list of strings naming each column of `X` with
 `variable_names`. Alternatively, you can pass `X` as a pandas dataframe
 and the columns will be used as variable names. Make sure only
 alphabetical characters and `_` are used in these names.
+
+## Limiting pow complexity
+
+One can limit the complexity of power laws
+with the `limitPowComplexity` argument.
+This will prevent the exponent part of the expression
+having complexity greater than one. This prevents uninterpretable
+expressions such as `x^(y+z^(5+y))`, which sometimes
+occur during training. But it still allows for, e.g., `5^y` or
+`(x+y)^5`: anything where the exponent is not overly complex.
 
 ## LaTeX, SymPy, callables
 
