@@ -606,7 +606,7 @@ function deepPow(tree::Node)::Integer
     elseif tree.degree == 1
         return 0 + deepPow(tree.l)
     else
-        if binops[tree.op] == pow
+        if binops[tree.op] === pow
             complexity_in_power = countNodes(tree.r)
             is_deep_pow = (complexity_in_power > 1)
             if is_deep_pow
