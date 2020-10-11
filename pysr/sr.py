@@ -242,8 +242,8 @@ def pysr(X=None, y=None, weights=None,
             op_list[i] = function_name
 
     def_hyperparams += f"""include("{pkg_directory}/operators.jl")
-const binops = @fastmath {'[' + ', '.join(binary_operators) + ']'}
-const unaops = @fastmath {'[' + ', '.join(unary_operators) + ']'}
+const binops = {'[' + ', '.join(binary_operators) + ']'}
+const unaops = {'[' + ', '.join(unary_operators) + ']'}
 const ns=10;
 const parsimony = {parsimony:f}f0
 const alpha = {alpha:f}f0
@@ -275,7 +275,42 @@ const mutationWeights = [
     {weightDoNothing:f}
 ]
 const warmupMaxsize = {warmupMaxsize:d}
-    """
+"""
+
+    op_runner = ""
+    if len(binary_operators) > 0:
+        op_runner += f"""
+@inline function BINOP(i::Int, x::Float32, y::Float32)::Float32
+    if i == 1
+        return @fastmath {binary_operators[0]}(x, y)
+"""
+        for i in range(1, len(binary_operators)):
+            op_runner += f"""
+    elseif i == {i+1}
+        return @fastmath {binary_operators[i]}(x, y)
+"""
+        op_runner += """
+    end
+end
+"""
+
+    if len(unary_operators) > 0:
+        op_runner += f"""
+@inline function UNAOP(i::Int, x::Float32)::Float32
+    if i == 1
+        return @fastmath {unary_operators[0]}(x)
+"""
+        for i in range(1, len(unary_operators)):
+            op_runner += f"""
+    elseif i == {i+1}
+        return @fastmath {unary_operators[i]}(x)
+"""
+        op_runner += """
+    end
+end
+"""
+
+    def_hyperparams += op_runner
 
     if X.shape[1] == 1:
         X_str = 'transpose([' + str(X.tolist()).replace(']', '').replace(',', '').replace('[', '') + '])'

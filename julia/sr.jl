@@ -281,9 +281,9 @@ function evalTreeArray(tree::Node, cX::Array{Float32, 2})::Union{Array{Float32, 
         if cumulator == nothing
             return nothing
         end
-        op = unaops[tree.op]
+        op_idx = tree.op
         @inbounds @simd for i=1:clen
-            cumulator[i] = op(cumulator[i])
+            cumulator[i] = UNAOP(op_idx, cumulator[i])
         end
         @inbounds for i=1:clen
             if isinf(cumulator[i]) || isnan(cumulator[i])
@@ -292,7 +292,6 @@ function evalTreeArray(tree::Node, cX::Array{Float32, 2})::Union{Array{Float32, 
         end
         return cumulator
     else
-        op = binops[tree.op]
         cumulator = evalTreeArray(tree.l, cX)
         if cumulator == nothing
             return nothing
@@ -302,8 +301,10 @@ function evalTreeArray(tree::Node, cX::Array{Float32, 2})::Union{Array{Float32, 
             return nothing
         end
 
+        op_idx = tree.op
+
         @inbounds @simd for i=1:clen
-            cumulator[i] = op(cumulator[i], array2[i])
+            cumulator[i] = BINOP(op_idx, cumulator[i], array2[i])
         end
         @inbounds for i=1:clen
             if isinf(cumulator[i]) || isnan(cumulator[i])
