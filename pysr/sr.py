@@ -286,27 +286,27 @@ const limitPowComplexity = {"true" if limitPowComplexity else "false"}
 
     op_runner = ""
     if len(binary_operators) > 0:
-        op_runner += f"""
-@inline function BINOP(i::Int, x::Float32, y::Float32)::Float32
+        op_runner += """
+function BINOP!(i::Int, x::Array{Float32, 1}, y::Array{Float32, 1})::Array{Float32, 1}
     if i == 1
-        return @fastmath {binary_operators[0]}(x, y)"""
+        x .= @fastmath """f"{binary_operators[0]}"".(x, y)"
         for i in range(1, len(binary_operators)):
             op_runner += f"""
     elseif i == {i+1}
-        return @fastmath {binary_operators[i]}(x, y)"""
+        x .= @fastmath {binary_operators[i]}.(x, y)"""
         op_runner += """
     end
 end"""
 
     if len(unary_operators) > 0:
-        op_runner += f"""
-@inline function UNAOP(i::Int, x::Float32)::Float32
+        op_runner += """
+function UNAOP!(i::Int, x::Array{Float32, 1})::Array{Float32, 1}
     if i == 1
-        return @fastmath {unary_operators[0]}(x)"""
+        x .= @fastmath """f"{unary_operators[0]}.(x)"
         for i in range(1, len(unary_operators)):
-            op_runner += f"""
+            op_runner += """
     elseif i == {i+1}
-        return @fastmath {unary_operators[i]}(x)"""
+        x .= @fastmath """f"{unary_operators[i]}.(x)"
         op_runner += """
     end
 end"""
