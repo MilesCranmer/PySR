@@ -236,16 +236,16 @@ def pysr(X=None, y=None, weights=None,
     for op_list in [binary_operators, unary_operators]:
         for i in range(len(op_list)):
             op = op_list[i]
-            if '(' not in op:
-                continue
+            is_user_defined_operator = '(' in op
 
-            def_hyperparams += op + "\n"
-            # Cut off from the first non-alphanumeric char:
-            first_non_char = [
-                    j for j in range(len(op))
-                    if not (op[j].isalpha() or op[j].isdigit())][0]
-            function_name = op[:first_non_char]
-            op_list[i] = function_name
+            if is_user_defined_operator:
+                def_hyperparams += op + "\n"
+                # Cut off from the first non-alphanumeric char:
+                first_non_char = [
+                        j for j in range(len(op))
+                        if not (op[j].isalpha() or op[j].isdigit())][0]
+                function_name = op[:first_non_char]
+                op_list[i] = function_name
 
     def_hyperparams += f"""include("{pkg_directory}/operators.jl")
 const binops = {'[' + ', '.join(binary_operators) + ']'}
