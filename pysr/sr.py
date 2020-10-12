@@ -310,7 +310,7 @@ end"""
             x[j] = """f"{unary_operators[0]}(x[j])""""
         end"""
         for i in range(1, len(unary_operators)):
-            op_runner += """
+            op_runner += f"""
     elseif i === {i+1}
         @inbounds @simd for j=1:clen
             x[j] = {unary_operators[i]}(x[j])
