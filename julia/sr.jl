@@ -96,9 +96,9 @@ end
 
 # Copy an equation (faster than deepcopy)
 function copyNode(tree::Node)::Node
-   if tree.degree === 0
+   if tree.degree == 0
        return Node(tree.val)
-   elseif tree.degree === 1
+   elseif tree.degree == 1
        return Node(tree.op, copyNode(tree.l))
     else
         return Node(tree.op, copyNode(tree.l), copyNode(tree.r))
@@ -107,9 +107,9 @@ end
 
 # Count the operators, constants, variables in an equation
 function countNodes(tree::Node)::Integer
-    if tree.degree === 0
+    if tree.degree == 0
         return 1
-    elseif tree.degree === 1
+    elseif tree.degree == 1
         return 1 + countNodes(tree.l)
     else
         return 1 + countNodes(tree.l) + countNodes(tree.r)
@@ -118,9 +118,9 @@ end
 
 # Count the max depth of a tree
 function countDepth(tree::Node)::Integer
-    if tree.degree === 0
+    if tree.degree == 0
         return 1
-    elseif tree.degree === 1
+    elseif tree.degree == 1
         return 1 + countDepth(tree.l)
     else
         return 1 + max(countDepth(tree.l), countDepth(tree.r))
@@ -129,7 +129,7 @@ end
 
 # Convert an equation to a string
 function stringTree(tree::Node)::String
-    if tree.degree === 0
+    if tree.degree == 0
         if tree.constant
             return string(tree.val)
         else
@@ -139,7 +139,7 @@ function stringTree(tree::Node)::String
                 return "x$(tree.val - 1)"
             end
         end
-    elseif tree.degree === 1
+    elseif tree.degree == 1
         return "$(unaops[tree.op])($(stringTree(tree.l)))"
     else
         return "$(binops[tree.op])($(stringTree(tree.l)), $(stringTree(tree.r)))"
@@ -153,7 +153,7 @@ end
 
 # Return a random node from the tree
 function randomNode(tree::Node)::Node
-    if tree.degree === 0
+    if tree.degree == 0
         return tree
     end
     a = countNodes(tree)
@@ -162,14 +162,14 @@ function randomNode(tree::Node)::Node
     if tree.degree >= 1
         b = countNodes(tree.l)
     end
-    if tree.degree === 2
+    if tree.degree == 2
         c = countNodes(tree.r)
     end
 
     i = rand(1:1+b+c)
     if i <= b
         return randomNode(tree.l)
-    elseif i === b + 1
+    elseif i == b + 1
         return tree
     end
 
@@ -178,9 +178,9 @@ end
 
 # Count the number of unary operators in the equation
 function countUnaryOperators(tree::Node)::Integer
-    if tree.degree === 0
+    if tree.degree == 0
         return 0
-    elseif tree.degree === 1
+    elseif tree.degree == 1
         return 1 + countUnaryOperators(tree.l)
     else
         return 0 + countUnaryOperators(tree.l) + countUnaryOperators(tree.r)
@@ -189,9 +189,9 @@ end
 
 # Count the number of binary operators in the equation
 function countBinaryOperators(tree::Node)::Integer
-    if tree.degree === 0
+    if tree.degree == 0
         return 0
-    elseif tree.degree === 1
+    elseif tree.degree == 1
         return 0 + countBinaryOperators(tree.l)
     else
         return 1 + countBinaryOperators(tree.l) + countBinaryOperators(tree.r)
@@ -206,14 +206,14 @@ end
 # Randomly convert an operator into another one (binary->binary;
 # unary->unary)
 function mutateOperator(tree::Node)::Node
-    if countOperators(tree) === 0
+    if countOperators(tree) == 0
         return tree
     end
     node = randomNode(tree)
-    while node.degree === 0
+    while node.degree == 0
         node = randomNode(tree)
     end
-    if node.degree === 1
+    if node.degree == 1
         node.op = rand(1:length(unaops))
     else
         node.op = rand(1:length(binops))
@@ -223,9 +223,9 @@ end
 
 # Count the number of constants in an equation
 function countConstants(tree::Node)::Integer
-    if tree.degree === 0
+    if tree.degree == 0
         return convert(Integer, tree.constant)
-    elseif tree.degree === 1
+    elseif tree.degree == 1
         return 0 + countConstants(tree.l)
     else
         return 0 + countConstants(tree.l) + countConstants(tree.r)
@@ -238,11 +238,11 @@ function mutateConstant(
         probNegate::Float32=0.01f0)::Node
     # T is between 0 and 1.
 
-    if countConstants(tree) === 0
+    if countConstants(tree) == 0
         return tree
     end
     node = randomNode(tree)
-    while node.degree !== 0 || node.constant === false
+    while node.degree != 0 || node.constant == false
         node = randomNode(tree)
     end
 
@@ -273,19 +273,21 @@ end
 # Evaluate an equation over an array of datapoints
 function evalTreeArray(tree::Node, cX::Array{Float32, 2})::Union{Array{Float32, 1}, Nothing}
     clen = size(cX)[1]
-    if tree.degree === 0
+    if tree.degree == 0
         if tree.constant
             return fill(tree.val, clen)
         else
             return copy(cX[:, tree.val])
         end
-    elseif tree.degree === 1
+    elseif tree.degree == 1
         cumulator = evalTreeArray(tree.l, cX)
         if cumulator === nothing
             return nothing
         end
         op_idx = tree.op
-        UNAOP!(cumulator, op_idx, clen)
+        @inbounds @simd for i=1:clen
+            cumulator[i] = UNAOP(op_idx, cumulator[i])
+        end
         @inbounds for i=1:clen
             if isinf(cumulator[i]) || isnan(cumulator[i])
                 return nothing
@@ -301,8 +303,12 @@ function evalTreeArray(tree::Node, cX::Array{Float32, 2})::Union{Array{Float32, 
         if array2 === nothing
             return nothing
         end
+
         op_idx = tree.op
-        BINOP!(cumulator, array2, op_idx, clen)
+
+        @inbounds @simd for i=1:clen
+            cumulator[i] = BINOP(op_idx, cumulator[i], array2[i])
+        end
         @inbounds for i=1:clen
             if isinf(cumulator[i]) || isnan(cumulator[i])
                 return nothing
@@ -350,7 +356,7 @@ end
 # Add a random unary/binary operation to the end of a tree
 function appendRandomOp(tree::Node)::Node
     node = randomNode(tree)
-    while node.degree !== 0
+    while node.degree != 0
         node = randomNode(tree)
     end
 
@@ -458,7 +464,7 @@ end
 
 # Return a random node from the tree with parent
 function randomNodeAndParent(tree::Node, parent::Union{Node, Nothing})::Tuple{Node, Union{Node, Nothing}}
-    if tree.degree === 0
+    if tree.degree == 0
         return tree, parent
     end
     a = countNodes(tree)
@@ -467,14 +473,14 @@ function randomNodeAndParent(tree::Node, parent::Union{Node, Nothing})::Tuple{No
     if tree.degree >= 1
         b = countNodes(tree.l)
     end
-    if tree.degree === 2
+    if tree.degree == 2
         c = countNodes(tree.r)
     end
 
     i = rand(1:1+b+c)
     if i <= b
         return randomNodeAndParent(tree.l, tree)
-    elseif i === b + 1
+    elseif i == b + 1
         return tree, parent
     end
 
@@ -487,7 +493,7 @@ function deleteRandomOp(tree::Node)::Node
     node, parent = randomNodeAndParent(tree, nothing)
     isroot = (parent === nothing)
 
-    if node.degree === 0
+    if node.degree == 0
         # Replace with new constant
         newnode = randomConstantNode()
         node.l = newnode.l
@@ -496,7 +502,7 @@ function deleteRandomOp(tree::Node)::Node
         node.degree = newnode.degree
         node.val = newnode.val
         node.constant = newnode.constant
-    elseif node.degree === 1
+    elseif node.degree == 1
         # Join one of the children with the parent
         if isroot
             return node.l
@@ -536,17 +542,17 @@ function combineOperators(tree::Node)::Node
     # ((const - var) - const) => (const - var)
     # (want to add anything commutative!)
     # TODO - need to combine plus/sub if they are both there.
-    if tree.degree === 0
+    if tree.degree == 0
         return tree
-    elseif tree.degree === 1
+    elseif tree.degree == 1
         tree.l = combineOperators(tree.l)
-    elseif tree.degree === 2
+    elseif tree.degree == 2
         tree.l = combineOperators(tree.l)
         tree.r = combineOperators(tree.r)
     end
 
-    top_level_constant = tree.degree === 2 && (tree.l.constant || tree.r.constant)
-    if tree.degree === 2 && (binops[tree.op] === mult || binops[tree.op] === plus) && top_level_constant
+    top_level_constant = tree.degree == 2 && (tree.l.constant || tree.r.constant)
+    if tree.degree == 2 && (binops[tree.op] === mult || binops[tree.op] === plus) && top_level_constant
         op = tree.op
         # Put the constant in r
         if tree.l.constant
@@ -557,7 +563,7 @@ function combineOperators(tree::Node)::Node
         topconstant = tree.r.val
         # Simplify down first
         below = tree.l
-        if below.degree === 2 && below.op === op
+        if below.degree == 2 && below.op == op
             if below.l.constant
                 tree = below
                 tree.l.val = binops[op](tree.l.val, topconstant)
@@ -568,11 +574,11 @@ function combineOperators(tree::Node)::Node
         end
     end
 
-    if tree.degree === 2 && binops[tree.op] === sub && top_level_constant
+    if tree.degree == 2 && binops[tree.op] === sub && top_level_constant
         # Currently just simplifies subtraction. (can't assume both plus and sub are operators)
         # Not commutative, so use different op.
         if tree.l.constant
-            if tree.r.degree === 2 && binops[tree.r.op] === sub
+            if tree.r.degree == 2 && binops[tree.r.op] === sub
                 if tree.r.l.constant
                     #(const - (const - var)) => (var - const)
                     l = tree.l
@@ -591,7 +597,7 @@ function combineOperators(tree::Node)::Node
                 end
             end
         else #tree.r.constant is true
-            if tree.l.degree === 2 && binops[tree.l.op] === sub
+            if tree.l.degree == 2 && binops[tree.l.op] === sub
                 if tree.l.l.constant
                     #((const - var) - const) => (const - var)
                     l = tree.l
@@ -616,17 +622,17 @@ end
 
 # Simplify tree
 function simplifyTree(tree::Node)::Node
-    if tree.degree === 1
+    if tree.degree == 1
         tree.l = simplifyTree(tree.l)
-        if tree.l.degree === 0 && tree.l.constant
+        if tree.l.degree == 0 && tree.l.constant
             return Node(unaops[tree.op](tree.l.val))
         end
-    elseif tree.degree === 2
+    elseif tree.degree == 2
         tree.l = simplifyTree(tree.l)
         tree.r = simplifyTree(tree.r)
         constantsBelow = (
-             tree.l.degree === 0 && tree.l.constant &&
-             tree.r.degree === 0 && tree.r.constant
+             tree.l.degree == 0 && tree.l.constant &&
+             tree.r.degree == 0 && tree.r.constant
         )
         if constantsBelow
             return Node(binops[tree.op](tree.l.val, tree.r.val))
@@ -648,9 +654,9 @@ end
 
 # Check if any power operator is to the power of a complex expression
 function deepPow(tree::Node)::Integer
-    if tree.degree === 0
+    if tree.degree == 0
         return 0
-    elseif tree.degree === 1
+    elseif tree.degree == 1
         return 0 + deepPow(tree.l)
     else
         if binops[tree.op] === pow
@@ -857,7 +863,7 @@ function run(
             pop = regEvolCycle(pop, 1.0f0, curmaxsize)
         end
 
-        if verbosity > 0 && (iT % verbosity === 0)
+        if verbosity > 0 && (iT % verbosity == 0)
             bestPops = bestSubPop(pop)
             bestCurScoreIdx = argmin([bestPops.members[member].score for member=1:bestPops.n])
             bestCurScore = bestPops.members[bestCurScoreIdx].score
@@ -870,13 +876,13 @@ end
 
 # Get all the constants from a tree
 function getConstants(tree::Node)::Array{Float32, 1}
-    if tree.degree === 0
+    if tree.degree == 0
         if tree.constant
             return [tree.val]
         else
             return Float32[]
         end
-    elseif tree.degree === 1
+    elseif tree.degree == 1
         return getConstants(tree.l)
     else
         both = [getConstants(tree.l), getConstants(tree.r)]
@@ -886,11 +892,11 @@ end
 
 # Set all the constants inside a tree
 function setConstants(tree::Node, constants::Array{Float32, 1})
-    if tree.degree === 0
+    if tree.degree == 0
         if tree.constant
             tree.val = constants[1]
         end
-    elseif tree.degree === 1
+    elseif tree.degree == 1
         setConstants(tree.l, constants)
     else
         numberLeft = countConstants(tree.l)
@@ -909,12 +915,12 @@ end
 # Use Nelder-Mead to optimize the constants in an equation
 function optimizeConstants(member::PopMember)::PopMember
     nconst = countConstants(member.tree)
-    if nconst === 0
+    if nconst == 0
         return member
     end
     x0 = getConstants(member.tree)
     f(x::Array{Float32,1})::Float32 = optFunc(x, member.tree)
-    if size(x0)[1] === 1
+    if size(x0)[1] == 1
         algorithm = Optim.Newton
     else
         algorithm = Optim.NelderMead
@@ -998,7 +1004,7 @@ function fullRun(niterations::Integer;
     bestSubPops = [Population(1) for j=1:npopulations]
     hallOfFame = HallOfFame()
     curmaxsize = 3
-    if warmupMaxsize === 0
+    if warmupMaxsize == 0
         curmaxsize = maxsize
     end
 
@@ -1067,7 +1073,7 @@ function fullRun(niterations::Integer;
                                     numberSmallerAndBetter += 1
                                 end
                             end
-                            betterThanAllSmaller = (numberSmallerAndBetter === 0)
+                            betterThanAllSmaller = (numberSmallerAndBetter == 0)
                             if betterThanAllSmaller
                                 println(io, "$size|$(curMSE)|$(stringTree(member.tree))")
                                 push!(dominating, member)
@@ -1117,7 +1123,7 @@ function fullRun(niterations::Integer;
 
                 cycles_complete -= 1
                 cycles_elapsed = npopulations * niterations - cycles_complete
-                if warmupMaxsize !== 0 && cycles_elapsed % warmupMaxsize === 0
+                if warmupMaxsize != 0 && cycles_elapsed % warmupMaxsize == 0
                     curmaxsize += 1
                     if curmaxsize > maxsize
                         curmaxsize = maxsize
@@ -1167,7 +1173,7 @@ function fullRun(niterations::Integer;
                             numberSmallerAndBetter += 1
                         end
                     end
-                    betterThanAllSmaller = (numberSmallerAndBetter === 0)
+                    betterThanAllSmaller = (numberSmallerAndBetter == 0)
                     if betterThanAllSmaller
                         delta_c = size - lastComplexity
                         delta_l_mse = log(curMSE/lastMSE)
