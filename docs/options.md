@@ -127,7 +127,7 @@ You can pass a list of strings naming each column of `X` with
 and the columns will be used as variable names. Make sure only
 alphabetical characters and `_` are used in these names.
 
-## Limiting pow complexity
+## Constraining operator complexity
 
 One can limit the complexity of specific operators with the `constraints` parameter.
 There is a "maxsize" parameter to PySR, but there is also an operator-level
@@ -141,7 +141,7 @@ What this says is that: a power law x^y can have an expression of arbitrary (-1)
 I find this helps a lot for getting more interpretable equations.
 The other terms say that each multiplication can only have sub-expressions
 of up to complexity 3 (e.g., 5.0 + x2) in each side, and cosine can only operate on
-expressions of complexity 5 (e.g., 5.0 + x2*exp(x3)).
+expressions of complexity 5 (e.g., 5.0 + x2 exp(x3)).
 
 ## LaTeX, SymPy, callables
 
