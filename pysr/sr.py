@@ -259,9 +259,15 @@ def pysr(X=None, y=None, weights=None,
     for op in binary_operators:
         if op not in constraints:
             constraints[op] = (-1, -1)
-        if op in ['mult', 'plus', 'sub']:
+        if op in ['plus', 'sub']:
             if constraints[op][0] != constraints[op][1]:
-                raise NotImplementedError("You need equal constraints on both sides for +, -, and *, due to simplification strategies.")
+                raise NotImplementedError("You need equal constraints on both sides for - and *, due to simplification strategies.")
+        elif op == 'mult':
+            # Make sure the complex expression is in the left side.
+            if constraints[op][0] == -1:
+                continue 
+            elif constraints[op][1] == -1 or constraints[op][0] < constraints[op][1]:
+                constraints[op][0], constraints[op][1] = constraints[op][1], constraints[op][0]
 
     constraints_str = "const una_constraints = ["
     first = True

@@ -548,7 +548,7 @@ function combineOperators(tree::Node)::Node
     top_level_constant = tree.degree == 2 && (tree.l.constant || tree.r.constant)
     if tree.degree == 2 && (binops[tree.op] === mult || binops[tree.op] === plus) && top_level_constant
         op = tree.op
-        # Put the constant in r
+        # Put the constant in r. Need to assume var in left for simplification assumption.
         if tree.l.constant
             tmp = tree.r
             tree.r = tree.l
