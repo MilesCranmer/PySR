@@ -212,17 +212,6 @@ def pysr(X=None, y=None, weights=None,
     if populations is None:
         populations = procs
 
-    #arbitrary complexity by default
-    for op in unary_operators:
-        if op not in constraints:
-            constraints[op] = -1
-    for op in binary_operators:
-        if op not in constraints:
-            constraints[op] = (-1, -1)
-        if op in ['mult', 'plus', 'sub']:
-            if constraints[op][0] != constraints[op][1]:
-                raise NotImplementedError("You need equal constraints on both sides for +, -, and *, due to simplification strategies.")
-
     rand_string = f'{"".join([str(np.random.rand())[2] for i in range(20)])}'
 
     if isinstance(binary_operators, str): binary_operators = [binary_operators]
@@ -262,6 +251,17 @@ def pysr(X=None, y=None, weights=None,
                         if not (op[j].isalpha() or op[j].isdigit())][0]
                 function_name = op[:first_non_char]
                 op_list[i] = function_name
+
+    #arbitrary complexity by default
+    for op in unary_operators:
+        if op not in constraints:
+            constraints[op] = -1
+    for op in binary_operators:
+        if op not in constraints:
+            constraints[op] = (-1, -1)
+        if op in ['mult', 'plus', 'sub']:
+            if constraints[op][0] != constraints[op][1]:
+                raise NotImplementedError("You need equal constraints on both sides for +, -, and *, due to simplification strategies.")
 
     constraints_str = "const una_constraints = ["
     first = True
