@@ -89,7 +89,8 @@ def pysr(X=None, y=None, weights=None,
             batchSize=50,
             select_k_features=None,
             warmupMaxsize=0,
-            limitPowComplexity=False,
+            constraints={},
+            limitPowComplexity=False, #deprecated
             threads=None, #deprecated
             julia_optimization=3,
         ):
@@ -166,9 +167,11 @@ def pysr(X=None, y=None, weights=None,
         a small number up to the maxsize (if greater than 0).
         If greater than 0, says how many cycles before the maxsize
         is increased.
-    :param limitPowComplexity: bool, whether to prevent pow from having
-        complex right arguments. I.e., 3.0^(x+y) becomes impossible,
-        but 3.0^x is possible.
+    :param constraints: dict of int (unary) or 2-tuples (binary),
+        this enforces maxsize constraints on the individual
+        arguments of operators. E.g., `'pow': (-1, 1)`
+        says that power laws can have any complexity left argument, but only
+        1 complexity exponent. Use this to force more interpretable solutions.
     :param julia_optimization: int, Optimization level (0, 1, 2, 3)
     :returns: pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
         (as strings).
@@ -176,6 +179,8 @@ def pysr(X=None, y=None, weights=None,
     """
     if threads is not None:
         raise ValueError("The threads kwarg is deprecated. Use procs.")
+    if limitPowComplexity:
+        raise ValueError("The limitPowComplexity kwarg is deprecated. Use constraints.")
     if maxdepth is None:
         maxdepth = maxsize
 
@@ -206,6 +211,17 @@ def pysr(X=None, y=None, weights=None,
 
     if populations is None:
         populations = procs
+
+    #arbitrary complexity by default
+    for op in unary_operators:
+        if op not in constraints:
+            constraints[op] = -1
+    for op in binary_operators:
+        if op not in constraints:
+            constraints[op] = (-1, -1)
+        if op in ['mult', 'plus', 'sub']:
+            if constraints[op][0] != constraints[op][1]:
+                raise NotImplementedError("You need equal constraints on both sides for +, -, and *, due to simplification strategies.")
 
     rand_string = f'{"".join([str(np.random.rand())[2] for i in range(20)])}'
 
@@ -247,7 +263,30 @@ def pysr(X=None, y=None, weights=None,
                 function_name = op[:first_non_char]
                 op_list[i] = function_name
 
+    constraints_str = "const una_constraints = ["
+    first = True
+    for op in unary_operators:
+        val = constraints[op]
+        if not first:
+            constraints_str += ", "
+        constraints_str += f"{val:d}"
+        first = False
+
+    constraints_str += """]
+const bin_constraints = ["""
+
+    first = True
+    for op in binary_operators:
+        tup = constraints[op]
+        if not first:
+            constraints_str += ", "
+        constraints_str += f"({tup[0]:d}, {tup[1]:d})"
+        first = False
+    constraints_str += "]"
+
+
     def_hyperparams += f"""include("{pkg_directory}/operators.jl")
+{constraints_str}
 const binops = {'[' + ', '.join(binary_operators) + ']'}
 const unaops = {'[' + ', '.join(unary_operators) + ']'}
 const ns=10;

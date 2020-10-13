@@ -14,7 +14,7 @@ may find useful include:
 - `maxsize`, `maxdepth`
 - `batching`, `batchSize`
 - `variable_names` (or pandas input)
-- Limiting pow complexity
+- Constraining operator complexity
 - LaTeX, SymPy, and callable equation output
 
 These are described below
@@ -129,13 +129,19 @@ alphabetical characters and `_` are used in these names.
 
 ## Limiting pow complexity
 
-One can limit the complexity of power laws
-with the `limitPowComplexity` argument.
-This will prevent the exponent part of the expression
-having complexity greater than one. This prevents uninterpretable
-expressions such as `x^(y+z^(5+y))`, which sometimes
-occur during training. But it still allows for, e.g., `5^y` or
-`(x+y)^5`: anything where the exponent is not overly complex.
+One can limit the complexity of specific operators with the `constraints` parameter.
+There is a "maxsize" parameter to PySR, but there is also an operator-level
+"constraints" parameter. One supplies a dict, like so:
+
+```python
+constraints={'pow': (-1, 1), 'mult': (3, 3), 'cos': 5}
+```
+
+What this says is that: a power law x^y can have an expression of arbitrary (-1) complexity in the x, but only complexity 1 (e.g., a constant or variable) in the y. So (x0 + 3)^5.5 is allowed, but 5.5^(x0 + 3) is not.
+I find this helps a lot for getting more interpretable equations.
+The other terms say that each multiplication can only have sub-expressions
+of up to complexity 3 (e.g., 5.0 + x2) in each side, and cosine can only operate on
+expressions of complexity 5 (e.g., 5.0 + x2*exp(x3)).
 
 ## LaTeX, SymPy, callables
 

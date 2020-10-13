@@ -646,24 +646,46 @@ mutable struct PopMember
 
 end
 
-# Check if any power operator is to the power of a complex expression
-function deepPow(tree::Node)::Integer
+# Check if any binary operator are overly complex
+function flagBinOperatorComplexity(tree::Node, op::Int)::Bool
     if tree.degree == 0
-        return 0
+        return false
     elseif tree.degree == 1
-        return 0 + deepPow(tree.l)
+        return flagBinOperatorComplexity(tree.l, op)
     else
-        if binops[tree.op] === pow
-            complexity_in_power = countNodes(tree.r)
-            is_deep_pow = (complexity_in_power > 1)
-            if is_deep_pow
-                return 1 + deepPow(tree.l)
-            else
-                return 0 + deepPow(tree.l)
+        if tree.op == op
+            overly_complex = (
+                    ((bin_constraints[op][1] > -1) &&
+                     (countNodes(tree.l) > bin_constraints[op][1]))
+                      ||
+                    ((bin_constraints[op][2] > -1) &&
+                     (countNodes(tree.r) > bin_constraints[op][2]))
+                )
+            if overly_complex
+                return true
             end
-        else
-            return 0 + deepPow(tree.l) + deepPow(tree.r)
         end
+        return (flagBinOperatorComplexity(tree.l, op) || flagBinOperatorComplexity(tree.r, op))
+    end
+end
+
+# Check if any unary operators are overly complex
+function flagUnaOperatorComplexity(tree::Node, op::Int)::Bool
+    if tree.degree == 0
+        return false
+    elseif tree.degree == 1
+        if tree.op == op
+            overly_complex = (
+                      (una_constraints[op] > -1) &&
+                      (countNodes(tree.l) > una_constraints[op])
+                )
+            if overly_complex
+                return true
+            end
+        end
+        return flagUnaOperatorComplexity(tree.l, op)
+    else
+        return (flagUnaOperatorComplexity(tree.l, op) || flagUnaOperatorComplexity(tree.r, op))
     end
 end
 
@@ -671,61 +693,104 @@ end
 #  exp(-delta/T) defines probability of accepting a change
 function iterate(member::PopMember, T::Float32, curmaxsize::Integer)::PopMember
     prev = member.tree
-    tree = copyNode(prev)
+    tree = prev
     #TODO - reconsider this
     if batching
-        beforeLoss = scoreFuncBatch(member.tree)
+        beforeLoss = scoreFuncBatch(prev)
     else
         beforeLoss = member.score
     end
 
     mutationChoice = rand()
-    weightAdjustmentMutateConstant = min(8, countConstants(tree))/8.0
-    cur_weights = copy(mutationWeights) .* 1.0
     #More constants => more likely to do constant mutation
+    weightAdjustmentMutateConstant = min(8, countConstants(prev))/8.0
+    cur_weights = copy(mutationWeights) .* 1.0
     cur_weights[1] *= weightAdjustmentMutateConstant
-    n = countNodes(tree)
-    depth = countDepth(tree)
+    n = countNodes(prev)
+    depth = countDepth(prev)
 
     # If equation too big, don't add new operators
     if n >= curmaxsize || depth >= maxdepth
         cur_weights[3] = 0.0
         cur_weights[4] = 0.0
     end
-
     cur_weights /= sum(cur_weights)
     cweights = cumsum(cur_weights)
 
-    if mutationChoice < cweights[1]
-        tree = mutateConstant(tree, T)
-    elseif mutationChoice < cweights[2]
-        tree = mutateOperator(tree)
-    elseif mutationChoice < cweights[3]
-        if rand() < 0.5
-            tree = appendRandomOp(tree)
-        else
-            tree = prependRandomOp(tree)
+    successful_mutation = false
+    #TODO: Currently we dont take this \/ into account
+    is_success_always_possible = true
+    attempts = 0
+    max_attempts = 10
+    
+    #############################################
+    # Mutations
+    #############################################
+    while (!successful_mutation) && attempts < max_attempts
+        tree = copyNode(prev)
+        successful_mutation = true
+        if mutationChoice < cweights[1]
+            tree = mutateConstant(tree, T)
+
+            is_success_always_possible = true
+            # Mutating a constant shouldn't invalidate an already-valid function
+
+        elseif mutationChoice < cweights[2]
+            tree = mutateOperator(tree)
+
+            is_success_always_possible = true
+            # Can always mutate to the same operator
+
+        elseif mutationChoice < cweights[3]
+            if rand() < 0.5
+                tree = appendRandomOp(tree)
+            else
+                tree = prependRandomOp(tree)
+            end
+            is_success_always_possible = false
+            # Can potentially have a situation without success
+        elseif mutationChoice < cweights[4]
+            tree = insertRandomOp(tree)
+            is_success_always_possible = false
+        elseif mutationChoice < cweights[5]
+            tree = deleteRandomOp(tree)
+            is_success_always_possible = true
+        elseif mutationChoice < cweights[6]
+            tree = simplifyTree(tree) # Sometimes we simplify tree
+            tree = combineOperators(tree) # See if repeated constants at outer levels
+            return PopMember(tree, beforeLoss)
+
+            is_success_always_possible = true
+            # Simplification shouldn't hurt complexity; unless some non-symmetric constraint
+            # to commutative operator...
+
+        elseif mutationChoice < cweights[7]
+            tree = genRandomTree(5) # Sometimes we generate a new tree completely tree
+
+            is_success_always_possible = true
+        else # no mutation applied
+            return PopMember(tree, beforeLoss)
         end
-    elseif mutationChoice < cweights[4]
-        tree = insertRandomOp(tree)
-    elseif mutationChoice < cweights[5]
-        tree = deleteRandomOp(tree)
-    elseif mutationChoice < cweights[6]
-        tree = simplifyTree(tree) # Sometimes we simplify tree
-        tree = combineOperators(tree) # See if repeated constants at outer levels
-        return PopMember(tree, beforeLoss)
-    elseif mutationChoice < cweights[7]
-        tree = genRandomTree(5) # Sometimes we generate a new tree completely tree
-    else
-        return PopMember(tree, beforeLoss)
+
+        # Check for illegal equations
+        for i=1:nbin
+            if successful_mutation && flagBinOperatorComplexity(tree, i)
+                successful_mutation = false
+            end
+        end
+        for i=1:nuna
+            if successful_mutation && flagUnaOperatorComplexity(tree, i)
+                successful_mutation = false
+            end
+        end
+
+        attempts += 1
     end
+    #############################################
 
-
-    # Check for illegal functions
-    if limitPowComplexity && (deepPow(tree) > 0)
+    if !successful_mutation
         return PopMember(copyNode(prev), beforeLoss)
     end
-
 
     if batching
         afterLoss = scoreFuncBatch(tree)
