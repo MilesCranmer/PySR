@@ -90,6 +90,7 @@ def pysr(X=None, y=None, weights=None,
             select_k_features=None,
             warmupMaxsize=0,
             constraints={},
+            useFrequency=False,
             limitPowComplexity=False, #deprecated
             threads=None, #deprecated
             julia_optimization=3,
@@ -172,6 +173,9 @@ def pysr(X=None, y=None, weights=None,
         arguments of operators. E.g., `'pow': (-1, 1)`
         says that power laws can have any complexity left argument, but only
         1 complexity exponent. Use this to force more interpretable solutions.
+    :param useFrequency: bool, whether to measure the frequency of complexities,
+        and use that instead of parsimony to explore equation space. Will
+        naturally find equations of all complexities.
     :param julia_optimization: int, Optimization level (0, 1, 2, 3)
     :returns: pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
         (as strings).
@@ -327,6 +331,7 @@ const mutationWeights = [
 ]
 const warmupMaxsize = {warmupMaxsize:d}
 const limitPowComplexity = {"true" if limitPowComplexity else "false"}
+const useFrequency = {"true" if useFrequency else "false"}
 """
 
     op_runner = ""

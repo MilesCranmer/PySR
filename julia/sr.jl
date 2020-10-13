@@ -691,7 +691,7 @@ end
 
 # Go through one simulated annealing mutation cycle
 #  exp(-delta/T) defines probability of accepting a change
-function iterate(member::PopMember, T::Float32, curmaxsize::Integer)::PopMember
+function iterate(member::PopMember, T::Float32, curmaxsize::Integer, frequencyComplexity::Array{Float32, 1})::PopMember
     prev = member.tree
     tree = prev
     #TODO - reconsider this
@@ -801,6 +801,11 @@ function iterate(member::PopMember, T::Float32, curmaxsize::Integer)::PopMember
     if annealing
         delta = afterLoss - beforeLoss
         probChange = exp(-delta/(T*alpha))
+        if useFrequency
+            oldSize = countNodes(prev)
+            newSize = countNodes(tree)
+            probChange *= frequencyComplexity[oldSize] / frequencyComplexity[newSize]
+        end
 
         return_unaltered = (isnan(afterLoss) || probChange < rand())
         if return_unaltered
@@ -863,7 +868,8 @@ end
 
 # Pass through the population several times, replacing the oldest
 # with the fittest of a small subsample
-function regEvolCycle(pop::Population, T::Float32, curmaxsize::Integer)::Population
+function regEvolCycle(pop::Population, T::Float32, curmaxsize::Integer,
+                      frequencyComplexity::Array{Float32, 1})::Population
     # Batch over each subsample. Can give 15% improvement in speed; probably moreso for large pops.
     # but is ultimately a different algorithm than regularized evolution, and might not be
     # as good.
@@ -884,7 +890,7 @@ function regEvolCycle(pop::Population, T::Float32, curmaxsize::Integer)::Populat
                 end
             end
             allstar = pop.members[best_idx]
-            babies[i] = iterate(allstar, T, curmaxsize)
+            babies[i] = iterate(allstar, T, curmaxsize, frequencyComplexity)
         end
 
         # Replace the n_evol_cycles-oldest members of each population
@@ -895,7 +901,7 @@ function regEvolCycle(pop::Population, T::Float32, curmaxsize::Integer)::Populat
     else
         for i=1:round(Integer, pop.n/ns)
             allstar = bestOfSample(pop)
-            baby = iterate(allstar, T, curmaxsize)
+            baby = iterate(allstar, T, curmaxsize, frequencyComplexity)
             #printTree(baby.tree)
             oldest = argmin([pop.members[member].birth for member=1:pop.n])
             pop.members[oldest] = baby
@@ -910,16 +916,17 @@ end
 function run(
         pop::Population,
         ncycles::Integer,
-        curmaxsize::Integer;
+        curmaxsize::Integer,
+        frequencyComplexity::Array{Float32, 1};
         verbosity::Integer=0
        )::Population
 
     allT = LinRange(1.0f0, 0.0f0, ncycles)
     for iT in 1:size(allT)[1]
         if annealing
-            pop = regEvolCycle(pop, allT[iT], curmaxsize)
+            pop = regEvolCycle(pop, allT[iT], curmaxsize, frequencyComplexity)
         else
-            pop = regEvolCycle(pop, 1.0f0, curmaxsize)
+            pop = regEvolCycle(pop, 1.0f0, curmaxsize, frequencyComplexity)
         end
 
         if verbosity > 0 && (iT % verbosity == 0)
@@ -1062,6 +1069,7 @@ function fullRun(niterations::Integer;
     channels = [RemoteChannel(1) for j=1:npopulations]
     bestSubPops = [Population(1) for j=1:npopulations]
     hallOfFame = HallOfFame()
+    frequencyComplexity = ones(Float32, actualMaxsize)
     curmaxsize = 3
     if warmupMaxsize == 0
         curmaxsize = maxsize
@@ -1074,7 +1082,7 @@ function fullRun(niterations::Integer;
 
     # # 2. Start the cycle on every process:
     @sync for i=1:npopulations
-        @async allPops[i] = @spawnat :any run(fetch(allPops[i]), ncyclesperiteration, curmaxsize, verbosity=verbosity)
+        @async allPops[i] = @spawnat :any run(fetch(allPops[i]), ncyclesperiteration, curmaxsize, copy(frequencyComplexity)/sum(frequencyComplexity), verbosity=verbosity)
     end
     println("Started!")
     cycles_complete = npopulations * niterations
@@ -1103,6 +1111,7 @@ function fullRun(niterations::Integer;
 
                 for member in cur_pop.members
                     size = countNodes(member.tree)
+                    frequencyComplexity[size] += 1
                     if member.score < hallOfFame.members[size].score
                         hallOfFame.members[size] = deepcopy(member)
                         hallOfFame.exists[size] = true
@@ -1164,7 +1173,7 @@ function fullRun(niterations::Integer;
 
                 @async begin
                     allPops[i] = @spawnat :any let
-                        tmp_pop = run(cur_pop, ncyclesperiteration, curmaxsize, verbosity=verbosity)
+                        tmp_pop = run(cur_pop, ncyclesperiteration, curmaxsize, copy(frequencyComplexity)/sum(frequencyComplexity), verbosity=verbosity)
                         @inbounds @simd for j=1:tmp_pop.n
                             if rand() < 0.1
                                 tmp_pop.members[j].tree = simplifyTree(tmp_pop.members[j].tree)

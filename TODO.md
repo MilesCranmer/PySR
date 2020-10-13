@@ -57,6 +57,7 @@
 - [x] Better cleanup of zombie processes after <ctl-c>
 - [x] Consider printing output sorted by score, not by complexity.
 - [x] Increase max complexity slowly over time up to the actual max.
+- [x] Record density over complexity. Favor equations that have a density we have not explored yet. Want the final density to be evenly distributed.
 - [ ] Sort these todo lists by priority
 
 ## Feature ideas
@@ -78,7 +79,6 @@
 
 ## Algorithmic performance ideas:
 
-- [ ] **Record density over complexity. Favor equations that have a density we have not explored yet. Want the final density to be evenly distributed.**
 
 - [ ] Use package compiler and compile sr.jl into a standalone binary that can be used by pysr.
 - [ ] When doing equation warmup, only migrate those equations with almost the same complexity. Rather than having to consider simple equations later in the game.
