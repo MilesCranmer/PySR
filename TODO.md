@@ -78,6 +78,8 @@
 
 ## Algorithmic performance ideas:
 
+- [ ] **Record density over complexity. Favor equations that have a density we have not explored yet. Want the final density to be evenly distributed.**
+
 - [ ] Use package compiler and compile sr.jl into a standalone binary that can be used by pysr.
 - [ ] When doing equation warmup, only migrate those equations with almost the same complexity. Rather than having to consider simple equations later in the game.
 - [ ] Right now we only update the score based on some. Need to update score based on entire data! Note that optimizer only is used sometimes.
