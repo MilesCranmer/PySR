@@ -18,7 +18,7 @@ to find algebraic relations that approximate a dataset.
 One can also
 extend these approaches to higher-dimensional
 spaces by using a neural network as proxy, as explained in 
-https://arxiv.org/abs/2006.11287, where we apply
+[2006.11287](https://arxiv.org/abs/2006.11287), where we apply
 it to N-body problems. Here, one essentially uses
 symbolic regression to convert a neural net
 to an analytic equation. Thus, these tools simultaneously present
