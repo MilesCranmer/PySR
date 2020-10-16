@@ -24,7 +24,7 @@ logm(x::Float32)::Float32 = log_fast(abs_fast(x) + 1f-8)
 logm2(x::Float32)::Float32 = log2_fast(abs_fast(x) + 1f-8)
 logm10(x::Float32)::Float32 = log10_fast(abs_fast(x) + 1f-8)
 sqrtm(x::Float32)::Float32 = sqrt_fast(abs_fast(x))
-neg(x::Float32)::Float32 = sub_float_fast(x)
+neg(x::Float32)::Float32 = neg_float_fast(x)
 
 function greater(x::Float32, y::Float32)::Float32
     if x > y
