@@ -423,10 +423,17 @@ const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
     global_extra_sympy_mappings = extra_sympy_mappings
 
     print("Running on", ' '.join(command))
-    process = subprocess.Popen(command)
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1)
     try:
+        while True:
+            line = process.stdout.readline()
+            if not line: break
+            print(line.decode('utf-8').replace('\n', ''))
+
+        process.stdout.close()
         process.wait()
     except KeyboardInterrupt:
+        print("Killing process... will return when done.")
         process.kill()
 
     return get_hof()
