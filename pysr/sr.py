@@ -195,6 +195,9 @@ def pysr(X=None, y=None, weights=None,
 
     use_custom_variable_names = (len(variable_names) != 0)
 
+    if len(X.shape) == 1:
+        X = X[:, None]
+
     # Check for potential errors before they happen
     assert len(unary_operators) + len(binary_operators) > 0
     assert len(X.shape) == 2
