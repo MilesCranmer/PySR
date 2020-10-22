@@ -78,7 +78,7 @@ equations = pysr(X, y, niterations=5,
 
 ...# (you can use ctl-c to exit early)
 
-print(best())
+print(best(equations))
 ```
 
 which gives:
@@ -92,7 +92,7 @@ or `best_callable` to get a function you can call.
 This uses a score which balances complexity and error;
 however, one can see the full list of equations with:
 ```python
-print(get_hof())
+print(equations)
 ```
 This is a pandas table, with additional columns:
 
