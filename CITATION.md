@@ -4,7 +4,7 @@ This software:
 ```
 @software{pysr,
   author       = {Miles Cranmer},
-  title        = {PySR: Fast & Parallelized Symbolic Regression in Python/Julia},
+  title        = {PySR: Fast \& Parallelized Symbolic Regression in Python/Julia},
   month        = sep,
   year         = 2020,
   publisher    = {Zenodo},
