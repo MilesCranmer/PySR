@@ -215,7 +215,7 @@ def pysr(X=None, y=None, weights=None,
         X = X[:, selection]
 
         if use_custom_variable_names:
-            variable_names = variable_names[selection]
+            variable_names = [variable_names[selection[i]] for i in range(len(selection))]
 
     if populations is None:
         populations = procs
