@@ -8,6 +8,7 @@ import sympy
 from sympy import sympify, Symbol, lambdify
 import subprocess
 import tempfile
+import shutil
 from pathlib import Path
 
 global_equation_file = 'hall_of_fame.csv'
@@ -97,6 +98,8 @@ def pysr(X=None, y=None, weights=None,
             limitPowComplexity=False, #deprecated
             threads=None, #deprecated
             julia_optimization=3,
+            tempdir=None,
+            delete_tempfiles=False,
         ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
@@ -180,6 +183,8 @@ def pysr(X=None, y=None, weights=None,
         and use that instead of parsimony to explore equation space. Will
         naturally find equations of all complexities.
     :param julia_optimization: int, Optimization level (0, 1, 2, 3)
+    :param tempdir: str or None, directory for the temporary files
+    :param delete_tempfiles: bool, whether to delete the temporary files after finishing
     :returns: pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
         (as strings).
 
@@ -396,59 +401,62 @@ const weights = convert(Array{Float32, 1}, """f"{weight_str})"
 const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
 
     # Get temporary directory in a system-independent way
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        tmpdir = Path(tmpdirname)
-        hyperparam_filename = str(tmpdir / f'.hyperparams_{rand_string}.jl')
-        dataset_filename = str(tmpdir / f'.dataset_{rand_string}.jl')
-        runfile_filename = str(tmpdir / f'.runfile_{rand_string}.jl')
+    tmpdirname = tempfile.mkdtemp(dir=tempdir)
+    #with tempfile.TemporaryDirectory(dir=tempdir) as tmpdirname:
+    tmpdir = Path(tmpdirname)
 
-        print(tmpdir)
+    hyperparam_filename = str(tmpdir / f'.hyperparams_{rand_string}.jl')
+    dataset_filename = str(tmpdir / f'.dataset_{rand_string}.jl')
+    runfile_filename = str(tmpdir / f'.runfile_{rand_string}.jl')
 
-        with open(hyperparam_filename, 'w') as f:
-            print(def_hyperparams, file=f)
+    with open(hyperparam_filename, 'w') as f:
+        print(def_hyperparams, file=f)
 
-        with open(dataset_filename, 'w') as f:
-            print(def_datasets, file=f)
+    with open(dataset_filename, 'w') as f:
+        print(def_datasets, file=f)
 
-        with open(tmpdir / f'.runfile_{rand_string}.jl', 'w') as f:
-            print(f'@everywhere include("{hyperparam_filename}")', file=f)
-            print(f'@everywhere include("{dataset_filename}")', file=f)
-            print(f'@everywhere include("{pkg_directory}/sr.jl")', file=f)
-            print(f'fullRun({niterations:d}, npop={npop:d}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})', file=f)
-            print(f'rmprocs(nprocs)', file=f)
+    with open(tmpdir / f'.runfile_{rand_string}.jl', 'w') as f:
+        print(f'@everywhere include("{hyperparam_filename}")', file=f)
+        print(f'@everywhere include("{dataset_filename}")', file=f)
+        print(f'@everywhere include("{pkg_directory}/sr.jl")', file=f)
+        print(f'fullRun({niterations:d}, npop={npop:d}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})', file=f)
+        print(f'rmprocs(nprocs)', file=f)
 
 
-        command = [
-            f'julia', f'-O{julia_optimization:d}',
-            f'-p', f'{procs}',
-            runfile_filename,
-            ]
-        if timeout is not None:
-            command = [f'timeout', f'{timeout}'] + command
+    command = [
+        f'julia', f'-O{julia_optimization:d}',
+        f'-p', f'{procs}',
+        runfile_filename,
+        ]
+    if timeout is not None:
+        command = [f'timeout', f'{timeout}'] + command
 
-        global global_n_features
-        global global_equation_file
-        global global_variable_names
-        global global_extra_sympy_mappings
+    global global_n_features
+    global global_equation_file
+    global global_variable_names
+    global global_extra_sympy_mappings
 
-        global_n_features = X.shape[1]
-        global_equation_file = equation_file
-        global_variable_names = variable_names
-        global_extra_sympy_mappings = extra_sympy_mappings
+    global_n_features = X.shape[1]
+    global_equation_file = equation_file
+    global_variable_names = variable_names
+    global_extra_sympy_mappings = extra_sympy_mappings
 
-        print("Running on", ' '.join(command))
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1)
-        try:
-            while True:
-                line = process.stdout.readline()
-                if not line: break
-                print(line.decode('utf-8').replace('\n', ''))
+    print("Running on", ' '.join(command))
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1)
+    try:
+        while True:
+            line = process.stdout.readline()
+            if not line: break
+            print(line.decode('utf-8').replace('\n', ''))
 
-            process.stdout.close()
-            process.wait()
-        except KeyboardInterrupt:
-            print("Killing process... will return when done.")
-            process.kill()
+        process.stdout.close()
+        process.wait()
+    except KeyboardInterrupt:
+        print("Killing process... will return when done.")
+        process.kill()
+
+    if delete_tempfiles:
+        shutil.rmtree(tmpdir)
 
     return get_hof()
 
