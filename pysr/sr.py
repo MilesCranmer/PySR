@@ -11,7 +11,8 @@ import tempfile
 import shutil
 from pathlib import Path
 
-global_equation_file = 'hall_of_fame.csv'
+
+global_equation_file = str(Path(__file__).parents[1] / 'hall_of_fame.csv')
 global_n_features = None
 global_variable_names = []
 global_extra_sympy_mappings = {}
@@ -248,7 +249,7 @@ def pysr(X=None, y=None, weights=None,
         y = eval(eval_str)
         print("Running on", eval_str)
 
-    pkg_directory = '/'.join(__file__.split('/')[:-2] + ['julia'])
+    pkg_directory = Path(__file__).parents[1] / 'julia'
 
     def_hyperparams = ""
 
@@ -280,7 +281,7 @@ def pysr(X=None, y=None, weights=None,
         elif op == 'mult':
             # Make sure the complex expression is in the left side.
             if constraints[op][0] == -1:
-                continue 
+                continue
             elif constraints[op][1] == -1 or constraints[op][0] < constraints[op][1]:
                 constraints[op][0], constraints[op][1] = constraints[op][1], constraints[op][0]
 
@@ -402,12 +403,12 @@ const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
 
     # Get temporary directory in a system-independent way
     tmpdirname = tempfile.mkdtemp(dir=tempdir)
-    #with tempfile.TemporaryDirectory(dir=tempdir) as tmpdirname:
     tmpdir = Path(tmpdirname)
 
-    hyperparam_filename = str(tmpdir / f'.hyperparams_{rand_string}.jl')
-    dataset_filename = str(tmpdir / f'.dataset_{rand_string}.jl')
-    runfile_filename = str(tmpdir / f'.runfile_{rand_string}.jl')
+    hyperparam_filename = tmpdir / f'.hyperparams_{rand_string}.jl'
+    dataset_filename = tmpdir / f'.dataset_{rand_string}.jl'
+    runfile_filename = tmpdir / f'.runfile_{rand_string}.jl'
+    pkg_filename = pkg_directory / "sr.jl"
 
     with open(hyperparam_filename, 'w') as f:
         print(def_hyperparams, file=f)
@@ -415,10 +416,10 @@ const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
     with open(dataset_filename, 'w') as f:
         print(def_datasets, file=f)
 
-    with open(tmpdir / f'.runfile_{rand_string}.jl', 'w') as f:
+    with open(runfile_filename, 'w') as f:
         print(f'@everywhere include("{hyperparam_filename}")', file=f)
         print(f'@everywhere include("{dataset_filename}")', file=f)
-        print(f'@everywhere include("{pkg_directory}/sr.jl")', file=f)
+        print(f'@everywhere include("{pkg_filename}")', file=f)
         print(f'fullRun({niterations:d}, npop={npop:d}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})', file=f)
         print(f'rmprocs(nprocs)', file=f)
 
@@ -426,7 +427,7 @@ const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
     command = [
         f'julia', f'-O{julia_optimization:d}',
         f'-p', f'{procs}',
-        runfile_filename,
+        str(runfile_filename),
         ]
     if timeout is not None:
         command = [f'timeout', f'{timeout}'] + command
