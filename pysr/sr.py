@@ -7,6 +7,8 @@ import pandas as pd
 import sympy
 from sympy import sympify, Symbol, lambdify
 import subprocess
+import tempfile
+from pathlib import Path
 
 global_equation_file = 'hall_of_fame.csv'
 global_n_features = None
@@ -393,51 +395,60 @@ const weights = convert(Array{Float32, 1}, """f"{weight_str})"
         def_hyperparams += f"""
 const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
 
-    with open(f'/tmp/.hyperparams_{rand_string}.jl', 'w') as f:
-        print(def_hyperparams, file=f)
+    # Get temporary directory in a system-independent way
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        tmpdir = Path(tmpdirname)
+        hyperparam_filename = str(tmpdir / f'.hyperparams_{rand_string}.jl')
+        dataset_filename = str(tmpdir / f'.dataset_{rand_string}.jl')
+        runfile_filename = str(tmpdir / f'.runfile_{rand_string}.jl')
 
-    with open(f'/tmp/.dataset_{rand_string}.jl', 'w') as f:
-        print(def_datasets, file=f)
+        print(tmpdir)
 
-    with open(f'/tmp/.runfile_{rand_string}.jl', 'w') as f:
-        print(f'@everywhere include("/tmp/.hyperparams_{rand_string}.jl")', file=f)
-        print(f'@everywhere include("/tmp/.dataset_{rand_string}.jl")', file=f)
-        print(f'@everywhere include("{pkg_directory}/sr.jl")', file=f)
-        print(f'fullRun({niterations:d}, npop={npop:d}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})', file=f)
-        print(f'rmprocs(nprocs)', file=f)
+        with open(hyperparam_filename, 'w') as f:
+            print(def_hyperparams, file=f)
+
+        with open(dataset_filename, 'w') as f:
+            print(def_datasets, file=f)
+
+        with open(tmpdir / f'.runfile_{rand_string}.jl', 'w') as f:
+            print(f'@everywhere include("{hyperparam_filename}")', file=f)
+            print(f'@everywhere include("{dataset_filename}")', file=f)
+            print(f'@everywhere include("{pkg_directory}/sr.jl")', file=f)
+            print(f'fullRun({niterations:d}, npop={npop:d}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})', file=f)
+            print(f'rmprocs(nprocs)', file=f)
 
 
-    command = [
-        f'julia', f'-O{julia_optimization:d}',
-        f'-p', f'{procs}',
-        f'/tmp/.runfile_{rand_string}.jl',
-        ]
-    if timeout is not None:
-        command = [f'timeout', f'{timeout}'] + command
+        command = [
+            f'julia', f'-O{julia_optimization:d}',
+            f'-p', f'{procs}',
+            runfile_filename,
+            ]
+        if timeout is not None:
+            command = [f'timeout', f'{timeout}'] + command
 
-    global global_n_features
-    global global_equation_file
-    global global_variable_names
-    global global_extra_sympy_mappings
+        global global_n_features
+        global global_equation_file
+        global global_variable_names
+        global global_extra_sympy_mappings
 
-    global_n_features = X.shape[1]
-    global_equation_file = equation_file
-    global_variable_names = variable_names
-    global_extra_sympy_mappings = extra_sympy_mappings
+        global_n_features = X.shape[1]
+        global_equation_file = equation_file
+        global_variable_names = variable_names
+        global_extra_sympy_mappings = extra_sympy_mappings
 
-    print("Running on", ' '.join(command))
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1)
-    try:
-        while True:
-            line = process.stdout.readline()
-            if not line: break
-            print(line.decode('utf-8').replace('\n', ''))
+        print("Running on", ' '.join(command))
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1)
+        try:
+            while True:
+                line = process.stdout.readline()
+                if not line: break
+                print(line.decode('utf-8').replace('\n', ''))
 
-        process.stdout.close()
-        process.wait()
-    except KeyboardInterrupt:
-        print("Killing process... will return when done.")
-        process.kill()
+            process.stdout.close()
+            process.wait()
+        except KeyboardInterrupt:
+            print("Killing process... will return when done.")
+            process.kill()
 
     return get_hof()
 
