@@ -12,7 +12,7 @@ import shutil
 from pathlib import Path
 
 
-global_equation_file = str(Path(__file__).parents[1] / 'hall_of_fame.csv')
+global_equation_file = Path('hall_of_fame.csv')
 global_n_features = None
 global_variable_names = []
 global_extra_sympy_mappings = {}
@@ -249,7 +249,9 @@ def pysr(X=None, y=None, weights=None,
         y = eval(eval_str)
         print("Running on", eval_str)
 
+    # Absolute paths are necessary for Windows support
     pkg_directory = Path(__file__).parents[1] / 'julia'
+    equation_file = Path(equation_file)
 
     def_hyperparams = ""
 
@@ -496,7 +498,7 @@ def get_hof(equation_file=None, n_features=None, variable_names=None, extra_symp
     global_extra_sympy_mappings = extra_sympy_mappings
 
     try:
-        output = pd.read_csv(equation_file + '.bkup', sep="|")
+        output = pd.read_csv(str(equation_file) + '.bkup', sep="|")
     except FileNotFoundError:
         print("Couldn't find equation file!")
         return pd.DataFrame()
