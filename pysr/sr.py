@@ -100,7 +100,7 @@ def pysr(X=None, y=None, weights=None,
             threads=None, #deprecated
             julia_optimization=3,
             tempdir=None,
-            delete_tempfiles=False,
+            delete_tempfiles=True,
         ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
