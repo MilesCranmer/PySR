@@ -12,7 +12,7 @@ import shutil
 from pathlib import Path
 
 
-global_equation_file = Path('hall_of_fame.csv')
+global_equation_file = 'hall_of_fame.csv'
 global_n_features = None
 global_variable_names = []
 global_extra_sympy_mappings = {}
@@ -251,7 +251,6 @@ def pysr(X=None, y=None, weights=None,
 
     # Absolute paths are necessary for Windows support
     pkg_directory = Path(__file__).parents[1] / 'julia'
-    equation_file = Path(equation_file)
 
     def_hyperparams = ""
 
@@ -419,9 +418,9 @@ const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
         print(def_datasets, file=f)
 
     with open(runfile_filename, 'w') as f:
-        print(f'@everywhere include("{hyperparam_filename}")', file=f)
-        print(f'@everywhere include("{dataset_filename}")', file=f)
-        print(f'@everywhere include("{pkg_filename}")', file=f)
+        print(f'@everywhere include("{_escape_filename(hyperparam_filename)}")', file=f)
+        print(f'@everywhere include("{_escape_filename(dataset_filename)}")', file=f)
+        print(f'@everywhere include("{_escape_filename(pkg_filename)}")', file=f)
         print(f'fullRun({niterations:d}, npop={npop:d}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})', file=f)
         print(f'rmprocs(nprocs)', file=f)
 
@@ -498,7 +497,7 @@ def get_hof(equation_file=None, n_features=None, variable_names=None, extra_symp
     global_extra_sympy_mappings = extra_sympy_mappings
 
     try:
-        output = pd.read_csv(str(equation_file) + '.bkup', sep="|")
+        output = pd.read_csv(equation_file + '.bkup', sep="|")
     except FileNotFoundError:
         print("Couldn't find equation file!")
         return pd.DataFrame()
@@ -572,4 +571,8 @@ def best_callable(equations=None):
     if equations is None: equations = get_hof()
     return best_row(equations)['lambda_format']
 
-
+def _escape_filename(filename):
+    """Turns a file into a string representation with correctly escaped backslashes"""
+    repr = str(filename)
+    repr = repr.replace('\\', '\\\\')
+    return repr
