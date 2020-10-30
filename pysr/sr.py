@@ -249,8 +249,15 @@ def pysr(X=None, y=None, weights=None,
         y = eval(eval_str)
         print("Running on", eval_str)
 
-    # Absolute paths are necessary for Windows support
+    # System-independent paths
     pkg_directory = Path(__file__).parents[1] / 'julia'
+    pkg_filename = pkg_directory / "sr.jl"
+    operator_filename = pkg_directory / "operators.jl"
+
+    tmpdir = Path(tempfile.mkdtemp(dir=tempdir))
+    hyperparam_filename = tmpdir / f'.hyperparams_{rand_string}.jl'
+    dataset_filename = tmpdir / f'.dataset_{rand_string}.jl'
+    runfile_filename = tmpdir / f'.runfile_{rand_string}.jl'
 
     def_hyperparams = ""
 
@@ -307,8 +314,7 @@ const bin_constraints = ["""
         first = False
     constraints_str += "]"
 
-
-    def_hyperparams += f"""include("{pkg_directory}/operators.jl")
+    def_hyperparams += f"""include("{_escape_filename(operator_filename)}")
 {constraints_str}
 const binops = {'[' + ', '.join(binary_operators) + ']'}
 const unaops = {'[' + ', '.join(unary_operators) + ']'}
@@ -401,15 +407,6 @@ const weights = convert(Array{Float32, 1}, """f"{weight_str})"
     if use_custom_variable_names:
         def_hyperparams += f"""
 const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
-
-    # Get temporary directory in a system-independent way
-    tmpdirname = tempfile.mkdtemp(dir=tempdir)
-    tmpdir = Path(tmpdirname)
-
-    hyperparam_filename = tmpdir / f'.hyperparams_{rand_string}.jl'
-    dataset_filename = tmpdir / f'.dataset_{rand_string}.jl'
-    runfile_filename = tmpdir / f'.runfile_{rand_string}.jl'
-    pkg_filename = pkg_directory / "sr.jl"
 
     with open(hyperparam_filename, 'w') as f:
         print(def_hyperparams, file=f)
