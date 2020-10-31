@@ -7,6 +7,10 @@ import pandas as pd
 import sympy
 from sympy import sympify, Symbol, lambdify
 import subprocess
+import tempfile
+import shutil
+from pathlib import Path
+
 
 global_equation_file = 'hall_of_fame.csv'
 global_n_features = None
@@ -92,6 +96,8 @@ def pysr(X=None, y=None, weights=None,
             warmupMaxsize=0,
             constraints={},
             useFrequency=False,
+            tempdir=None,
+            delete_tempfiles=True,
             limitPowComplexity=False, #deprecated
             threads=None, #deprecated
             julia_optimization=3,
@@ -178,6 +184,8 @@ def pysr(X=None, y=None, weights=None,
         and use that instead of parsimony to explore equation space. Will
         naturally find equations of all complexities.
     :param julia_optimization: int, Optimization level (0, 1, 2, 3)
+    :param tempdir: str or None, directory for the temporary files
+    :param delete_tempfiles: bool, whether to delete the temporary files after finishing
     :returns: pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
         (as strings).
 
@@ -241,7 +249,15 @@ def pysr(X=None, y=None, weights=None,
         y = eval(eval_str)
         print("Running on", eval_str)
 
-    pkg_directory = '/'.join(__file__.split('/')[:-2] + ['julia'])
+    # System-independent paths
+    pkg_directory = Path(__file__).parents[1] / 'julia'
+    pkg_filename = pkg_directory / "sr.jl"
+    operator_filename = pkg_directory / "operators.jl"
+
+    tmpdir = Path(tempfile.mkdtemp(dir=tempdir))
+    hyperparam_filename = tmpdir / f'.hyperparams_{rand_string}.jl'
+    dataset_filename = tmpdir / f'.dataset_{rand_string}.jl'
+    runfile_filename = tmpdir / f'.runfile_{rand_string}.jl'
 
     def_hyperparams = ""
 
@@ -273,7 +289,7 @@ def pysr(X=None, y=None, weights=None,
         elif op == 'mult':
             # Make sure the complex expression is in the left side.
             if constraints[op][0] == -1:
-                continue 
+                continue
             elif constraints[op][1] == -1 or constraints[op][0] < constraints[op][1]:
                 constraints[op][0], constraints[op][1] = constraints[op][1], constraints[op][0]
 
@@ -298,8 +314,7 @@ const bin_constraints = ["""
         first = False
     constraints_str += "]"
 
-
-    def_hyperparams += f"""include("{pkg_directory}/operators.jl")
+    def_hyperparams += f"""include("{_escape_filename(operator_filename)}")
 {constraints_str}
 const binops = {'[' + ', '.join(binary_operators) + ']'}
 const unaops = {'[' + ', '.join(unary_operators) + ']'}
@@ -393,16 +408,16 @@ const weights = convert(Array{Float32, 1}, """f"{weight_str})"
         def_hyperparams += f"""
 const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
 
-    with open(f'/tmp/.hyperparams_{rand_string}.jl', 'w') as f:
+    with open(hyperparam_filename, 'w') as f:
         print(def_hyperparams, file=f)
 
-    with open(f'/tmp/.dataset_{rand_string}.jl', 'w') as f:
+    with open(dataset_filename, 'w') as f:
         print(def_datasets, file=f)
 
-    with open(f'/tmp/.runfile_{rand_string}.jl', 'w') as f:
-        print(f'@everywhere include("/tmp/.hyperparams_{rand_string}.jl")', file=f)
-        print(f'@everywhere include("/tmp/.dataset_{rand_string}.jl")', file=f)
-        print(f'@everywhere include("{pkg_directory}/sr.jl")', file=f)
+    with open(runfile_filename, 'w') as f:
+        print(f'@everywhere include("{_escape_filename(hyperparam_filename)}")', file=f)
+        print(f'@everywhere include("{_escape_filename(dataset_filename)}")', file=f)
+        print(f'@everywhere include("{_escape_filename(pkg_filename)}")', file=f)
         print(f'fullRun({niterations:d}, npop={npop:d}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})', file=f)
         print(f'rmprocs(nprocs)', file=f)
 
@@ -410,7 +425,7 @@ const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
     command = [
         f'julia', f'-O{julia_optimization:d}',
         f'-p', f'{procs}',
-        f'/tmp/.runfile_{rand_string}.jl',
+        str(runfile_filename),
         ]
     if timeout is not None:
         command = [f'timeout', f'{timeout}'] + command
@@ -438,6 +453,9 @@ const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
     except KeyboardInterrupt:
         print("Killing process... will return when done.")
         process.kill()
+
+    if delete_tempfiles:
+        shutil.rmtree(tmpdir)
 
     return get_hof()
 
@@ -550,4 +568,8 @@ def best_callable(equations=None):
     if equations is None: equations = get_hof()
     return best_row(equations)['lambda_format']
 
-
+def _escape_filename(filename):
+    """Turns a file into a string representation with correctly escaped backslashes"""
+    repr = str(filename)
+    repr = repr.replace('\\', '\\\\')
+    return repr
