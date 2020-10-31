@@ -228,8 +228,6 @@ def pysr(X=None, y=None, weights=None,
     if populations is None:
         populations = procs
 
-    rand_string = f'{"".join([str(np.random.rand())[2] for i in range(20)])}'
-
     if isinstance(binary_operators, str): binary_operators = [binary_operators]
     if isinstance(unary_operators, str): unary_operators = [unary_operators]
 
@@ -255,9 +253,9 @@ def pysr(X=None, y=None, weights=None,
     operator_filename = pkg_directory / "operators.jl"
 
     tmpdir = Path(tempfile.mkdtemp(dir=tempdir))
-    hyperparam_filename = tmpdir / f'.hyperparams_{rand_string}.jl'
-    dataset_filename = tmpdir / f'.dataset_{rand_string}.jl'
-    runfile_filename = tmpdir / f'.runfile_{rand_string}.jl'
+    hyperparam_filename = tmpdir / f'hyperparams.jl'
+    dataset_filename = tmpdir / f'dataset.jl'
+    runfile_filename = tmpdir / f'runfile.jl'
 
     def_hyperparams = ""
 
