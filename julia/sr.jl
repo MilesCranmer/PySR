@@ -1217,15 +1217,17 @@ function fullRun(niterations::Integer;
                 deleteat!(equation_speed, 1)
             end
             average_speed = sum(equation_speed)/length(equation_speed)
-            @printf("\n")
-            @printf("Cycles per second: %.3e\n", round(average_speed, sigdigits=3))
-            @printf("Hall of Fame:\n")
-            @printf("-----------------------------------------\n")
-            @printf("%-10s  %-8s   %-8s  %-8s\n", "Complexity", "MSE", "Score", "Equation")
             curMSE = baselineMSE
-            @printf("%-10d  %-8.3e  %-8.3e  %-.f\n", 0, curMSE, 0f0, avgy)
             lastMSE = curMSE
             lastComplexity = 0
+            if verbosity > 0
+                @printf("\n")
+                @printf("Cycles per second: %.3e\n", round(average_speed, sigdigits=3))
+                @printf("Hall of Fame:\n")
+                @printf("-----------------------------------------\n")
+                @printf("%-10s  %-8s   %-8s  %-8s\n", "Complexity", "MSE", "Score", "Equation")
+                @printf("%-10d  %-8.3e  %-8.3e  %-.f\n", 0, curMSE, 0f0, avgy)
+            end
 
             for size=1:actualMaxsize
                 if hallOfFame.exists[size]
@@ -1251,7 +1253,9 @@ function fullRun(niterations::Integer;
                         delta_c = size - lastComplexity
                         delta_l_mse = log(curMSE/lastMSE)
                         score = convert(Float32, -delta_l_mse/delta_c)
-                        @printf("%-10d  %-8.3e  %-8.3e  %-s\n" , size, curMSE, score, stringTree(member.tree))
+                        if verbosity > 0
+                            @printf("%-10d  %-8.3e  %-8.3e  %-s\n" , size, curMSE, score, stringTree(member.tree))
+                        end
                         lastMSE = curMSE
                         lastComplexity = size
                     end
