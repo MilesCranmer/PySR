@@ -1086,7 +1086,12 @@ function fullRun(niterations::Integer;
     end
     println("Started!")
     cycles_complete = npopulations * niterations
-    curmaxsize += 1
+    if warmupMaxsize != 0
+        curmaxsize += 1
+        if curmaxsize > maxsize
+            curmaxsize = maxsize
+        end
+    end
 
     last_print_time = time()
     num_equations = 0.0
