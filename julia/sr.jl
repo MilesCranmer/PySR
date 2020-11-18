@@ -1223,6 +1223,8 @@ function fullRun(niterations::Integer;
             if verbosity > 0
                 @printf("\n")
                 @printf("Cycles per second: %.3e\n", round(average_speed, sigdigits=3))
+                cycles_elapsed = npopulations * niterations - cycles_complete
+                @printf("Progress: %d / %d total iterations (%.3f%%)\n", cycles_elapsed, npopulations * niterations, 100.0*cycles_elapsed/(npopulations*niterations))
                 @printf("Hall of Fame:\n")
                 @printf("-----------------------------------------\n")
                 @printf("%-10s  %-8s   %-8s  %-8s\n", "Complexity", "MSE", "Score", "Equation")
