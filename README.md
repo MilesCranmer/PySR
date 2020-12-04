@@ -1,5 +1,7 @@
 # [PySR.jl](https://github.com/MilesCranmer/PySR)
 
+(pronounced like *py* as in python, and then *sur* as in surface)
+
 [![Documentation Status](https://readthedocs.org/projects/pysr/badge/?version=latest)](https://pysr.readthedocs.io/en/latest/?badge=latest)
 [![PyPI version](https://badge.fury.io/py/pysr.svg)](https://badge.fury.io/py/pysr)
 [![Build Status](https://travis-ci.com/MilesCranmer/PySR.svg?branch=master)](https://travis-ci.com/MilesCranmer/PySR)
