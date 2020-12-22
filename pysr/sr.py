@@ -198,7 +198,7 @@ def pysr(X=None, y=None, weights=None,
     if maxdepth is None:
         maxdepth = maxsize
     if equation_file is None:
-        date_time = datetime.now().strftime("%m_%d_%Y_%H:%M:%S")
+        date_time = datetime.now().strftime("%Y_%m_%d_%H:%M:%S")
         equation_file = 'hall_of_fame_' + date_time + '.csv'
 
     if isinstance(X, pd.DataFrame):
