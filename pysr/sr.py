@@ -10,6 +10,7 @@ import subprocess
 import tempfile
 import shutil
 from pathlib import Path
+from datetime import datetime
 
 
 global_equation_file = 'hall_of_fame.csv'
@@ -83,7 +84,7 @@ def pysr(X=None, y=None, weights=None,
             nrestarts=3,
             timeout=None,
             extra_sympy_mappings={},
-            equation_file='hall_of_fame.csv',
+            equation_file=None,
             test='simple1',
             verbosity=1e9,
             maxsize=20,
@@ -196,6 +197,9 @@ def pysr(X=None, y=None, weights=None,
         raise ValueError("The limitPowComplexity kwarg is deprecated. Use constraints.")
     if maxdepth is None:
         maxdepth = maxsize
+    if equation_file is None:
+        date_time = datetime.now().strftime("%m_%d_%Y_%H:%M:%S")
+        equation_file = 'hall_of_fame_' + date_time + '.csv'
 
     if isinstance(X, pd.DataFrame):
         variable_names = list(X.columns)

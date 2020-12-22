@@ -22,7 +22,7 @@ These are described below
 The program will output a pandas DataFrame containing the equations,
 mean square error, and complexity. It will also dump to a csv
 at the end of every iteration,
-which is `hall_of_fame.csv` by default. It also prints the
+which is `hall_of_fame_{date_time}.csv` by default. It also prints the
 equations to stdout.
 
 ## Operators
