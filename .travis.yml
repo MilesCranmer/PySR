@@ -19,9 +19,6 @@ jobs:
         - choco install python --version 3.8.0
         - python -m pip install --upgrade pip
       env: PATH=/c/Python38:/c/Python38/Scripts:$PATH PY=python
-  allow_failures:
-    - os: linux
-    - os: windows
 
 install: pip3 install --upgrade pip
 
