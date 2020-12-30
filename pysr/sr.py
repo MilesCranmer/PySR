@@ -260,6 +260,9 @@ def pysr(X=None, y=None, weights=None,
     hyperparam_filename = tmpdir / f'hyperparams.jl'
     dataset_filename = tmpdir / f'dataset.jl'
     runfile_filename = tmpdir / f'runfile.jl'
+    X_filename = tmpdir / "X.csv"
+    y_filename = tmpdir / "y.csv"
+    weights_filename = tmpdir / "weights.csv"
 
     def_hyperparams = ""
 
@@ -392,19 +395,20 @@ end"""
 
     def_hyperparams += op_runner
 
-    if X.shape[1] == 1:
-        X_str = 'transpose([' + str(X.tolist()).replace(']', '').replace(',', '').replace('[', '') + '])'
-    else:
-        X_str = str(X.tolist()).replace('],', '];').replace(',', '')
-    y_str = str(y.tolist())
+    def_datasets = """using DelimitedFiles"""
 
-    def_datasets = """const X = convert(Array{Float32, 2}, """f"{X_str})""""
-const y = convert(Array{Float32, 1}, """f"{y_str})"
+    np.savetxt(X_filename, X, delimiter=',')
+    np.savetxt(y_filename, y, delimiter=',')
+    if weights is not None:
+        np.savetxt(weights_filename, weights, delimiter=',')
+
+    def_datasets += f"""
+const X = readdlm("{_escape_filename(X_filename)}", ',', Float32, '\\n')
+const y = readdlm("{_escape_filename(y_filename)}", ',', Float32, '\\n')"""
 
     if weights is not None:
-        weight_str = str(weights.tolist())
         def_datasets += """
-const weights = convert(Array{Float32, 1}, """f"{weight_str})"
+const weights = readdlm("{_escape_filename(weights_filename)}", ',', Float32, '\\n')"""
 
     if use_custom_variable_names:
         def_hyperparams += f"""
