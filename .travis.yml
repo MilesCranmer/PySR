@@ -9,7 +9,7 @@ jobs:
       dist: bionic
       before_install: sudo apt-get -y install python3-pip python3-setuptools
       env:
-        - PY="sudo python3" PATH=$HOME/.local/bin:$PATH
+        - PY='sudo env "PATH=$PATH" python3' PATH=$HOME/.local/bin:$PATH
     - name: "macOS"
       os: osx
       before_install: python3 --version; pip3 --version; sw_vers
