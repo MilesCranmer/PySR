@@ -1,5 +1,7 @@
 language: julia
-matrix:
+julia:
+    - 1
+jobs:
   include:
     - name: "Linux"
       os: linux
@@ -11,15 +13,11 @@ matrix:
       os: windows
       before_install:
         - choco install python
+        - python -m ensurepip
         - python -m pip install --upgrade pip
       env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
-
-julia:
-    - 1
-
-jobs:
   allow_failures:
-  - os: osx
+  - os: linux
   - os: windows
 
 before_script:
