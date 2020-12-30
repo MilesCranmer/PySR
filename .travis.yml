@@ -16,5 +16,5 @@ before_script:
     - export PATH=$HOME/.local/bin:$PATH
 
 script:
-    - julia --color=yes -e 'import Pkg; Pkg.add("Optim"); Pkg.add("SpecialFunctions")'
+    - julia --color=yes -e 'using Pkg; pkg"add Optim; add SpecialFunctions; precompile;"'
     - ./test/travis.sh
