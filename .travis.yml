@@ -14,22 +14,20 @@ jobs:
     - name: "Windows"
       os: windows
       before_install:
-        - choco install python
-        - python -m ensurepip
+        - choco install python --version 3.8.0
         - python -m pip install --upgrade pip
-      env:
-        - PATH=/c/Python37:/c/Python37/Scripts:$PATH
+      env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
   allow_failures:
     - os: linux
     - os: windows
+
+install: pip3 install --upgrade pip
 
 before_script:
     - julia --color=yes -e 'using Pkg; pkg"add Optim; add SpecialFunctions; precompile;"'
 
 script:
-    - python3 -m venv main
-    - source main
-    - python3 -m pip install numpy pandas
+    - pip3 install numpy pandas
     - python3 setup.py install --user
     - PATH=$HOME/.local/bin:$PATH python3 test/test.py
 
