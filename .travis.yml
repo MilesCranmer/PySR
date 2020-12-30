@@ -1,16 +1,26 @@
 language: julia
-os: linux
-dist: bionic
+matrix:
+  include:
+    - name: "Linux"
+      os: linux
+      before_install: sudo apt-get -y install python3-pip python3-setuptools
+    - name: "macOS"
+      os: osx
+      before_install: python3 --version; pip3 --version; sw_vers
+    - name: "Windows"
+      os: windows
+      before_install:
+        - choco install python
+        - python -m pip install --upgrade pip
+      env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
 
 julia:
     - 1
 
-addons:
-    apt:
-        packages:
-            - python3-pip
-            - python3-setuptools
-
+jobs:
+  allow_failures:
+  - os: osx
+  - os: windows
 
 before_script:
     - export PATH=$HOME/.local/bin:$PATH
