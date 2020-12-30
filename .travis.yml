@@ -8,7 +8,7 @@ jobs:
       os: linux
       dist: bionic
       before_install: sudo apt-get -y install python3-pip python3-setuptools
-      env: PY=python3
+      env: PY=python3 SETUPPREFIX="--user"
     - name: "macOS"
       os: osx
       before_install: python3 --version; pip3 --version; sw_vers
