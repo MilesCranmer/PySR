@@ -1,6 +1,10 @@
 language: julia
 julia:
     - 1
+env:
+    - PY=python3
+    - PATH=$HOME/.local/bin:$PATH
+
 jobs:
   include:
     - name: "Linux"
@@ -15,14 +19,18 @@ jobs:
         - choco install python
         - python -m ensurepip
         - python -m pip install --upgrade pip
-      env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
+      env:
+        - PATH=/c/Python37:/c/Python37/Scripts:$PATH
+        - PY=python
   allow_failures:
   - os: linux
   - os: windows
 
 before_script:
-    - export PATH=$HOME/.local/bin:$PATH
 
 script:
     - julia --color=yes -e 'using Pkg; pkg"add Optim; add SpecialFunctions; precompile;"'
-    - ./test/travis.sh
+    - $PY -m pip install numpy pandas
+    - $PY setup.py install
+    - $PY test/test.py
+
