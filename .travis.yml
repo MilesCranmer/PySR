@@ -8,13 +8,9 @@ jobs:
       os: linux
       dist: bionic
       before_install: sudo apt-get -y install python3-pip python3-setuptools
-      env:
-        - PY='sudo env "PATH=$PATH" python3' PATH=$HOME/.local/bin:$PATH
     - name: "macOS"
       os: osx
       before_install: python3 --version; pip3 --version; sw_vers
-      env:
-        - PY=python3 PATH=$HOME/.local/bin:$PATH
     - name: "Windows"
       os: windows
       before_install:
@@ -22,7 +18,7 @@ jobs:
         - python -m ensurepip
         - python -m pip install --upgrade pip
       env:
-        - PY=python3 PATH=/c/Python37:/c/Python37/Scripts:$PATH
+        - PATH=/c/Python37:/c/Python37/Scripts:$PATH
   allow_failures:
     - os: linux
     - os: windows
@@ -31,7 +27,9 @@ before_script:
     - julia --color=yes -e 'using Pkg; pkg"add Optim; add SpecialFunctions; precompile;"'
 
 script:
-    - $PY -m pip install numpy pandas
-    - $PY setup.py install
-    - $PY test/test.py
+    - python3 -m venv main
+    - source main
+    - python3 -m pip install numpy pandas
+    - python3 setup.py install --user
+    - PATH=$HOME/.local/bin:$PATH python3 test/test.py
 
