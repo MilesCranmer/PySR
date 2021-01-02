@@ -78,6 +78,7 @@ y = 2*np.cos(X[:, 3]) + X[:, 0]**2 - 2
 equations = pysr(X, y, niterations=5,
         binary_operators=["plus", "mult"],
         unary_operators=["cos", "exp", "sin", "inv(x) = 1/x"])
+        # Define your own operator with Julia syntax!
 
 ...# (you can use ctl-c to exit early)
 
