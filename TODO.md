@@ -58,19 +58,23 @@
 - [x] Consider printing output sorted by score, not by complexity.
 - [x] Increase max complexity slowly over time up to the actual max.
 - [x] Record density over complexity. Favor equations that have a density we have not explored yet. Want the final density to be evenly distributed.
+- [x] Do printing from Python side. Then we can do simplification and pretty-printing.
+- [x] Sympy printing
 - [ ] Sort these todo lists by priority
 
 ## Feature ideas
 
-- [ ] Do printing from Python side. Then we can do simplification and pretty-printing.
+- [ ] Other default losses (e.g., abs, other likelihoods, or just allow user to pass this as a string).
+- [ ] Other dtypes available
+- [ ] NDSA-II
 - [ ] Cross-validation
-- [ ] Sympy printing
 - [ ] Hierarchical model, so can re-use functional forms. Output of one equation goes into second equation?
 - [ ] Add function to plot equations
 - [ ] Refresh screen rather than dumping to stdout?
 - [ ] Add ability to save state from python
 - [ ] Additional degree operators?
 - [ ] Multi targets (vector ops). Idea 1: Node struct contains argument for which registers it is applied to. Then, can work with multiple components simultaneously. Though this may be tricky to get right. Idea 2: each op is defined by input/output space. Some operators are flexible, and the spaces should be adjusted automatically. Otherwise, only consider ops that make a tree possible. But will need additional ops here to get it to work. Idea 3: define each equation in 2 parts: one part that is shared between all outputs, and one that is different between all outputs. Maybe this could be an array of nodes corresponding to each output. And those nodes would define their functions.
+    - Much easier option: simply flatten the output vector, and set the index as another input feature. The equation learned will be a single equation containing indices as a feature.
 - [ ] Tree crossover? I.e., can take as input a part of the same equation, so long as it is the same level or below?
 - [ ] Create flexible way of providing "simplification recipes." I.e., plus(plus(T, C), C) => plus(T, +(C, C)). The user could pass these.
 - [ ] Consider allowing multi-threading turned off, for faster testing (cache issue on travis). Or could simply fix the caching issue there.
@@ -100,6 +104,7 @@
 
 - [ ] How hard is it to turn the recursive array evaluation into a for loop?
 - [ ] Try defining a binary tree as an array, rather than a linked list. See https://stackoverflow.com/a/6384714/2689923
+    - in array branch
 - [ ] Add true multi-node processing, with MPI, or just file sharing. Multiple populations per core.
     - Ongoing in cluster branch
 - [ ] Performance: try inling things?
