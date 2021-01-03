@@ -407,7 +407,7 @@ const X = readdlm("{_escape_filename(X_filename)}", ',', Float32, '\\n')
 const y = readdlm("{_escape_filename(y_filename)}", ',', Float32, '\\n')"""
 
     if weights is not None:
-        def_datasets += """
+        def_datasets += f"""
 const weights = readdlm("{_escape_filename(weights_filename)}", ',', Float32, '\\n')"""
 
     if use_custom_variable_names:
