@@ -65,6 +65,13 @@ pip install pysr
 ```
 
 # Quickstart
+For a simple demo, start by navigating to the root directory and then in a terminal call 
+```
+>> python main.py
+```
+<br>
+For a more hands on demo you can do the following (also in the root directory)
+
 ```python
 import numpy as np
 from pysr import pysr, best, get_hof
@@ -104,8 +111,3 @@ This is a pandas table, with additional columns:
 - `score` - a metric akin to Occam's razor; you should use this to help select the "true" equation.
 - `sympy_format` - sympy equation.
 - `lambda_format` - a lambda function for that equation, that you can pass values through.
-
-You can also quick start by navigating to the root directory and simply calling 
-```
-python main.py
-```
