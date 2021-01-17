@@ -65,7 +65,6 @@ pip install pysr
 ```
 
 # Quickstart
-
 ```python
 import numpy as np
 from pysr import pysr, best, get_hof
@@ -106,3 +105,7 @@ This is a pandas table, with additional columns:
 - `sympy_format` - sympy equation.
 - `lambda_format` - a lambda function for that equation, that you can pass values through.
 
+You can also quick start by navigating to the root directory and simply calling 
+```
+python main.py
+```
