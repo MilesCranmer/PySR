@@ -192,11 +192,9 @@ def pysr(X=None, y=None, weights=None,
 
     """
     raise_depreciation_errors(limitPowComplexity, threads)
-    if maxdepth is None:
-        maxdepth = maxsize
-    if equation_file is None:
-        date_time = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")[:-3]
-        equation_file = 'hall_of_fame_' + date_time + '.csv'
+    X_filename, dataset_filename, hyperparam_filename, operator_filename, pkg_filename, runfile_filename, tmpdir, \
+    weights_filename, y_filename = set_paths(tempdir)
+
 
     if isinstance(X, pd.DataFrame):
         variable_names = list(X.columns)
@@ -208,6 +206,12 @@ def pysr(X=None, y=None, weights=None,
         X = X[:, None]
 
     check_assertions(X, binary_operators, unary_operators, use_custom_variable_names, variable_names, weights, y)
+
+    if maxdepth is None:
+        maxdepth = maxsize
+    if equation_file is None:
+        date_time = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")[:-3]
+        equation_file = 'hall_of_fame_' + date_time + '.csv'
 
     if select_k_features is not None:
         selection = run_feature_selection(X, y, select_k_features)
@@ -238,9 +242,6 @@ def pysr(X=None, y=None, weights=None,
         X = np.random.randn(100, 5)*3
         y = eval(eval_str)
         print("Running on", eval_str)
-
-    X_filename, dataset_filename, hyperparam_filename, operator_filename, pkg_filename, runfile_filename, tmpdir, weights_filename, y_filename = set_paths(
-        tempdir)
 
     def_hyperparams = ""
 
