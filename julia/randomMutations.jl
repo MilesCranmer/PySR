@@ -228,3 +228,12 @@ function deleteRandomOp(tree::Node)::Node
     end
     return tree
 end
+
+# Create a random equation by appending random operators
+function genRandomTree(length::Integer)::Node
+    tree = Node(1.0f0)
+    for i=1:length
+        tree = appendRandomOp(tree)
+    end
+    return tree
+end
