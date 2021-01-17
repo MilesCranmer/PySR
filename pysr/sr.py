@@ -247,24 +247,35 @@ def pysr(X=None, y=None, weights=None,
     create_julia_files(dataset_filename, def_datasets, def_hyperparams, fractionReplaced, hyperparam_filename,
                        ncyclesperiteration, niterations, npop, pkg_filename, runfile_filename, topn, verbosity)
 
-    command = [
-        f'julia', f'-O{julia_optimization:d}',
-        f'-p', f'{procs}',
-        str(runfile_filename),
-        ]
-    if timeout is not None:
-        command = [f'timeout', f'{timeout}'] + command
+    final_pysr_process(julia_optimization, procs, runfile_filename, timeout)
 
+    set_globals(X, equation_file, extra_sympy_mappings, variable_names)
+
+    if delete_tempfiles:
+        shutil.rmtree(tmpdir)
+
+    return get_hof()
+
+
+def set_globals(X, equation_file, extra_sympy_mappings, variable_names):
     global global_n_features
     global global_equation_file
     global global_variable_names
     global global_extra_sympy_mappings
-
     global_n_features = X.shape[1]
     global_equation_file = equation_file
     global_variable_names = variable_names
     global_extra_sympy_mappings = extra_sympy_mappings
 
+
+def final_pysr_process(julia_optimization, procs, runfile_filename, timeout):
+    command = [
+        f'julia', f'-O{julia_optimization:d}',
+        f'-p', f'{procs}',
+        str(runfile_filename),
+    ]
+    if timeout is not None:
+        command = [f'timeout', f'{timeout}'] + command
     print("Running on", ' '.join(command))
     process = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1, shell=True)
     try:
@@ -278,11 +289,6 @@ def pysr(X=None, y=None, weights=None,
     except KeyboardInterrupt:
         print("Killing process... will return when done.")
         process.kill()
-
-    if delete_tempfiles:
-        shutil.rmtree(tmpdir)
-
-    return get_hof()
 
 
 def create_julia_files(dataset_filename, def_datasets, def_hyperparams, fractionReplaced, hyperparam_filename,
