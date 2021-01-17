@@ -191,10 +191,7 @@ def pysr(X=None, y=None, weights=None,
         (as strings).
 
     """
-    if threads is not None:
-        raise ValueError("The threads kwarg is deprecated. Use procs.")
-    if limitPowComplexity:
-        raise ValueError("The limitPowComplexity kwarg is deprecated. Use constraints.")
+    raise_depreciation_errors(limitPowComplexity, threads)
     if maxdepth is None:
         maxdepth = maxsize
     if equation_file is None:
@@ -464,6 +461,13 @@ const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
         shutil.rmtree(tmpdir)
 
     return get_hof()
+
+
+def raise_depreciation_errors(limitPowComplexity, threads):
+    if threads is not None:
+        raise ValueError("The threads kwarg is deprecated. Use procs.")
+    if limitPowComplexity:
+        raise ValueError("The limitPowComplexity kwarg is deprecated. Use constraints.")
 
 
 def run_feature_selection(X, y, select_k_features):
