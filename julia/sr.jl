@@ -27,6 +27,10 @@ include("simplification.jl")
 
 include("PopMember.jl")
 
+
+include("halloffame.jl")
+
+
 include("complexityChecks.jl")
 
 
@@ -235,37 +239,6 @@ function run(
     return pop
 end
 
-# Get all the constants from a tree
-function getConstants(tree::Node)::Array{Float32, 1}
-    if tree.degree == 0
-        if tree.constant
-            return [tree.val]
-        else
-            return Float32[]
-        end
-    elseif tree.degree == 1
-        return getConstants(tree.l)
-    else
-        both = [getConstants(tree.l), getConstants(tree.r)]
-        return [constant for subtree in both for constant in subtree]
-    end
-end
-
-# Set all the constants inside a tree
-function setConstants(tree::Node, constants::Array{Float32, 1})
-    if tree.degree == 0
-        if tree.constant
-            tree.val = constants[1]
-        end
-    elseif tree.degree == 1
-        setConstants(tree.l, constants)
-    else
-        numberLeft = countConstants(tree.l)
-        setConstants(tree.l, constants)
-        setConstants(tree.r, constants[numberLeft+1:end])
-    end
-end
-
 
 # Proxy function for optimization
 function optFunc(x::Array{Float32, 1}, tree::Node)::Float32
@@ -313,38 +286,6 @@ function optimizeConstants(member::PopMember)::PopMember
         end
     end
     return member
-end
-
-
-# List of the best members seen all time
-mutable struct HallOfFame
-    members::Array{PopMember, 1}
-    exists::Array{Bool, 1} #Whether it has been set
-
-    # Arranged by complexity - store one at each.
-    HallOfFame() = new([PopMember(Node(1f0), 1f9) for i=1:actualMaxsize], [false for i=1:actualMaxsize])
-end
-
-
-# Check for errors before they happen
-function testConfiguration()
-    test_input = LinRange(-100f0, 100f0, 99)
-
-    try
-        for left in test_input
-            for right in test_input
-                for binop in binops
-                    test_output = binop.(left, right)
-                end
-            end
-            for unaop in unaops
-                test_output = unaop.(left)
-            end
-        end
-    catch error
-        @printf("\n\nYour configuration is invalid - one of your operators is not well-defined over the real line.\n\n\n")
-        throw(error)
-    end
 end
 
 
