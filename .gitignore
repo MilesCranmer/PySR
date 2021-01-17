@@ -8,3 +8,8 @@ trials*
 **/__pycache__
 build
 dist
+*.idea/
+*.vs/*
+*.pyproj
+*.sln
+pysr/.vs/

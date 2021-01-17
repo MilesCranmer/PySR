@@ -447,7 +447,7 @@ const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
     global_extra_sympy_mappings = extra_sympy_mappings
 
     print("Running on", ' '.join(command))
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1)
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1, shell=True)
     try:
         while True:
             line = process.stdout.readline()
