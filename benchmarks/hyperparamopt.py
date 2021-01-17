@@ -34,58 +34,46 @@ def run_trial(args):
     """
 
     print("Running on", args)
-    for key in 'niterations npop'.split(' '):
-        args[key] = int(args[key])
-
-
-    total_steps = 10*100*1000
-    niterations = args['niterations']
-    npop = args['npop']
-    if niterations == 0 or npop == 0: 
-        print("Bad parameters")
-        return {'status': 'ok', 'loss': np.inf}
-        
-    args['ncyclesperiteration'] = int(total_steps / (niterations * npop))
+    args['niterations'] = 100
+    args['npop'] = 100
+    args['ncyclesperiteration'] = 1000
     args['topn'] = 10
-    args['parsimony'] = 1e-3
+    args['parsimony'] = 0.0
+    args['useFrequency'] = True
     args['annealing'] = True
 
     if args['npop'] < 20 or args['ncyclesperiteration'] < 3:
         print("Bad parameters")
         return {'status': 'ok', 'loss': np.inf}
 
-
     args['weightDoNothing'] = 1.0
-
-    maxTime = 30
-    ntrials = 2
-    equation_file = f'.hall_of_fame_{np.random.rand():f}.csv'
+    ntrials = 3
 
     with temp_seed(0):
-        X = np.random.randn(100, 5)*3
+        X = np.random.randn(100, 10)*3
 
-    eval_str = ["np.sign(X[:, 2])*np.abs(X[:, 2])**2.5 + 5*np.cos(X[:, 3]) - 5",
-    "np.sign(X[:, 2])*np.abs(X[:, 2])**3.5 + 1/(np.abs(X[:, 0])+1)",
+    eval_str = [
+    "np.sign(X[:, 2])*np.abs(X[:, 2])**2.5 + 5*np.cos(X[:, 3]) - 5",
     "np.exp(X[:, 0]/2) + 12.0 + np.log(np.abs(X[:, 0])*10 + 1)",
-    "1.0 + 3*X[:, 0]**2 - 0.5*X[:, 0]**3 + 0.1*X[:, 0]**4",
-    "(np.exp(X[:, 3]) + 3)/(np.abs(X[:, 1]) + np.cos(X[:, 0]) + 1.1)"]
+    "(np.exp(X[:, 3]) + 3)/(np.abs(X[:, 1]) + np.cos(X[:, 0]) + 1.1)",
+    "X[:, 0] * np.sin(2*np.pi * (X[:, 1] * X[:, 2] - X[:, 3] / X[:, 4])) + 3.0"
+    ]
 
     print(f"Starting", str(args))
     try:
         trials = []
-        for i in range(3, 6):
+        for i in range(len(eval_str)):
             print(f"Starting test {i}")
             for j in range(ntrials):
                 print(f"Starting trial {j}")
-                trial = pysr.pysr(
-                    test=f"simple{i}",
+                y = eval(eval_str[i])
+                trial = pysr.pysr(X, y,
                     procs=4,
+                    populations=20,
                     binary_operators=["plus", "mult", "pow", "div"],
-                    unary_operators=["cos", "exp", "sin", "loga", "abs"],
-                    equation_file=equation_file,
-                    timeout=maxTime,
+                    unary_operators=["cos", "exp", "sin", "logm", "abs"],
                     maxsize=25,
-                    verbosity=0,
+                    constraints={'pow': (-1, 1)},
                     **args)
                 if len(trial) == 0: raise ValueError
                 trials.append(
@@ -109,8 +97,6 @@ def run_trial(args):
 
 
 space = {
-    'niterations': hp.qlognormal('niterations', np.log(10), 1.0, 1),
-    'npop': hp.qlognormal('npop', np.log(100), 1.0, 1),
     'alpha': hp.lognormal('alpha', np.log(10.0), 1.0),
     'fractionReplacedHof': hp.lognormal('fractionReplacedHof', np.log(0.1), 1.0),
     'fractionReplaced': hp.lognormal('fractionReplaced', np.log(0.1), 1.0),
@@ -125,8 +111,6 @@ space = {
 }
 
 ################################################################################
-
-
 
 def merge_trials(trials1, trials2_slice):
     """Merge two hyperopt trials objects

@@ -1,5 +1,7 @@
 # [PySR.jl](https://github.com/MilesCranmer/PySR)
 
+(pronounced like *py* as in python, and then *sur* as in surface)
+
 [![Documentation Status](https://readthedocs.org/projects/pysr/badge/?version=latest)](https://pysr.readthedocs.io/en/latest/?badge=latest)
 [![PyPI version](https://badge.fury.io/py/pysr.svg)](https://badge.fury.io/py/pysr)
 [![Build Status](https://travis-ci.com/MilesCranmer/PySR.svg?branch=master)](https://travis-ci.com/MilesCranmer/PySR)
@@ -47,10 +49,11 @@ then instructions for [mac](https://julialang.org/downloads/platform/#macos)
 and [linux](https://julialang.org/downloads/platform/#linux_and_freebsd).
 (Don't use the `conda-forge` version; it doesn't seem to work properly.)
 Then, at the command line,
-install the `Optim` and `SpecialFunctions` packages via:
+install and precompile the `Optim` and `SpecialFunctions`
+packages via:
 
 ```bash
-julia -e 'import Pkg; Pkg.add("Optim"); Pkg.add("SpecialFunctions")'
+julia -e 'using Pkg; pkg"add Optim; add SpecialFunctions; precompile;"'
 ```
 
 For python, you need to have Python 3, numpy, sympy, and pandas installed.
@@ -73,8 +76,10 @@ y = 2*np.cos(X[:, 3]) + X[:, 0]**2 - 2
 
 # Learn equations
 equations = pysr(X, y, niterations=5,
-        binary_operators=["plus", "mult"],
-        unary_operators=["cos", "exp", "sin"])
+    binary_operators=["plus", "mult"],
+    unary_operators=[
+      "cos", "exp", "sin", #Pre-defined library of operators (see https://pysr.readthedocs.io/en/latest/docs/operators/)
+      "inv(x) = 1/x"]) # Define your own operator! (Julia syntax)
 
 ...# (you can use ctl-c to exit early)
 
