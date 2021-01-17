@@ -207,75 +207,29 @@ def pysr(X=None, y=None, weights=None,
 
     check_assertions(X, binary_operators, unary_operators, use_custom_variable_names, variable_names, weights, y)
 
+    X, variable_names = handle_feature_selection(X, select_k_features, use_custom_variable_names, variable_names, y)
+
     if maxdepth is None:
         maxdepth = maxsize
     if equation_file is None:
         date_time = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")[:-3]
         equation_file = 'hall_of_fame_' + date_time + '.csv'
-
-    if select_k_features is not None:
-        selection = run_feature_selection(X, y, select_k_features)
-        print(f"Using features {selection}")
-        X = X[:, selection]
-
-        if use_custom_variable_names:
-            variable_names = [variable_names[selection[i]] for i in range(len(selection))]
-
     if populations is None:
         populations = procs
-
-    if isinstance(binary_operators, str): binary_operators = [binary_operators]
-    if isinstance(unary_operators, str): unary_operators = [unary_operators]
-
+    if isinstance(binary_operators, str):
+        binary_operators = [binary_operators]
+    if isinstance(unary_operators, str):
+        unary_operators = [unary_operators]
     if X is None:
-        if test == 'simple1':
-            eval_str = "np.sign(X[:, 2])*np.abs(X[:, 2])**2.5 + 5*np.cos(X[:, 3]) - 5"
-        elif test == 'simple2':
-            eval_str = "np.sign(X[:, 2])*np.abs(X[:, 2])**3.5 + 1/(np.abs(X[:, 0])+1)"
-        elif test == 'simple3':
-            eval_str = "np.exp(X[:, 0]/2) + 12.0 + np.log(np.abs(X[:, 0])*10 + 1)"
-        elif test == 'simple4':
-            eval_str = "1.0 + 3*X[:, 0]**2 - 0.5*X[:, 0]**3 + 0.1*X[:, 0]**4"
-        elif test == 'simple5':
-            eval_str = "(np.exp(X[:, 3]) + 3)/(np.abs(X[:, 1]) + np.cos(X[:, 0]) + 1.1)"
-
-        X = np.random.randn(100, 5)*3
-        y = eval(eval_str)
-        print("Running on", eval_str)
+        X, y = using_test_input(X, test, y)
 
     def_hyperparams = ""
 
     # Add pre-defined functions to Julia
-    for op_list in [binary_operators, unary_operators]:
-        for i in range(len(op_list)):
-            op = op_list[i]
-            is_user_defined_operator = '(' in op
-
-            if is_user_defined_operator:
-                def_hyperparams += op + "\n"
-                # Cut off from the first non-alphanumeric char:
-                first_non_char = [
-                        j for j in range(len(op))
-                        if not (op[j].isalpha() or op[j].isdigit())][0]
-                function_name = op[:first_non_char]
-                op_list[i] = function_name
+    def_hyperparams = predefined_function_addition(binary_operators, def_hyperparams, unary_operators)
 
     #arbitrary complexity by default
-    for op in unary_operators:
-        if op not in constraints:
-            constraints[op] = -1
-    for op in binary_operators:
-        if op not in constraints:
-            constraints[op] = (-1, -1)
-        if op in ['plus', 'sub']:
-            if constraints[op][0] != constraints[op][1]:
-                raise NotImplementedError("You need equal constraints on both sides for - and *, due to simplification strategies.")
-        elif op == 'mult':
-            # Make sure the complex expression is in the left side.
-            if constraints[op][0] == -1:
-                continue
-            elif constraints[op][1] == -1 or constraints[op][0] < constraints[op][1]:
-                constraints[op][0], constraints[op][1] = constraints[op][1], constraints[op][0]
+    handle_constraints(binary_operators, constraints, unary_operators)
 
     constraints_str = "const una_constraints = ["
     first = True
@@ -443,6 +397,70 @@ const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
         shutil.rmtree(tmpdir)
 
     return get_hof()
+
+
+def handle_constraints(binary_operators, constraints, unary_operators):
+    for op in unary_operators:
+        if op not in constraints:
+            constraints[op] = -1
+    for op in binary_operators:
+        if op not in constraints:
+            constraints[op] = (-1, -1)
+        if op in ['plus', 'sub']:
+            if constraints[op][0] != constraints[op][1]:
+                raise NotImplementedError(
+                    "You need equal constraints on both sides for - and *, due to simplification strategies.")
+        elif op == 'mult':
+            # Make sure the complex expression is in the left side.
+            if constraints[op][0] == -1:
+                continue
+            elif constraints[op][1] == -1 or constraints[op][0] < constraints[op][1]:
+                constraints[op][0], constraints[op][1] = constraints[op][1], constraints[op][0]
+
+
+def predefined_function_addition(binary_operators, def_hyperparams, unary_operators):
+    for op_list in [binary_operators, unary_operators]:
+        for i in range(len(op_list)):
+            op = op_list[i]
+            is_user_defined_operator = '(' in op
+
+            if is_user_defined_operator:
+                def_hyperparams += op + "\n"
+                # Cut off from the first non-alphanumeric char:
+                first_non_char = [
+                    j for j in range(len(op))
+                    if not (op[j].isalpha() or op[j].isdigit())][0]
+                function_name = op[:first_non_char]
+                op_list[i] = function_name
+    return def_hyperparams
+
+
+def using_test_input(X, test, y):
+    if test == 'simple1':
+        eval_str = "np.sign(X[:, 2])*np.abs(X[:, 2])**2.5 + 5*np.cos(X[:, 3]) - 5"
+    elif test == 'simple2':
+        eval_str = "np.sign(X[:, 2])*np.abs(X[:, 2])**3.5 + 1/(np.abs(X[:, 0])+1)"
+    elif test == 'simple3':
+        eval_str = "np.exp(X[:, 0]/2) + 12.0 + np.log(np.abs(X[:, 0])*10 + 1)"
+    elif test == 'simple4':
+        eval_str = "1.0 + 3*X[:, 0]**2 - 0.5*X[:, 0]**3 + 0.1*X[:, 0]**4"
+    elif test == 'simple5':
+        eval_str = "(np.exp(X[:, 3]) + 3)/(np.abs(X[:, 1]) + np.cos(X[:, 0]) + 1.1)"
+    X = np.random.randn(100, 5) * 3
+    y = eval(eval_str)
+    print("Running on", eval_str)
+    return X, y
+
+
+def handle_feature_selection(X, select_k_features, use_custom_variable_names, variable_names, y):
+    if select_k_features is not None:
+        selection = run_feature_selection(X, y, select_k_features)
+        print(f"Using features {selection}")
+        X = X[:, selection]
+
+        if use_custom_variable_names:
+            variable_names = [variable_names[selection[i]] for i in range(len(selection))]
+    return X, variable_names
 
 
 def set_paths(tempdir):
