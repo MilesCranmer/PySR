@@ -207,16 +207,7 @@ def pysr(X=None, y=None, weights=None,
     if len(X.shape) == 1:
         X = X[:, None]
 
-    # Check for potential errors before they happen
-    assert len(unary_operators) + len(binary_operators) > 0
-    assert len(X.shape) == 2
-    assert len(y.shape) == 1
-    assert X.shape[0] == y.shape[0]
-    if weights is not None:
-        assert len(weights.shape) == 1
-        assert X.shape[0] == weights.shape[0]
-    if use_custom_variable_names:
-        assert len(variable_names) == X.shape[1]
+    check_assertions(X, binary_operators, unary_operators, use_custom_variable_names, variable_names, weights, y)
 
     if select_k_features is not None:
         selection = run_feature_selection(X, y, select_k_features)
@@ -248,18 +239,8 @@ def pysr(X=None, y=None, weights=None,
         y = eval(eval_str)
         print("Running on", eval_str)
 
-    # System-independent paths
-    pkg_directory = Path(__file__).parents[1] / 'julia'
-    pkg_filename = pkg_directory / "sr.jl"
-    operator_filename = pkg_directory / "operators.jl"
-
-    tmpdir = Path(tempfile.mkdtemp(dir=tempdir))
-    hyperparam_filename = tmpdir / f'hyperparams.jl'
-    dataset_filename = tmpdir / f'dataset.jl'
-    runfile_filename = tmpdir / f'runfile.jl'
-    X_filename = tmpdir / "X.csv"
-    y_filename = tmpdir / "y.csv"
-    weights_filename = tmpdir / "weights.csv"
+    X_filename, dataset_filename, hyperparam_filename, operator_filename, pkg_filename, runfile_filename, tmpdir, weights_filename, y_filename = set_paths(
+        tempdir)
 
     def_hyperparams = ""
 
@@ -461,6 +442,34 @@ const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
         shutil.rmtree(tmpdir)
 
     return get_hof()
+
+
+def set_paths(tempdir):
+    # System-independent paths
+    pkg_directory = Path(__file__).parents[1] / 'julia'
+    pkg_filename = pkg_directory / "sr.jl"
+    operator_filename = pkg_directory / "operators.jl"
+    tmpdir = Path(tempfile.mkdtemp(dir=tempdir))
+    hyperparam_filename = tmpdir / f'hyperparams.jl'
+    dataset_filename = tmpdir / f'dataset.jl'
+    runfile_filename = tmpdir / f'runfile.jl'
+    X_filename = tmpdir / "X.csv"
+    y_filename = tmpdir / "y.csv"
+    weights_filename = tmpdir / "weights.csv"
+    return X_filename, dataset_filename, hyperparam_filename, operator_filename, pkg_filename, runfile_filename, tmpdir, weights_filename, y_filename
+
+
+def check_assertions(X, binary_operators, unary_operators, use_custom_variable_names, variable_names, weights, y):
+    # Check for potential errors before they happen
+    assert len(unary_operators) + len(binary_operators) > 0
+    assert len(X.shape) == 2
+    assert len(y.shape) == 1
+    assert X.shape[0] == y.shape[0]
+    if weights is not None:
+        assert len(weights.shape) == 1
+        assert X.shape[0] == weights.shape[0]
+    if use_custom_variable_names:
+        assert len(variable_names) == X.shape[1]
 
 
 def raise_depreciation_errors(limitPowComplexity, threads):
