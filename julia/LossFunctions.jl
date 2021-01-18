@@ -1,3 +1,5 @@
+import Random: randperm
+
 # Sum of square error between two arrays
 function SSE(x::Array{Float32}, y::Array{Float32})::Float32
     diff = (x - y)

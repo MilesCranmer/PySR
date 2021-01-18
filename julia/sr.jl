@@ -1,5 +1,4 @@
 import Printf: @printf
-import Random: shuffle!, randperm
 
 function fullRun(niterations::Integer;
                 npop::Integer=300,

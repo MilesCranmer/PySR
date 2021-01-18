@@ -1,3 +1,5 @@
+import Random: shuffle!
+
 # Pass through the population several times, replacing the oldest
 # with the fittest of a small subsample
 function regEvolCycle(pop::Population, T::Float32, curmaxsize::Integer,
