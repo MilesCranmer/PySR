@@ -1,4 +1,4 @@
-# [PySR.jl](https://github.com/MilesCranmer/PySR)
+# [PySR](https://github.com/MilesCranmer/PySR)
 
 (pronounced like *py* as in python, and then *sur* as in surface)
 
@@ -12,6 +12,9 @@ Uses regularized evolution, simulated annealing, and gradient-free optimization.
 [Cite this software](https://github.com/MilesCranmer/PySR/blob/master/CITATION.md)
 
 [Documentation](https://pysr.readthedocs.io/en/latest)
+
+Check out [SymbolicRegression.jl](https://github.com/MilesCranmer/SymbolicRegression.jl) for
+the pure-Julia version of this package.
 
 Symbolic regression is a very interpretable machine learning algorithm
 for low-dimensional problems: these tools search equation space
