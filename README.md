@@ -65,16 +65,11 @@ pip install pysr
 ```
 
 # Quickstart
-For a simple demo, start by navigating to the root directory and then in a terminal call 
-```
->> python main.py
-```
-<br>
-For a more hands on demo you can do the following (also in the root directory)
 
+Here is some demo code (also found in `example.py`)
 ```python
 import numpy as np
-from pysr import pysr, best, get_hof
+from pysr import pysr, best
 
 # Dataset
 X = 2*np.random.randn(100, 5)

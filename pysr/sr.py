@@ -227,10 +227,12 @@ def pysr(X=None, y=None, weights=None,
     # Add pre-defined functions to Julia
     def_hyperparams = predefined_function_addition(binary_operators, def_hyperparams, unary_operators)
 
+
     #arbitrary complexity by default
     handle_constraints(binary_operators, constraints, unary_operators)
 
     constraints_str = make_constraints_str(binary_operators, constraints, unary_operators)
+
 
     def_hyperparams = make_hyperparams_julia_str(X, alpha, annealing, batchSize, batching, binary_operators,
                                                  constraints_str, def_hyperparams, equation_file, fast_cycle,
