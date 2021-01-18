@@ -1,3 +1,5 @@
+import Printf: @printf
+
 function id(x::Float32)::Float32
     x
 end
