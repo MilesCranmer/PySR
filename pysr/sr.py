@@ -254,11 +254,24 @@ def pysr(X=None, y=None, weights=None,
     # System-independent paths
     pkg_directory = Path(__file__).parents[1] / 'julia'
     pkg_filename = pkg_directory / "sr.jl"
-    operator_filename = pkg_directory / "operators.jl"
+    operator_filename = pkg_directory / "Operators.jl"
+    julia_auxiliaries = [
+        "Equation.jl", "ProgramConstants.jl",
+        "LossFunctions.jl", "Utils.jl", "EvaluateEquation.jl",
+        "MutationFunctions.jl", "SimplifyEquation.jl", "PopMember.jl",
+        "HallOfFame.jl", "CheckConstraints.jl", "Mutate.jl",
+        "Population.jl", "RegularizedEvolution.jl", "SingleIteration.jl",
+        "ConstantOptimization.jl"
+    ]
+    julia_auxiliary_filenames = [
+        pkg_directory / fname
+        for fname in julia_auxiliaries
+    ]
 
     tmpdir = Path(tempfile.mkdtemp(dir=tempdir))
     hyperparam_filename = tmpdir / f'hyperparams.jl'
     dataset_filename = tmpdir / f'dataset.jl'
+    auxiliary_filename = tmpdir / f'auxiliary.jl'
     runfile_filename = tmpdir / f'runfile.jl'
     X_filename = tmpdir / "X.csv"
     y_filename = tmpdir / "y.csv"
@@ -395,6 +408,10 @@ end"""
 
     def_hyperparams += op_runner
 
+    def_auxiliary = '\n'.join([
+    f"""include("{_escape_filename(aux_fname)}")""" for aux_fname in julia_auxiliary_filenames
+    ])
+
     def_datasets = """using DelimitedFiles"""
 
     np.savetxt(X_filename, X, delimiter=',')
@@ -420,9 +437,13 @@ const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
     with open(dataset_filename, 'w') as f:
         print(def_datasets, file=f)
 
+    with open(auxiliary_filename, 'w') as f:
+        print(def_auxiliary, file=f)
+
     with open(runfile_filename, 'w') as f:
         print(f'@everywhere include("{_escape_filename(hyperparam_filename)}")', file=f)
         print(f'@everywhere include("{_escape_filename(dataset_filename)}")', file=f)
+        print(f'@everywhere include("{_escape_filename(auxiliary_filename)}")', file=f)
         print(f'@everywhere include("{_escape_filename(pkg_filename)}")', file=f)
         print(f'fullRun({niterations:d}, npop={npop:d}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})', file=f)
         print(f'rmprocs(nprocs)', file=f)

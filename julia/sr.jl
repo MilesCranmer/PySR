@@ -2,22 +2,6 @@ import Optim
 import Printf: @printf
 import Random: shuffle!, randperm
 
-include("Equation.jl")
-include("ProgramConstants.jl")
-include("LossFunctions.jl")
-include("Utils.jl")
-include("EvaluateEquation.jl")
-include("MutationFunctions.jl")
-include("SimplifyEquation.jl")
-include("PopMember.jl")
-include("HallOfFame.jl")
-include("CheckConstraints.jl")
-include("Mutate.jl")
-include("Population.jl")
-include("RegularizedEvolution.jl")
-include("SingleIteration.jl")
-include("ConstantOptimization.jl")
-
 function fullRun(niterations::Integer;
                 npop::Integer=300,
                 ncyclesperiteration::Integer=3000,
