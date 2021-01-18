@@ -2,48 +2,21 @@ import Optim
 import Printf: @printf
 import Random: shuffle!, randperm
 
-
-include("constants.jl")
-
-include("errors.jl")
-
-if weighted
-    const avgy = sum(y .* weights)/sum(weights)
-    const baselineMSE = MSE(y, convert(Array{Float32, 1}, ones(len) .* avgy), weights)
-else
-    const avgy = sum(y)/len
-    const baselineMSE = MSE(y, convert(Array{Float32, 1}, ones(len) .* avgy))
-end
-
-include("utils.jl")
-
-include("Node.jl")
-
-include("eval.jl")
-
-include("randomMutations.jl")
-
-include("simplification.jl")
-
+include("Equation.jl")
+include("ProgramConstants.jl")
+include("LossFunctions.jl")
+include("Utils.jl")
+include("EvaluateEquation.jl")
+include("MutationFunctions.jl")
+include("SimplifyEquation.jl")
 include("PopMember.jl")
-
-
-include("halloffame.jl")
-
-
-include("complexityChecks.jl")
-
-include("simulatedAnnealing.jl")
-
+include("HallOfFame.jl")
+include("CheckConstraints.jl")
+include("Mutate.jl")
 include("Population.jl")
-
-include("regEvolCycle.jl")
-
-include("run.jl")
-
-include("optimization.jl")
-
-
+include("RegularizedEvolution.jl")
+include("SingleIteration.jl")
+include("ConstantOptimization.jl")
 
 function fullRun(niterations::Integer;
                 npop::Integer=300,

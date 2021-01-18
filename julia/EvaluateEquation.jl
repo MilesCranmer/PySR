@@ -45,38 +45,3 @@ function evalTreeArray(tree::Node, cX::Array{Float32, 2})::Union{Array{Float32, 
         return cumulator
     end
 end
-
-# Score an equation
-function scoreFunc(tree::Node)::Float32
-    prediction = evalTreeArray(tree)
-    if prediction === nothing
-        return 1f9
-    end
-    if weighted
-        mse = MSE(prediction, y, weights)
-    else
-        mse = MSE(prediction, y)
-    end
-    return mse / baselineMSE + countNodes(tree)*parsimony
-end
-
-# Score an equation with a small batch
-function scoreFuncBatch(tree::Node)::Float32
-    # batchSize
-    batch_idx = randperm(len)[1:batchSize]
-    batch_X = X[batch_idx, :]
-    prediction = evalTreeArray(tree, batch_X)
-    if prediction === nothing
-        return 1f9
-    end
-    size_adjustment = 1f0
-    batch_y = y[batch_idx]
-    if weighted
-        batch_w = weights[batch_idx]
-        mse = MSE(prediction, batch_y, batch_w)
-        size_adjustment = 1f0 * len / batchSize
-    else
-        mse = MSE(prediction, batch_y)
-    end
-    return size_adjustment * mse / baselineMSE + countNodes(tree)*parsimony
-end

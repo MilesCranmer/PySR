@@ -1,5 +1,4 @@
-# Go through one simulated annealing mutation cycle
-#  exp(-delta/T) defines probability of accepting a change
+# Go through one mutation cycle
 function iterate(member::PopMember, T::Float32, curmaxsize::Integer, frequencyComplexity::Array{Float32, 1})::PopMember
     prev = member.tree
     tree = prev
