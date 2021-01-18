@@ -1,4 +1,3 @@
-import Optim
 import Printf: @printf
 import Random: shuffle!, randperm
 

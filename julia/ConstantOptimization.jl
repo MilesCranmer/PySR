@@ -1,3 +1,5 @@
+import Optim
+
 # Proxy function for optimization
 function optFunc(x::Array{Float32, 1}, tree::Node)::Float32
     setConstants(tree, x)
