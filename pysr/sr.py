@@ -192,8 +192,8 @@ def pysr(X=None, y=None, weights=None,
 
     """
     raise_depreciation_errors(limitPowComplexity, threads)
-    X_filename, dataset_filename, hyperparam_filename, operator_filename, pkg_filename, runfile_filename, tmpdir, \
-    weights_filename, y_filename = set_paths(tempdir)
+    auxiliary_filename, X_filename, dataset_filename, hyperparam_filename, julia_auxiliary_filenames, operator_filename \
+        ,pkg_filename, runfile_filename, tmpdir, weights_filename, y_filename = set_paths(tempdir)
 
     if isinstance(X, pd.DataFrame):
         variable_names = list(X.columns)
@@ -241,10 +241,11 @@ def pysr(X=None, y=None, weights=None,
                                                  warmupMaxsize, weightAddNode, weightDeleteNode, weightDoNothing,
                                                  weightInsertNode, weightMutateConstant, weightMutateOperator,
                                                  weightRandomize, weightSimplify, weights)
+    def_auxiliary = make_auxiliary_julia_str(julia_auxiliary_filenames)
 
     def_datasets = make_datasets_julia_str(X, X_filename, weights, weights_filename, y, y_filename)
 
-    create_julia_files(dataset_filename, def_datasets, def_hyperparams, fractionReplaced, hyperparam_filename,
+    create_julia_files(auxiliary_filename, dataset_filename, def_auxiliary, def_datasets, def_hyperparams, fractionReplaced, hyperparam_filename,
                        ncyclesperiteration, niterations, npop, pkg_filename, runfile_filename, topn, verbosity)
 
     final_pysr_process(julia_optimization, procs, runfile_filename, timeout)
@@ -255,6 +256,13 @@ def pysr(X=None, y=None, weights=None,
         shutil.rmtree(tmpdir)
 
     return get_hof()
+
+
+def make_auxiliary_julia_str(julia_auxiliary_filenames):
+    def_auxiliary = '\n'.join([
+        f"""include("{_escape_filename(aux_fname)}")""" for aux_fname in julia_auxiliary_filenames
+    ])
+    return def_auxiliary
 
 
 def set_globals(X, equation_file, extra_sympy_mappings, variable_names):
@@ -291,15 +299,18 @@ def final_pysr_process(julia_optimization, procs, runfile_filename, timeout):
         process.kill()
 
 
-def create_julia_files(dataset_filename, def_datasets, def_hyperparams, fractionReplaced, hyperparam_filename,
+def create_julia_files(auxiliary_filename, dataset_filename, def_auxiliary, def_datasets, def_hyperparams, fractionReplaced, hyperparam_filename,
                        ncyclesperiteration, niterations, npop, pkg_filename, runfile_filename, topn, verbosity):
     with open(hyperparam_filename, 'w') as f:
         print(def_hyperparams, file=f)
     with open(dataset_filename, 'w') as f:
         print(def_datasets, file=f)
+    with open(auxiliary_filename, 'w') as f:
+        print(def_auxiliary, file=f)
     with open(runfile_filename, 'w') as f:
         print(f'@everywhere include("{_escape_filename(hyperparam_filename)}")', file=f)
         print(f'@everywhere include("{_escape_filename(dataset_filename)}")', file=f)
+        print(f'@everywhere include("{_escape_filename(auxiliary_filename)}")', file=f)
         print(f'@everywhere include("{_escape_filename(pkg_filename)}")', file=f)
         print(
             f'fullRun({niterations:d}, npop={npop:d}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})',
@@ -497,15 +508,31 @@ def set_paths(tempdir):
     # System-independent paths
     pkg_directory = Path(__file__).parents[1] / 'julia'
     pkg_filename = pkg_directory / "sr.jl"
-    operator_filename = pkg_directory / "operators.jl"
+    operator_filename = pkg_directory / "Operators.jl"
+    julia_auxiliaries = [
+        "Equation.jl", "ProgramConstants.jl",
+        "LossFunctions.jl", "Utils.jl", "EvaluateEquation.jl",
+        "MutationFunctions.jl", "SimplifyEquation.jl", "PopMember.jl",
+        "HallOfFame.jl", "CheckConstraints.jl", "Mutate.jl",
+        "Population.jl", "RegularizedEvolution.jl", "SingleIteration.jl",
+        "ConstantOptimization.jl"
+    ]
+    julia_auxiliary_filenames = [
+        pkg_directory / fname
+        for fname in julia_auxiliaries
+    ]
+
+
     tmpdir = Path(tempfile.mkdtemp(dir=tempdir))
     hyperparam_filename = tmpdir / f'hyperparams.jl'
     dataset_filename = tmpdir / f'dataset.jl'
+    auxiliary_filename = tmpdir / f'auxiliary.jl'
     runfile_filename = tmpdir / f'runfile.jl'
     X_filename = tmpdir / "X.csv"
     y_filename = tmpdir / "y.csv"
     weights_filename = tmpdir / "weights.csv"
-    return X_filename, dataset_filename, hyperparam_filename, operator_filename, pkg_filename, runfile_filename, tmpdir, weights_filename, y_filename
+    return auxiliary_filename, X_filename, dataset_filename, hyperparam_filename, julia_auxiliary_filenames, \
+           operator_filename, pkg_filename, runfile_filename, tmpdir, weights_filename, y_filename
 
 
 def check_assertions(X, binary_operators, unary_operators, use_custom_variable_names, variable_names, weights, y):
