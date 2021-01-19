@@ -31,7 +31,9 @@ function fullRun(niterations::Integer;
     @sync for i=1:npopulations
         @async allPops[i] = @spawnat :any run(fetch(allPops[i]), ncyclesperiteration, curmaxsize, copy(frequencyComplexity)/sum(frequencyComplexity), verbosity=verbosity)
     end
-    println("Started!")
+    if verbosity > 0
+        println("Started!")
+    end
     cycles_complete = npopulations * niterations
     if warmupMaxsize != 0
         curmaxsize += 1

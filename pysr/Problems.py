@@ -1,7 +1,7 @@
 import numpy as np
 import csv
 import traceback
-
+from sr import pysr, best
 
 class Problem:
     """
@@ -94,13 +94,34 @@ def run_on_problem(problem, verbosity=0):
     Takes in a problem and returns a tuple: (equations, best predicted equation, actual equation)
     """
     from time import time
-    from . import pysr, best
     starting = time()
     equations = pysr(problem.X, problem.y, variable_names=problem.variable_names, verbosity=verbosity)
     timing = time()-starting
     others = {"equations": equations, "time": timing}
     return best(equations), problem.form, others
 
+
+def do_feynman_experiments(first=100, verbosity=0, dp=500, output_file_path="experiments/FeynmanExperiment.csv", data_dir="datasets/FeynmanEquations.csv"):
+    from tqdm import tqdm
+    problems = FeynmanProblem.mk_problems(first=first, gen=True, dp=dp, data_dir=data_dir)
+    indx = range(len(problems))
+    ids = []
+    predictions = []
+    true_equations = []
+    time_takens = []
+    for problem in tqdm(problems):
+        prediction, true_equation, others = run_on_problem(problem, verbosity)
+        ids.append(problem.eq_id)
+        predictions.append(prediction)
+        true_equations.append(true_equation)
+        time_takens.append(others['time'])
+    with open(output_file_path, 'a') as f:
+        writer = csv.writer(outcsv, delimiter=',')
+        writer.writerow(['ID', 'Predicted', 'True', 'Time'])
+        for i in range(len(ids)):
+            writer.writerow([ids[i], predictions[i], true_equations[i], time_takens[i]])
+    return
+
+
 if __name__ == "__main__":
-    ret = FeynmanProblem.mk_problems(first=100, gen=True)
-    print(ret)
+    do_feynman_experiments(first=4)
