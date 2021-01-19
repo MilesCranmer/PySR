@@ -8,10 +8,10 @@ class Problem:
 
     Should be able to call pysr(problem.X, problem.y, var_names=problem.var_names) and have it work
     """
-    def __init__(self, X, y, var_names=None):
+    def __init__(self, X, y, variable_names=None):
         self.X = X
         self.y = y
-        self.var_names = var_names
+        self.variable_names = variable_names
 
 
 class FeynmanProblem(Problem):
@@ -27,7 +27,8 @@ class FeynmanProblem(Problem):
         self.eq_id      = row['Filename']
         self.form       = row['Formula']
         self.n_vars     = int(row['# variables'])
-        super(FeynmanProblem, self).__init__(None, None, var_names=[row[f'v{i + 1}_name'] for i in range(self.n_vars)])
+        super(FeynmanProblem, self).__init__(None, None,
+                                             variable_names=[row[f'v{i + 1}_name'] for i in range(self.n_vars)])
         #self.var_names  = [row[f'v{i+1}_name']  for i in range(self.n_vars)]
         self.low        = [float(row[f'v{i+1}_low'])   for i in range(self.n_vars)]
         self.high       = [float(row[f'v{i+1}_high'])  for i in range(self.n_vars)]
@@ -49,7 +50,7 @@ class FeynmanProblem(Problem):
             d['ln']   = np.log
             d['log'] = np.log # Quite sure the Feynman dataset has no base 10 logs
             d['arcsin'] = np.arcsin
-            self.Y = eval(self.form,d)
+            self.y = eval(self.form,d)
         return
 
     def __str__(self):
