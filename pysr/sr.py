@@ -302,7 +302,7 @@ def _final_pysr_process(julia_optimization, procs, runfile_filename, timeout, **
     if timeout is not None:
         command = [f'timeout', f'{timeout}'] + command
     print("Running on", ' '.join(command))
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1, shell=True)
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1)
     try:
         while True:
             line = process.stdout.readline()
