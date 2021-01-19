@@ -277,7 +277,7 @@ def pysr(X=None, y=None, weights=None,
     if delete_tempfiles:
         shutil.rmtree(kwargs['tmpdir'])
 
-    return get_hof()
+    return get_hof(**kwargs)
 
 
 def _make_auxiliary_julia_str(julia_auxiliary_filenames, **kwargs):
@@ -596,7 +596,7 @@ def run_feature_selection(X, y, select_k_features):
             max_features=select_k_features, prefit=True)
     return selector.get_support(indices=True)
 
-def get_hof(equation_file=None, n_features=None, variable_names=None, extra_sympy_mappings=None):
+def get_hof(equation_file=None, n_features=None, variable_names=None, extra_sympy_mappings=None, **kwargs):
     """Get the equations from a hall of fame file. If no arguments
     entered, the ones used previously from a call to PySR will be used."""
 
