@@ -69,9 +69,10 @@ pip install pysr
 
 # Quickstart
 
+Here is some demo code (also found in `example.py`)
 ```python
 import numpy as np
-from pysr import pysr, best, get_hof
+from pysr import pysr, best
 
 # Dataset
 X = 2*np.random.randn(100, 5)
@@ -108,4 +109,3 @@ This is a pandas table, with additional columns:
 - `score` - a metric akin to Occam's razor; you should use this to help select the "true" equation.
 - `sympy_format` - sympy equation.
 - `lambda_format` - a lambda function for that equation, that you can pass values through.
-

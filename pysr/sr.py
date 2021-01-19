@@ -192,15 +192,7 @@ def pysr(X=None, y=None, weights=None,
         (as strings).
 
     """
-    if threads is not None:
-        raise ValueError("The threads kwarg is deprecated. Use procs.")
-    if limitPowComplexity:
-        raise ValueError("The limitPowComplexity kwarg is deprecated. Use constraints.")
-    if maxdepth is None:
-        maxdepth = maxsize
-    if equation_file is None:
-        date_time = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")[:-3]
-        equation_file = 'hall_of_fame_' + date_time + '.csv'
+    _raise_depreciation_errors(limitPowComplexity, threads)
 
     if isinstance(X, pd.DataFrame):
         variable_names = list(X.columns)
@@ -211,119 +203,165 @@ def pysr(X=None, y=None, weights=None,
     if len(X.shape) == 1:
         X = X[:, None]
 
-    # Check for potential errors before they happen
-    assert len(unary_operators) + len(binary_operators) > 0
-    assert len(X.shape) == 2
-    assert len(y.shape) == 1
-    assert X.shape[0] == y.shape[0]
-    if weights is not None:
-        assert len(weights.shape) == 1
-        assert X.shape[0] == weights.shape[0]
-    if use_custom_variable_names:
-        assert len(variable_names) == X.shape[1]
+    _check_assertions(X, binary_operators, unary_operators,
+                     use_custom_variable_names, variable_names, weights, y)
 
 
     if len(X) > 10000 and not batching:
         warnings.warn("Note: you are running with more than 10,000 datapoints. You should consider turning on batching (https://pysr.readthedocs.io/en/latest/docs/options/#batching). You should also reconsider if you need that many datapoints. Unless you have a large amount of noise (in which case you should smooth your dataset first), generally < 10,000 datapoints is enough to find a functional form with symbolic regression. More datapoints will lower the search speed.")
 
-    if select_k_features is not None:
-        selection = run_feature_selection(X, y, select_k_features)
-        print(f"Using features {selection}")
-        X = X[:, selection]
+    X, variable_names = _handle_feature_selection(
+            X, select_k_features,
+            use_custom_variable_names, variable_names, y
+        )
 
-        if use_custom_variable_names:
-            variable_names = [variable_names[selection[i]] for i in range(len(selection))]
-
+    if maxdepth is None:
+        maxdepth = maxsize
+    if equation_file is None:
+        date_time = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")[:-3]
+        equation_file = 'hall_of_fame_' + date_time + '.csv'
     if populations is None:
         populations = procs
-
-    if isinstance(binary_operators, str): binary_operators = [binary_operators]
-    if isinstance(unary_operators, str): unary_operators = [unary_operators]
-
+    if isinstance(binary_operators, str):
+        binary_operators = [binary_operators]
+    if isinstance(unary_operators, str):
+        unary_operators = [unary_operators]
     if X is None:
-        if test == 'simple1':
-            eval_str = "np.sign(X[:, 2])*np.abs(X[:, 2])**2.5 + 5*np.cos(X[:, 3]) - 5"
-        elif test == 'simple2':
-            eval_str = "np.sign(X[:, 2])*np.abs(X[:, 2])**3.5 + 1/(np.abs(X[:, 0])+1)"
-        elif test == 'simple3':
-            eval_str = "np.exp(X[:, 0]/2) + 12.0 + np.log(np.abs(X[:, 0])*10 + 1)"
-        elif test == 'simple4':
-            eval_str = "1.0 + 3*X[:, 0]**2 - 0.5*X[:, 0]**3 + 0.1*X[:, 0]**4"
-        elif test == 'simple5':
-            eval_str = "(np.exp(X[:, 3]) + 3)/(np.abs(X[:, 1]) + np.cos(X[:, 0]) + 1.1)"
+        X, y = _using_test_input(X, test, y)
 
-        X = np.random.randn(100, 5)*3
-        y = eval(eval_str)
-        print("Running on", eval_str)
+    kwargs = dict(X=X, y=y, weights=weights,
+                alpha=alpha, annealing=annealing, batchSize=batchSize,
+                 batching=batching, binary_operators=binary_operators,
+                 equation_file=equation_file, fast_cycle=fast_cycle,
+                 fractionReplaced=fractionReplaced,
+                 ncyclesperiteration=ncyclesperiteration,
+                 niterations=niterations, npop=npop,
+                 topn=topn, verbosity=verbosity,
+                 julia_optimization=julia_optimization, timeout=timeout,
+                 fractionReplacedHof=fractionReplacedHof,
+                 hofMigration=hofMigration,
+                 limitPowComplexity=limitPowComplexity, maxdepth=maxdepth,
+                 maxsize=maxsize, migration=migration, nrestarts=nrestarts,
+                 parsimony=parsimony, perturbationFactor=perturbationFactor,
+                 populations=populations, procs=procs,
+                 shouldOptimizeConstants=shouldOptimizeConstants,
+                 unary_operators=unary_operators, useFrequency=useFrequency,
+                 use_custom_variable_names=use_custom_variable_names,
+                 variable_names=variable_names, warmupMaxsize=warmupMaxsize,
+                 weightAddNode=weightAddNode,
+                 weightDeleteNode=weightDeleteNode,
+                 weightDoNothing=weightDoNothing,
+                 weightInsertNode=weightInsertNode,
+                 weightMutateConstant=weightMutateConstant,
+                 weightMutateOperator=weightMutateOperator,
+                 weightRandomize=weightRandomize,
+                 weightSimplify=weightSimplify,
+                 constraints=constraints,
+                 extra_sympy_mappings=extra_sympy_mappings)
 
-    # System-independent paths
-    pkg_directory = Path(__file__).parents[1] / 'julia'
-    pkg_filename = pkg_directory / "sr.jl"
-    operator_filename = pkg_directory / "operators.jl"
+    kwargs = {**_set_paths(tempdir), **kwargs}
 
-    tmpdir = Path(tempfile.mkdtemp(dir=tempdir))
-    hyperparam_filename = tmpdir / f'hyperparams.jl'
-    dataset_filename = tmpdir / f'dataset.jl'
-    runfile_filename = tmpdir / f'runfile.jl'
-    X_filename = tmpdir / "X.csv"
-    y_filename = tmpdir / "y.csv"
-    weights_filename = tmpdir / "weights.csv"
+    kwargs['def_hyperparams'] = _metaprogram_fast_operator(**kwargs)
 
-    def_hyperparams = ""
+    _handle_constraints(**kwargs)
 
-    # Add pre-defined functions to Julia
-    for op_list in [binary_operators, unary_operators]:
-        for i in range(len(op_list)):
-            op = op_list[i]
-            is_user_defined_operator = '(' in op
+    kwargs['constraints_str'] = _make_constraints_str(**kwargs)
+    kwargs['def_hyperparams'] = _make_hyperparams_julia_str(**kwargs)
+    kwargs['def_auxiliary'] = _make_auxiliary_julia_str(**kwargs)
+    kwargs['def_datasets'] = _make_datasets_julia_str(**kwargs)
 
-            if is_user_defined_operator:
-                def_hyperparams += op + "\n"
-                # Cut off from the first non-alphanumeric char:
-                first_non_char = [
-                        j for j in range(len(op))
-                        if not (op[j].isalpha() or op[j].isdigit())][0]
-                function_name = op[:first_non_char]
-                op_list[i] = function_name
+    _create_julia_files(**kwargs)
+    _final_pysr_process(**kwargs)
+    _set_globals(**kwargs)
 
-    #arbitrary complexity by default
-    for op in unary_operators:
-        if op not in constraints:
-            constraints[op] = -1
-    for op in binary_operators:
-        if op not in constraints:
-            constraints[op] = (-1, -1)
-        if op in ['plus', 'sub']:
-            if constraints[op][0] != constraints[op][1]:
-                raise NotImplementedError("You need equal constraints on both sides for - and *, due to simplification strategies.")
-        elif op == 'mult':
-            # Make sure the complex expression is in the left side.
-            if constraints[op][0] == -1:
-                continue
-            elif constraints[op][1] == -1 or constraints[op][0] < constraints[op][1]:
-                constraints[op][0], constraints[op][1] = constraints[op][1], constraints[op][0]
+    if delete_tempfiles:
+        shutil.rmtree(kwargs['tmpdir'])
 
-    constraints_str = "const una_constraints = ["
-    first = True
-    for op in unary_operators:
-        val = constraints[op]
-        if not first:
-            constraints_str += ", "
-        constraints_str += f"{val:d}"
-        first = False
+    return get_hof(**kwargs)
 
-    constraints_str += """]
-const bin_constraints = ["""
 
-    first = True
-    for op in binary_operators:
-        tup = constraints[op]
-        if not first:
-            constraints_str += ", "
-        constraints_str += f"({tup[0]:d}, {tup[1]:d})"
-        first = False
-    constraints_str += "]"
+def _make_auxiliary_julia_str(julia_auxiliary_filenames, **kwargs):
+    def_auxiliary = '\n'.join([
+        f"""include("{_escape_filename(aux_fname)}")""" for aux_fname in julia_auxiliary_filenames
+    ])
+    return def_auxiliary
 
+
+def _set_globals(X, equation_file, extra_sympy_mappings, variable_names, **kwargs):
+    global global_n_features
+    global global_equation_file
+    global global_variable_names
+    global global_extra_sympy_mappings
+    global_n_features = X.shape[1]
+    global_equation_file = equation_file
+    global_variable_names = variable_names
+    global_extra_sympy_mappings = extra_sympy_mappings
+
+
+def _final_pysr_process(julia_optimization, procs, runfile_filename, timeout, **kwargs):
+    command = [
+        f'julia', f'-O{julia_optimization:d}',
+        f'-p', f'{procs}',
+        str(runfile_filename),
+    ]
+    if timeout is not None:
+        command = [f'timeout', f'{timeout}'] + command
+    print("Running on", ' '.join(command))
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1)
+    try:
+        while True:
+            line = process.stdout.readline()
+            if not line: break
+            print(line.decode('utf-8').replace('\n', ''))
+
+        process.stdout.close()
+        process.wait()
+    except KeyboardInterrupt:
+        print("Killing process... will return when done.")
+        process.kill()
+
+
+def _create_julia_files(auxiliary_filename, dataset_filename, def_auxiliary, def_datasets, def_hyperparams, fractionReplaced, hyperparam_filename,
+                       ncyclesperiteration, niterations, npop, pkg_filename, runfile_filename, topn, verbosity, **kwargs):
+    with open(hyperparam_filename, 'w') as f:
+        print(def_hyperparams, file=f)
+    with open(dataset_filename, 'w') as f:
+        print(def_datasets, file=f)
+    with open(auxiliary_filename, 'w') as f:
+        print(def_auxiliary, file=f)
+    with open(runfile_filename, 'w') as f:
+        print(f'@everywhere include("{_escape_filename(hyperparam_filename)}")', file=f)
+        print(f'@everywhere include("{_escape_filename(dataset_filename)}")', file=f)
+        print(f'@everywhere include("{_escape_filename(auxiliary_filename)}")', file=f)
+        print(f'@everywhere include("{_escape_filename(pkg_filename)}")', file=f)
+        print(
+            f'fullRun({niterations:d}, npop={npop:d}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})',
+            file=f)
+        print(f'rmprocs(nprocs)', file=f)
+
+
+def _make_datasets_julia_str(X, X_filename, weights, weights_filename, y, y_filename, **kwargs):
+    def_datasets = """using DelimitedFiles"""
+    np.savetxt(X_filename, X, delimiter=',')
+    np.savetxt(y_filename, y, delimiter=',')
+    if weights is not None:
+        np.savetxt(weights_filename, weights, delimiter=',')
+    def_datasets += f"""
+const X = readdlm("{_escape_filename(X_filename)}", ',', Float32, '\\n')
+const y = readdlm("{_escape_filename(y_filename)}", ',', Float32, '\\n')"""
+    if weights is not None:
+        def_datasets += f"""
+const weights = readdlm("{_escape_filename(weights_filename)}", ',', Float32, '\\n')"""
+    return def_datasets
+
+
+def _make_hyperparams_julia_str(X, alpha, annealing, batchSize, batching, binary_operators, constraints_str,
+                               def_hyperparams, equation_file, fast_cycle, fractionReplacedHof, hofMigration,
+                               limitPowComplexity, maxdepth, maxsize, migration, nrestarts, operator_filename,
+                               parsimony, perturbationFactor, populations, procs, shouldOptimizeConstants,
+                               unary_operators, useFrequency, use_custom_variable_names, variable_names, warmupMaxsize, weightAddNode,
+                               weightDeleteNode, weightDoNothing, weightInsertNode, weightMutateConstant,
+                               weightMutateOperator, weightRandomize, weightSimplify, weights, **kwargs):
     def_hyperparams += f"""include("{_escape_filename(operator_filename)}")
 {constraints_str}
 const binops = {'[' + ', '.join(binary_operators) + ']'}
@@ -362,7 +400,6 @@ const warmupMaxsize = {warmupMaxsize:d}
 const limitPowComplexity = {"true" if limitPowComplexity else "false"}
 const useFrequency = {"true" if useFrequency else "false"}
 """
-
     op_runner = ""
     if len(binary_operators) > 0:
         op_runner += """
@@ -373,14 +410,13 @@ const useFrequency = {"true" if useFrequency else "false"}
         end"""
         for i in range(1, len(binary_operators)):
             op_runner += f"""
-    elseif i === {i+1}
+    elseif i === {i + 1}
         @inbounds @simd for j=1:clen
             x[j] = {binary_operators[i]}(x[j], y[j])
         end"""
         op_runner += """
     end
 end"""
-
     if len(unary_operators) > 0:
         op_runner += """
 @inline function UNAOP!(x::Array{Float32, 1}, i::Int, clen::Int)
@@ -390,85 +426,160 @@ end"""
         end"""
         for i in range(1, len(unary_operators)):
             op_runner += f"""
-    elseif i === {i+1}
+    elseif i === {i + 1}
         @inbounds @simd for j=1:clen
             x[j] = {unary_operators[i]}(x[j])
         end"""
         op_runner += """
     end
 end"""
-
     def_hyperparams += op_runner
-
-    def_datasets = """using DelimitedFiles"""
-
-    np.savetxt(X_filename, X, delimiter=',')
-    np.savetxt(y_filename, y, delimiter=',')
-    if weights is not None:
-        np.savetxt(weights_filename, weights, delimiter=',')
-
-    def_datasets += f"""
-const X = readdlm("{_escape_filename(X_filename)}", ',', Float32, '\\n')
-const y = readdlm("{_escape_filename(y_filename)}", ',', Float32, '\\n')"""
-
-    if weights is not None:
-        def_datasets += f"""
-const weights = readdlm("{_escape_filename(weights_filename)}", ',', Float32, '\\n')"""
-
     if use_custom_variable_names:
         def_hyperparams += f"""
-const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
-
-    with open(hyperparam_filename, 'w') as f:
-        print(def_hyperparams, file=f)
-
-    with open(dataset_filename, 'w') as f:
-        print(def_datasets, file=f)
-
-    with open(runfile_filename, 'w') as f:
-        print(f'@everywhere include("{_escape_filename(hyperparam_filename)}")', file=f)
-        print(f'@everywhere include("{_escape_filename(dataset_filename)}")', file=f)
-        print(f'@everywhere include("{_escape_filename(pkg_filename)}")', file=f)
-        print(f'fullRun({niterations:d}, npop={npop:d}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})', file=f)
-        print(f'rmprocs(nprocs)', file=f)
+    const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
+    return def_hyperparams
 
 
-    command = [
-        f'julia', f'-O{julia_optimization:d}',
-        f'-p', f'{procs}',
-        str(runfile_filename),
-        ]
-    if timeout is not None:
-        command = [f'timeout', f'{timeout}'] + command
+def _make_constraints_str(binary_operators, constraints, unary_operators, **kwargs):
+    constraints_str = "const una_constraints = ["
+    first = True
+    for op in unary_operators:
+        val = constraints[op]
+        if not first:
+            constraints_str += ", "
+        constraints_str += f"{val:d}"
+        first = False
+    constraints_str += """]
+const bin_constraints = ["""
+    first = True
+    for op in binary_operators:
+        tup = constraints[op]
+        if not first:
+            constraints_str += ", "
+        constraints_str += f"({tup[0]:d}, {tup[1]:d})"
+        first = False
+    constraints_str += "]"
+    return constraints_str
 
-    global global_n_features
-    global global_equation_file
-    global global_variable_names
-    global global_extra_sympy_mappings
 
-    global_n_features = X.shape[1]
-    global_equation_file = equation_file
-    global_variable_names = variable_names
-    global_extra_sympy_mappings = extra_sympy_mappings
+def _handle_constraints(binary_operators, constraints, unary_operators, **kwargs):
+    for op in unary_operators:
+        if op not in constraints:
+            constraints[op] = -1
+    for op in binary_operators:
+        if op not in constraints:
+            constraints[op] = (-1, -1)
+        if op in ['plus', 'sub']:
+            if constraints[op][0] != constraints[op][1]:
+                raise NotImplementedError(
+                    "You need equal constraints on both sides for - and *, due to simplification strategies.")
+        elif op == 'mult':
+            # Make sure the complex expression is in the left side.
+            if constraints[op][0] == -1:
+                continue
+            elif constraints[op][1] == -1 or constraints[op][0] < constraints[op][1]:
+                constraints[op][0], constraints[op][1] = constraints[op][1], constraints[op][0]
 
-    print("Running on", ' '.join(command))
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1)
-    try:
-        while True:
-            line = process.stdout.readline()
-            if not line: break
-            print(line.decode('utf-8').replace('\n', ''))
 
-        process.stdout.close()
-        process.wait()
-    except KeyboardInterrupt:
-        print("Killing process... will return when done.")
-        process.kill()
+def _metaprogram_fast_operator(binary_operators, unary_operators, **kwargs):
+    def_hyperparams = ""
+    for op_list in [binary_operators, unary_operators]:
+        for i in range(len(op_list)):
+            op = op_list[i]
+            is_user_defined_operator = '(' in op
 
-    if delete_tempfiles:
-        shutil.rmtree(tmpdir)
+            if is_user_defined_operator:
+                def_hyperparams += op + "\n"
+                # Cut off from the first non-alphanumeric char:
+                first_non_char = [
+                    j for j in range(len(op))
+                    if not (op[j].isalpha() or op[j].isdigit())][0]
+                function_name = op[:first_non_char]
+                op_list[i] = function_name
+    return def_hyperparams
 
-    return get_hof()
+
+def _using_test_input(X, test, y):
+    if test == 'simple1':
+        eval_str = "np.sign(X[:, 2])*np.abs(X[:, 2])**2.5 + 5*np.cos(X[:, 3]) - 5"
+    elif test == 'simple2':
+        eval_str = "np.sign(X[:, 2])*np.abs(X[:, 2])**3.5 + 1/(np.abs(X[:, 0])+1)"
+    elif test == 'simple3':
+        eval_str = "np.exp(X[:, 0]/2) + 12.0 + np.log(np.abs(X[:, 0])*10 + 1)"
+    elif test == 'simple4':
+        eval_str = "1.0 + 3*X[:, 0]**2 - 0.5*X[:, 0]**3 + 0.1*X[:, 0]**4"
+    elif test == 'simple5':
+        eval_str = "(np.exp(X[:, 3]) + 3)/(np.abs(X[:, 1]) + np.cos(X[:, 0]) + 1.1)"
+    X = np.random.randn(100, 5) * 3
+    y = eval(eval_str)
+    print("Running on", eval_str)
+    return X, y
+
+
+def _handle_feature_selection(X, select_k_features, use_custom_variable_names, variable_names, y):
+    if select_k_features is not None:
+        selection = run_feature_selection(X, y, select_k_features)
+        print(f"Using features {selection}")
+        X = X[:, selection]
+
+        if use_custom_variable_names:
+            variable_names = [variable_names[selection[i]] for i in range(len(selection))]
+    return X, variable_names
+
+
+def _set_paths(tempdir):
+    # System-independent paths
+    pkg_directory = Path(__file__).parents[1] / 'julia'
+    pkg_filename = pkg_directory / "sr.jl"
+    operator_filename = pkg_directory / "Operators.jl"
+    julia_auxiliaries = [
+        "Equation.jl", "ProgramConstants.jl",
+        "LossFunctions.jl", "Utils.jl", "EvaluateEquation.jl",
+        "MutationFunctions.jl", "SimplifyEquation.jl", "PopMember.jl",
+        "HallOfFame.jl", "CheckConstraints.jl", "Mutate.jl",
+        "Population.jl", "RegularizedEvolution.jl", "SingleIteration.jl",
+        "ConstantOptimization.jl"
+    ]
+    julia_auxiliary_filenames = [
+        pkg_directory / fname
+        for fname in julia_auxiliaries
+    ]
+
+    tmpdir = Path(tempfile.mkdtemp(dir=tempdir))
+    hyperparam_filename = tmpdir / f'hyperparams.jl'
+    dataset_filename = tmpdir / f'dataset.jl'
+    auxiliary_filename = tmpdir / f'auxiliary.jl'
+    runfile_filename = tmpdir / f'runfile.jl'
+    X_filename = tmpdir / "X.csv"
+    y_filename = tmpdir / "y.csv"
+    weights_filename = tmpdir / "weights.csv"
+    return dict(auxiliary_filename=auxiliary_filename, X_filename=X_filename,
+            dataset_filename=dataset_filename,
+            hyperparam_filename=hyperparam_filename,
+            julia_auxiliary_filenames=julia_auxiliary_filenames,
+            operator_filename=operator_filename, pkg_filename=pkg_filename,
+            runfile_filename=runfile_filename, tmpdir=tmpdir,
+            weights_filename=weights_filename, y_filename=y_filename)
+
+
+def _check_assertions(X, binary_operators, unary_operators, use_custom_variable_names, variable_names, weights, y):
+    # Check for potential errors before they happen
+    assert len(unary_operators) + len(binary_operators) > 0
+    assert len(X.shape) == 2
+    assert len(y.shape) == 1
+    assert X.shape[0] == y.shape[0]
+    if weights is not None:
+        assert len(weights.shape) == 1
+        assert X.shape[0] == weights.shape[0]
+    if use_custom_variable_names:
+        assert len(variable_names) == X.shape[1]
+
+
+def _raise_depreciation_errors(limitPowComplexity, threads):
+    if threads is not None:
+        raise ValueError("The threads kwarg is deprecated. Use procs.")
+    if limitPowComplexity:
+        raise ValueError("The limitPowComplexity kwarg is deprecated. Use constraints.")
 
 
 def run_feature_selection(X, y, select_k_features):
@@ -485,7 +596,7 @@ def run_feature_selection(X, y, select_k_features):
             max_features=select_k_features, prefit=True)
     return selector.get_support(indices=True)
 
-def get_hof(equation_file=None, n_features=None, variable_names=None, extra_sympy_mappings=None):
+def get_hof(equation_file=None, n_features=None, variable_names=None, extra_sympy_mappings=None, **kwargs):
     """Get the equations from a hall of fame file. If no arguments
     entered, the ones used previously from a call to PySR will be used."""
 
