@@ -192,7 +192,7 @@ def pysr(X=None, y=None, weights=None,
         (as strings).
 
     """
-    raise_depreciation_errors(limitPowComplexity, threads)
+    _raise_depreciation_errors(limitPowComplexity, threads)
 
     if isinstance(X, pd.DataFrame):
         variable_names = list(X.columns)
@@ -210,7 +210,7 @@ def pysr(X=None, y=None, weights=None,
     if len(X) > 10000 and not batching:
         warnings.warn("Note: you are running with more than 10,000 datapoints. You should consider turning on batching (https://pysr.readthedocs.io/en/latest/docs/options/#batching). You should also reconsider if you need that many datapoints. Unless you have a large amount of noise (in which case you should smooth your dataset first), generally < 10,000 datapoints is enough to find a functional form with symbolic regression. More datapoints will lower the search speed.")
 
-    X, variable_names = handle_feature_selection(
+    X, variable_names = _handle_feature_selection(
             X, select_k_features,
             use_custom_variable_names, variable_names, y
         )
@@ -516,7 +516,7 @@ def _using_test_input(X, test, y):
     return X, y
 
 
-def handle_feature_selection(X, select_k_features, use_custom_variable_names, variable_names, y):
+def _handle_feature_selection(X, select_k_features, use_custom_variable_names, variable_names, y):
     if select_k_features is not None:
         selection = run_feature_selection(X, y, select_k_features)
         print(f"Using features {selection}")
@@ -562,7 +562,7 @@ def _set_paths(tempdir):
             weights_filename=weights_filename, y_filename=y_filename)
 
 
-def check_assertions(X, binary_operators, unary_operators, use_custom_variable_names, variable_names, weights, y):
+def _check_assertions(X, binary_operators, unary_operators, use_custom_variable_names, variable_names, weights, y):
     # Check for potential errors before they happen
     assert len(unary_operators) + len(binary_operators) > 0
     assert len(X.shape) == 2
@@ -575,7 +575,7 @@ def check_assertions(X, binary_operators, unary_operators, use_custom_variable_n
         assert len(variable_names) == X.shape[1]
 
 
-def raise_depreciation_errors(limitPowComplexity, threads):
+def _raise_depreciation_errors(limitPowComplexity, threads):
     if threads is not None:
         raise ValueError("The threads kwarg is deprecated. Use procs.")
     if limitPowComplexity:
