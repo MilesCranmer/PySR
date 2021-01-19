@@ -251,7 +251,8 @@ def pysr(X=None, y=None, weights=None,
                  weightMutateOperator=weightMutateOperator,
                  weightRandomize=weightRandomize,
                  weightSimplify=weightSimplify,
-                 constraints=constraints)
+                 constraints=constraints,
+                 extra_sympy_mappings=extra_sympy_mappings)
 
     kwargs = {**_set_paths(tempdir), **kwargs}
 
