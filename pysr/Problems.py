@@ -93,9 +93,13 @@ def run_on_problem(problem, verbosity=0):
     """
     Takes in a problem and returns a tuple: (equations, best predicted equation, actual equation)
     """
+    from time import time
     from . import pysr, best
+    starting = time()
     equations = pysr(problem.X, problem.y, variable_names=problem.variable_names, verbosity=verbosity)
-    return equations, best(equations), problem.form
+    timing = time()-starting
+    others = {"equations": equations, "time": timing}
+    return best(equations), problem.form, others
 
 if __name__ == "__main__":
     ret = FeynmanProblem.mk_problems(first=100, gen=True)
