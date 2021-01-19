@@ -1,16 +1,20 @@
 import numpy as np
 import csv
+import traceback
 
 
 class Problem:
     """
     Problem API to work with PySR.
 
+    Has attributes: X, y as pysr accepts, form which is a string representing the correct equation and variable_names
+
     Should be able to call pysr(problem.X, problem.y, var_names=problem.var_names) and have it work
     """
-    def __init__(self, X, y, variable_names=None):
+    def __init__(self, X, y, form=None, variable_names=None):
         self.X = X
         self.y = y
+        self.form = form
         self.variable_names = variable_names
 
 
@@ -25,9 +29,9 @@ class FeynmanProblem(Problem):
         gen: If true the problem will have dp X and y values randomly generated else they will be None
         """
         self.eq_id      = row['Filename']
-        self.form       = row['Formula']
+        #self.form       = row['Formula']
         self.n_vars     = int(row['# variables'])
-        super(FeynmanProblem, self).__init__(None, None,
+        super(FeynmanProblem, self).__init__(None, None, form=row['Formula'],
                                              variable_names=[row[f'v{i + 1}_name'] for i in range(self.n_vars)])
         #self.var_names  = [row[f'v{i+1}_name']  for i in range(self.n_vars)]
         self.low        = [float(row[f'v{i+1}_low'])   for i in range(self.n_vars)]
@@ -38,8 +42,8 @@ class FeynmanProblem(Problem):
         if gen:
             self.X = np.random.uniform(0.01, 25, size=(self.dp, self.n_vars))
             d = {}
-            for var in range(len(self.var_names)):
-                d[self.var_names[var]] = self.X[:, var]
+            for var in range(len(self.variable_names)):
+                d[self.variable_names[var]] = self.X[:, var]
             d['exp'] = np.exp
             d['sqrt'] = np.sqrt
             d['pi'] = np.pi
@@ -78,12 +82,20 @@ class FeynmanProblem(Problem):
                     p = FeynmanProblem(row, gen=gen, dp=dp)
                     ret.append(p)
                 except Exception as e:
-                    #traceback.print_exc()
+                    traceback.print_exc()
                     #print(row)
                     print(f"FAILED ON ROW {i}")
                 ind += 1
         return ret
 
+
+def run_on_problem(problem, verbosity=0):
+    """
+    Takes in a problem and returns a tuple: (equations, best predicted equation, actual equation)
+    """
+    from . import pysr, best
+    equations = pysr(problem.X, problem.y, variable_names=problem.variable_names, verbosity=verbosity)
+    return equations, best(equations), problem.form
 
 if __name__ == "__main__":
     ret = FeynmanProblem.mk_problems(first=100, gen=True)
