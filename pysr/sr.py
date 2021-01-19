@@ -11,6 +11,7 @@ import tempfile
 import shutil
 from pathlib import Path
 from datetime import datetime
+import warnings
 
 
 global_equation_file = 'hall_of_fame.csv'
@@ -220,6 +221,10 @@ def pysr(X=None, y=None, weights=None,
         assert X.shape[0] == weights.shape[0]
     if use_custom_variable_names:
         assert len(variable_names) == X.shape[1]
+
+
+    if len(X) > 10000 and not batching:
+        warnings.warn("Note: you are running with more than 10,000 datapoints. You should consider turning on batching (https://pysr.readthedocs.io/en/latest/docs/options/#batching). You should also reconsider if you need that many datapoints. Unless you have a large amount of noise (in which case you should smooth your dataset first), generally < 10,000 datapoints is enough to find a functional form with symbolic regression. More datapoints will lower the search speed.")
 
     if select_k_features is not None:
         selection = run_feature_selection(X, y, select_k_features)
