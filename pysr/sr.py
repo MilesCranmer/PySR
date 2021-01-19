@@ -308,7 +308,7 @@ def _final_pysr_process(julia_optimization, procs, runfile_filename, timeout, **
         command = [f'timeout', f'{timeout}'] + command
     if kwargs['verbosity'] > 0:
         print("Running on", ' '.join(command))
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1)
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=-1)
     try:
         while True:
             line = process.stdout.readline()
