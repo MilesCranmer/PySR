@@ -222,19 +222,16 @@ def pysr(X=None, y=None, weights=None,
     if X is None:
         X, y = using_test_input(X, test, y)
 
-    def_hyperparams = ""
-
     # Add pre-defined functions to Julia
-    def_hyperparams = predefined_function_addition(binary_operators, def_hyperparams, unary_operators)
-
+    def_hyperparams = _predefined_function_addition(binary_operators, unary_operators)
 
     #arbitrary complexity by default
-    handle_constraints(binary_operators, constraints, unary_operators)
+    _handle_constraints(binary_operators, constraints, unary_operators)
 
-    constraints_str = make_constraints_str(binary_operators, constraints, unary_operators)
+    constraints_str = _make_constraints_str(binary_operators, constraints, unary_operators)
 
 
-    def_hyperparams = make_hyperparams_julia_str(X, alpha, annealing, batchSize, batching, binary_operators,
+    def_hyperparams = _make_hyperparams_julia_str(X, alpha, annealing, batchSize, batching, binary_operators,
                                                  constraints_str, def_hyperparams, equation_file, fast_cycle,
                                                  fractionReplacedHof, hofMigration, limitPowComplexity, maxdepth,
                                                  maxsize, migration, nrestarts, operator_filename, parsimony,
@@ -243,16 +240,17 @@ def pysr(X=None, y=None, weights=None,
                                                  warmupMaxsize, weightAddNode, weightDeleteNode, weightDoNothing,
                                                  weightInsertNode, weightMutateConstant, weightMutateOperator,
                                                  weightRandomize, weightSimplify, weights)
-    def_auxiliary = make_auxiliary_julia_str(julia_auxiliary_filenames)
 
-    def_datasets = make_datasets_julia_str(X, X_filename, weights, weights_filename, y, y_filename)
+    def_auxiliary = _make_auxiliary_julia_str(julia_auxiliary_filenames)
 
-    create_julia_files(auxiliary_filename, dataset_filename, def_auxiliary, def_datasets, def_hyperparams, fractionReplaced, hyperparam_filename,
+    def_datasets = _make_datasets_julia_str(X, X_filename, weights, weights_filename, y, y_filename)
+
+    _create_julia_files(auxiliary_filename, dataset_filename, def_auxiliary, def_datasets, def_hyperparams, fractionReplaced, hyperparam_filename,
                        ncyclesperiteration, niterations, npop, pkg_filename, runfile_filename, topn, verbosity)
 
-    final_pysr_process(julia_optimization, procs, runfile_filename, timeout)
+    _final_pysr_process(julia_optimization, procs, runfile_filename, timeout)
 
-    set_globals(X, equation_file, extra_sympy_mappings, variable_names)
+    _set_globals(X, equation_file, extra_sympy_mappings, variable_names)
 
     if delete_tempfiles:
         shutil.rmtree(tmpdir)
@@ -260,14 +258,14 @@ def pysr(X=None, y=None, weights=None,
     return get_hof()
 
 
-def make_auxiliary_julia_str(julia_auxiliary_filenames):
+def _make_auxiliary_julia_str(julia_auxiliary_filenames):
     def_auxiliary = '\n'.join([
         f"""include("{_escape_filename(aux_fname)}")""" for aux_fname in julia_auxiliary_filenames
     ])
     return def_auxiliary
 
 
-def set_globals(X, equation_file, extra_sympy_mappings, variable_names):
+def _set_globals(X, equation_file, extra_sympy_mappings, variable_names):
     global global_n_features
     global global_equation_file
     global global_variable_names
@@ -278,7 +276,7 @@ def set_globals(X, equation_file, extra_sympy_mappings, variable_names):
     global_extra_sympy_mappings = extra_sympy_mappings
 
 
-def final_pysr_process(julia_optimization, procs, runfile_filename, timeout):
+def _final_pysr_process(julia_optimization, procs, runfile_filename, timeout):
     command = [
         f'julia', f'-O{julia_optimization:d}',
         f'-p', f'{procs}',
@@ -301,7 +299,7 @@ def final_pysr_process(julia_optimization, procs, runfile_filename, timeout):
         process.kill()
 
 
-def create_julia_files(auxiliary_filename, dataset_filename, def_auxiliary, def_datasets, def_hyperparams, fractionReplaced, hyperparam_filename,
+def _create_julia_files(auxiliary_filename, dataset_filename, def_auxiliary, def_datasets, def_hyperparams, fractionReplaced, hyperparam_filename,
                        ncyclesperiteration, niterations, npop, pkg_filename, runfile_filename, topn, verbosity):
     with open(hyperparam_filename, 'w') as f:
         print(def_hyperparams, file=f)
@@ -320,7 +318,7 @@ def create_julia_files(auxiliary_filename, dataset_filename, def_auxiliary, def_
         print(f'rmprocs(nprocs)', file=f)
 
 
-def make_datasets_julia_str(X, X_filename, weights, weights_filename, y, y_filename):
+def _make_datasets_julia_str(X, X_filename, weights, weights_filename, y, y_filename):
     def_datasets = """using DelimitedFiles"""
     np.savetxt(X_filename, X, delimiter=',')
     np.savetxt(y_filename, y, delimiter=',')
@@ -335,7 +333,7 @@ const weights = readdlm("{_escape_filename(weights_filename)}", ',', Float32, '\
     return def_datasets
 
 
-def make_hyperparams_julia_str(X, alpha, annealing, batchSize, batching, binary_operators, constraints_str,
+def _make_hyperparams_julia_str(X, alpha, annealing, batchSize, batching, binary_operators, constraints_str,
                                def_hyperparams, equation_file, fast_cycle, fractionReplacedHof, hofMigration,
                                limitPowComplexity, maxdepth, maxsize, migration, nrestarts, operator_filename,
                                parsimony, perturbationFactor, populations, procs, shouldOptimizeConstants,
@@ -420,7 +418,7 @@ end"""
     return def_hyperparams
 
 
-def make_constraints_str(binary_operators, constraints, unary_operators):
+def _make_constraints_str(binary_operators, constraints, unary_operators):
     constraints_str = "const una_constraints = ["
     first = True
     for op in unary_operators:
@@ -442,7 +440,7 @@ const bin_constraints = ["""
     return constraints_str
 
 
-def handle_constraints(binary_operators, constraints, unary_operators):
+def _handle_constraints(binary_operators, constraints, unary_operators):
     for op in unary_operators:
         if op not in constraints:
             constraints[op] = -1
@@ -461,7 +459,8 @@ def handle_constraints(binary_operators, constraints, unary_operators):
                 constraints[op][0], constraints[op][1] = constraints[op][1], constraints[op][0]
 
 
-def predefined_function_addition(binary_operators, def_hyperparams, unary_operators):
+def _predefined_function_addition(binary_operators, unary_operators):
+    def_hyperparams = ""
     for op_list in [binary_operators, unary_operators]:
         for i in range(len(op_list)):
             op = op_list[i]
