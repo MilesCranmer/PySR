@@ -62,6 +62,8 @@
 - [x] Sympy printing
 - [ ] Sort these todo lists by priority
 
+- [ ] Automatically convert log, log10, log2, pow to the correct operators.
+
 ## Feature ideas
 
 - [ ] Other default losses (e.g., abs, other likelihoods, or just allow user to pass this as a string).
