@@ -267,7 +267,6 @@ def pysr(X=None, y=None, weights=None,
 
     kwargs['constraints_str'] = _make_constraints_str(**kwargs)
     kwargs['def_hyperparams'] = _make_hyperparams_julia_str(**kwargs)
-    kwargs['def_auxiliary'] = _make_auxiliary_julia_str(**kwargs)
     kwargs['def_datasets'] = _make_datasets_julia_str(**kwargs)
 
     _create_julia_files(**kwargs)
@@ -278,13 +277,6 @@ def pysr(X=None, y=None, weights=None,
         shutil.rmtree(kwargs['tmpdir'])
 
     return get_hof(**kwargs)
-
-
-def _make_auxiliary_julia_str(julia_auxiliary_filenames, **kwargs):
-    def_auxiliary = '\n'.join([
-        f"""include("{_escape_filename(aux_fname)}")""" for aux_fname in julia_auxiliary_filenames
-    ])
-    return def_auxiliary
 
 
 def _set_globals(X, equation_file, extra_sympy_mappings, variable_names, **kwargs):
@@ -321,22 +313,18 @@ def _final_pysr_process(julia_optimization, procs, runfile_filename, timeout, **
         process.kill()
 
 
-def _create_julia_files(auxiliary_filename, dataset_filename, def_auxiliary, def_datasets, def_hyperparams, fractionReplaced, hyperparam_filename,
-                       ncyclesperiteration, niterations, npop, pkg_filename, runfile_filename, topn, verbosity, **kwargs):
+def _create_julia_files(dataset_filename, def_datasets,  hyperparam_filename, def_hyperparams,
+                        fractionReplaced, ncyclesperiteration, niterations, npop,
+                        runfile_filename, topn, verbosity, **kwargs):
     with open(hyperparam_filename, 'w') as f:
         print(def_hyperparams, file=f)
     with open(dataset_filename, 'w') as f:
         print(def_datasets, file=f)
-    with open(auxiliary_filename, 'w') as f:
-        print(def_auxiliary, file=f)
     with open(runfile_filename, 'w') as f:
         print(f'@everywhere include("{_escape_filename(hyperparam_filename)}")', file=f)
         print(f'@everywhere include("{_escape_filename(dataset_filename)}")', file=f)
-        print(f'@everywhere include("{_escape_filename(auxiliary_filename)}")', file=f)
-        print(f'@everywhere include("{_escape_filename(pkg_filename)}")', file=f)
-        print(
-            f'fullRun({niterations:d}, npop={npop:d}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})',
-            file=f)
+        print(f'@everywhere using SymbolicRegression")', file=f)
+        print(f'RunSR(X, y, {niterations:d}, options)', file=f)
         print(f'rmprocs(nprocs)', file=f)
 
 
@@ -354,7 +342,6 @@ const y = readdlm("{_escape_filename(y_filename)}", ',', Float32, '\\n')"""
 const weights = readdlm("{_escape_filename(weights_filename)}", ',', Float32, '\\n')"""
     return def_datasets
 
-
 def _make_hyperparams_julia_str(X, alpha, annealing, batchSize, batching, binary_operators, constraints_str,
                                def_hyperparams, equation_file, fast_cycle, fractionReplacedHof, hofMigration,
                                limitPowComplexity, maxdepth, maxsize, migration, nrestarts, operator_filename,
@@ -362,31 +349,30 @@ def _make_hyperparams_julia_str(X, alpha, annealing, batchSize, batching, binary
                                unary_operators, useFrequency, use_custom_variable_names, variable_names, warmupMaxsize, weightAddNode,
                                weightDeleteNode, weightDoNothing, weightInsertNode, weightMutateConstant,
                                weightMutateOperator, weightRandomize, weightSimplify, weights, **kwargs):
-    def_hyperparams += f"""include("{_escape_filename(operator_filename)}")
-{constraints_str}
-const binops = {'[' + ', '.join(binary_operators) + ']'}
-const unaops = {'[' + ', '.join(unary_operators) + ']'}
-const ns=10;
-const parsimony = {parsimony:f}f0
-const alpha = {alpha:f}f0
-const maxsize = {maxsize:d}
-const maxdepth = {maxdepth:d}
-const fast_cycle = {'true' if fast_cycle else 'false'}
-const migration = {'true' if migration else 'false'}
-const hofMigration = {'true' if hofMigration else 'false'}
-const fractionReplacedHof = {fractionReplacedHof}f0
-const shouldOptimizeConstants = {'true' if shouldOptimizeConstants else 'false'}
-const hofFile = "{equation_file}"
-const nprocs = {procs:d}
-const npopulations = {populations:d}
-const nrestarts = {nrestarts:d}
-const perturbationFactor = {perturbationFactor:f}f0
-const annealing = {"true" if annealing else "false"}
-const weighted = {"true" if weights is not None else "false"}
-const batching = {"true" if batching else "false"}
-const batchSize = {min([batchSize, len(X)]) if batching else len(X):d}
-const useVarMap = {"true" if use_custom_variable_names else "false"}
-const mutationWeights = [
+    def_hyperparams += f"""{constraints_str}
+SymbolicRegression.Options(binops = {'[' + ', '.join(binary_operators) + ']'},
+unaops = {'[' + ', '.join(unary_operators) + ']'},
+ns=10,
+parsimony = {parsimony:f}f0,
+alpha = {alpha:f}f0,
+maxsize = {maxsize:d},
+maxdepth = {maxdepth:d},
+fast_cycle = {'true' if fast_cycle else 'false'},
+migration = {'true' if migration else 'false'},
+hofMigration = {'true' if hofMigration else 'false'},
+fractionReplacedHof = {fractionReplacedHof}f0,
+shouldOptimizeConstants = {'true' if shouldOptimizeConstants else 'false'},
+hofFile = "{equation_file}",
+nprocs = {procs:d},
+npopulations = {populations:d},
+nrestarts = {nrestarts:d},
+perturbationFactor = {perturbationFactor:f}f0,
+annealing = {"true" if annealing else "false"},
+weighted = {"true" if weights is not None else "false"},
+batching = {"true" if batching else "false"},
+batchSize = {min([batchSize, len(X)]) if batching else len(X):d},
+useVarMap = {"true" if use_custom_variable_names else "false"},
+mutationWeights = [
     {weightMutateConstant:f},
     {weightMutateOperator:f},
     {weightAddNode:f},
@@ -395,48 +381,21 @@ const mutationWeights = [
     {weightSimplify:f},
     {weightRandomize:f},
     {weightDoNothing:f}
-]
-const warmupMaxsize = {warmupMaxsize:d}
-const limitPowComplexity = {"true" if limitPowComplexity else "false"}
-const useFrequency = {"true" if useFrequency else "false"}
+],
+warmupMaxsize = {warmupMaxsize:d},
+limitPowComplexity = {"true" if limitPowComplexity else "false"},
+useFrequency = {"true" if useFrequency else "false"},
+npop={npop:d},
+ncyclesperiteration={ncyclesperiteration:d},
+fractionReplaced={fractionReplaced:f}f0,
+topn={topn:d},
+verbosity=round(Int32, {verbosity:f})
 """
-    op_runner = ""
-    if len(binary_operators) > 0:
-        op_runner += """
-@inline function BINOP!(x::Array{Float32, 1}, y::Array{Float32, 1}, i::Int, clen::Int)
-    if i === 1
-        @inbounds @simd for j=1:clen
-            x[j] = """f"{binary_operators[0]}""""(x[j], y[j])
-        end"""
-        for i in range(1, len(binary_operators)):
-            op_runner += f"""
-    elseif i === {i + 1}
-        @inbounds @simd for j=1:clen
-            x[j] = {binary_operators[i]}(x[j], y[j])
-        end"""
-        op_runner += """
-    end
-end"""
-    if len(unary_operators) > 0:
-        op_runner += """
-@inline function UNAOP!(x::Array{Float32, 1}, i::Int, clen::Int)
-    if i === 1
-        @inbounds @simd for j=1:clen
-            x[j] = """f"{unary_operators[0]}(x[j])""""
-        end"""
-        for i in range(1, len(unary_operators)):
-            op_runner += f"""
-    elseif i === {i + 1}
-        @inbounds @simd for j=1:clen
-            x[j] = {unary_operators[i]}(x[j])
-        end"""
-        op_runner += """
-    end
-end"""
-    def_hyperparams += op_runner
+
     if use_custom_variable_names:
-        def_hyperparams += f"""
-    const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
+        def_hyperparams += f""",
+    varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
+    def_hyperparams += '\n)'
     return def_hyperparams
 
 
@@ -529,35 +488,16 @@ def _handle_feature_selection(X, select_k_features, use_custom_variable_names, v
 
 def _set_paths(tempdir):
     # System-independent paths
-    pkg_directory = Path(__file__).parents[1] / 'julia'
-    pkg_filename = pkg_directory / "sr.jl"
-    operator_filename = pkg_directory / "Operators.jl"
-    julia_auxiliaries = [
-        "Equation.jl", "ProgramConstants.jl",
-        "LossFunctions.jl", "Utils.jl", "EvaluateEquation.jl",
-        "MutationFunctions.jl", "SimplifyEquation.jl", "PopMember.jl",
-        "HallOfFame.jl", "CheckConstraints.jl", "Mutate.jl",
-        "Population.jl", "RegularizedEvolution.jl", "SingleIteration.jl",
-        "ConstantOptimization.jl"
-    ]
-    julia_auxiliary_filenames = [
-        pkg_directory / fname
-        for fname in julia_auxiliaries
-    ]
-
     tmpdir = Path(tempfile.mkdtemp(dir=tempdir))
     hyperparam_filename = tmpdir / f'hyperparams.jl'
     dataset_filename = tmpdir / f'dataset.jl'
-    auxiliary_filename = tmpdir / f'auxiliary.jl'
     runfile_filename = tmpdir / f'runfile.jl'
     X_filename = tmpdir / "X.csv"
     y_filename = tmpdir / "y.csv"
     weights_filename = tmpdir / "weights.csv"
-    return dict(auxiliary_filename=auxiliary_filename, X_filename=X_filename,
+    return dict(X_filename=X_filename,
             dataset_filename=dataset_filename,
             hyperparam_filename=hyperparam_filename,
-            julia_auxiliary_filenames=julia_auxiliary_filenames,
-            operator_filename=operator_filename, pkg_filename=pkg_filename,
             runfile_filename=runfile_filename, tmpdir=tmpdir,
             weights_filename=weights_filename, y_filename=y_filename)
 
