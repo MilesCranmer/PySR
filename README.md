@@ -56,14 +56,7 @@ install and precompile the `Optim` and `SpecialFunctions`
 packages via:
 
 ```bash
-julia -e 'using Pkg; pkg"add Optim; add SpecialFunctions; precompile;"'
-```
-
-For python, you need to have Python 3, numpy, sympy, and pandas installed.
-
-You can install this package from PyPI with:
-
-```bash
+julia -e 'using Pkg; Pkg.add("SymbolicRegression"); using SymbolicRegression'
 pip install pysr
 ```
 
