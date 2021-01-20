@@ -261,7 +261,7 @@ def pysr(X=None, y=None, weights=None,
 
     kwargs = {**_set_paths(tempdir), **kwargs}
 
-    kwargs['def_hyperparams'] = _metaprogram_fast_operator(**kwargs)
+    kwargs['def_hyperparams'] = _create_inline_operators(**kwargs)
 
     _handle_constraints(**kwargs)
 
@@ -321,9 +321,9 @@ def _create_julia_files(dataset_filename, def_datasets,  hyperparam_filename, de
     with open(dataset_filename, 'w') as f:
         print(def_datasets, file=f)
     with open(runfile_filename, 'w') as f:
-        print(f'@everywhere include("{_escape_filename(hyperparam_filename)}")', file=f)
-        print(f'@everywhere include("{_escape_filename(dataset_filename)}")', file=f)
-        print(f'@everywhere using SymbolicRegression")', file=f)
+        print(f'@everywhere using SymbolicRegression', file=f)
+        print(f'include("{_escape_filename(hyperparam_filename)}")', file=f)
+        print(f'include("{_escape_filename(dataset_filename)}")', file=f)
         print(f'RunSR(X, y, {niterations:d}, options)', file=f)
         print(f'rmprocs(nprocs)', file=f)
 
@@ -331,48 +331,48 @@ def _create_julia_files(dataset_filename, def_datasets,  hyperparam_filename, de
 def _make_datasets_julia_str(X, X_filename, weights, weights_filename, y, y_filename, **kwargs):
     def_datasets = """using DelimitedFiles"""
     np.savetxt(X_filename, X, delimiter=',')
-    np.savetxt(y_filename, y, delimiter=',')
+    np.savetxt(y_filename, y.reshape(-1, 1), delimiter=',')
     if weights is not None:
-        np.savetxt(weights_filename, weights, delimiter=',')
+        np.savetxt(weights_filename, weights.reshape(-1, 1), delimiter=',')
     def_datasets += f"""
-const X = readdlm("{_escape_filename(X_filename)}", ',', Float32, '\\n')
-const y = readdlm("{_escape_filename(y_filename)}", ',', Float32, '\\n')"""
+X = readdlm("{_escape_filename(X_filename)}", ',', Float32, '\\n')
+y = readdlm("{_escape_filename(y_filename)}", ',', Float32, '\\n')[:, 1]"""
     if weights is not None:
         def_datasets += f"""
-const weights = readdlm("{_escape_filename(weights_filename)}", ',', Float32, '\\n')"""
+weights = readdlm("{_escape_filename(weights_filename)}", ',', Float32, '\\n')[:, 1]"""
     return def_datasets
 
 def _make_hyperparams_julia_str(X, alpha, annealing, batchSize, batching, binary_operators, constraints_str,
                                def_hyperparams, equation_file, fast_cycle, fractionReplacedHof, hofMigration,
-                               limitPowComplexity, maxdepth, maxsize, migration, nrestarts, operator_filename,
+                               limitPowComplexity, maxdepth, maxsize, migration, nrestarts, npop,
                                parsimony, perturbationFactor, populations, procs, shouldOptimizeConstants,
-                               unary_operators, useFrequency, use_custom_variable_names, variable_names, warmupMaxsize, weightAddNode,
+                               unary_operators, useFrequency, use_custom_variable_names,
+                               variable_names, warmupMaxsize, weightAddNode,
+                               ncyclesperiteration, fractionReplaced, topn, verbosity,
                                weightDeleteNode, weightDoNothing, weightInsertNode, weightMutateConstant,
                                weightMutateOperator, weightRandomize, weightSimplify, weights, **kwargs):
-    def_hyperparams += f"""{constraints_str}
-SymbolicRegression.Options(binops = {'[' + ', '.join(binary_operators) + ']'},
-unaops = {'[' + ', '.join(unary_operators) + ']'},
-ns=10,
-parsimony = {parsimony:f}f0,
-alpha = {alpha:f}f0,
-maxsize = {maxsize:d},
-maxdepth = {maxdepth:d},
-fast_cycle = {'true' if fast_cycle else 'false'},
-migration = {'true' if migration else 'false'},
-hofMigration = {'true' if hofMigration else 'false'},
-fractionReplacedHof = {fractionReplacedHof}f0,
-shouldOptimizeConstants = {'true' if shouldOptimizeConstants else 'false'},
-hofFile = "{equation_file}",
-nprocs = {procs:d},
-npopulations = {populations:d},
-nrestarts = {nrestarts:d},
-perturbationFactor = {perturbationFactor:f}f0,
-annealing = {"true" if annealing else "false"},
-weighted = {"true" if weights is not None else "false"},
-batching = {"true" if batching else "false"},
-batchSize = {min([batchSize, len(X)]) if batching else len(X):d},
-useVarMap = {"true" if use_custom_variable_names else "false"},
-mutationWeights = [
+    def_hyperparams += f"""options = SymbolicRegression.Options(binary_operators={'(' + ', '.join(binary_operators) + ')'},
+unary_operators={'(' + ', '.join(unary_operators) + ')'},
+{constraints_str}
+parsimony={parsimony:f}f0,
+alpha={alpha:f}f0,
+maxsize={maxsize:d},
+maxdepth={maxdepth:d},
+fast_cycle={'true' if fast_cycle else 'false'},
+migration={'true' if migration else 'false'},
+hofMigration={'true' if hofMigration else 'false'},
+fractionReplacedHof={fractionReplacedHof}f0,
+shouldOptimizeConstants={'true' if shouldOptimizeConstants else 'false'},
+hofFile="{equation_file}",
+npopulations={populations:d},
+nrestarts={nrestarts:d},
+perturbationFactor={perturbationFactor:f}f0,
+annealing={"true" if annealing else "false"},
+weighted={"true" if weights is not None else "false"},
+batching={"true" if batching else "false"},
+batchSize={min([batchSize, len(X)]) if batching else len(X):d},
+useVarMap={"true" if use_custom_variable_names else "false"},
+mutationWeights=[
     {weightMutateConstant:f},
     {weightMutateOperator:f},
     {weightAddNode:f},
@@ -382,9 +382,9 @@ mutationWeights = [
     {weightRandomize:f},
     {weightDoNothing:f}
 ],
-warmupMaxsize = {warmupMaxsize:d},
-limitPowComplexity = {"true" if limitPowComplexity else "false"},
-useFrequency = {"true" if useFrequency else "false"},
+warmupMaxsize={warmupMaxsize:d},
+limitPowComplexity={"true" if limitPowComplexity else "false"},
+useFrequency={"true" if useFrequency else "false"},
 npop={npop:d},
 ncyclesperiteration={ncyclesperiteration:d},
 fractionReplaced={fractionReplaced:f}f0,
@@ -400,7 +400,7 @@ verbosity=round(Int32, {verbosity:f})
 
 
 def _make_constraints_str(binary_operators, constraints, unary_operators, **kwargs):
-    constraints_str = "const una_constraints = ["
+    constraints_str = "una_constraints = ["
     first = True
     for op in unary_operators:
         val = constraints[op]
@@ -408,8 +408,8 @@ def _make_constraints_str(binary_operators, constraints, unary_operators, **kwar
             constraints_str += ", "
         constraints_str += f"{val:d}"
         first = False
-    constraints_str += """]
-const bin_constraints = ["""
+    constraints_str += """],
+bin_constraints = ["""
     first = True
     for op in binary_operators:
         tup = constraints[op]
@@ -417,7 +417,7 @@ const bin_constraints = ["""
             constraints_str += ", "
         constraints_str += f"({tup[0]:d}, {tup[1]:d})"
         first = False
-    constraints_str += "]"
+    constraints_str += "],"
     return constraints_str
 
 
@@ -440,7 +440,7 @@ def _handle_constraints(binary_operators, constraints, unary_operators, **kwargs
                 constraints[op][0], constraints[op][1] = constraints[op][1], constraints[op][0]
 
 
-def _metaprogram_fast_operator(binary_operators, unary_operators, **kwargs):
+def _create_inline_operators(binary_operators, unary_operators, **kwargs):
     def_hyperparams = ""
     for op_list in [binary_operators, unary_operators]:
         for i in range(len(op_list)):
