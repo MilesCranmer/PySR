@@ -103,6 +103,7 @@ def pysr(X=None, y=None, weights=None,
             limitPowComplexity=False, #deprecated
             threads=None, #deprecated
             julia_optimization=3,
+            local_install=None,
         ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
@@ -257,7 +258,8 @@ def pysr(X=None, y=None, weights=None,
                  weightRandomize=weightRandomize,
                  weightSimplify=weightSimplify,
                  constraints=constraints,
-                 extra_sympy_mappings=extra_sympy_mappings)
+                 extra_sympy_mappings=extra_sympy_mappings,
+                 local_install=local_install)
 
     kwargs = {**_set_paths(tempdir), **kwargs}
 
@@ -290,10 +292,9 @@ def _set_globals(X, equation_file, extra_sympy_mappings, variable_names, **kwarg
     global_extra_sympy_mappings = extra_sympy_mappings
 
 
-def _final_pysr_process(julia_optimization, procs, runfile_filename, timeout, **kwargs):
+def _final_pysr_process(julia_optimization, runfile_filename, timeout, **kwargs):
     command = [
         f'julia', f'-O{julia_optimization:d}',
-        f'-p', f'{procs}',
         str(runfile_filename),
     ]
     if timeout is not None:
@@ -315,17 +316,33 @@ def _final_pysr_process(julia_optimization, procs, runfile_filename, timeout, **
 
 def _create_julia_files(dataset_filename, def_datasets,  hyperparam_filename, def_hyperparams,
                         fractionReplaced, ncyclesperiteration, niterations, npop,
-                        runfile_filename, topn, verbosity, **kwargs):
+                        runfile_filename, topn, verbosity, local_install, procs, weights,
+                        X, variable_names, **kwargs):
     with open(hyperparam_filename, 'w') as f:
         print(def_hyperparams, file=f)
     with open(dataset_filename, 'w') as f:
         print(def_datasets, file=f)
     with open(runfile_filename, 'w') as f:
-        print(f'@everywhere using SymbolicRegression', file=f)
+        print(f'using Distributed', file=f)
+        print(f'procs = addprocs({procs})', file=f)
+        if local_install is None:
+            print(f'@everywhere using SymbolicRegression', file=f)
+        else:
+            local_install = Path(local_install) / "src" / "SymbolicRegression.jl"
+            print(f'@everywhere include("{_escape_filename(local_install)}")', file=f)
+            print(f'@everywhere using .SymbolicRegression', file=f)
         print(f'include("{_escape_filename(hyperparam_filename)}")', file=f)
         print(f'include("{_escape_filename(dataset_filename)}")', file=f)
-        print(f'RunSR(X, y, {niterations:d}, options)', file=f)
-        print(f'rmprocs(nprocs)', file=f)
+        if len(variable_names) == 0:
+            varMap = "[" + ",".join([f'"x{i}"' for i in range(X.shape[1])]) + "]"
+        else:
+            varMap = "[" + ",".join(variable_names) + "]"
+
+        if weights is not None:
+            print(f'EquationSearch(X, y, weights=weights, niterations={niterations:d}, varMap={varMap}, options=options)', file=f)
+        else:
+            print(f'EquationSearch(X, y, niterations={niterations:d}, varMap={varMap}, options=options)', file=f)
+        print(f'rmprocs(procs)', file=f)
 
 
 def _make_datasets_julia_str(X, X_filename, weights, weights_filename, y, y_filename, **kwargs):
@@ -335,7 +352,7 @@ def _make_datasets_julia_str(X, X_filename, weights, weights_filename, y, y_file
     if weights is not None:
         np.savetxt(weights_filename, weights.reshape(-1, 1), delimiter=',')
     def_datasets += f"""
-X = readdlm("{_escape_filename(X_filename)}", ',', Float32, '\\n')
+X = convert(Array, readdlm("{_escape_filename(X_filename)}", ',', Float32, '\\n')')
 y = readdlm("{_escape_filename(y_filename)}", ',', Float32, '\\n')[:, 1]"""
     if weights is not None:
         def_datasets += f"""
@@ -351,7 +368,25 @@ def _make_hyperparams_julia_str(X, alpha, annealing, batchSize, batching, binary
                                ncyclesperiteration, fractionReplaced, topn, verbosity,
                                weightDeleteNode, weightDoNothing, weightInsertNode, weightMutateConstant,
                                weightMutateOperator, weightRandomize, weightSimplify, weights, **kwargs):
-    def_hyperparams += f"""options = SymbolicRegression.Options(binary_operators={'(' + ', '.join(binary_operators) + ')'},
+    def_hyperparams += f"""div = SymbolicRegression.div
+plus=SymbolicRegression.plus
+sub=SymbolicRegression.sub
+mult=SymbolicRegression.mult
+square=SymbolicRegression.square
+cube=SymbolicRegression.cube
+pow=SymbolicRegression.pow
+div=SymbolicRegression.div
+logm=SymbolicRegression.logm
+logm2=SymbolicRegression.logm2
+logm10=SymbolicRegression.logm10
+sqrtm=SymbolicRegression.sqrtm
+neg=SymbolicRegression.neg
+greater=SymbolicRegression.greater
+relu=SymbolicRegression.relu
+logical_or=SymbolicRegression.logical_or
+logical_and=SymbolicRegression.logical_and
+
+options = SymbolicRegression.Options(binary_operators={'(' + ', '.join(binary_operators) + ')'},
 unary_operators={'(' + ', '.join(unary_operators) + ')'},
 {constraints_str}
 parsimony={parsimony:f}f0,
@@ -368,10 +403,8 @@ npopulations={populations:d},
 nrestarts={nrestarts:d},
 perturbationFactor={perturbationFactor:f}f0,
 annealing={"true" if annealing else "false"},
-weighted={"true" if weights is not None else "false"},
 batching={"true" if batching else "false"},
 batchSize={min([batchSize, len(X)]) if batching else len(X):d},
-useVarMap={"true" if use_custom_variable_names else "false"},
 mutationWeights=[
     {weightMutateConstant:f},
     {weightMutateOperator:f},
