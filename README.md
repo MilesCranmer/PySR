@@ -51,9 +51,8 @@ Install Julia - see [downloads](https://julialang.org/downloads/), and
 then instructions for [mac](https://julialang.org/downloads/platform/#macos)
 and [linux](https://julialang.org/downloads/platform/#linux_and_freebsd).
 (Don't use the `conda-forge` version; it doesn't seem to work properly.)
-Then, at the command line,
-install and precompile the `Optim` and `SpecialFunctions`
-packages via:
+Then, at the command line, install and precompile the backend
+and Python frontend with:
 
 ```bash
 julia -e 'using Pkg; Pkg.add("SymbolicRegression"); using SymbolicRegression'
