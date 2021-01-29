@@ -334,8 +334,8 @@ def _create_julia_files(dataset_filename, def_datasets,  hyperparam_filename, de
             local_install = Path(local_install) / "src" / "SymbolicRegression.jl"
             print(f'@everywhere include("{_escape_filename(local_install)}")', file=f)
             print(f'@everywhere using .SymbolicRegression', file=f)
-        print(f'include("{_escape_filename(hyperparam_filename)}")', file=f)
-        print(f'include("{_escape_filename(dataset_filename)}")', file=f)
+        print(f'@everywhere include("{_escape_filename(hyperparam_filename)}")', file=f)
+        print(f'@everywhere include("{_escape_filename(dataset_filename)}")', file=f)
         if len(variable_names) == 0:
             varMap = "[" + ",".join([f'"x{i}"' for i in range(X.shape[1])]) + "]"
         else:
@@ -371,8 +371,7 @@ def _make_hyperparams_julia_str(X, alpha, annealing, batchSize, batching, binary
                                ncyclesperiteration, fractionReplaced, topn, verbosity,
                                weightDeleteNode, weightDoNothing, weightInsertNode, weightMutateConstant,
                                weightMutateOperator, weightRandomize, weightSimplify, weights, **kwargs):
-    def_hyperparams += f"""div = SymbolicRegression.div
-plus=SymbolicRegression.plus
+    def_hyperparams += f"""plus=SymbolicRegression.plus
 sub=SymbolicRegression.sub
 mult=SymbolicRegression.mult
 square=SymbolicRegression.square
