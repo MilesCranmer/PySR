@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pysr", # Replace with your own username
-    version="0.3.37",
+    version="0.4.0",
     author="Miles Cranmer",
     author_email="miles.cranmer@gmail.com",
     description="Simple and efficient symbolic regression",
@@ -18,9 +18,6 @@ setuptools.setup(
         "sympy"
         ],
     packages=setuptools.find_packages(),
-    package_data={
-        'pysr': ['../julia/*.jl']
-    },
     include_package_data=False,
     classifiers=[
         "Programming Language :: Python :: 3",
