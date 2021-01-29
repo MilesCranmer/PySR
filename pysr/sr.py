@@ -189,6 +189,9 @@ def pysr(X=None, y=None, weights=None,
     :param julia_optimization: int, Optimization level (0, 1, 2, 3)
     :param tempdir: str or None, directory for the temporary files
     :param delete_tempfiles: bool, whether to delete the temporary files after finishing
+    :param local_install: str or None, the root directory for the
+        `SymbolicRegression.jl` repo, so one can customize the search code
+        instead of using the pre-compiled package.
     :returns: pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
         (as strings).
 
