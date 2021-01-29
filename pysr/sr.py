@@ -352,7 +352,7 @@ def _make_datasets_julia_str(X, X_filename, weights, weights_filename, y, y_file
     if weights is not None:
         np.savetxt(weights_filename, weights.reshape(-1, 1), delimiter=',')
     def_datasets += f"""
-X = convert(Array, readdlm("{_escape_filename(X_filename)}", ',', Float32, '\\n')')
+X = copy(transpose(readdlm("{_escape_filename(X_filename)}", ',', Float32, '\\n')))
 y = readdlm("{_escape_filename(y_filename)}", ',', Float32, '\\n')[:, 1]"""
     if weights is not None:
         def_datasets += f"""
