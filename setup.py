@@ -19,7 +19,7 @@ setuptools.setup(
         ],
     packages=setuptools.find_packages(),
     package_data={
-        'pysr': ['Project.toml']
+        'pysr': ['../Project.toml']
     },
     include_package_data=False,
     classifiers=[
