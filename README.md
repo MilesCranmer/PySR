@@ -14,7 +14,7 @@ Uses regularized evolution, simulated annealing, and gradient-free optimization.
 [Documentation](https://pysr.readthedocs.io/en/latest)
 
 Check out [SymbolicRegression.jl](https://github.com/MilesCranmer/SymbolicRegression.jl) for
-the pure-Julia version of this package.
+the pure-Julia backend of this package.
 
 Symbolic regression is a very interpretable machine learning algorithm
 for low-dimensional problems: these tools search equation space
@@ -51,21 +51,14 @@ Install Julia - see [downloads](https://julialang.org/downloads/), and
 then instructions for [mac](https://julialang.org/downloads/platform/#macos)
 and [linux](https://julialang.org/downloads/platform/#linux_and_freebsd).
 (Don't use the `conda-forge` version; it doesn't seem to work properly.)
-Then, at the command line,
-install and precompile the `Optim` and `SpecialFunctions`
-packages via:
 
-```bash
-julia -e 'using Pkg; pkg"add Optim; add SpecialFunctions; precompile;"'
-```
-
-For python, you need to have Python 3, numpy, sympy, and pandas installed.
-
-You can install this package from PyPI with:
-
+You can install PySR with:
 ```bash
 pip install pysr
 ```
+
+The first launch will automatically install the Julia packages
+required.
 
 # Quickstart
 

@@ -1,0 +1,6 @@
+[deps]
+SymbolicRegression = "8254be44-1295-4e6a-a16d-46603ac705cb"
+
+[compat]
+SymbolicRegression = "0.4"
+julia = "1"

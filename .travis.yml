@@ -19,7 +19,7 @@ jobs:
 install: pip3 install --upgrade pip
 
 before_script:
-    - julia --color=yes -e 'using Pkg; pkg"add Optim; add SpecialFunctions; precompile;"'
+    - julia --color=yes -e 'using Pkg; pkg"add SymbolicRegression; precompile;"'
 
 script:
     - pip3 install numpy pandas

@@ -100,13 +100,13 @@ def pysr(X=None, y=None, weights=None,
             useFrequency=False,
             tempdir=None,
             delete_tempfiles=True,
-            limitPowComplexity=False, #deprecated
-            threads=None, #deprecated
             julia_optimization=3,
+            julia_project=None,
+            user_input=True
         ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
-    equations, but you should adjust `threads`, `niterations`,
+    equations, but you should adjust `niterations`,
     `binary_operators`, `unary_operators` to your requirements.
 
     :param X: np.ndarray or pandas.DataFrame, 2D array. Rows are examples,
@@ -188,12 +188,16 @@ def pysr(X=None, y=None, weights=None,
     :param julia_optimization: int, Optimization level (0, 1, 2, 3)
     :param tempdir: str or None, directory for the temporary files
     :param delete_tempfiles: bool, whether to delete the temporary files after finishing
+    :param julia_project: str or None, a Julia environment location containing
+        a Project.toml (and potentially the source code for SymbolicRegression.jl).
+        Default gives the Python package directory, where a Project.toml file
+        should be present from the install.
+    :param user_input: Whether to ask for user input or not for installing (to
+        be used for automated scripts). Will choose to install when asked.
     :returns: pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
         (as strings).
 
     """
-    _raise_depreciation_errors(limitPowComplexity, threads)
-
     if isinstance(X, pd.DataFrame):
         variable_names = list(X.columns)
         X = np.array(X)
@@ -239,8 +243,7 @@ def pysr(X=None, y=None, weights=None,
                  topn=topn, verbosity=verbosity,
                  julia_optimization=julia_optimization, timeout=timeout,
                  fractionReplacedHof=fractionReplacedHof,
-                 hofMigration=hofMigration,
-                 limitPowComplexity=limitPowComplexity, maxdepth=maxdepth,
+                 hofMigration=hofMigration, maxdepth=maxdepth,
                  maxsize=maxsize, migration=migration, nrestarts=nrestarts,
                  parsimony=parsimony, perturbationFactor=perturbationFactor,
                  populations=populations, procs=procs,
@@ -257,17 +260,24 @@ def pysr(X=None, y=None, weights=None,
                  weightRandomize=weightRandomize,
                  weightSimplify=weightSimplify,
                  constraints=constraints,
-                 extra_sympy_mappings=extra_sympy_mappings)
+                 extra_sympy_mappings=extra_sympy_mappings,
+                 julia_project=julia_project)
 
     kwargs = {**_set_paths(tempdir), **kwargs}
 
-    kwargs['def_hyperparams'] = _metaprogram_fast_operator(**kwargs)
+    pkg_directory = kwargs['pkg_directory']
+    kwargs['need_install'] = False
+    if not (pkg_directory / 'Manifest.toml').is_file():
+        kwargs['need_install'] = (not user_input) or _yesno("I will install Julia packages using PySR's Project.toml file. OK?")
+        if kwargs['need_install']:
+            print("OK. I will install at launch.")
+
+    kwargs['def_hyperparams'] = _create_inline_operators(**kwargs)
 
     _handle_constraints(**kwargs)
 
     kwargs['constraints_str'] = _make_constraints_str(**kwargs)
     kwargs['def_hyperparams'] = _make_hyperparams_julia_str(**kwargs)
-    kwargs['def_auxiliary'] = _make_auxiliary_julia_str(**kwargs)
     kwargs['def_datasets'] = _make_datasets_julia_str(**kwargs)
 
     _create_julia_files(**kwargs)
@@ -278,13 +288,6 @@ def pysr(X=None, y=None, weights=None,
         shutil.rmtree(kwargs['tmpdir'])
 
     return get_hof(**kwargs)
-
-
-def _make_auxiliary_julia_str(julia_auxiliary_filenames, **kwargs):
-    def_auxiliary = '\n'.join([
-        f"""include("{_escape_filename(aux_fname)}")""" for aux_fname in julia_auxiliary_filenames
-    ])
-    return def_auxiliary
 
 
 def _set_globals(X, equation_file, extra_sympy_mappings, variable_names, **kwargs):
@@ -298,14 +301,16 @@ def _set_globals(X, equation_file, extra_sympy_mappings, variable_names, **kwarg
     global_extra_sympy_mappings = extra_sympy_mappings
 
 
-def _final_pysr_process(julia_optimization, procs, runfile_filename, timeout, **kwargs):
+def _final_pysr_process(julia_optimization, runfile_filename, timeout, **kwargs):
     command = [
         f'julia', f'-O{julia_optimization:d}',
-        f'-p', f'{procs}',
         str(runfile_filename),
     ]
     if timeout is not None:
         command = [f'timeout', f'{timeout}'] + command
+    _cmd_runner(command)
+
+def _cmd_runner(command):
     print("Running on", ' '.join(command))
     process = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1)
     try:
@@ -320,73 +325,108 @@ def _final_pysr_process(julia_optimization, procs, runfile_filename, timeout, **
         print("Killing process... will return when done.")
         process.kill()
 
-
-def _create_julia_files(auxiliary_filename, dataset_filename, def_auxiliary, def_datasets, def_hyperparams, fractionReplaced, hyperparam_filename,
-                       ncyclesperiteration, niterations, npop, pkg_filename, runfile_filename, topn, verbosity, **kwargs):
+def _create_julia_files(dataset_filename, def_datasets,  hyperparam_filename, def_hyperparams,
+                        fractionReplaced, ncyclesperiteration, niterations, npop,
+                        runfile_filename, topn, verbosity, julia_project, procs, weights,
+                        X, variable_names, pkg_directory, need_install, **kwargs):
     with open(hyperparam_filename, 'w') as f:
         print(def_hyperparams, file=f)
     with open(dataset_filename, 'w') as f:
         print(def_datasets, file=f)
-    with open(auxiliary_filename, 'w') as f:
-        print(def_auxiliary, file=f)
     with open(runfile_filename, 'w') as f:
-        print(f'@everywhere include("{_escape_filename(hyperparam_filename)}")', file=f)
-        print(f'@everywhere include("{_escape_filename(dataset_filename)}")', file=f)
-        print(f'@everywhere include("{_escape_filename(auxiliary_filename)}")', file=f)
-        print(f'@everywhere include("{_escape_filename(pkg_filename)}")', file=f)
-        print(
-            f'fullRun({niterations:d}, npop={npop:d}, ncyclesperiteration={ncyclesperiteration:d}, fractionReplaced={fractionReplaced:f}f0, verbosity=round(Int32, {verbosity:f}), topn={topn:d})',
-            file=f)
-        print(f'rmprocs(nprocs)', file=f)
+        if julia_project is None:
+            julia_project = pkg_directory
+        else:
+            julia_project = Path(julia_project)
+        print(f'import Pkg', file=f)
+        print(f'Pkg.activate("{_escape_filename(julia_project)}")', file=f)
+        if need_install:
+            print(f'Pkg.add("SymbolicRegression")', file=f)
+            print(f'Pkg.instantiate()', file=f)
+            print(f'Pkg.precompile()', file=f)
+        print(f'using SymbolicRegression', file=f)
+        print(f'include("{_escape_filename(hyperparam_filename)}")', file=f)
+        print(f'include("{_escape_filename(dataset_filename)}")', file=f)
+        if len(variable_names) == 0:
+            varMap = "[" + ",".join([f'"x{i}"' for i in range(X.shape[1])]) + "]"
+        else:
+            varMap = "[" + ",".join(variable_names) + "]"
+
+        if weights is not None:
+            print(f'EquationSearch(X, y, weights=weights, niterations={niterations:d}, varMap={varMap}, options=options, numprocs={procs})', file=f)
+        else:
+            print(f'EquationSearch(X, y, niterations={niterations:d}, varMap={varMap}, options=options, numprocs={procs})', file=f)
 
 
 def _make_datasets_julia_str(X, X_filename, weights, weights_filename, y, y_filename, **kwargs):
     def_datasets = """using DelimitedFiles"""
     np.savetxt(X_filename, X, delimiter=',')
-    np.savetxt(y_filename, y, delimiter=',')
+    np.savetxt(y_filename, y.reshape(-1, 1), delimiter=',')
     if weights is not None:
-        np.savetxt(weights_filename, weights, delimiter=',')
+        np.savetxt(weights_filename, weights.reshape(-1, 1), delimiter=',')
     def_datasets += f"""
-const X = readdlm("{_escape_filename(X_filename)}", ',', Float32, '\\n')
-const y = readdlm("{_escape_filename(y_filename)}", ',', Float32, '\\n')"""
+X = copy(transpose(readdlm("{_escape_filename(X_filename)}", ',', Float32, '\\n')))
+y = readdlm("{_escape_filename(y_filename)}", ',', Float32, '\\n')[:, 1]"""
     if weights is not None:
         def_datasets += f"""
-const weights = readdlm("{_escape_filename(weights_filename)}", ',', Float32, '\\n')"""
+weights = readdlm("{_escape_filename(weights_filename)}", ',', Float32, '\\n')[:, 1]"""
     return def_datasets
-
 
 def _make_hyperparams_julia_str(X, alpha, annealing, batchSize, batching, binary_operators, constraints_str,
                                def_hyperparams, equation_file, fast_cycle, fractionReplacedHof, hofMigration,
-                               limitPowComplexity, maxdepth, maxsize, migration, nrestarts, operator_filename,
+                               maxdepth, maxsize, migration, nrestarts, npop,
                                parsimony, perturbationFactor, populations, procs, shouldOptimizeConstants,
-                               unary_operators, useFrequency, use_custom_variable_names, variable_names, warmupMaxsize, weightAddNode,
+                               unary_operators, useFrequency, use_custom_variable_names,
+                               variable_names, warmupMaxsize, weightAddNode,
+                               ncyclesperiteration, fractionReplaced, topn, verbosity,
                                weightDeleteNode, weightDoNothing, weightInsertNode, weightMutateConstant,
                                weightMutateOperator, weightRandomize, weightSimplify, weights, **kwargs):
-    def_hyperparams += f"""include("{_escape_filename(operator_filename)}")
+    def tuple_fix(ops):
+        if len(ops) > 1:
+            return ', '.join(ops)
+        elif len(ops) == 0:
+            return ''
+        else:
+            return ops[0] + ','
+
+    def_hyperparams += f"""\n
+plus=(+)
+sub=(-)
+mult=(*)
+square=SymbolicRegression.square
+cube=SymbolicRegression.cube
+pow=(^)
+div=(/)
+logm=SymbolicRegression.logm
+logm2=SymbolicRegression.logm2
+logm10=SymbolicRegression.logm10
+sqrtm=SymbolicRegression.sqrtm
+neg=SymbolicRegression.neg
+greater=SymbolicRegression.greater
+relu=SymbolicRegression.relu
+logical_or=SymbolicRegression.logical_or
+logical_and=SymbolicRegression.logical_and
+
+options = SymbolicRegression.Options(binary_operators={'(' + tuple_fix(binary_operators) + ')'},
+unary_operators={'(' + tuple_fix(unary_operators) + ')'},
 {constraints_str}
-const binops = {'[' + ', '.join(binary_operators) + ']'}
-const unaops = {'[' + ', '.join(unary_operators) + ']'}
-const ns=10;
-const parsimony = {parsimony:f}f0
-const alpha = {alpha:f}f0
-const maxsize = {maxsize:d}
-const maxdepth = {maxdepth:d}
-const fast_cycle = {'true' if fast_cycle else 'false'}
-const migration = {'true' if migration else 'false'}
-const hofMigration = {'true' if hofMigration else 'false'}
-const fractionReplacedHof = {fractionReplacedHof}f0
-const shouldOptimizeConstants = {'true' if shouldOptimizeConstants else 'false'}
-const hofFile = "{equation_file}"
-const nprocs = {procs:d}
-const npopulations = {populations:d}
-const nrestarts = {nrestarts:d}
-const perturbationFactor = {perturbationFactor:f}f0
-const annealing = {"true" if annealing else "false"}
-const weighted = {"true" if weights is not None else "false"}
-const batching = {"true" if batching else "false"}
-const batchSize = {min([batchSize, len(X)]) if batching else len(X):d}
-const useVarMap = {"true" if use_custom_variable_names else "false"}
-const mutationWeights = [
+parsimony={parsimony:f}f0,
+alpha={alpha:f}f0,
+maxsize={maxsize:d},
+maxdepth={maxdepth:d},
+fast_cycle={'true' if fast_cycle else 'false'},
+migration={'true' if migration else 'false'},
+hofMigration={'true' if hofMigration else 'false'},
+fractionReplacedHof={fractionReplacedHof}f0,
+shouldOptimizeConstants={'true' if shouldOptimizeConstants else 'false'},
+hofFile="{equation_file}",
+npopulations={populations:d},
+nrestarts={nrestarts:d},
+perturbationFactor={perturbationFactor:f}f0,
+annealing={"true" if annealing else "false"},
+batching={"true" if batching else "false"},
+batchSize={min([batchSize, len(X)]) if batching else len(X):d},
+mutationWeights=[
     {weightMutateConstant:f},
     {weightMutateOperator:f},
     {weightAddNode:f},
@@ -395,53 +435,25 @@ const mutationWeights = [
     {weightSimplify:f},
     {weightRandomize:f},
     {weightDoNothing:f}
-]
-const warmupMaxsize = {warmupMaxsize:d}
-const limitPowComplexity = {"true" if limitPowComplexity else "false"}
-const useFrequency = {"true" if useFrequency else "false"}
+],
+warmupMaxsize={warmupMaxsize:d},
+useFrequency={"true" if useFrequency else "false"},
+npop={npop:d},
+ncyclesperiteration={ncyclesperiteration:d},
+fractionReplaced={fractionReplaced:f}f0,
+topn={topn:d},
+verbosity=round(Int32, {verbosity:f})
 """
-    op_runner = ""
-    if len(binary_operators) > 0:
-        op_runner += """
-@inline function BINOP!(x::Array{Float32, 1}, y::Array{Float32, 1}, i::Int, clen::Int)
-    if i === 1
-        @inbounds @simd for j=1:clen
-            x[j] = """f"{binary_operators[0]}""""(x[j], y[j])
-        end"""
-        for i in range(1, len(binary_operators)):
-            op_runner += f"""
-    elseif i === {i + 1}
-        @inbounds @simd for j=1:clen
-            x[j] = {binary_operators[i]}(x[j], y[j])
-        end"""
-        op_runner += """
-    end
-end"""
-    if len(unary_operators) > 0:
-        op_runner += """
-@inline function UNAOP!(x::Array{Float32, 1}, i::Int, clen::Int)
-    if i === 1
-        @inbounds @simd for j=1:clen
-            x[j] = """f"{unary_operators[0]}(x[j])""""
-        end"""
-        for i in range(1, len(unary_operators)):
-            op_runner += f"""
-    elseif i === {i + 1}
-        @inbounds @simd for j=1:clen
-            x[j] = {unary_operators[i]}(x[j])
-        end"""
-        op_runner += """
-    end
-end"""
-    def_hyperparams += op_runner
+
     if use_custom_variable_names:
-        def_hyperparams += f"""
-    const varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
+        def_hyperparams += f""",
+    varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
+    def_hyperparams += '\n)'
     return def_hyperparams
 
 
 def _make_constraints_str(binary_operators, constraints, unary_operators, **kwargs):
-    constraints_str = "const una_constraints = ["
+    constraints_str = "una_constraints = ["
     first = True
     for op in unary_operators:
         val = constraints[op]
@@ -449,8 +461,8 @@ def _make_constraints_str(binary_operators, constraints, unary_operators, **kwar
             constraints_str += ", "
         constraints_str += f"{val:d}"
         first = False
-    constraints_str += """]
-const bin_constraints = ["""
+    constraints_str += """],
+bin_constraints = ["""
     first = True
     for op in binary_operators:
         tup = constraints[op]
@@ -458,7 +470,7 @@ const bin_constraints = ["""
             constraints_str += ", "
         constraints_str += f"({tup[0]:d}, {tup[1]:d})"
         first = False
-    constraints_str += "]"
+    constraints_str += "],"
     return constraints_str
 
 
@@ -481,7 +493,7 @@ def _handle_constraints(binary_operators, constraints, unary_operators, **kwargs
                 constraints[op][0], constraints[op][1] = constraints[op][1], constraints[op][0]
 
 
-def _metaprogram_fast_operator(binary_operators, unary_operators, **kwargs):
+def _create_inline_operators(binary_operators, unary_operators, **kwargs):
     def_hyperparams = ""
     for op_list in [binary_operators, unary_operators]:
         for i in range(len(op_list)):
@@ -529,35 +541,20 @@ def _handle_feature_selection(X, select_k_features, use_custom_variable_names, v
 
 def _set_paths(tempdir):
     # System-independent paths
-    pkg_directory = Path(__file__).parents[1] / 'julia'
-    pkg_filename = pkg_directory / "sr.jl"
-    operator_filename = pkg_directory / "Operators.jl"
-    julia_auxiliaries = [
-        "Equation.jl", "ProgramConstants.jl",
-        "LossFunctions.jl", "Utils.jl", "EvaluateEquation.jl",
-        "MutationFunctions.jl", "SimplifyEquation.jl", "PopMember.jl",
-        "HallOfFame.jl", "CheckConstraints.jl", "Mutate.jl",
-        "Population.jl", "RegularizedEvolution.jl", "SingleIteration.jl",
-        "ConstantOptimization.jl"
-    ]
-    julia_auxiliary_filenames = [
-        pkg_directory / fname
-        for fname in julia_auxiliaries
-    ]
-
+    pkg_directory = Path(__file__).parents[1]
+    default_project_file = pkg_directory / "Project.toml"
     tmpdir = Path(tempfile.mkdtemp(dir=tempdir))
     hyperparam_filename = tmpdir / f'hyperparams.jl'
     dataset_filename = tmpdir / f'dataset.jl'
-    auxiliary_filename = tmpdir / f'auxiliary.jl'
     runfile_filename = tmpdir / f'runfile.jl'
     X_filename = tmpdir / "X.csv"
     y_filename = tmpdir / "y.csv"
     weights_filename = tmpdir / "weights.csv"
-    return dict(auxiliary_filename=auxiliary_filename, X_filename=X_filename,
+    return dict(pkg_directory=pkg_directory,
+	    default_project_file=default_project_file,
+	    X_filename=X_filename,
             dataset_filename=dataset_filename,
             hyperparam_filename=hyperparam_filename,
-            julia_auxiliary_filenames=julia_auxiliary_filenames,
-            operator_filename=operator_filename, pkg_filename=pkg_filename,
             runfile_filename=runfile_filename, tmpdir=tmpdir,
             weights_filename=weights_filename, y_filename=y_filename)
 
@@ -573,13 +570,6 @@ def _check_assertions(X, binary_operators, unary_operators, use_custom_variable_
         assert X.shape[0] == weights.shape[0]
     if use_custom_variable_names:
         assert len(variable_names) == X.shape[1]
-
-
-def _raise_depreciation_errors(limitPowComplexity, threads):
-    if threads is not None:
-        raise ValueError("The threads kwarg is deprecated. Use procs.")
-    if limitPowComplexity:
-        raise ValueError("The limitPowComplexity kwarg is deprecated. Use constraints.")
 
 
 def run_feature_selection(X, y, select_k_features):
@@ -695,3 +685,15 @@ def _escape_filename(filename):
     repr = str(filename)
     repr = repr.replace('\\', '\\\\')
     return repr
+
+# https://gist.github.com/garrettdreyfus/8153571
+def _yesno(question):
+    """Simple Yes/No Function."""
+    prompt = f'{question} (y/n): '
+    ans = input(prompt).strip().lower()
+    if ans not in ['y', 'n']:
+        print(f'{ans} is invalid, please try again...')
+        return _yesno(question)
+    if ans == 'y':
+        return True
+    return False

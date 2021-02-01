@@ -7,16 +7,16 @@ y = X[:, 0]
 equations = pysr(X, y,
                  niterations=10)
 print(equations)
-assert equations.iloc[-1]['MSE'] < 1e-10
+assert equations.iloc[-1]['MSE'] < 1e-4
 
 print("Test 2 - test custom operator")
 y = X[:, 0]**2
 equations = pysr(X, y,
-                 unary_operators=["square(x) = x^2"], binary_operators=["plus"],
+                 unary_operators=["sq(x) = x^2"], binary_operators=["plus"],
                  extra_sympy_mappings={'square': lambda x: x**2},
                  niterations=10)
 print(equations)
-assert equations.iloc[-1]['MSE'] < 1e-10
+assert equations.iloc[-1]['MSE'] < 1e-4
 
 X = np.random.randn(100, 1)
 y = X[:, 0] + 3.0
@@ -26,4 +26,4 @@ equations = pysr(X, y,
                  niterations=10)
 
 print(equations)
-assert equations.iloc[-1]['MSE'] < 1e-10
+assert equations.iloc[-1]['MSE'] < 1e-4
