@@ -104,6 +104,7 @@ def pysr(X=None, y=None, weights=None,
             threads=None, #deprecated
             julia_optimization=3,
             julia_project=None,
+            user_input=True
         ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
@@ -265,6 +266,11 @@ def pysr(X=None, y=None, weights=None,
 
     kwargs = {**_set_paths(tempdir), **kwargs}
 
+    pkg_directory = kwargs['pkg_directory']
+    if not (pkg_directory / 'Manifest.toml').is_file():
+        kwargs['need_install'] = _yesno("I will install Julia packages using PySR's Project.toml file. OK?")
+        print("OK. I will install.")
+
     kwargs['def_hyperparams'] = _create_inline_operators(**kwargs)
 
     _handle_constraints(**kwargs)
@@ -301,6 +307,9 @@ def _final_pysr_process(julia_optimization, runfile_filename, timeout, **kwargs)
     ]
     if timeout is not None:
         command = [f'timeout', f'{timeout}'] + command
+    _cmd_runner(command)
+
+def _cmd_runner(command):
     print("Running on", ' '.join(command))
     process = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1)
     try:
@@ -315,11 +324,10 @@ def _final_pysr_process(julia_optimization, runfile_filename, timeout, **kwargs)
         print("Killing process... will return when done.")
         process.kill()
 
-
 def _create_julia_files(dataset_filename, def_datasets,  hyperparam_filename, def_hyperparams,
                         fractionReplaced, ncyclesperiteration, niterations, npop,
                         runfile_filename, topn, verbosity, julia_project, procs, weights,
-                        X, variable_names, pkg_directory, **kwargs):
+                        X, variable_names, pkg_directory, need_install, **kwargs):
     with open(hyperparam_filename, 'w') as f:
         print(def_hyperparams, file=f)
     with open(dataset_filename, 'w') as f:
@@ -331,6 +339,10 @@ def _create_julia_files(dataset_filename, def_datasets,  hyperparam_filename, de
             julia_project = Path(julia_project)
         print(f'import Pkg', file=f)
         print(f'Pkg.activate("{_escape_filename(julia_project)}")', file=f)
+        if need_install:
+            print(f'Pkg.add("SymbolicRegression")', file=f)
+            print(f'Pkg.instantiate()', file=f)
+            print(f'Pkg.precompile()', file=f)
         print(f'using SymbolicRegression', file=f)
         print(f'include("{_escape_filename(hyperparam_filename)}")', file=f)
         print(f'include("{_escape_filename(dataset_filename)}")', file=f)
@@ -680,3 +692,15 @@ def _escape_filename(filename):
     repr = str(filename)
     repr = repr.replace('\\', '\\\\')
     return repr
+
+# https://gist.github.com/garrettdreyfus/8153571
+def _yesno(question):
+    """Simple Yes/No Function."""
+    prompt = f'{question} (y/n): '
+    ans = input(prompt).strip().lower()
+    if ans not in ['y', 'n']:
+        print(f'{ans} is invalid, please try again...')
+        return _yesno(question)
+    if ans == 'y':
+        return True
+    return False

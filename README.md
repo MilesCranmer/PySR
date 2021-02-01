@@ -51,13 +51,15 @@ Install Julia - see [downloads](https://julialang.org/downloads/), and
 then instructions for [mac](https://julialang.org/downloads/platform/#macos)
 and [linux](https://julialang.org/downloads/platform/#linux_and_freebsd).
 (Don't use the `conda-forge` version; it doesn't seem to work properly.)
-Then, at the command line, install and precompile the backend
-and Python frontend with:
 
+
+You can install PySR with:
 ```bash
-julia -e 'using Pkg; Pkg.add("SymbolicRegression"); using SymbolicRegression'
 pip install pysr
 ```
+
+The first launch will automatically install the Julia packages
+required.
 
 # Quickstart
 
