@@ -100,15 +100,13 @@ def pysr(X=None, y=None, weights=None,
             useFrequency=False,
             tempdir=None,
             delete_tempfiles=True,
-            limitPowComplexity=False, #deprecated
-            threads=None, #deprecated
             julia_optimization=3,
             julia_project=None,
             user_input=True
         ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
-    equations, but you should adjust `threads`, `niterations`,
+    equations, but you should adjust `niterations`,
     `binary_operators`, `unary_operators` to your requirements.
 
     :param X: np.ndarray or pandas.DataFrame, 2D array. Rows are examples,
@@ -191,13 +189,15 @@ def pysr(X=None, y=None, weights=None,
     :param tempdir: str or None, directory for the temporary files
     :param delete_tempfiles: bool, whether to delete the temporary files after finishing
     :param julia_project: str or None, a Julia environment location containing
-        a Project.toml (and potentially the source code for SymbolicRegression.jl)
+        a Project.toml (and potentially the source code for SymbolicRegression.jl).
+        Default gives the Python package directory, where a Project.toml file
+        should be present from the install.
+    :param user_input: Whether to ask for user input or not for installing (to
+        be used for automated scripts). Will choose to install when asked.
     :returns: pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
         (as strings).
 
     """
-    _raise_depreciation_errors(limitPowComplexity, threads)
-
     if isinstance(X, pd.DataFrame):
         variable_names = list(X.columns)
         X = np.array(X)
@@ -267,9 +267,11 @@ def pysr(X=None, y=None, weights=None,
     kwargs = {**_set_paths(tempdir), **kwargs}
 
     pkg_directory = kwargs['pkg_directory']
+    kwargs['need_install'] = False
     if not (pkg_directory / 'Manifest.toml').is_file():
-        kwargs['need_install'] = _yesno("I will install Julia packages using PySR's Project.toml file. OK?")
-        print("OK. I will install.")
+        kwargs['need_install'] = (not user_input) or _yesno("I will install Julia packages using PySR's Project.toml file. OK?")
+        if kwargs['need_install']:
+            print("OK. I will install at launch.")
 
     kwargs['def_hyperparams'] = _create_inline_operators(**kwargs)
 
@@ -570,13 +572,6 @@ def _check_assertions(X, binary_operators, unary_operators, use_custom_variable_
         assert X.shape[0] == weights.shape[0]
     if use_custom_variable_names:
         assert len(variable_names) == X.shape[1]
-
-
-def _raise_depreciation_errors(limitPowComplexity, threads):
-    if threads is not None:
-        raise ValueError("The threads kwarg is deprecated. Use procs.")
-    if limitPowComplexity:
-        raise ValueError("The limitPowComplexity kwarg is deprecated. Use constraints.")
 
 
 def run_feature_selection(X, y, select_k_features):
