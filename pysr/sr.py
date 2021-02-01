@@ -319,16 +319,18 @@ def _final_pysr_process(julia_optimization, runfile_filename, timeout, **kwargs)
 def _create_julia_files(dataset_filename, def_datasets,  hyperparam_filename, def_hyperparams,
                         fractionReplaced, ncyclesperiteration, niterations, npop,
                         runfile_filename, topn, verbosity, julia_project, procs, weights,
-                        X, variable_names, **kwargs):
+                        X, variable_names, pkg_directory, **kwargs):
     with open(hyperparam_filename, 'w') as f:
         print(def_hyperparams, file=f)
     with open(dataset_filename, 'w') as f:
         print(def_datasets, file=f)
     with open(runfile_filename, 'w') as f:
-        if julia_project is not None:
+        if julia_project is None:
+            julia_project = pkg_directory
+        else:
             julia_project = Path(julia_project)
-            print(f'import Pkg', file=f)
-            print(f'Pkg.activate("{_escape_filename(julia_project)}")', file=f)
+        print(f'import Pkg', file=f)
+        print(f'Pkg.activate("{_escape_filename(julia_project)}")', file=f)
         print(f'using SymbolicRegression', file=f)
         print(f'include("{_escape_filename(hyperparam_filename)}")', file=f)
         print(f'include("{_escape_filename(dataset_filename)}")', file=f)
@@ -527,6 +529,8 @@ def _handle_feature_selection(X, select_k_features, use_custom_variable_names, v
 
 def _set_paths(tempdir):
     # System-independent paths
+    pkg_directory = Path(__file__).parents[1]
+    default_project_file = pkg_directory / "Project.toml"
     tmpdir = Path(tempfile.mkdtemp(dir=tempdir))
     hyperparam_filename = tmpdir / f'hyperparams.jl'
     dataset_filename = tmpdir / f'dataset.jl'
@@ -534,7 +538,9 @@ def _set_paths(tempdir):
     X_filename = tmpdir / "X.csv"
     y_filename = tmpdir / "y.csv"
     weights_filename = tmpdir / "weights.csv"
-    return dict(X_filename=X_filename,
+    return dict(pkg_directory=pkg_directory,
+	    default_project_file=default_project_file,
+	    X_filename=X_filename,
             dataset_filename=dataset_filename,
             hyperparam_filename=hyperparam_filename,
             runfile_filename=runfile_filename, tmpdir=tmpdir,
