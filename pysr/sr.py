@@ -103,7 +103,7 @@ def pysr(X=None, y=None, weights=None,
             limitPowComplexity=False, #deprecated
             threads=None, #deprecated
             julia_optimization=3,
-            local_install=None,
+            julia_project=None,
         ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
@@ -189,9 +189,8 @@ def pysr(X=None, y=None, weights=None,
     :param julia_optimization: int, Optimization level (0, 1, 2, 3)
     :param tempdir: str or None, directory for the temporary files
     :param delete_tempfiles: bool, whether to delete the temporary files after finishing
-    :param local_install: str or None, the root directory for the
-        `SymbolicRegression.jl` repo, so one can customize the search code
-        instead of using the pre-compiled package.
+    :param julia_project: str or None, a Julia environment location containing
+        a Project.toml (and potentially the source code for SymbolicRegression.jl)
     :returns: pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
         (as strings).
 
@@ -262,7 +261,7 @@ def pysr(X=None, y=None, weights=None,
                  weightSimplify=weightSimplify,
                  constraints=constraints,
                  extra_sympy_mappings=extra_sympy_mappings,
-                 local_install=local_install)
+                 julia_project=julia_project)
 
     kwargs = {**_set_paths(tempdir), **kwargs}
 
@@ -319,33 +318,29 @@ def _final_pysr_process(julia_optimization, runfile_filename, timeout, **kwargs)
 
 def _create_julia_files(dataset_filename, def_datasets,  hyperparam_filename, def_hyperparams,
                         fractionReplaced, ncyclesperiteration, niterations, npop,
-                        runfile_filename, topn, verbosity, local_install, procs, weights,
+                        runfile_filename, topn, verbosity, julia_project, procs, weights,
                         X, variable_names, **kwargs):
     with open(hyperparam_filename, 'w') as f:
         print(def_hyperparams, file=f)
     with open(dataset_filename, 'w') as f:
         print(def_datasets, file=f)
     with open(runfile_filename, 'w') as f:
-        print(f'using Distributed', file=f)
-        print(f'procs = addprocs({procs})', file=f)
-        if local_install is None:
-            print(f'@everywhere using SymbolicRegression', file=f)
-        else:
-            local_install = Path(local_install) / "src" / "SymbolicRegression.jl"
-            print(f'@everywhere include("{_escape_filename(local_install)}")', file=f)
-            print(f'@everywhere using .SymbolicRegression', file=f)
-        print(f'@everywhere include("{_escape_filename(hyperparam_filename)}")', file=f)
-        print(f'@everywhere include("{_escape_filename(dataset_filename)}")', file=f)
+        if julia_project is not None:
+            julia_project = Path(julia_project)
+            print(f'import Pkg', file=f)
+            print(f'Pkg.activate("{_escape_filename(julia_project)}")', file=f)
+        print(f'using SymbolicRegression', file=f)
+        print(f'include("{_escape_filename(hyperparam_filename)}")', file=f)
+        print(f'include("{_escape_filename(dataset_filename)}")', file=f)
         if len(variable_names) == 0:
             varMap = "[" + ",".join([f'"x{i}"' for i in range(X.shape[1])]) + "]"
         else:
             varMap = "[" + ",".join(variable_names) + "]"
 
         if weights is not None:
-            print(f'EquationSearch(X, y, weights=weights, niterations={niterations:d}, varMap={varMap}, options=options)', file=f)
+            print(f'EquationSearch(X, y, weights=weights, niterations={niterations:d}, varMap={varMap}, options=options, numprocs={procs})', file=f)
         else:
-            print(f'EquationSearch(X, y, niterations={niterations:d}, varMap={varMap}, options=options)', file=f)
-        print(f'rmprocs(procs)', file=f)
+            print(f'EquationSearch(X, y, niterations={niterations:d}, varMap={varMap}, options=options, numprocs={procs})', file=f)
 
 
 def _make_datasets_julia_str(X, X_filename, weights, weights_filename, y, y_filename, **kwargs):
@@ -371,13 +366,22 @@ def _make_hyperparams_julia_str(X, alpha, annealing, batchSize, batching, binary
                                ncyclesperiteration, fractionReplaced, topn, verbosity,
                                weightDeleteNode, weightDoNothing, weightInsertNode, weightMutateConstant,
                                weightMutateOperator, weightRandomize, weightSimplify, weights, **kwargs):
-    def_hyperparams += f"""plus=SymbolicRegression.plus
-sub=SymbolicRegression.sub
-mult=SymbolicRegression.mult
+    def tuple_fix(ops):
+        if len(ops) > 1:
+            return ', '.join(ops)
+        elif len(ops) == 0:
+            return ''
+        else:
+            return ops[0] + ','
+
+    def_hyperparams += f"""\n
+plus=(+)
+sub=(-)
+mult=(*)
 square=SymbolicRegression.square
 cube=SymbolicRegression.cube
-pow=SymbolicRegression.pow
-div=SymbolicRegression.div
+pow=(^)
+div=(/)
 logm=SymbolicRegression.logm
 logm2=SymbolicRegression.logm2
 logm10=SymbolicRegression.logm10
@@ -388,8 +392,8 @@ relu=SymbolicRegression.relu
 logical_or=SymbolicRegression.logical_or
 logical_and=SymbolicRegression.logical_and
 
-options = SymbolicRegression.Options(binary_operators={'(' + ', '.join(binary_operators) + ')'},
-unary_operators={'(' + ', '.join(unary_operators) + ')'},
+options = SymbolicRegression.Options(binary_operators={'(' + tuple_fix(binary_operators) + ')'},
+unary_operators={'(' + tuple_fix(unary_operators) + ')'},
 {constraints_str}
 parsimony={parsimony:f}f0,
 alpha={alpha:f}f0,
