@@ -18,6 +18,9 @@ setuptools.setup(
         "sympy"
         ],
     packages=setuptools.find_packages(),
+    package_data={
+        'pysr': ['Project.toml']
+    },
     include_package_data=False,
     classifiers=[
         "Programming Language :: Python :: 3",
