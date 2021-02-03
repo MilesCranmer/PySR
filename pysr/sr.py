@@ -341,7 +341,6 @@ def _create_julia_files(dataset_filename, def_datasets,  hyperparam_filename, de
         print(f'import Pkg', file=f)
         print(f'Pkg.activate("{_escape_filename(julia_project)}")', file=f)
         if need_install:
-            print(f'Pkg.add("SymbolicRegression")', file=f)
             print(f'Pkg.instantiate()', file=f)
             print(f'Pkg.precompile()', file=f)
         print(f'using SymbolicRegression', file=f)
