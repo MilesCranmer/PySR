@@ -8,8 +8,8 @@ This software:
   month        = sep,
   year         = 2020,
   publisher    = {Zenodo},
-  doi          = {10.5281/zenodo.4052869},
-  url          = {https://doi.org/10.5281/zenodo.4052869}
+  doi          = {10.5281/zenodo.4041459},
+  url          = {http://doi.org/10.5281/zenodo.4041459}
 }
 ```
 
