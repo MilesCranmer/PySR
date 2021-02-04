@@ -102,7 +102,8 @@ def pysr(X=None, y=None, weights=None,
             delete_tempfiles=True,
             julia_optimization=3,
             julia_project=None,
-            user_input=True
+            user_input=True,
+            update=True
         ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
@@ -240,7 +241,7 @@ def pysr(X=None, y=None, weights=None,
                  fractionReplaced=fractionReplaced,
                  ncyclesperiteration=ncyclesperiteration,
                  niterations=niterations, npop=npop,
-                 topn=topn, verbosity=verbosity,
+                 topn=topn, verbosity=verbosity, update=update,
                  julia_optimization=julia_optimization, timeout=timeout,
                  fractionReplacedHof=fractionReplacedHof,
                  hofMigration=hofMigration, maxdepth=maxdepth,
@@ -271,6 +272,7 @@ def pysr(X=None, y=None, weights=None,
         kwargs['need_install'] = (not user_input) or _yesno("I will install Julia packages using PySR's Project.toml file. OK?")
         if kwargs['need_install']:
             print("OK. I will install at launch.")
+            assert update
 
     kwargs['def_hyperparams'] = _create_inline_operators(**kwargs)
 
@@ -328,7 +330,7 @@ def _cmd_runner(command):
 def _create_julia_files(dataset_filename, def_datasets,  hyperparam_filename, def_hyperparams,
                         fractionReplaced, ncyclesperiteration, niterations, npop,
                         runfile_filename, topn, verbosity, julia_project, procs, weights,
-                        X, variable_names, pkg_directory, need_install, **kwargs):
+                        X, variable_names, pkg_directory, need_install, update, **kwargs):
     with open(hyperparam_filename, 'w') as f:
         print(def_hyperparams, file=f)
     with open(dataset_filename, 'w') as f:
@@ -342,7 +344,10 @@ def _create_julia_files(dataset_filename, def_datasets,  hyperparam_filename, de
         print(f'Pkg.activate("{_escape_filename(julia_project)}")', file=f)
         if need_install:
             print(f'Pkg.instantiate()', file=f)
+            print(f'Pkg.update()', file=f)
             print(f'Pkg.precompile()', file=f)
+        elif update:
+            print(f'Pkg.update()', file=f)
         print(f'using SymbolicRegression', file=f)
         print(f'include("{_escape_filename(hyperparam_filename)}")', file=f)
         print(f'include("{_escape_filename(dataset_filename)}")', file=f)
