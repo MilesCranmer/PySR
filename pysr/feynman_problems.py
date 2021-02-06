@@ -29,16 +29,12 @@ class FeynmanProblem(Problem):
         gen: If true the problem will have dp X and y values randomly generated else they will be None
         """
         self.eq_id      = row['Filename']
-        #self.form       = row['Formula']
         self.n_vars     = int(row['# variables'])
         super(FeynmanProblem, self).__init__(None, None, form=row['Formula'],
                                              variable_names=[row[f'v{i + 1}_name'] for i in range(self.n_vars)])
-        #self.var_names  = [row[f'v{i+1}_name']  for i in range(self.n_vars)]
         self.low        = [float(row[f'v{i+1}_low'])   for i in range(self.n_vars)]
         self.high       = [float(row[f'v{i+1}_high'])  for i in range(self.n_vars)]
-        self.dp         = dp#int(row[f'datapoints'])
-        #self.X = None
-        #self.Y = None
+        self.dp         = dp
         if gen:
             self.X = np.random.uniform(0.01, 25, size=(self.dp, self.n_vars))
             d = {}
