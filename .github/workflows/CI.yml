@@ -2,9 +2,17 @@ on:
   push:
     branches:
       - master
+    paths:
+      - 'test/**'
+      - 'pysr/**'
+      - '.github/workflows/**'
   pull_request:
     branches:
       - master
+    paths:
+      - 'test/**'
+      - 'pysr/**'
+      - '.github/workflows/**'
 
 jobs:
   test:
