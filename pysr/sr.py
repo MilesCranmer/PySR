@@ -449,9 +449,6 @@ topn={topn:d},
 verbosity=round(Int32, {verbosity:f})
 """
 
-    if use_custom_variable_names:
-        def_hyperparams += f""",
-    varMap = {'["' + '", "'.join(variable_names) + '"]'}"""
     def_hyperparams += '\n)'
     return def_hyperparams
 
