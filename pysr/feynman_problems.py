@@ -152,7 +152,3 @@ def do_feynman_experiments(first=100, verbosity=0, dp=500, output_file_path="exp
         for i in range(len(ids)):
             writer.writerow([ids[i], predictions[i], true_equations[i], time_takens[i]])
     return
-
-
-if __name__ == "__main__":
-    do_feynman_experiments_parallel(first=10)
