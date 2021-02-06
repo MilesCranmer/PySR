@@ -4,7 +4,7 @@
 
 [![Documentation Status](https://readthedocs.org/projects/pysr/badge/?version=latest)](https://pysr.readthedocs.io/en/latest/?badge=latest)
 [![PyPI version](https://badge.fury.io/py/pysr.svg)](https://badge.fury.io/py/pysr)
-[![Build Status](https://travis-ci.com/MilesCranmer/PySR.svg?branch=master)](https://travis-ci.com/MilesCranmer/PySR)
+![.github/workflows/CI.yml](https://github.com/MilesCranmer/PySR/workflows/.github/workflows/CI.yml/badge.svg)
 
 **Parallelized symbolic regression built on Julia, and interfaced by Python.
 Uses regularized evolution, simulated annealing, and gradient-free optimization.**
