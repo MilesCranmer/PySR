@@ -310,11 +310,12 @@ def _final_pysr_process(julia_optimization, runfile_filename, timeout, **kwargs)
     ]
     if timeout is not None:
         command = [f'timeout', f'{timeout}'] + command
-    _cmd_runner(command)
+    _cmd_runner(command, **kwargs)
 
 def _cmd_runner(command):
-    print("Running on", ' '.join(command))
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1)
+    if kwargs['verbosity'] > 0:
+        print("Running on", ' '.join(command))
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=-1)
     try:
         while True:
             line = process.stdout.readline()
