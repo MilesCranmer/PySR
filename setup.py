@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pysr", # Replace with your own username
-    version="0.4.6",
+    version="0.4.7",
     author="Miles Cranmer",
     author_email="miles.cranmer@gmail.com",
     description="Simple and efficient symbolic regression",
@@ -19,7 +19,7 @@ setuptools.setup(
         ],
     packages=setuptools.find_packages(),
     package_data={
-        'pysr': ['../Project.toml']
+        'pysr': ['../Project.toml', '../datasets/*']
     },
     include_package_data=False,
     classifiers=[
