@@ -2,6 +2,10 @@ import numpy as np
 import csv
 import traceback
 from .sr import pysr, best
+from pathlib import Path
+
+PKG_DIR = Path(__file__).parents[1]
+FEYNMAN_DATASET = PKG_DIR / "datasets" / "FeynmanEquations.csv"
 
 class Problem:
     """
@@ -59,7 +63,7 @@ class FeynmanProblem(Problem):
     def __repr__(self):
         return str(self)
 
-    def mk_problems(first=100, gen=False, dp=500, data_dir="datasets/FeynmanEquations.csv"):
+    def mk_problems(first=100, gen=False, dp=500, data_dir=FEYNMAN_DATASET):
         """
 
         first: the first "first" equations from the dataset will be made into problems
@@ -97,8 +101,7 @@ def run_on_problem(problem, verbosity=0, multiprocessing=True):
         others['equations'] = equations
     return str(best(equations)), problem.form, others
 
-
-def do_feynman_experiments_parallel(first=100, verbosity=0, dp=500, output_file_path="experiments/FeynmanExperiment.csv", data_dir="datasets/FeynmanEquations.csv"):
+def do_feynman_experiments_parallel(first=100, verbosity=0, dp=500, output_file_path="FeynmanExperiment.csv", data_dir=FEYNMAN_DATASET):
     import multiprocessing as mp
     from tqdm import tqdm
     problems = FeynmanProblem.mk_problems(first=first, gen=True, dp=dp, data_dir=data_dir)
@@ -126,7 +129,7 @@ def do_feynman_experiments_parallel(first=100, verbosity=0, dp=500, output_file_
             writer.writerow([ids[i], predictions[i], true_equations[i], time_takens[i]])
     return
 
-def do_feynman_experiments(first=100, verbosity=0, dp=500, output_file_path="experiments/FeynmanExperiment.csv", data_dir="datasets/FeynmanEquations.csv"):
+def do_feynman_experiments(first=100, verbosity=0, dp=500, output_file_path="FeynmanExperiment.csv", data_dir=FEYNMAN_DATASET):
     from tqdm import tqdm
 
     problems = FeynmanProblem.mk_problems(first=first, gen=True, dp=dp, data_dir=data_dir)
