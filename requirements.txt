@@ -1,0 +1,4 @@
+sympy
+pandas
+numpy
+scikit_learn
