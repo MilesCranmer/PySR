@@ -355,7 +355,7 @@ def _create_julia_files(dataset_filename, def_datasets,  hyperparam_filename, de
         if len(variable_names) == 0:
             varMap = "[" + ",".join([f'"x{i}"' for i in range(X.shape[1])]) + "]"
         else:
-            varMap = "[" + ",".join(variable_names) + "]"
+            varMap = "[" + ",".join(['"' + vname + '"' for vname in variable_names]) + "]"
 
         if weights is not None:
             print(f'EquationSearch(X, y, weights=weights, niterations={niterations:d}, varMap={varMap}, options=options, numprocs={procs})', file=f)
@@ -365,8 +365,8 @@ def _create_julia_files(dataset_filename, def_datasets,  hyperparam_filename, de
 
 def _make_datasets_julia_str(X, X_filename, weights, weights_filename, y, y_filename, **kwargs):
     def_datasets = """using DelimitedFiles"""
-    np.savetxt(X_filename, X, delimiter=',')
-    np.savetxt(y_filename, y.reshape(-1, 1), delimiter=',')
+    np.savetxt(X_filename, X.astype(np.float32), delimiter=',')
+    np.savetxt(y_filename, y.reshape(-1, 1).astype(np.float32), delimiter=',')
     if weights is not None:
         np.savetxt(weights_filename, weights.reshape(-1, 1), delimiter=',')
     def_datasets += f"""
