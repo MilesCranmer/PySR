@@ -1,7 +1,7 @@
 import numpy as np
 import csv
 import traceback
-from sr import pysr, best
+from .sr import pysr, best
 
 class Problem:
     """
@@ -79,7 +79,6 @@ class FeynmanProblem(Problem):
                     ret.append(p)
                 except Exception as e:
                     traceback.print_exc()
-                    #print(row)
                     print(f"FAILED ON ROW {i}")
                 ind += 1
         return ret
