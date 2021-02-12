@@ -126,27 +126,13 @@ def pysr(X=None, y=None, weights=None,
         loss written as a function. Examples of custom written losses
         include: `myloss(x, y) = abs(x-y)` for non-weighted, or 
         `myloss(x, y, w) = w*abs(x-y)` for weighted.
-        Among the included losses, these are:
-            Regression:
-                - `LPDistLoss{P}()`,
-                - `L1DistLoss()`,
-                - `L2DistLoss()` (mean square),
-                - `LogitDistLoss()`,
-                - `HuberLoss(d)`,
-                - `L1EpsilonInsLoss(ϵ)`,
-                - `L2EpsilonInsLoss(ϵ)`,
-                - `PeriodicLoss(c)`,
-                - `QuantileLoss(τ)`,
-            Classification:
-                - `ZeroOneLoss()`,
-                - `PerceptronLoss()`,
-                - `L1HingeLoss()`,
-                - `SmoothedL1HingeLoss(γ)`,
-                - `ModifiedHuberLoss()`,
-                - `L2MarginLoss()`,
-                - `ExpLoss()`,
-                - `SigmoidLoss()`,
-                - `DWDMarginLoss(q)`.
+        Among the included losses, these are as follows. Regression:
+        `LPDistLoss{P}()`, `L1DistLoss()`, `L2DistLoss()` (mean square),
+        `LogitDistLoss()`, `HuberLoss(d)`, `L1EpsilonInsLoss(ϵ)`,
+        `L2EpsilonInsLoss(ϵ)`, `PeriodicLoss(c)`, `QuantileLoss(τ)`.
+        Classification: `ZeroOneLoss()`, `PerceptronLoss()`, `L1HingeLoss()`,
+        `SmoothedL1HingeLoss(γ)`, `ModifiedHuberLoss()`, `L2MarginLoss()`,
+        `ExpLoss()`, `SigmoidLoss()`, `DWDMarginLoss(q)`.
     :param populations: int, Number of populations running; by default=procs.
     :param niterations: int, Number of iterations of the algorithm to run. The best
         equations are printed, and migrate between populations, at the
