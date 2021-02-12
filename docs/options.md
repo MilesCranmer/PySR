@@ -16,6 +16,7 @@ may find useful include:
 - `variable_names` (or pandas input)
 - Constraining operator complexity
 - LaTeX, SymPy, and callable equation output
+- `loss`
 
 These are described below
 
@@ -158,3 +159,11 @@ for the best equation, using the `score` column to sort equations.
 `best_latex()` returns the LaTeX form of this, and `best_callable()`
 returns a callable function.
 
+## `loss`
+
+The default loss is mean-square error, and weighted mean-square error.
+One can pass an arbitrary Julia string to define a custom loss, using,
+e.g., `loss="myloss(x, y) = abs(x - y)^1.5"`. For more details,
+see the
+[Losses](https://milescranmer.github.io/SymbolicRegression.jl/dev/losses/)
+page for SymbolicRegression.jl.

@@ -10,7 +10,9 @@ equations = pysr(X, y, niterations=5,
     binary_operators=["plus", "mult"],
     unary_operators=[
       "cos", "exp", "sin", #Pre-defined library of operators (see https://pysr.readthedocs.io/en/latest/docs/operators/)
-      "inv(x) = 1/x"]) # Define your own operator! (Julia syntax)
+      "inv(x) = 1/x"],
+    loss='L1DistLoss()',
+    julia_project="../SymbolicRegression.jl") # Define your own operator! (Julia syntax)
 
 ...# (you can use ctl-c to exit early)
 

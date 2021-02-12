@@ -57,12 +57,13 @@ sympy_mappings = {
 }
 
 def pysr(X=None, y=None, weights=None,
+            binary_operators=["plus", "mult"],
+            unary_operators=["cos", "exp", "sin"],
             procs=4,
+            loss='L2DistLoss()',
             populations=None,
             niterations=100,
             ncyclesperiteration=300,
-            binary_operators=["plus", "mult"],
-            unary_operators=["cos", "exp", "sin"],
             alpha=0.1,
             annealing=True,
             fractionReplaced=0.10,
@@ -116,16 +117,42 @@ def pysr(X=None, y=None, weights=None,
     :param y: np.ndarray, 1D array. Rows are examples.
     :param weights: np.ndarray, 1D array. Each row is how to weight the
         mean-square-error loss on weights.
+    :param binary_operators: list, List of strings giving the binary operators
+        in Julia's Base.
+    :param unary_operators: list, Same but for operators taking a single scalar.
     :param procs: int, Number of processes (=number of populations running).
+    :param loss: str, String of Julia code specifying the loss function.
+        Can either be a loss from LossFunctions.jl, or your own
+        loss written as a function. Examples of custom written losses
+        include: `myloss(x, y) = abs(x-y)` for non-weighted, or 
+        `myloss(x, y, w) = w*abs(x-y)` for weighted.
+        Among the included losses, these are:
+            Regression:
+                - `LPDistLoss{P}()`,
+                - `L1DistLoss()`,
+                - `L2DistLoss()` (mean square),
+                - `LogitDistLoss()`,
+                - `HuberLoss(d)`,
+                - `L1EpsilonInsLoss(ϵ)`,
+                - `L2EpsilonInsLoss(ϵ)`,
+                - `PeriodicLoss(c)`,
+                - `QuantileLoss(τ)`,
+            Classification:
+                - `ZeroOneLoss()`,
+                - `PerceptronLoss()`,
+                - `L1HingeLoss()`,
+                - `SmoothedL1HingeLoss(γ)`,
+                - `ModifiedHuberLoss()`,
+                - `L2MarginLoss()`,
+                - `ExpLoss()`,
+                - `SigmoidLoss()`,
+                - `DWDMarginLoss(q)`.
     :param populations: int, Number of populations running; by default=procs.
     :param niterations: int, Number of iterations of the algorithm to run. The best
         equations are printed, and migrate between populations, at the
         end of each.
     :param ncyclesperiteration: int, Number of total mutations to run, per 10
         samples of the population, per iteration.
-    :param binary_operators: list, List of strings giving the binary operators
-        in Julia's Base, or in `operator.jl`.
-    :param unary_operators: list, Same but for operators taking a single `Float32`.
     :param alpha: float, Initial temperature.
     :param annealing: bool, Whether to use annealing. You should (and it is default).
     :param fractionReplaced: float, How much of population to replace with migrating
@@ -262,7 +289,7 @@ def pysr(X=None, y=None, weights=None,
                  weightSimplify=weightSimplify,
                  constraints=constraints,
                  extra_sympy_mappings=extra_sympy_mappings,
-                 julia_project=julia_project)
+                 julia_project=julia_project, loss=loss)
 
     kwargs = {**_set_paths(tempdir), **kwargs}
 
@@ -383,7 +410,7 @@ def _make_hyperparams_julia_str(X, alpha, annealing, batchSize, batching, binary
                                parsimony, perturbationFactor, populations, procs, shouldOptimizeConstants,
                                unary_operators, useFrequency, use_custom_variable_names,
                                variable_names, warmupMaxsize, weightAddNode,
-                               ncyclesperiteration, fractionReplaced, topn, verbosity,
+                               ncyclesperiteration, fractionReplaced, topn, verbosity, loss,
                                weightDeleteNode, weightDoNothing, weightInsertNode, weightMutateConstant,
                                weightMutateOperator, weightRandomize, weightSimplify, weights, **kwargs):
     def tuple_fix(ops):
@@ -411,11 +438,13 @@ greater=SymbolicRegression.greater
 relu=SymbolicRegression.relu
 logical_or=SymbolicRegression.logical_or
 logical_and=SymbolicRegression.logical_and
+_custom_loss = {loss}
 
 options = SymbolicRegression.Options(binary_operators={'(' + tuple_fix(binary_operators) + ')'},
 unary_operators={'(' + tuple_fix(unary_operators) + ')'},
 {constraints_str}
 parsimony={parsimony:f}f0,
+loss=_custom_loss,
 alpha={alpha:f}f0,
 maxsize={maxsize:d},
 maxdepth={maxdepth:d},
