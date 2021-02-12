@@ -438,13 +438,13 @@ greater=SymbolicRegression.greater
 relu=SymbolicRegression.relu
 logical_or=SymbolicRegression.logical_or
 logical_and=SymbolicRegression.logical_and
-loss = {loss}
+_custom_loss = {loss}
 
 options = SymbolicRegression.Options(binary_operators={'(' + tuple_fix(binary_operators) + ')'},
 unary_operators={'(' + tuple_fix(unary_operators) + ')'},
 {constraints_str}
 parsimony={parsimony:f}f0,
-loss=loss,
+loss=_custom_loss,
 alpha={alpha:f}f0,
 maxsize={maxsize:d},
 maxdepth={maxdepth:d},
