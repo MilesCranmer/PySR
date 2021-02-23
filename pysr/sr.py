@@ -281,12 +281,11 @@ def pysr(X=None, y=None, weights=None,
 
     kwargs = {**_set_paths(tempdir), **kwargs}
 
-    if equation_file is None:
-        if temp_equation_file:
-            equation_file = kwargs['tmpdir'] / f'hall_of_fame.csv'
-        else:
-            date_time = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")[:-3]
-            equation_file = 'hall_of_fame_' + date_time + '.csv'
+    if temp_equation_file:
+        equation_file = kwargs['tmpdir'] / f'hall_of_fame.csv'
+    elif equation_file is None:
+        date_time = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")[:-3]
+        equation_file = 'hall_of_fame_' + date_time + '.csv'
 
     kwargs = {**dict(equation_file=equation_file), **kwargs}
 
