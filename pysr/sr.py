@@ -104,7 +104,8 @@ def pysr(X=None, y=None, weights=None,
             julia_optimization=3,
             julia_project=None,
             user_input=True,
-            update=True
+            update=True,
+            temp_equation_file=False
         ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
@@ -208,6 +209,10 @@ def pysr(X=None, y=None, weights=None,
         should be present from the install.
     :param user_input: Whether to ask for user input or not for installing (to
         be used for automated scripts). Will choose to install when asked.
+    :param update: Whether to automatically update Julia packages.
+    :param temp_equation_file: Whether to put the hall of fame file in
+        the temp directory. Deletion is then controlled with the
+        delete_tempfiles argument.
     :returns: pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
         (as strings).
 
@@ -235,9 +240,6 @@ def pysr(X=None, y=None, weights=None,
 
     if maxdepth is None:
         maxdepth = maxsize
-    if equation_file is None:
-        date_time = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")[:-3]
-        equation_file = 'hall_of_fame_' + date_time + '.csv'
     if populations is None:
         populations = procs
     if isinstance(binary_operators, str):
@@ -250,7 +252,7 @@ def pysr(X=None, y=None, weights=None,
     kwargs = dict(X=X, y=y, weights=weights,
                 alpha=alpha, annealing=annealing, batchSize=batchSize,
                  batching=batching, binary_operators=binary_operators,
-                 equation_file=equation_file, fast_cycle=fast_cycle,
+                 fast_cycle=fast_cycle,
                  fractionReplaced=fractionReplaced,
                  ncyclesperiteration=ncyclesperiteration,
                  niterations=niterations, npop=npop,
@@ -278,6 +280,16 @@ def pysr(X=None, y=None, weights=None,
                  julia_project=julia_project, loss=loss)
 
     kwargs = {**_set_paths(tempdir), **kwargs}
+
+    if equation_file is None:
+        if temp_equation_file:
+            equation_file = kwargs['tmpdir'] / f'hall_of_fame.csv'
+        else:
+            date_time = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")[:-3]
+            equation_file = 'hall_of_fame_' + date_time + '.csv'
+
+    kwargs = {**dict(equation_file=equation_file), **kwargs}
+
 
     pkg_directory = kwargs['pkg_directory']
     kwargs['need_install'] = False
