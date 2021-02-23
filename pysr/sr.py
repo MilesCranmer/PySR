@@ -635,7 +635,7 @@ def get_hof(equation_file=None, n_features=None, variable_names=None, extra_symp
     global_extra_sympy_mappings = extra_sympy_mappings
 
     try:
-        output = pd.read_csv(equation_file + '.bkup', sep="|")
+        output = pd.read_csv(str(equation_file) + '.bkup', sep="|")
     except FileNotFoundError:
         print("Couldn't find equation file!")
         return pd.DataFrame()
