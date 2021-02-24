@@ -89,6 +89,7 @@ def pysr(X=None, y=None, weights=None,
             equation_file=None,
             test='simple1',
             verbosity=1e9,
+            progress=False,
             maxsize=20,
             fast_cycle=False,
             maxdepth=None,
@@ -172,6 +173,8 @@ def pysr(X=None, y=None, weights=None,
     :param timeout: float, Time in seconds to timeout search
     :param equation_file: str, Where to save the files (.csv separated by |)
     :param test: str, What test to run, if X,y not passed.
+    :param verbosity: int, What verbosity level to use. 0 means minimal print statements.
+    :param progress: bool, Whether to use a progress bar instead of printing to stdout.
     :param maxsize: int, Max size of an equation.
     :param maxdepth: int, Max depth of an equation. You can use both maxsize and maxdepth.
         maxdepth is by default set to = maxsize, which means that it is redundant.
@@ -255,8 +258,8 @@ def pysr(X=None, y=None, weights=None,
                  fast_cycle=fast_cycle,
                  fractionReplaced=fractionReplaced,
                  ncyclesperiteration=ncyclesperiteration,
-                 niterations=niterations, npop=npop,
-                 topn=topn, verbosity=verbosity, update=update,
+                 niterations=niterations, npop=npop, topn=topn,
+                 verbosity=verbosity, progress=progress, update=update,
                  julia_optimization=julia_optimization, timeout=timeout,
                  fractionReplacedHof=fractionReplacedHof,
                  hofMigration=hofMigration, maxdepth=maxdepth,
@@ -407,7 +410,7 @@ def _make_hyperparams_julia_str(X, alpha, annealing, batchSize, batching, binary
                                parsimony, perturbationFactor, populations, procs, shouldOptimizeConstants,
                                unary_operators, useFrequency, use_custom_variable_names,
                                variable_names, warmupMaxsize, weightAddNode,
-                               ncyclesperiteration, fractionReplaced, topn, verbosity, loss,
+                               ncyclesperiteration, fractionReplaced, topn, verbosity, progress, loss,
                                weightDeleteNode, weightDoNothing, weightInsertNode, weightMutateConstant,
                                weightMutateOperator, weightRandomize, weightSimplify, weights, **kwargs):
     def tuple_fix(ops):
@@ -473,7 +476,8 @@ npop={npop:d},
 ncyclesperiteration={ncyclesperiteration:d},
 fractionReplaced={fractionReplaced:f}f0,
 topn={topn:d},
-verbosity=round(Int32, {verbosity:f})
+verbosity=round(Int32, {verbosity:f}),
+progress={'true' if progress else 'false'}
 """
 
     def_hyperparams += '\n)'
