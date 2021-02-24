@@ -347,7 +347,12 @@ def _cmd_runner(command, **kwargs):
         while True:
             line = process.stdout.readline()
             if not line: break
-            print(line.decode('utf-8').replace('\n', ''))
+            decoded_line = (line.decode('utf-8')
+                                .replace('\\033[K',  '\033[K')
+                                .replace('\\033[1A', '\033[1A')
+                                .replace('\\r',      '\r'))
+            print(decoded_line, end='')
+
 
         process.stdout.close()
         process.wait()
@@ -477,7 +482,8 @@ ncyclesperiteration={ncyclesperiteration:d},
 fractionReplaced={fractionReplaced:f}f0,
 topn={topn:d},
 verbosity=round(Int32, {verbosity:f}),
-progress={'true' if progress else 'false'}
+progress={'true' if progress else 'false'},
+terminal_width={os.get_terminal_size().columns:d}
 """
 
     def_hyperparams += '\n)'
