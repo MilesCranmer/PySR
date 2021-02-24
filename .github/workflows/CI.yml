@@ -33,6 +33,23 @@ jobs:
         uses: julia-actions/setup-julia@v1.6.0
         with:
           version: ${{ matrix.julia-version }}
+      - name: "Change package server"
+        shell: bash
+        env:
+            JULIA_PKG_SERVER: ""
+        run: |
+            julia -e 'using Pkg; Pkg.Registry.add("General")'
+      - name: "Cache dependencies"
+        uses: actions/cache@v1 # Thanks FromFile.jl
+        env:
+          cache-name: cache-artifacts
+        with:
+          path: ~/.julia/artifacts
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
       - name: "Set up Python"
         uses: actions/setup-python@v1
         with:
