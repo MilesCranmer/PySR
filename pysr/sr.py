@@ -418,6 +418,10 @@ def _make_hyperparams_julia_str(X, alpha, annealing, batchSize, batching, binary
                                ncyclesperiteration, fractionReplaced, topn, verbosity, progress, loss,
                                weightDeleteNode, weightDoNothing, weightInsertNode, weightMutateConstant,
                                weightMutateOperator, weightRandomize, weightSimplify, weights, **kwargs):
+    try:
+        term_width = shutil.get_terminal_size().columns
+    except:
+        _, term_width = subprocess.check_output(['stty', 'size']).split()
     def tuple_fix(ops):
         if len(ops) > 1:
             return ', '.join(ops)
@@ -483,7 +487,7 @@ fractionReplaced={fractionReplaced:f}f0,
 topn={topn:d},
 verbosity=round(Int32, {verbosity:f}),
 progress={'true' if progress else 'false'},
-terminal_width={os.get_terminal_size().columns:d}
+terminal_width={term_width:d}
 """
 
     def_hyperparams += '\n)'
