@@ -313,10 +313,13 @@ def pysr(X=None, y=None, weights=None,
     _final_pysr_process(**kwargs)
     _set_globals(**kwargs)
 
+    equations = get_hof(**kwargs)
+
     if delete_tempfiles:
         shutil.rmtree(kwargs['tmpdir'])
 
-    return get_hof(**kwargs)
+    return equations
+
 
 
 def _set_globals(X, equation_file, extra_sympy_mappings, variable_names, **kwargs):
