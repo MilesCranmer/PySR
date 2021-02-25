@@ -353,6 +353,7 @@ def _cmd_runner(command, **kwargs):
             decoded_line = (line.decode('utf-8')
                                 .replace('\\033[K',  '\033[K')
                                 .replace('\\033[1A', '\033[1A')
+                                .replace('\\033[1B', '\033[1B')
                                 .replace('\\r',      '\r'))
             print(decoded_line, end='')
 
