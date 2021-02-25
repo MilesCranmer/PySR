@@ -2,5 +2,5 @@
 SymbolicRegression = "8254be44-1295-4e6a-a16d-46603ac705cb"
 
 [compat]
-SymbolicRegression = "0.5.6"
+SymbolicRegression = "0.5.8"
 julia = "1.5"
