@@ -97,7 +97,7 @@ def pysr(X=None, y=None, weights=None,
             batching=False,
             batchSize=50,
             select_k_features=None,
-            warmupMaxsize=0,
+            warmupMaxsizeBy=0.0,
             constraints={},
             useFrequency=False,
             tempdir=None,
@@ -106,7 +106,8 @@ def pysr(X=None, y=None, weights=None,
             julia_project=None,
             user_input=True,
             update=True,
-            temp_equation_file=False
+            temp_equation_file=False,
+            warmupMaxsize=None, #Deprecated
         ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
@@ -191,10 +192,10 @@ def pysr(X=None, y=None, weights=None,
         Python using random forests, before passing to the symbolic regression
         code. None means no feature selection; an int means select that many
         features.
-    :param warmupMaxsize: int, whether to slowly increase max size from
+    :param warmupMaxsizeBy: float, whether to slowly increase max size from
         a small number up to the maxsize (if greater than 0).
-        If greater than 0, says how many cycles before the maxsize
-        is increased.
+        If greater than 0, says the fraction of training time at which
+        the current maxsize will reach the user-passed maxsize.
     :param constraints: dict of int (unary) or 2-tuples (binary),
         this enforces maxsize constraints on the individual
         arguments of operators. E.g., `'pow': (-1, 1)`
@@ -220,6 +221,7 @@ def pysr(X=None, y=None, weights=None,
         (as strings).
 
     """
+    assert warmupMaxsize == None, "warmupMaxsize is deprecated. Use warmupMaxsizeBy and give a fraction of time."
     if isinstance(X, pd.DataFrame):
         variable_names = list(X.columns)
         X = np.array(X)
@@ -269,7 +271,7 @@ def pysr(X=None, y=None, weights=None,
                  shouldOptimizeConstants=shouldOptimizeConstants,
                  unary_operators=unary_operators, useFrequency=useFrequency,
                  use_custom_variable_names=use_custom_variable_names,
-                 variable_names=variable_names, warmupMaxsize=warmupMaxsize,
+                 variable_names=variable_names, warmupMaxsizeBy=warmupMaxsizeBy,
                  weightAddNode=weightAddNode,
                  weightDeleteNode=weightDeleteNode,
                  weightDoNothing=weightDoNothing,
@@ -418,7 +420,7 @@ def _make_hyperparams_julia_str(X, alpha, annealing, batchSize, batching, binary
                                maxdepth, maxsize, migration, nrestarts, npop,
                                parsimony, perturbationFactor, populations, procs, shouldOptimizeConstants,
                                unary_operators, useFrequency, use_custom_variable_names,
-                               variable_names, warmupMaxsize, weightAddNode,
+                               variable_names, warmupMaxsizeBy, weightAddNode,
                                ncyclesperiteration, fractionReplaced, topn, verbosity, progress, loss,
                                weightDeleteNode, weightDoNothing, weightInsertNode, weightMutateConstant,
                                weightMutateOperator, weightRandomize, weightSimplify, weights, **kwargs):
@@ -483,7 +485,7 @@ mutationWeights=[
     {weightRandomize:f},
     {weightDoNothing:f}
 ],
-warmupMaxsize={warmupMaxsize:d},
+warmupMaxsizeBy={warmupMaxsizeBy:f}f0,
 useFrequency={"true" if useFrequency else "false"},
 npop={npop:d},
 ncyclesperiteration={ncyclesperiteration:d},
