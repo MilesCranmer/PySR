@@ -154,4 +154,4 @@ def sympy2jax(equation, symbols_in):
     text += functional_form_text
     ldict = {}
     exec(text, globals(), ldict)
-    return ldict['f'], jnp.array(parameters)
+    return ldict[hash_string], jnp.array(parameters)
