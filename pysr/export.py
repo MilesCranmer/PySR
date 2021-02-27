@@ -148,7 +148,7 @@ def sympy2jax(equation, symbols_in):
     """
     parameters = []
     functional_form_text = sympy2jaxtext(equation, parameters, symbols_in)
-    hash_string = 'A' + str(hash([equation, symbols_in]))
+    hash_string = 'A_' + str(abs(hash(str(equation) + str(symbols_in))))
     text = f"def {hash_string}(X, parameters):\n"
     text += "    return "
     text += functional_form_text
