@@ -686,7 +686,7 @@ def get_hof(equation_file=None, n_features=None, variable_names=None,
         sympy_format.append(eqn)
         if output_jax_format:
             func, params = sympy2jax(eqn, sympy_symbols)
-            jax_format.append({'callable': func, 'parameters': parameters})
+            jax_format.append({'callable': func, 'parameters': params})
         lambda_format.append(lambdify(sympy_symbols, eqn))
         curMSE = output.loc[i, 'MSE']
         curComplexity = output.loc[i, 'Complexity']
@@ -705,7 +705,7 @@ def get_hof(equation_file=None, n_features=None, variable_names=None,
     output['lambda_format'] = lambda_format
     output_cols = ['Complexity', 'MSE', 'score', 'Equation', 'sympy_format', 'lambda_format']
     if output_jax_format:
-        output_cols += 'jax_format'
+        output_cols += ['jax_format']
         output['jax_format'] = jax_format
 
     return output[output_cols]
