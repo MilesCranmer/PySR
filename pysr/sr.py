@@ -53,7 +53,6 @@ sympy_mappings = {
     'floor': lambda x    : sympy.floor(x),
     'ceil': lambda x    : sympy.ceil(x),
     'sign': lambda x    : sympy.sign(x),
-    'round': lambda x    : sympy.round(x),
 }
 
 def pysr(X=None, y=None, weights=None,

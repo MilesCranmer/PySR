@@ -53,7 +53,6 @@ try:
         sympy.Max: "jnp.max",
         sympy.Min: "jnp.min",
         sympy.Mod: "jnp.mod",
-        sympy.round: 'jnp.round'
     }
 except ImportError:
     ...
