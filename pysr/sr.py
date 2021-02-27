@@ -12,7 +12,7 @@ import shutil
 from pathlib import Path
 from datetime import datetime
 import warnings
-
+from .export import sympy2jax
 
 global_equation_file = 'hall_of_fame.csv'
 global_n_features = None
@@ -106,6 +106,7 @@ def pysr(X=None, y=None, weights=None,
             user_input=True,
             update=True,
             temp_equation_file=False,
+            output_jax_format=False,
             warmupMaxsize=None, #Deprecated
         ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
@@ -216,6 +217,8 @@ def pysr(X=None, y=None, weights=None,
     :param temp_equation_file: Whether to put the hall of fame file in
         the temp directory. Deletion is then controlled with the
         delete_tempfiles argument.
+    :param output_jax_format: Whether to create a 'jax_format' column in the output,
+        containing jax-callable functions and the default parameters in a jax array.
     :returns: pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
         (as strings).
 
@@ -281,7 +284,8 @@ def pysr(X=None, y=None, weights=None,
                  weightSimplify=weightSimplify,
                  constraints=constraints,
                  extra_sympy_mappings=extra_sympy_mappings,
-                 julia_project=julia_project, loss=loss)
+                 julia_project=julia_project, loss=loss,
+                 output_jax_format=output_jax_format)
 
     kwargs = {**_set_paths(tempdir), **kwargs}
 
@@ -633,7 +637,8 @@ def run_feature_selection(X, y, select_k_features):
             max_features=select_k_features, prefit=True)
     return selector.get_support(indices=True)
 
-def get_hof(equation_file=None, n_features=None, variable_names=None, extra_sympy_mappings=None, **kwargs):
+def get_hof(equation_file=None, n_features=None, variable_names=None,
+            extra_sympy_mappings=None, output_jax_format=False, **kwargs):
     """Get the equations from a hall of fame file. If no arguments
     entered, the ones used previously from a call to PySR will be used."""
 
@@ -663,6 +668,8 @@ def get_hof(equation_file=None, n_features=None, variable_names=None, extra_symp
     lastComplexity = 0
     sympy_format = []
     lambda_format = []
+    if output_jax_format:
+        jax_format = []
     use_custom_variable_names = (len(variable_names) != 0)
     local_sympy_mappings = {
             **extra_sympy_mappings,
@@ -677,6 +684,9 @@ def get_hof(equation_file=None, n_features=None, variable_names=None, extra_symp
     for i in range(len(output)):
         eqn = sympify(output.loc[i, 'Equation'], locals=local_sympy_mappings)
         sympy_format.append(eqn)
+        if output_jax_format:
+            func, params = sympy2jax(eqn, sympy_symbols)
+            jax_format.append({'callable': func, 'parameters': parameters})
         lambda_format.append(lambdify(sympy_symbols, eqn))
         curMSE = output.loc[i, 'MSE']
         curComplexity = output.loc[i, 'Complexity']
@@ -693,8 +703,12 @@ def get_hof(equation_file=None, n_features=None, variable_names=None, extra_symp
     output['score'] = np.array(scores)
     output['sympy_format'] = sympy_format
     output['lambda_format'] = lambda_format
+    output_cols = ['Complexity', 'MSE', 'score', 'Equation', 'sympy_format', 'lambda_format']
+    if output_jax_format:
+        output_cols += 'jax_format'
+        output['jax_format'] = jax_format
 
-    return output[['Complexity', 'MSE', 'score', 'Equation', 'sympy_format', 'lambda_format']]
+    return output[output_cols]
 
 def best_row(equations=None):
     """Return the best row of a hall of fame file using the score column.
