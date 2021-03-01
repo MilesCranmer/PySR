@@ -229,7 +229,8 @@ def pysr(X=None, y=None, weights=None,
     """
     assert warmupMaxsize == None, "warmupMaxsize is deprecated. Use warmupMaxsizeBy and give a fraction of time."
     if nrestarts != None:
-        optimizer_nrestarts=nrestarts
+        optimizer_nrestarts = nrestarts
+
     assert optimizer_algorithm in ['NelderMead', 'BFGS']
 
     if isinstance(X, pd.DataFrame):
@@ -276,10 +277,10 @@ def pysr(X=None, y=None, weights=None,
                  fractionReplacedHof=fractionReplacedHof,
                  hofMigration=hofMigration, maxdepth=maxdepth,
                  maxsize=maxsize, migration=migration,
-                 optimizer_algorithm=optimizer_algorithm
-                 optimizer_nrestarts=optimizer_nrestarts
-                 optimize_probability=optimize_probability
-                 optimizer_iterations=optimizer_iterations
+                 optimizer_algorithm=optimizer_algorithm,
+                 optimizer_nrestarts=optimizer_nrestarts,
+                 optimize_probability=optimize_probability,
+                 optimizer_iterations=optimizer_iterations,
                  parsimony=parsimony, perturbationFactor=perturbationFactor,
                  populations=populations, procs=procs,
                  shouldOptimizeConstants=shouldOptimizeConstants,
@@ -487,7 +488,7 @@ fractionReplacedHof={fractionReplacedHof}f0,
 shouldOptimizeConstants={'true' if shouldOptimizeConstants else 'false'},
 hofFile="{_escape_filename(equation_file)}",
 npopulations={populations:d},
-optimizer_algorithm={optimizer_algorithm},
+optimizer_algorithm="{optimizer_algorithm}",
 optimizer_nrestarts={optimizer_nrestarts:d},
 optimize_probability={optimize_probability:f}f0,
 optimizer_iterations={optimizer_iterations:d},
