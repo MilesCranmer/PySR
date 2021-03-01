@@ -45,8 +45,8 @@ try:
         # Note: May raise error for ints and complexes
         sympy.erf: "jsp.erf",
         sympy.erfc: "jsp.erfc",
-        sympy.LessThan: "jnp.le",
-        sympy.GreaterThan: "jnp.ge",
+        sympy.LessThan: "jnp.less",
+        sympy.GreaterThan: "jnp.greater",
         sympy.And: "jnp.logical_and",
         sympy.Or: "jnp.logical_or",
         sympy.Not: "jnp.logical_not",
