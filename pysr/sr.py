@@ -82,7 +82,6 @@ def pysr(X=None, y=None, weights=None,
             weightRandomize=1,
             weightSimplify=0.01,
             perturbationFactor=1.0,
-            nrestarts=3,
             timeout=None,
             extra_sympy_mappings={},
             equation_file=None,
@@ -108,6 +107,11 @@ def pysr(X=None, y=None, weights=None,
             temp_equation_file=False,
             output_jax_format=False,
             warmupMaxsize=None, #Deprecated
+            nrestarts=None,
+            optimizer_algorithm="NelderMead",
+            optimizer_nrestarts=3,
+            optimize_probability=0.1,
+            optimizer_iterations=100,
         ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
@@ -224,6 +228,10 @@ def pysr(X=None, y=None, weights=None,
 
     """
     assert warmupMaxsize == None, "warmupMaxsize is deprecated. Use warmupMaxsizeBy and give a fraction of time."
+    if nrestarts != None:
+        optimizer_nrestarts=nrestarts
+    assert optimizer_algorithm in ['NelderMead', 'BFGS']
+
     if isinstance(X, pd.DataFrame):
         variable_names = list(X.columns)
         X = np.array(X)
@@ -257,7 +265,7 @@ def pysr(X=None, y=None, weights=None,
         X, y = _using_test_input(X, test, y)
 
     kwargs = dict(X=X, y=y, weights=weights,
-                alpha=alpha, annealing=annealing, batchSize=batchSize,
+                 alpha=alpha, annealing=annealing, batchSize=batchSize,
                  batching=batching, binary_operators=binary_operators,
                  fast_cycle=fast_cycle,
                  fractionReplaced=fractionReplaced,
@@ -267,7 +275,11 @@ def pysr(X=None, y=None, weights=None,
                  julia_optimization=julia_optimization, timeout=timeout,
                  fractionReplacedHof=fractionReplacedHof,
                  hofMigration=hofMigration, maxdepth=maxdepth,
-                 maxsize=maxsize, migration=migration, nrestarts=nrestarts,
+                 maxsize=maxsize, migration=migration,
+                 optimizer_algorithm=optimizer_algorithm
+                 optimizer_nrestarts=optimizer_nrestarts
+                 optimize_probability=optimize_probability
+                 optimizer_iterations=optimizer_iterations
                  parsimony=parsimony, perturbationFactor=perturbationFactor,
                  populations=populations, procs=procs,
                  shouldOptimizeConstants=shouldOptimizeConstants,
@@ -420,7 +432,9 @@ weights = readdlm("{_escape_filename(weights_filename)}", ',', Float32, '\\n')[:
 
 def _make_hyperparams_julia_str(X, alpha, annealing, batchSize, batching, binary_operators, constraints_str,
                                def_hyperparams, equation_file, fast_cycle, fractionReplacedHof, hofMigration,
-                               maxdepth, maxsize, migration, nrestarts, npop,
+                               maxdepth, maxsize, migration,
+                               optimizer_algorithm, optimizer_nrestarts,
+                               optimize_probability, optimizer_iterations, npop,
                                parsimony, perturbationFactor, populations, procs, shouldOptimizeConstants,
                                unary_operators, useFrequency, use_custom_variable_names,
                                variable_names, warmupMaxsizeBy, weightAddNode,
@@ -473,7 +487,10 @@ fractionReplacedHof={fractionReplacedHof}f0,
 shouldOptimizeConstants={'true' if shouldOptimizeConstants else 'false'},
 hofFile="{_escape_filename(equation_file)}",
 npopulations={populations:d},
-nrestarts={nrestarts:d},
+optimizer_algorithm={optimizer_algorithm},
+optimizer_nrestarts={optimizer_nrestarts:d},
+optimize_probability={optimize_probability:f}f0,
+optimizer_iterations={optimizer_iterations:d},
 perturbationFactor={perturbationFactor:f}f0,
 annealing={"true" if annealing else "false"},
 batching={"true" if batching else "false"},
