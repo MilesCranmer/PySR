@@ -56,8 +56,8 @@ sympy_mappings = {
 }
 
 def pysr(X=None, y=None, weights=None,
-            binary_operators=["plus", "mult"],
-            unary_operators=["cos", "exp", "sin"],
+            binary_operators=None,
+            unary_operators=None,
             procs=4,
             loss='L2DistLoss()',
             populations=None,
@@ -83,7 +83,7 @@ def pysr(X=None, y=None, weights=None,
             weightSimplify=0.01,
             perturbationFactor=1.0,
             timeout=None,
-            extra_sympy_mappings={},
+            extra_sympy_mappings=None,
             equation_file=None,
             test='simple1',
             verbosity=1e9,
@@ -91,12 +91,12 @@ def pysr(X=None, y=None, weights=None,
             maxsize=20,
             fast_cycle=False,
             maxdepth=None,
-            variable_names=[],
+            variable_names=None,
             batching=False,
             batchSize=50,
             select_k_features=None,
             warmupMaxsizeBy=0.0,
-            constraints={},
+            constraints=None,
             useFrequency=False,
             tempdir=None,
             delete_tempfiles=True,
@@ -125,8 +125,9 @@ def pysr(X=None, y=None, weights=None,
     :param weights: np.ndarray, 1D array. Each row is how to weight the
         mean-square-error loss on weights.
     :param binary_operators: list, List of strings giving the binary operators
-        in Julia's Base.
+        in Julia's Base. Default is ["plus", "mult"].
     :param unary_operators: list, Same but for operators taking a single scalar.
+        Default is ["cos", "exp", "sin"].
     :param procs: int, Number of processes (=number of populations running).
     :param loss: str, String of Julia code specifying the loss function.
         Can either be a loss from LossFunctions.jl, or your own
@@ -227,6 +228,17 @@ def pysr(X=None, y=None, weights=None,
         (as strings).
 
     """
+    if binary_operators is None:
+        binary_operators = ["plus", "mult"]
+    if unary_operators is None:
+        unary_operators = ["cos", "exp", "sin"]
+    if extra_sympy_mappings is None:
+        extra_sympy_mappings = {}
+    if variable_names is None:
+        variable_names = []
+    if constraints is None:
+        constraints = {}
+
     assert warmupMaxsize == None, "warmupMaxsize is deprecated. Use warmupMaxsizeBy and give a fraction of time."
     if nrestarts != None:
         optimizer_nrestarts = nrestarts
