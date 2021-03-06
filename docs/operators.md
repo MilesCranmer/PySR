@@ -32,7 +32,7 @@ of these and other valid operators are stated below.
 `atan`,
 `asinh`,
 `acosh_abs`,
-`atanh`,
+`atanh_clip` (=atanh((x+1)%2 - 1)),
 `erf`,
 `erfc`,
 `gamma`,

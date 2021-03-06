@@ -40,8 +40,10 @@ sympy_mappings = {
     'asin': lambda x    : sympy.asin(x),
     'atan': lambda x    : sympy.atan(x),
     'acosh':lambda x    : sympy.acosh(abs(x) + 1),
+    'acosh_abs':lambda x : sympy.acosh(abs(x) + 1),
     'asinh':lambda x    : sympy.asinh(x),
-    'atanh':lambda x    : sympy.atanh(x),
+    'atanh':lambda x    : sympy.atanh(sympy.Mod(x+1, 2)-1),
+    'atanh_clip':lambda x : sympy.atanh(sympy.Mod(x+1, 2)-1),
     'abs':  lambda x    : abs(x),
     'mod':  lambda x, y : sympy.Mod(x, y),
     'erf':  lambda x    : sympy.erf(x),
@@ -479,6 +481,8 @@ log_abs=SymbolicRegression.log_abs
 log2_abs=SymbolicRegression.log2_abs
 log10_abs=SymbolicRegression.log10_abs
 log1p_abs=SymbolicRegression.log1p_abs
+acosh_abs=SymbolicRegression.acosh_abs
+atanh_clip=SymbolicRegression.atanh_clip
 sqrt_abs=SymbolicRegression.sqrt_abs
 neg=SymbolicRegression.neg
 greater=SymbolicRegression.greater
