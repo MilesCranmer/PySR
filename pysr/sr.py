@@ -28,7 +28,7 @@ sympy_mappings = {
     'plus': lambda x, y : x + y,
     'sub':  lambda x, y : x - y,
     'neg':  lambda x    : -x,
-    'pow':  lambda x, y : sympy.sign(x)*abs(x)**y,
+    'pow':  lambda x, y : abs(x)**y,
     'cos':  lambda x    : sympy.cos(x),
     'sin':  lambda x    : sympy.sin(x),
     'tan':  lambda x    : sympy.tan(x),
