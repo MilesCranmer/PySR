@@ -8,7 +8,7 @@ of these and other valid operators are stated below.
 
 **Binary**
 
-`plus`, `sub`, `mult`, `pow`, `div`, `greater`, `mod`, `beta`, `logical_or`,
+`plus`, `sub`, `mult`, `pow`, `div`, `greater`, `mod`, `logical_or`,
 `logical_and`
 
 **Unary**
@@ -18,22 +18,20 @@ of these and other valid operators are stated below.
 `cube`,
 `exp`,
 `abs`,
-`logm` (=log(abs(x) + 1e-8)),
-`logm10` (=log10(abs(x) + 1e-8)),
-`logm2` (=log2(abs(x) + 1e-8)),
-`sqrtm` (=sqrt(abs(x)))
-`log1p`,
+`log_abs` (=log(abs(x) + 1e-8)),
+`log10_abs`,
+`log2_abs`,
+`log1p_abs` (=log(abs(x) + 1)),
+`sqrt_abs` (=sqrt(abs(x)))
 `sin`,
 `cos`,
 `tan`,
 `sinh`,
 `cosh`,
 `tanh`,
-`asin`,
-`acos`,
 `atan`,
 `asinh`,
-`acosh`,
+`acosh_abs`,
 `atanh`,
 `erf`,
 `erfc`,
@@ -66,7 +64,7 @@ for more complex functions. Make sure that it works with
 instead of `1.5e3`, if you write any constant numbers.
 
 Your operator should work with the entire real line (you can use
-abs(x) - see `logm`); otherwise
-the search code will be slowed down with domain errors.
+abs(x) for operators requiring positive input - see `log_abs`); otherwise
+the search code will experience domain errors.
 
 
