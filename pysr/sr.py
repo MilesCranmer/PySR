@@ -22,7 +22,7 @@ global_extra_sympy_mappings = {}
 sympy_mappings = {
     'div':  lambda x, y : x/y,
     'mult': lambda x, y : x*y,
-    'sqrtm':lambda x    : sympy.sqrt(abs(x)),
+    'sqrt_abs':lambda x    : sympy.sqrt(abs(x)),
     'square':lambda x   : x**2,
     'cube': lambda x    : x**3,
     'plus': lambda x, y : x + y,
@@ -46,10 +46,10 @@ sympy_mappings = {
     'mod':  lambda x, y : sympy.Mod(x, y),
     'erf':  lambda x    : sympy.erf(x),
     'erfc': lambda x    : sympy.erfc(x),
-    'logm': lambda x    : sympy.log(abs(x)),
-    'logm10':lambda x   : sympy.log(abs(x), 10),
-    'logm2': lambda x   : sympy.log(abs(x), 2),
-    'log1p': lambda x   : sympy.log(x + 1),
+    'log_abs': lambda x : sympy.log(abs(x)),
+    'log10_abs':lambda x : sympy.log(abs(x), 10),
+    'log2_abs': lambda x : sympy.log(abs(x), 2),
+    'log1p_abs': lambda x : sympy.log(abs(x) + 1),
     'floor': lambda x   : sympy.floor(x),
     'ceil': lambda x    : sympy.ceil(x),
     'sign': lambda x    : sympy.sign(x),
@@ -475,10 +475,11 @@ square=SymbolicRegression.square
 cube=SymbolicRegression.cube
 pow=(^)
 div=(/)
-logm=SymbolicRegression.logm
-logm2=SymbolicRegression.logm2
-logm10=SymbolicRegression.logm10
-sqrtm=SymbolicRegression.sqrtm
+log_abs=SymbolicRegression.log_abs
+log2_abs=SymbolicRegression.log2_abs
+log10_abs=SymbolicRegression.log10_abs
+log1p_abs=SymbolicRegression.log1p_abs
+sqrt_abs=SymbolicRegression.sqrt_abs
 neg=SymbolicRegression.neg
 greater=SymbolicRegression.greater
 relu=SymbolicRegression.relu
