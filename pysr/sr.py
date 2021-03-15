@@ -327,8 +327,15 @@ def pysr(X=None, y=None, weights=None,
 
 
     pkg_directory = kwargs['pkg_directory']
+    manifest_file = None
+    if kwargs['julia_project'] is not None:
+        manifest_filepath = Path(kwargs['julia_project']) / 'Manifest.toml'
+    else:
+        manifest_filepath = pkg_directory / 'Manifest.toml'
+
     kwargs['need_install'] = False
-    if not (pkg_directory / 'Manifest.toml').is_file():
+
+    if not (manifest_filepath).is_file():
         kwargs['need_install'] = (not user_input) or _yesno("I will install Julia packages using PySR's Project.toml file. OK?")
         if kwargs['need_install']:
             print("OK. I will install at launch.")
