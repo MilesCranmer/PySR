@@ -259,6 +259,7 @@ def pysr(X=None, y=None, weights=None,
 
     _check_assertions(X, binary_operators, unary_operators,
                      use_custom_variable_names, variable_names, weights, y)
+    _check_for_julia_installation()
 
 
     if len(X) > 10000 and not batching:
@@ -665,6 +666,19 @@ def _check_assertions(X, binary_operators, unary_operators, use_custom_variable_
     if use_custom_variable_names:
         assert len(variable_names) == X.shape[1]
 
+def _check_for_julia_installation():
+    try:
+        process = subprocess.Popen(["julia", "-v"], stdout=subprocess.PIPE, bufsize=-1)
+        while True:
+            line = process.stdout.readline()
+            if not line: break
+        process.stdout.close()
+        process.wait()
+    except FileNotFoundError:
+        import os
+        raise ModuleNotFoundError(f"Your current $PATH is: {os.environ['PATH']}\nPySR could not start julia. Make sure julia is installed and on your $PATH.")
+    process.kill()
+
 
 def run_feature_selection(X, y, select_k_features):
     """Use a gradient boosting tree regressor as a proxy for finding
@@ -703,8 +717,7 @@ def get_hof(equation_file=None, n_features=None, variable_names=None,
     try:
         output = pd.read_csv(str(equation_file) + '.bkup', sep="|")
     except FileNotFoundError:
-        print("Couldn't find equation file!")
-        return pd.DataFrame()
+        raise RuntimeError("Couldn't find equation file! The equation search likely exited before a single iteration completed.")
 
     scores = []
     lastMSE = None
