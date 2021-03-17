@@ -676,7 +676,7 @@ def _check_for_julia_installation():
         process.wait()
     except FileNotFoundError:
         import os
-        raise ModuleNotFoundError(f"Your current $PATH is: {os.environ['PATH']}\nPySR could not start julia. Make sure julia is installed and on your $PATH.")
+        raise RuntimeError(f"Your current $PATH is: {os.environ['PATH']}\nPySR could not start julia. Make sure julia is installed and on your $PATH.")
     process.kill()
 
 
