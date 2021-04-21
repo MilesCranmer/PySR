@@ -239,9 +239,6 @@ def pysr(X=None, y=None, weights=None,
     if constraints is None:
         constraints = {}
 
-    if nrestarts != None:
-        optimizer_nrestarts = nrestarts
-
     assert optimizer_algorithm in ['NelderMead', 'BFGS']
 
     if isinstance(X, pd.DataFrame):
