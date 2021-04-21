@@ -63,11 +63,11 @@ def pysr(X=None, y=None, weights=None,
             unary_operators=None,
             procs=4,
             loss='L2DistLoss()',
-            populations=None,
+            populations=20,
             niterations=100,
             ncyclesperiteration=300,
             alpha=0.1,
-            annealing=True,
+            annealing=False,
             fractionReplaced=0.10,
             fractionReplacedHof=0.10,
             npop=1000,
@@ -90,7 +90,7 @@ def pysr(X=None, y=None, weights=None,
             equation_file=None,
             test='simple1',
             verbosity=1e9,
-            progress=False,
+            progress=True,
             maxsize=20,
             fast_cycle=False,
             maxdepth=None,
@@ -100,7 +100,7 @@ def pysr(X=None, y=None, weights=None,
             select_k_features=None,
             warmupMaxsizeBy=0.0,
             constraints=None,
-            useFrequency=False,
+            useFrequency=True,
             tempdir=None,
             delete_tempfiles=True,
             julia_optimization=3,
@@ -109,12 +109,10 @@ def pysr(X=None, y=None, weights=None,
             update=True,
             temp_equation_file=False,
             output_jax_format=False,
-            warmupMaxsize=None, #Deprecated
-            nrestarts=None,
-            optimizer_algorithm="NelderMead",
+            optimizer_algorithm="BFGS",
             optimizer_nrestarts=3,
-            optimize_probability=0.1,
-            optimizer_iterations=100,
+            optimize_probability=1.0,
+            optimizer_iterations=10,
         ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
@@ -128,9 +126,9 @@ def pysr(X=None, y=None, weights=None,
     :param weights: np.ndarray, 1D array. Each row is how to weight the
         mean-square-error loss on weights.
     :param binary_operators: list, List of strings giving the binary operators
-        in Julia's Base. Default is ["plus", "mult"].
+        in Julia's Base. Default is ["+", "-", "*", "/",].
     :param unary_operators: list, Same but for operators taking a single scalar.
-        Default is ["cos", "exp", "sin"].
+        Default is [].
     :param procs: int, Number of processes (=number of populations running).
     :param loss: str, String of Julia code specifying the loss function.
         Can either be a loss from LossFunctions.jl, or your own
@@ -144,7 +142,7 @@ def pysr(X=None, y=None, weights=None,
         Classification: `ZeroOneLoss()`, `PerceptronLoss()`, `L1HingeLoss()`,
         `SmoothedL1HingeLoss(γ)`, `ModifiedHuberLoss()`, `L2MarginLoss()`,
         `ExpLoss()`, `SigmoidLoss()`, `DWDMarginLoss(q)`.
-    :param populations: int, Number of populations running; by default=procs.
+    :param populations: int, Number of populations running.
     :param niterations: int, Number of iterations of the algorithm to run. The best
         equations are printed, and migrate between populations, at the
         end of each.
@@ -163,7 +161,6 @@ def pysr(X=None, y=None, weights=None,
     :param shouldOptimizeConstants: bool, Whether to numerically optimize
         constants (Nelder-Mead/Newton) at the end of each iteration.
     :param topn: int, How many top individuals migrate from each population.
-    :param nrestarts: int, Number of times to restart the constant optimizer
     :param perturbationFactor: float, Constants are perturbed by a max
         factor of (perturbationFactor*T + 1). Either multiplied by this
         or divided by this.
@@ -232,9 +229,9 @@ def pysr(X=None, y=None, weights=None,
 
     """
     if binary_operators is None:
-        binary_operators = ["plus", "mult"]
+        binary_operators = '+ * - /'.split(' ')
     if unary_operators is None:
-        unary_operators = ["cos", "exp", "sin"]
+        unary_operators = []
     if extra_sympy_mappings is None:
         extra_sympy_mappings = {}
     if variable_names is None:
@@ -242,7 +239,6 @@ def pysr(X=None, y=None, weights=None,
     if constraints is None:
         constraints = {}
 
-    assert warmupMaxsize == None, "warmupMaxsize is deprecated. Use warmupMaxsizeBy and give a fraction of time."
     if nrestarts != None:
         optimizer_nrestarts = nrestarts
 
@@ -265,6 +261,9 @@ def pysr(X=None, y=None, weights=None,
     if len(X) > 10000 and not batching:
         warnings.warn("Note: you are running with more than 10,000 datapoints. You should consider turning on batching (https://pysr.readthedocs.io/en/latest/docs/options/#batching). You should also reconsider if you need that many datapoints. Unless you have a large amount of noise (in which case you should smooth your dataset first), generally < 10,000 datapoints is enough to find a functional form with symbolic regression. More datapoints will lower the search speed.")
 
+    if maxsize > 40:
+        warnings.warn("Note: Using a large maxsize for the equation search will be slow and use significant memory. You should consider turning `useFrequency` to False, and perhaps use `warmupMaxsizeBy`.")
+
     X, variable_names = _handle_feature_selection(
             X, select_k_features,
             use_custom_variable_names, variable_names, y
@@ -272,8 +271,6 @@ def pysr(X=None, y=None, weights=None,
 
     if maxdepth is None:
         maxdepth = maxsize
-    if populations is None:
-        populations = procs
     if isinstance(binary_operators, str):
         binary_operators = [binary_operators]
     if isinstance(unary_operators, str):
