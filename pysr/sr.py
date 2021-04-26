@@ -1,4 +1,5 @@
 import os
+import sys
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from collections import namedtuple
 import pathlib
@@ -385,14 +386,12 @@ def _cmd_runner(command, **kwargs):
         while True:
             line = process.stdout.readline()
             if not line: break
-            if kwargs['progress']:
-                decoded_line = (line.decode('utf-8')
-                                    .replace('\\033[K',  '\033[K')
-                                    .replace('\\033[1A', '\033[1A')
-                                    .replace('\\033[1B', '\033[1B')
-                                    .replace('\\r',      '\r'))
-            else:
-                decoded_line = line.decode('utf-8')
+            decoded_line = (line.decode('utf-8')
+                                .replace('\\033[K',  '\033[K')
+                                .replace('\\033[1A', '\033[1A')
+                                .replace('\\033[1B', '\033[1B')
+                                .replace('\\r',      '\r')
+                                .encode(sys.stdout.encoding))
 
             print(decoded_line, end='')
 
