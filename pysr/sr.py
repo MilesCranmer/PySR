@@ -385,12 +385,17 @@ def _cmd_runner(command, **kwargs):
         while True:
             line = process.stdout.readline()
             if not line: break
-            decoded_line = (line.decode('utf-8')
-                                .replace('\\033[K',  '\033[K')
-                                .replace('\\033[1A', '\033[1A')
-                                .replace('\\033[1B', '\033[1B')
-                                .replace('\\r',      '\r'))
+            if kwargs['progress']:
+                decoded_line = (line.decode('utf-8')
+                                    .replace('\\033[K',  '\033[K')
+                                    .replace('\\033[1A', '\033[1A')
+                                    .replace('\\033[1B', '\033[1B')
+                                    .replace('\\r',      '\r'))
+            else:
+                decoded_line = line.decode('utf-8')
+
             print(decoded_line, end='')
+
 
 
         process.stdout.close()
