@@ -391,7 +391,7 @@ def _cmd_runner(command, **kwargs):
                                 .replace('\\033[1A', '\033[1A')
                                 .replace('\\033[1B', '\033[1B')
                                 .replace('\\r',      '\r')
-                                .encode(sys.stdout.encoding))
+                                .encode(sys.stdout.encoding, errors='replace'))
 
             print(decoded_line, end='')
 
