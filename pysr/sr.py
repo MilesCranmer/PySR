@@ -19,6 +19,8 @@ global_equation_file = 'hall_of_fame.csv'
 global_n_features = None
 global_variable_names = []
 global_extra_sympy_mappings = {}
+global_multioutput = False
+global_nout = 1
 
 sympy_mappings = {
     'div':  lambda x, y : x/y,
@@ -276,6 +278,15 @@ def pysr(X=None, y=None, weights=None,
     if X is None:
         X, y = _using_test_input(X, test, y)
 
+    if len(y.shape) == 2:
+        multioutput = True
+        nout = y.shape[1]
+    elif len(y.shape) == 1:
+        multioutput = False
+        nout = 1
+    else:
+        raise NotImplementedError("y shape not supported!")
+
     kwargs = dict(X=X, y=y, weights=weights,
                  alpha=alpha, annealing=annealing, batchSize=batchSize,
                  batching=batching, binary_operators=binary_operators,
@@ -309,7 +320,8 @@ def pysr(X=None, y=None, weights=None,
                  constraints=constraints,
                  extra_sympy_mappings=extra_sympy_mappings,
                  julia_project=julia_project, loss=loss,
-                 output_jax_format=output_jax_format)
+                 output_jax_format=output_jax_format,
+                 multioutput=multioutput, nout=nout)
 
     kwargs = {**_set_paths(tempdir), **kwargs}
 
@@ -358,15 +370,20 @@ def pysr(X=None, y=None, weights=None,
 
 
 
-def _set_globals(X, equation_file, extra_sympy_mappings, variable_names, **kwargs):
+def _set_globals(X, equation_file, extra_sympy_mappings, variable_names,
+                multioutput, **kwargs):
     global global_n_features
     global global_equation_file
     global global_variable_names
     global global_extra_sympy_mappings
+    global global_multioutput
+    global global_nout
     global_n_features = X.shape[1]
     global_equation_file = equation_file
     global_variable_names = variable_names
     global_extra_sympy_mappings = extra_sympy_mappings
+    global_multioutput = multioutput
+    global_nout = nout
 
 
 def _final_pysr_process(julia_optimization, runfile_filename, timeout, **kwargs):
@@ -438,17 +455,35 @@ def _create_julia_files(dataset_filename, def_datasets,  hyperparam_filename, de
             print(f'EquationSearch(X, y, niterations={niterations:d}, varMap={varMap}, options=options, numprocs={procs})', file=f)
 
 
-def _make_datasets_julia_str(X, X_filename, weights, weights_filename, y, y_filename, **kwargs):
+def _make_datasets_julia_str(X, X_filename, weights, weights_filename, y, y_filename,
+                            multioutput, **kwargs):
     def_datasets = """using DelimitedFiles"""
     np.savetxt(X_filename, X.astype(np.float32), delimiter=',')
-    np.savetxt(y_filename, y.reshape(-1, 1).astype(np.float32), delimiter=',')
+    if multioutput:
+        np.savetxt(y_filename, y.astype(np.float32), delimiter=',')
+    else:
+        np.savetxt(y_filename, y.reshape(-1, 1).astype(np.float32), delimiter=',')
     if weights is not None:
-        np.savetxt(weights_filename, weights.reshape(-1, 1), delimiter=',')
+        if multioutput:
+            np.savetxt(weights_filename, weights.astype(np.float32), delimiter=',')
+        else:
+            np.savetxt(weights_filename, weights.reshape(-1, 1).astype(np.float32), delimiter=',')
     def_datasets += f"""
-X = copy(transpose(readdlm("{_escape_filename(X_filename)}", ',', Float32, '\\n')))
+X = copy(transpose(readdlm("{_escape_filename(X_filename)}", ',', Float32, '\\n')))"""
+
+    if multioutput:
+        def_datasets+= f"""
+y = copy(transpose(readdlm("{_escape_filename(y_filename)}", ',', Float32, '\\n')))"""
+    else:
+        def_datasets+= f"""
 y = readdlm("{_escape_filename(y_filename)}", ',', Float32, '\\n')[:, 1]"""
+
     if weights is not None:
-        def_datasets += f"""
+        if multioutput:
+            def_datasets += f"""
+weights = copy(transpose(readdlm("{_escape_filename(weights_filename)}", ',', Float32, '\\n')))"""
+        else:
+            def_datasets += f"""
 weights = readdlm("{_escape_filename(weights_filename)}", ',', Float32, '\\n')[:, 1]"""
     return def_datasets
 
@@ -656,10 +691,10 @@ def _check_assertions(X, binary_operators, unary_operators, use_custom_variable_
     # Check for potential errors before they happen
     assert len(unary_operators) + len(binary_operators) > 0
     assert len(X.shape) == 2
-    assert len(y.shape) == 1
+    assert len(y.shape) in [1, 2]
     assert X.shape[0] == y.shape[0]
     if weights is not None:
-        assert len(weights.shape) == 1
+        assert weights.shape == y.shape
         assert X.shape[0] == weights.shape[0]
     if use_custom_variable_names:
         assert len(variable_names) == X.shape[1]
@@ -693,7 +728,8 @@ def run_feature_selection(X, y, select_k_features):
     return selector.get_support(indices=True)
 
 def get_hof(equation_file=None, n_features=None, variable_names=None,
-            extra_sympy_mappings=None, output_jax_format=False, **kwargs):
+            extra_sympy_mappings=None, output_jax_format=False,
+            multioutput=False, nout=1, **kwargs):
     """Get the equations from a hall of fame file. If no arguments
     entered, the ones used previously from a call to PySR will be used."""
 
@@ -701,19 +737,28 @@ def get_hof(equation_file=None, n_features=None, variable_names=None,
     global global_equation_file
     global global_variable_names
     global global_extra_sympy_mappings
+    global global_multioutput
+    global global_nout
 
     if equation_file is None: equation_file = global_equation_file
     if n_features is None: n_features = global_n_features
     if variable_names is None: variable_names = global_variable_names
     if extra_sympy_mappings is None: extra_sympy_mappings = global_extra_sympy_mappings
+    if multioutput is None: multioutput = global_multioutput
+    if nout is None: nout = global_nout
 
     global_equation_file = equation_file
     global_n_features = n_features
     global_variable_names = variable_names
     global_extra_sympy_mappings = extra_sympy_mappings
+    global_multioutput = multioutput
+    global_nout = nout
 
     try:
-        output = pd.read_csv(str(equation_file) + '.bkup', sep="|")
+        if multioutput:
+            all_outputs = [pd.read_csv(f'out{i}_' + str(equation_file) + '.bkup', sep="|") for i in range(1, nout+1)]
+        else:
+            all_outputs = [pd.read_csv(str(equation_file) + '.bkup', sep="|")]
     except FileNotFoundError:
         raise RuntimeError("Couldn't find equation file! The equation search likely exited before a single iteration completed.")
 
@@ -735,42 +780,52 @@ def get_hof(equation_file=None, n_features=None, variable_names=None,
     else:
         sympy_symbols = [sympy.Symbol('x%d'%i) for i in range(n_features)]
 
-    for i in range(len(output)):
-        eqn = sympify(output.loc[i, 'Equation'], locals=local_sympy_mappings)
-        sympy_format.append(eqn)
+    ret_outputs = []
+    for output in all_outputs:
+        for i in range(len(output)):
+            eqn = sympify(output.loc[i, 'Equation'], locals=local_sympy_mappings)
+            sympy_format.append(eqn)
+            if output_jax_format:
+                func, params = sympy2jax(eqn, sympy_symbols)
+                jax_format.append({'callable': func, 'parameters': params})
+            lambda_format.append(lambdify(sympy_symbols, eqn))
+            curMSE = output.loc[i, 'MSE']
+            curComplexity = output.loc[i, 'Complexity']
+
+            if lastMSE is None:
+                cur_score = 0.0
+            else:
+                cur_score = - np.log(curMSE/lastMSE)/(curComplexity - lastComplexity)
+
+            scores.append(cur_score)
+            lastMSE = curMSE
+            lastComplexity = curComplexity
+
+        output['score'] = np.array(scores)
+        output['sympy_format'] = sympy_format
+        output['lambda_format'] = lambda_format
+        output_cols = ['Complexity', 'MSE', 'score', 'Equation', 'sympy_format', 'lambda_format']
         if output_jax_format:
-            func, params = sympy2jax(eqn, sympy_symbols)
-            jax_format.append({'callable': func, 'parameters': params})
-        lambda_format.append(lambdify(sympy_symbols, eqn))
-        curMSE = output.loc[i, 'MSE']
-        curComplexity = output.loc[i, 'Complexity']
+            output_cols += ['jax_format']
+            output['jax_format'] = jax_format
 
-        if lastMSE is None:
-            cur_score = 0.0
-        else:
-            cur_score = - np.log(curMSE/lastMSE)/(curComplexity - lastComplexity)
+        ret_outputs.append(output[output_cols])
 
-        scores.append(cur_score)
-        lastMSE = curMSE
-        lastComplexity = curComplexity
-
-    output['score'] = np.array(scores)
-    output['sympy_format'] = sympy_format
-    output['lambda_format'] = lambda_format
-    output_cols = ['Complexity', 'MSE', 'score', 'Equation', 'sympy_format', 'lambda_format']
-    if output_jax_format:
-        output_cols += ['jax_format']
-        output['jax_format'] = jax_format
-
-    return output[output_cols]
+    if multioutput:
+        return ret_outputs
+    else:
+        return ret_outputs[0]
 
 def best_row(equations=None):
     """Return the best row of a hall of fame file using the score column.
     By default this uses the last equation file.
     """
-    if equations is None: equations = get_hof()
-    best_idx = np.argmax(equations['score'])
-    return equations.iloc[best_idx]
+    if equations is None: all_eqs = get_hof()
+    if isinstance(all_eqs, list):
+        return [equations[j].iloc[np.argmax(equations[j]['score'])] for j in range(len(all_eqs))]
+    else:
+        best_idx = np.argmax(equations['score'])
+        return equations.iloc[best_idx]
 
 def best_tex(equations=None):
     """Return the equation with the best score, in latex format
