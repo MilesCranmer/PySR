@@ -278,12 +278,13 @@ def pysr(X=None, y=None, weights=None,
     if X is None:
         X, y = _using_test_input(X, test, y)
 
-    if len(y.shape) == 2:
-        multioutput = True
-        nout = y.shape[1]
-    elif len(y.shape) == 1:
+    if len(y.shape) == 1 or (len(y.shape) == 2 and y.shape[1] == 1):
         multioutput = False
         nout = 1
+        y = y.reshape(-1)
+    elif len(y.shape) == 2:
+        multioutput = True
+        nout = y.shape[1]
     else:
         raise NotImplementedError("y shape not supported!")
 
