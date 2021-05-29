@@ -821,35 +821,39 @@ def best_row(equations=None):
     """Return the best row of a hall of fame file using the score column.
     By default this uses the last equation file.
     """
-    if equations is None: all_eqs = get_hof()
-    if isinstance(all_eqs, list):
-        return [equations[j].iloc[np.argmax(equations[j]['score'])] for j in range(len(all_eqs))]
+    if equations is None: equations = get_hof()
+    if isinstance(equations, list):
+        return [eq.iloc[np.argmax(eq['score'])] for eq in equations]
     else:
-        best_idx = np.argmax(equations['score'])
-        return equations.iloc[best_idx]
+        return equations.iloc[np.argmax(equations['score'])]
 
 def best_tex(equations=None):
     """Return the equation with the best score, in latex format
     By default this uses the last equation file.
     """
     if equations is None: equations = get_hof()
-    best_sympy = best_row(equations)['sympy_format']
-    return sympy.latex(best_sympy.simplify())
+    if isinstance(equations, list):
+        return [sympy.latex(best_row(eq)['sympy_format'].simplify()) for eq in equations]
+    else:
+        return sympy.latex(best_row(equations)['sympy_format'].simplify())
 
 def best(equations=None):
     """Return the equation with the best score, in sympy format.
     By default this uses the last equation file.
     """
     if equations is None: equations = get_hof()
-    best_sympy = best_row(equations)['sympy_format']
-    return best_sympy.simplify()
+        return [best_row(eq)['sympy_format'].simplify() for eq in equations]
+    else:
+        return best_row(equations)['sympy_format'].simplify()
 
 def best_callable(equations=None):
     """Return the equation with the best score, in callable format.
     By default this uses the last equation file.
     """
     if equations is None: equations = get_hof()
-    return best_row(equations)['lambda_format']
+        return [best_row(eq)['lambda_format'] for eq in equations]
+    else:
+        return best_row(equations)['lambda_format']
 
 def _escape_filename(filename):
     """Turns a file into a string representation with correctly escaped backslashes"""
