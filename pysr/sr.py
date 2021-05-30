@@ -14,6 +14,7 @@ from pathlib import Path
 from datetime import datetime
 import warnings
 from .export_jax import sympy2jax
+from .export_torch import sympy2torch
 
 global_equation_file = 'hall_of_fame.csv'
 global_n_features = None
