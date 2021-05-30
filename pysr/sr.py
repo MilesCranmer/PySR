@@ -372,7 +372,7 @@ def pysr(X=None, y=None, weights=None,
 
 
 def _set_globals(X, equation_file, extra_sympy_mappings, variable_names,
-                multioutput, **kwargs):
+                multioutput, nout, **kwargs):
     global global_n_features
     global global_equation_file
     global global_variable_names
@@ -730,7 +730,7 @@ def run_feature_selection(X, y, select_k_features):
 
 def get_hof(equation_file=None, n_features=None, variable_names=None,
             extra_sympy_mappings=None, output_jax_format=False,
-            multioutput=False, nout=1, **kwargs):
+            multioutput=False, nout=None, **kwargs):
     """Get the equations from a hall of fame file. If no arguments
     entered, the ones used previously from a call to PySR will be used."""
 
@@ -763,26 +763,28 @@ def get_hof(equation_file=None, n_features=None, variable_names=None,
     except FileNotFoundError:
         raise RuntimeError("Couldn't find equation file! The equation search likely exited before a single iteration completed.")
 
-    scores = []
-    lastMSE = None
-    lastComplexity = 0
-    sympy_format = []
-    lambda_format = []
-    if output_jax_format:
-        jax_format = []
-    use_custom_variable_names = (len(variable_names) != 0)
-    local_sympy_mappings = {
-            **extra_sympy_mappings,
-            **sympy_mappings
-    }
-
-    if use_custom_variable_names:
-        sympy_symbols = [sympy.Symbol(variable_names[i]) for i in range(n_features)]
-    else:
-        sympy_symbols = [sympy.Symbol('x%d'%i) for i in range(n_features)]
-
     ret_outputs = []
+
     for output in all_outputs:
+
+        scores = []
+        lastMSE = None
+        lastComplexity = 0
+        sympy_format = []
+        lambda_format = []
+        if output_jax_format:
+            jax_format = []
+        use_custom_variable_names = (len(variable_names) != 0)
+        local_sympy_mappings = {
+                **extra_sympy_mappings,
+                **sympy_mappings
+        }
+
+        if use_custom_variable_names:
+            sympy_symbols = [sympy.Symbol(variable_names[i]) for i in range(n_features)]
+        else:
+            sympy_symbols = [sympy.Symbol('x%d'%i) for i in range(n_features)]
+
         for i in range(len(output)):
             eqn = sympify(output.loc[i, 'Equation'], locals=local_sympy_mappings)
             sympy_format.append(eqn)
@@ -842,6 +844,7 @@ def best(equations=None):
     By default this uses the last equation file.
     """
     if equations is None: equations = get_hof()
+    if isinstance(equations, list):
         return [best_row(eq)['sympy_format'].simplify() for eq in equations]
     else:
         return best_row(equations)['sympy_format'].simplify()
@@ -851,6 +854,7 @@ def best_callable(equations=None):
     By default this uses the last equation file.
     """
     if equations is None: equations = get_hof()
+    if isinstance(equations, list):
         return [best_row(eq)['lambda_format'] for eq in equations]
     else:
         return best_row(equations)['lambda_format']
