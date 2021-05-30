@@ -17,14 +17,15 @@ equations = pysr(X, y, **default_test_kwargs)
 print(equations)
 assert equations.iloc[-1]['MSE'] < 1e-4
 
-print("Test 2 - test custom operator")
-y = X[:, 0]**2
+print("Test 2 - test custom operator, and multiple outputs")
+y = X[:, [0, 1]]**2
 equations = pysr(X, y,
                  unary_operators=["sq(x) = x^2"], binary_operators=["plus"],
                  extra_sympy_mappings={'square': lambda x: x**2},
                  **default_test_kwargs)
 print(equations)
-assert equations.iloc[-1]['MSE'] < 1e-4
+assert equations[0].iloc[-1]['MSE'] < 1e-4
+assert equations[1].iloc[-1]['MSE'] < 1e-4
 
 X = np.random.randn(100, 1)
 y = X[:, 0] + 3.0
