@@ -412,6 +412,7 @@ def _cmd_runner(command, **kwargs):
                                 .encode(sys.stdout.encoding, errors='replace'))
 
             sys.stdout.buffer.write(decoded_line)
+            sys.stdout.flush()
 
         process.stdout.close()
         process.wait()
