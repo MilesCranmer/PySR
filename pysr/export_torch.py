@@ -8,7 +8,6 @@ import functools as ft
 import sympy
 import torch
 
-
 def _reduce(fn):
     def fn_(*args):
         return ft.reduce(fn, args)
@@ -66,7 +65,6 @@ _global_func_lookup = {
     # Note: May raise error for integer matrices.
     sympy.Determinant: torch.det,
 }
-
 
 class _Node(torch.nn.Module):
     def __init__(self, *, expr, _memodict, _func_lookup, **kwargs):

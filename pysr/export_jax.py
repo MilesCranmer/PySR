@@ -2,60 +2,56 @@ import functools as ft
 import sympy
 import string
 import random
-
-try:
-    import jax
-    from jax import numpy as jnp
-    from jax.scipy import special as jsp
+import jax
+from jax import numpy as jnp
+from jax.scipy import special as jsp
 
 # Special since need to reduce arguments.
-    MUL = 0
-    ADD = 1
+MUL = 0
+ADD = 1
 
-    _jnp_func_lookup = {
-        sympy.Mul: MUL,
-        sympy.Add: ADD,
-        sympy.div: "jnp.div",
-        sympy.Abs: "jnp.abs",
-        sympy.sign: "jnp.sign",
-        # Note: May raise error for ints.
-        sympy.ceiling: "jnp.ceil",
-        sympy.floor: "jnp.floor",
-        sympy.log: "jnp.log",
-        sympy.exp: "jnp.exp",
-        sympy.sqrt: "jnp.sqrt",
-        sympy.cos: "jnp.cos",
-        sympy.acos: "jnp.acos",
-        sympy.sin: "jnp.sin",
-        sympy.asin: "jnp.asin",
-        sympy.tan: "jnp.tan",
-        sympy.atan: "jnp.atan",
-        sympy.atan2: "jnp.atan2",
-        # Note: Also may give NaN for complex results.
-        sympy.cosh: "jnp.cosh",
-        sympy.acosh: "jnp.acosh",
-        sympy.sinh: "jnp.sinh",
-        sympy.asinh: "jnp.asinh",
-        sympy.tanh: "jnp.tanh",
-        sympy.atanh: "jnp.atanh",
-        sympy.Pow: "jnp.power",
-        sympy.re: "jnp.real",
-        sympy.im: "jnp.imag",
-        sympy.arg: "jnp.angle",
-        # Note: May raise error for ints and complexes
-        sympy.erf: "jsp.erf",
-        sympy.erfc: "jsp.erfc",
-        sympy.LessThan: "jnp.less",
-        sympy.GreaterThan: "jnp.greater",
-        sympy.And: "jnp.logical_and",
-        sympy.Or: "jnp.logical_or",
-        sympy.Not: "jnp.logical_not",
-        sympy.Max: "jnp.max",
-        sympy.Min: "jnp.min",
-        sympy.Mod: "jnp.mod",
-    }
-except ImportError:
-    ...
+_jnp_func_lookup = {
+    sympy.Mul: MUL,
+    sympy.Add: ADD,
+    sympy.div: "jnp.div",
+    sympy.Abs: "jnp.abs",
+    sympy.sign: "jnp.sign",
+    # Note: May raise error for ints.
+    sympy.ceiling: "jnp.ceil",
+    sympy.floor: "jnp.floor",
+    sympy.log: "jnp.log",
+    sympy.exp: "jnp.exp",
+    sympy.sqrt: "jnp.sqrt",
+    sympy.cos: "jnp.cos",
+    sympy.acos: "jnp.acos",
+    sympy.sin: "jnp.sin",
+    sympy.asin: "jnp.asin",
+    sympy.tan: "jnp.tan",
+    sympy.atan: "jnp.atan",
+    sympy.atan2: "jnp.atan2",
+    # Note: Also may give NaN for complex results.
+    sympy.cosh: "jnp.cosh",
+    sympy.acosh: "jnp.acosh",
+    sympy.sinh: "jnp.sinh",
+    sympy.asinh: "jnp.asinh",
+    sympy.tanh: "jnp.tanh",
+    sympy.atanh: "jnp.atanh",
+    sympy.Pow: "jnp.power",
+    sympy.re: "jnp.real",
+    sympy.im: "jnp.imag",
+    sympy.arg: "jnp.angle",
+    # Note: May raise error for ints and complexes
+    sympy.erf: "jsp.erf",
+    sympy.erfc: "jsp.erfc",
+    sympy.LessThan: "jnp.less",
+    sympy.GreaterThan: "jnp.greater",
+    sympy.And: "jnp.logical_and",
+    sympy.Or: "jnp.logical_or",
+    sympy.Not: "jnp.logical_not",
+    sympy.Max: "jnp.max",
+    sympy.Min: "jnp.min",
+    sympy.Mod: "jnp.mod",
+}
 
 def sympy2jaxtext(expr, parameters, symbols_in):
     if issubclass(expr.func, sympy.Float):

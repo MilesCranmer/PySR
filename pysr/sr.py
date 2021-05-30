@@ -13,8 +13,6 @@ import shutil
 from pathlib import Path
 from datetime import datetime
 import warnings
-from .export_jax import sympy2jax
-from .export_torch import sympy2torch
 
 global_equation_file = 'hall_of_fame.csv'
 global_n_features = None
@@ -125,11 +123,12 @@ def pysr(X, y, weights=None,
          update=True,
          temp_equation_file=False,
          output_jax_format=False,
+         output_torch_format=False,
          optimizer_algorithm="BFGS",
          optimizer_nrestarts=3,
          optimize_probability=1.0,
-         optimizer_iterations=10,
-        ):
+         optimizer_iterations=10
+         ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
     equations, but you should adjust `niterations`,
@@ -242,6 +241,8 @@ def pysr(X, y, weights=None,
         delete_tempfiles argument.
     :param output_jax_format: Whether to create a 'jax_format' column in the output,
         containing jax-callable functions and the default parameters in a jax array.
+    :param output_torch_format: Whether to create a 'torch_format' column in the output,
+        containing a torch module with trainable parameters.
     :returns: pd.DataFrame or list, Results dataframe,
         giving complexity, MSE, and equations (as strings), as well as functional
         forms. If list, each element corresponds to a dataframe of equations
@@ -337,6 +338,7 @@ def pysr(X, y, weights=None,
                  extra_sympy_mappings=extra_sympy_mappings,
                  julia_project=julia_project, loss=loss,
                  output_jax_format=output_jax_format,
+                 output_torch_format=output_torch_format,
                  multioutput=multioutput, nout=nout)
 
     kwargs = {**_set_paths(tempdir), **kwargs}
@@ -727,6 +729,7 @@ def run_feature_selection(X, y, select_k_features):
 
 def get_hof(equation_file=None, n_features=None, variable_names=None,
             extra_sympy_mappings=None, output_jax_format=False,
+            output_torch_format=False,
             multioutput=None, nout=None, **kwargs):
     """Get the equations from a hall of fame file. If no arguments
     entered, the ones used previously from a call to PySR will be used."""
@@ -771,6 +774,8 @@ def get_hof(equation_file=None, n_features=None, variable_names=None,
         lambda_format = []
         if output_jax_format:
             jax_format = []
+        if output_torch_format:
+            torch_format = []
         use_custom_variable_names = (len(variable_names) != 0)
         local_sympy_mappings = {
                 **extra_sympy_mappings,
@@ -786,10 +791,19 @@ def get_hof(equation_file=None, n_features=None, variable_names=None,
             eqn = sympify(output.loc[i, 'Equation'], locals=local_sympy_mappings)
             sympy_format.append(eqn)
             if output_jax_format:
+                from .export_jax import sympy2jax
                 func, params = sympy2jax(eqn, sympy_symbols)
                 jax_format.append({'callable': func, 'parameters': params})
+<<<<<<< HEAD
 
             lambda_format.append(CallableEquation(sympy_symbols, eqn))
+=======
+            if output_torch_format:
+                from .export_torch import sympy2torch
+                func, params = sympy2torch(eqn, sympy_symbols)
+                torch_format.append({'callable': func, 'parameters': params})
+            lambda_format.append(lambdify(sympy_symbols, eqn))
+>>>>>>> 6ba697f (Add torch format output; dont import jax/torch by default)
             curMSE = output.loc[i, 'MSE']
             curComplexity = output.loc[i, 'Complexity']
 
@@ -809,6 +823,9 @@ def get_hof(equation_file=None, n_features=None, variable_names=None,
         if output_jax_format:
             output_cols += ['jax_format']
             output['jax_format'] = jax_format
+        if output_torch_format:
+            output_cols += ['torch_format']
+            output['torch_format'] = torch_format
 
         ret_outputs.append(output[output_cols])
 
