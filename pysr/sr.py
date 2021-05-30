@@ -125,9 +125,12 @@ def pysr(X=None, y=None, weights=None,
     :param X: np.ndarray or pandas.DataFrame, 2D array. Rows are examples,
         columns are features. If pandas DataFrame, the columns are used
         for variable names (so make sure they don't contain spaces).
-    :param y: np.ndarray, 1D array. Rows are examples.
-    :param weights: np.ndarray, 1D array. Each row is how to weight the
-        mean-square-error loss on weights.
+    :param y: np.ndarray, 1D array (rows are examples) or 2D array (rows
+        are examples, columns are outputs). Putting in a 2D array will
+        trigger a search for equations for each feature of y.
+    :param weights: np.ndarray, same shape as y. Each element is how to
+        weight the mean-square-error loss for that particular element
+        of y.
     :param binary_operators: list, List of strings giving the binary operators
         in Julia's Base. Default is ["+", "-", "*", "/",].
     :param unary_operators: list, Same but for operators taking a single scalar.
@@ -227,8 +230,10 @@ def pysr(X=None, y=None, weights=None,
         delete_tempfiles argument.
     :param output_jax_format: Whether to create a 'jax_format' column in the output,
         containing jax-callable functions and the default parameters in a jax array.
-    :returns: pd.DataFrame, Results dataframe, giving complexity, MSE, and equations
-        (as strings).
+    :returns: pd.DataFrame or list, Results dataframe,
+        giving complexity, MSE, and equations (as strings), as well as functional
+        forms. If list, each element corresponds to a dataframe of equations
+        for each output.
 
     """
     if binary_operators is None:
