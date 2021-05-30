@@ -728,7 +728,7 @@ def run_feature_selection(X, y, select_k_features):
 
 def get_hof(equation_file=None, n_features=None, variable_names=None,
             extra_sympy_mappings=None, output_jax_format=False,
-            multioutput=False, nout=None, **kwargs):
+            multioutput=None, nout=None, **kwargs):
     """Get the equations from a hall of fame file. If no arguments
     entered, the ones used previously from a call to PySR will be used."""
 
