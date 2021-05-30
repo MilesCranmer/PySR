@@ -75,7 +75,7 @@ def sympy2jaxtext(expr, parameters, symbols_in):
         else:
             return f'{_func}({", ".join(args)})'
 
-def sympy2jax(equation, symbols_in):
+def sympy2jax(expression, symbols_in):
     """Returns a function f and its parameters;
     the function takes an input matrix, and a list of arguments:
             f(X, parameters)
@@ -147,8 +147,8 @@ def sympy2jax(equation, symbols_in):
         ```
     """
     parameters = []
-    functional_form_text = sympy2jaxtext(equation, parameters, symbols_in)
-    hash_string = 'A_' + str(abs(hash(str(equation) + str(symbols_in))))
+    functional_form_text = sympy2jaxtext(expression, parameters, symbols_in)
+    hash_string = 'A_' + str(abs(hash(str(expression) + str(symbols_in))))
     text = f"def {hash_string}(X, parameters):\n"
     text += "    return "
     text += functional_form_text
