@@ -2,9 +2,6 @@ import functools as ft
 import sympy
 import string
 import random
-import jax
-from jax import numpy as jnp
-from jax.scipy import special as jsp
 
 # Special since need to reduce arguments.
 MUL = 0
@@ -53,6 +50,7 @@ _jnp_func_lookup = {
     sympy.Mod: "jnp.mod",
 }
 
+
 def sympy2jaxtext(expr, parameters, symbols_in):
     if issubclass(expr.func, sympy.Float):
         parameters.append(float(expr))
@@ -70,6 +68,27 @@ def sympy2jaxtext(expr, parameters, symbols_in):
             return ' + '.join(['(' + arg + ')' for arg in args])
         else:
             return f'{_func}({", ".join(args)})'
+
+
+jax_initialized = False
+jax = None
+jnp = None
+jsp = None
+
+def _initialize_jax():
+    global jax_initialized
+    global jax
+    global jnp
+    global jsp
+
+    if not jax_initialized:
+        import jax as _jax
+        from jax import numpy as _jnp
+        from jax.scipy import special as _jsp
+        jax = _jax
+        jnp = _jnp
+        jsp = _jsp
+
 
 def sympy2jax(expression, symbols_in):
     """Returns a function f and its parameters;
@@ -142,6 +161,12 @@ def sympy2jax(expression, symbols_in):
         #                3.5427954 , -2.7479894 ], dtype=float32)
         ```
     """
+    _initialize_jax()
+    global jax_initialized
+    global jax
+    global jnp
+    global jsp
+
     parameters = []
     functional_form_text = sympy2jaxtext(expression, parameters, symbols_in)
     hash_string = 'A_' + str(abs(hash(str(expression) + str(symbols_in))))

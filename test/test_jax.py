@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from pysr import pysr, sympy2jax
+from pysr import sympy2jax
 from jax import numpy as jnp
 from jax import random
 from jax import grad
