@@ -411,9 +411,7 @@ def _cmd_runner(command, **kwargs):
                                 .replace('\\r',      '\r')
                                 .encode(sys.stdout.encoding, errors='replace'))
 
-            print(decoded_line, end='')
-
-
+            sys.stdout.buffer.write(decoded_line)
 
         process.stdout.close()
         process.wait()
