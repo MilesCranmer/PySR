@@ -173,7 +173,7 @@ def sympy2jax(expression, symbols_in, selection=None):
     text = f"def {hash_string}(X, parameters):\n"
     if selection is not None:
         # Impose the feature selection:
-        text += f"    X = X[:, {list(selection)}]"
+        text += f"    X = X[:, {list(selection)}]\n"
     text += "    return "
     text += functional_form_text
     ldict = {}
