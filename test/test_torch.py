@@ -18,7 +18,7 @@ class TestTorch(unittest.TestCase):
     def test_pipeline(self):
         X = np.random.randn(100, 10)
         equations = pd.DataFrame({
-            'Equation': ['1.0', 'cos(x1)', 'square(cos(x1))'],
+            'Equation': ['1.0', 'cos(x0)', 'square(cos(x0))'],
             'MSE': [1.0, 0.1, 1e-5],
             'Complexity': [1, 2, 3]
             })
@@ -27,12 +27,12 @@ class TestTorch(unittest.TestCase):
                 'equation_file.csv.bkup', sep='|')
 
         equations = get_hof(
-                'equation_file.csv', n_features=2, variables_names='x0 x1'.split(' '),
+                'equation_file.csv', n_features=2, variables_names='x1 x2 x3'.split(' '),
                 extra_sympy_mappings={}, output_torch_format=True,
                 multioutput=False, nout=1, selection=[1, 2, 3])
 
         tformat = equations.iloc[-1].torch_format
         np.testing.assert_almost_equal(
                 tformat(torch.tensor(X)).detach().numpy(),
-                np.square(np.cos(X[:, 0]))
+                np.square(np.cos(X[:, 1])) #Selection 1st feature
         )
