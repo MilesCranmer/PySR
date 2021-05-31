@@ -84,6 +84,7 @@ def _initialize_torch():
         }
 
         class _Node(torch.nn.Module):
+            """SympyTorch code from https://github.com/patrick-kidger/sympytorch"""
             def __init__(self, *, expr, _memodict, _func_lookup, **kwargs):
                 super().__init__(**kwargs)
 
@@ -134,6 +135,7 @@ def _initialize_torch():
 
 
         class SingleSymPyModule(torch.nn.Module):
+            """SympyTorch code from https://github.com/patrick-kidger/sympytorch"""
             def __init__(self, expression, symbols_in,
                     extra_funcs=None, **kwargs):
                 super().__init__(**kwargs)
@@ -149,10 +151,6 @@ def _initialize_torch():
 
             def __repr__(self):
                 return f"{type(self).__name__}(expression={self._expression_string})"
-
-            def sympy(self):
-                _memodict = {}
-                return self._node.sympy(_memodict)
 
             def forward(self, X):
                 symbols = {symbol: X[:, i]
