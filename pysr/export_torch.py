@@ -121,30 +121,6 @@ def _initialize_torch():
                         args.append(arg_)
                     self._args = torch.nn.ModuleList(args)
 
-            def sympy(self, _memodict):
-                if issubclass(self._sympy_func, sympy.Float):
-                    return self._sympy_func(self._value.item())
-                elif issubclass(self._sympy_func, sympy.UnevaluatedExpr):
-                    return self._sympy_func(self._value.item())
-                elif issubclass(self._sympy_func, sympy.Integer):
-                    return self._sympy_func(self._value)
-                elif issubclass(self._sympy_func, sympy.Symbol):
-                    return self._sympy_func(self._name)
-                else:
-                    if issubclass(self._sympy_func, (sympy.Min, sympy.Max)):
-                        evaluate = False
-                    else:
-                        evaluate = True
-                    args = []
-                    for arg in self._args:
-                        try:
-                            arg_ = _memodict[arg]
-                        except KeyError:
-                            arg_ = arg.sympy(_memodict)
-                            _memodict[arg] = arg_
-                        args.append(arg_)
-                    return self._sympy_func(*args, evaluate=evaluate)
-
             def forward(self, memodict):
                 args = []
                 for arg in self._args:
