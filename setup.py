@@ -12,11 +12,9 @@ install_sympytorch = torch_installed
 if install_sympytorch:
     extra_installs.append('sympytorch')
 
-print(extra_installs)
-
 setuptools.setup(
     name="pysr", # Replace with your own username
-    version="0.6.0rc1",
+    version="0.6.0rc2",
     author="Miles Cranmer",
     author_email="miles.cranmer@gmail.com",
     description="Simple and efficient symbolic regression",
