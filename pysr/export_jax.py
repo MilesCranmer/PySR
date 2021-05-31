@@ -90,7 +90,7 @@ def _initialize_jax():
         jsp = _jsp
 
 
-def sympy2jax(expression, symbols_in):
+def sympy2jax(expression, symbols_in, selection=None):
     """Returns a function f and its parameters;
     the function takes an input matrix, and a list of arguments:
             f(X, parameters)
@@ -171,6 +171,9 @@ def sympy2jax(expression, symbols_in):
     functional_form_text = sympy2jaxtext(expression, parameters, symbols_in)
     hash_string = 'A_' + str(abs(hash(str(expression) + str(symbols_in))))
     text = f"def {hash_string}(X, parameters):\n"
+    if selection is not None:
+        # Impose the feature selection:
+        text += f"    X = X[:, {list(selection)}]"
     text += "    return "
     text += functional_form_text
     ldict = {}

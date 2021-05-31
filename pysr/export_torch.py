@@ -137,7 +137,7 @@ def _initialize_torch():
         class SingleSymPyModule(torch.nn.Module):
             """SympyTorch code from https://github.com/patrick-kidger/sympytorch"""
             def __init__(self, expression, symbols_in,
-                    extra_funcs=None, **kwargs):
+                         selection=None, extra_funcs=None, **kwargs):
                 super().__init__(**kwargs)
                 
                 if extra_funcs is None:
@@ -147,18 +147,22 @@ def _initialize_torch():
                 _memodict = {}
                 self._node = _Node(expr=expression, _memodict=_memodict, _func_lookup=_func_lookup)
                 self._expression_string = str(expression)
+                self._selection = selection
                 self.symbols_in = [str(symbol) for symbol in symbols_in]
 
             def __repr__(self):
                 return f"{type(self).__name__}(expression={self._expression_string})"
 
             def forward(self, X):
+                if self._selection is not None:
+                    X = X[:, self._selection]
                 symbols = {symbol: X[:, i]
                            for i, symbol in enumerate(self.symbols_in)}
                 return self._node(symbols)
 
 
-def sympy2torch(expression, symbols_in, extra_torch_mappings=None):
+def sympy2torch(expression, symbols_in,
+                selection=None, extra_torch_mappings=None):
     """Returns a module for a given sympy expression with trainable parameters;
 
     This function will assume the input to the module is a matrix X, where
@@ -168,4 +172,6 @@ def sympy2torch(expression, symbols_in, extra_torch_mappings=None):
 
     _initialize_torch()
 
-    return SingleSymPyModule(expression, symbols_in, extra_funcs=extra_torch_mappings)
+    return SingleSymPyModule(expression, symbols_in,
+                             selection=selection,
+                             extra_funcs=extra_torch_mappings)
