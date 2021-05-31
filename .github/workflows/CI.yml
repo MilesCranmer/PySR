@@ -73,7 +73,7 @@ jobs:
         run: coverage run --append --source=pysr --omit='*/feynman_problems.py' -m unittest test.test_jax
         shell: bash
       - name: "Install Torch"
-        run: pip install torch # (optional import)
+        run: pip install torch sympytorch # (optional import)
         shell: bash
       - name: "Run Torch tests"
         run: coverage run --append --source=pysr --omit='*/feynman_problems.py' -m unittest test.test_torch
