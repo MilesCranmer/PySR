@@ -1,8 +1,3 @@
-#####
-# From https://github.com/patrick-kidger/sympytorch
-# Copied here to allow PySR-specific tweaks
-#####
-
 import collections as co
 import functools as ft
 import sympy
@@ -23,7 +18,7 @@ def _initialize_torch():
     global sympytorch
     global PySRTorchModule
 
-    # Way to lazy load torch, only if this is called,
+    # Way to lazy load torch and sympytorch, only if this is called,
     # but still allow this module to be loaded in __init__
     if not torch_initialized:
         try:
@@ -35,7 +30,6 @@ def _initialize_torch():
 
 
         class PySRTorchModule(torch.nn.Module):
-            """SympyTorch code from https://github.com/patrick-kidger/sympytorch"""
             def __init__(self, *, expression, symbols_in,
                          selection=None, extra_funcs=None, **kwargs):
                 super().__init__(**kwargs)
