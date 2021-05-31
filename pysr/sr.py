@@ -800,8 +800,8 @@ def get_hof(equation_file=None, n_features=None, variable_names=None,
 =======
             if output_torch_format:
                 from .export_torch import sympy2torch
-                func, params = sympy2torch(eqn, sympy_symbols)
-                torch_format.append({'callable': func, 'parameters': params})
+                module = sympy2torch(eqn, sympy_symbols)
+                torch_format.append(module)
             lambda_format.append(lambdify(sympy_symbols, eqn))
 >>>>>>> 6ba697f (Add torch format output; dont import jax/torch by default)
             curMSE = output.loc[i, 'MSE']
