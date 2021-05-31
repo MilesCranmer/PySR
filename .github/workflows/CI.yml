@@ -59,14 +59,21 @@ jobs:
             python -m pip install --upgrade pip
             pip install -r requirements.txt
             python setup.py install
+      - name: "Install Coverage tool"
+        run: pip install coverage
       - name: "Install JAX"
         if: matrix.os != 'windows-latest'
         run: pip install jax jaxlib # (optional import)
         shell: bash
       - name: "Run tests"
-        run: python test/test.py
+        run: coverage run --source=pysr --omit=pysr/feynman_problems.py test/test.py
         shell: bash
       - name: "Run JAX tests"
         if: matrix.os != 'windows-latest'
-        run: python test/test_jax.py
+        run: coverage run --append --source=pysr --omit=pysr/feynman_problems.py test/test_jax.py
         shell: bash
+      - name: Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: .coverage
