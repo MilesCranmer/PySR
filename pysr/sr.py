@@ -722,10 +722,10 @@ def run_feature_selection(X, y, select_k_features):
         the k most important features in X, returning indices for those
         features as output."""
 
-    from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+    from sklearn.ensemble import RandomForestRegressor
     from sklearn.feature_selection import SelectFromModel, SelectKBest
 
-    clf = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth=1, random_state=0, loss='ls') #RandomForestRegressor()
+    clf = RandomForestRegressor(n_estimators=100, max_depth=3, random_state=0)
     clf.fit(X, y)
     selector = SelectFromModel(clf, threshold=-np.inf,
             max_features=select_k_features, prefit=True)
