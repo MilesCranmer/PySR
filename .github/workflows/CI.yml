@@ -68,14 +68,14 @@ jobs:
       - name: "Run tests"
         run: |
             cd test
-            coverage run --source=pysr --omit=pysr.feynman_problems -m unittest test
+            coverage run --source=pysr --omit=feynman_problems.py -m unittest test
             cd ..
         shell: bash
       - name: "Run JAX tests"
         if: matrix.os != 'windows-latest'
         run: |
             cd test
-            coverage run --append --source=pysr --omit=pysr.feynman_problems -m unittest test_jax
+            coverage run --append --source=pysr --omit=feynman_problems.py -m unittest test_jax
             cd ..
         shell: bash
       - name: Coveralls
