@@ -160,7 +160,7 @@ def _initialize_torch():
                 return self._node(symbols)
 
 
-def sympy2torch(expression, symbols_in):
+def sympy2torch(expression, symbols_in, extra_torch_mappings=None):
     """Returns a module for a given sympy expression with trainable parameters;
 
     This function will assume the input to the module is a matrix X, where
@@ -170,4 +170,4 @@ def sympy2torch(expression, symbols_in):
 
     _initialize_torch()
 
-    return SingleSymPyModule(expression, symbols_in)
+    return SingleSymPyModule(expression, symbols_in, extra_funcs=extra_torch_mappings)
