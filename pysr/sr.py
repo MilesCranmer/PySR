@@ -61,61 +61,60 @@ sympy_mappings = {
     'gamma': lambda x   : sympy.gamma(x),
 }
 
-def pysr(X=None, y=None, weights=None,
-            binary_operators=None,
-            unary_operators=None,
-            procs=4,
-            loss='L2DistLoss()',
-            populations=20,
-            niterations=100,
-            ncyclesperiteration=300,
-            alpha=0.1,
-            annealing=False,
-            fractionReplaced=0.10,
-            fractionReplacedHof=0.10,
-            npop=1000,
-            parsimony=1e-4,
-            migration=True,
-            hofMigration=True,
-            shouldOptimizeConstants=True,
-            topn=10,
-            weightAddNode=1,
-            weightInsertNode=3,
-            weightDeleteNode=3,
-            weightDoNothing=1,
-            weightMutateConstant=10,
-            weightMutateOperator=1,
-            weightRandomize=1,
-            weightSimplify=0.01,
-            perturbationFactor=1.0,
-            timeout=None,
-            extra_sympy_mappings=None,
-            equation_file=None,
-            test='simple1',
-            verbosity=1e9,
-            progress=True,
-            maxsize=20,
-            fast_cycle=False,
-            maxdepth=None,
-            variable_names=None,
-            batching=False,
-            batchSize=50,
-            select_k_features=None,
-            warmupMaxsizeBy=0.0,
-            constraints=None,
-            useFrequency=True,
-            tempdir=None,
-            delete_tempfiles=True,
-            julia_optimization=3,
-            julia_project=None,
-            user_input=True,
-            update=True,
-            temp_equation_file=False,
-            output_jax_format=False,
-            optimizer_algorithm="BFGS",
-            optimizer_nrestarts=3,
-            optimize_probability=1.0,
-            optimizer_iterations=10,
+def pysr(X, y, weights=None,
+         binary_operators=None,
+         unary_operators=None,
+         procs=4,
+         loss='L2DistLoss()',
+         populations=20,
+         niterations=100,
+         ncyclesperiteration=300,
+         alpha=0.1,
+         annealing=False,
+         fractionReplaced=0.10,
+         fractionReplacedHof=0.10,
+         npop=1000,
+         parsimony=1e-4,
+         migration=True,
+         hofMigration=True,
+         shouldOptimizeConstants=True,
+         topn=10,
+         weightAddNode=1,
+         weightInsertNode=3,
+         weightDeleteNode=3,
+         weightDoNothing=1,
+         weightMutateConstant=10,
+         weightMutateOperator=1,
+         weightRandomize=1,
+         weightSimplify=0.01,
+         perturbationFactor=1.0,
+         timeout=None,
+         extra_sympy_mappings=None,
+         equation_file=None,
+         verbosity=1e9,
+         progress=True,
+         maxsize=20,
+         fast_cycle=False,
+         maxdepth=None,
+         variable_names=None,
+         batching=False,
+         batchSize=50,
+         select_k_features=None,
+         warmupMaxsizeBy=0.0,
+         constraints=None,
+         useFrequency=True,
+         tempdir=None,
+         delete_tempfiles=True,
+         julia_optimization=3,
+         julia_project=None,
+         user_input=True,
+         update=True,
+         temp_equation_file=False,
+         output_jax_format=False,
+         optimizer_algorithm="BFGS",
+         optimizer_nrestarts=3,
+         optimize_probability=1.0,
+         optimizer_iterations=10,
         ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
@@ -184,7 +183,6 @@ def pysr(X=None, y=None, weights=None,
         constant parts by evaluation
     :param timeout: float, Time in seconds to timeout search
     :param equation_file: str, Where to save the files (.csv separated by |)
-    :param test: str, What test to run, if X,y not passed.
     :param verbosity: int, What verbosity level to use. 0 means minimal print statements.
     :param progress: bool, Whether to use a progress bar instead of printing to stdout.
     :param maxsize: int, Max size of an equation.
@@ -280,8 +278,6 @@ def pysr(X=None, y=None, weights=None,
         binary_operators = [binary_operators]
     if isinstance(unary_operators, str):
         unary_operators = [unary_operators]
-    if X is None:
-        X, y = _using_test_input(X, test, y)
 
     if len(y.shape) == 1 or (len(y.shape) == 2 and y.shape[1] == 1):
         multioutput = False
@@ -642,23 +638,6 @@ def _create_inline_operators(binary_operators, unary_operators, **kwargs):
                 function_name = op[:first_non_char]
                 op_list[i] = function_name
     return def_hyperparams
-
-
-def _using_test_input(X, test, y):
-    if test == 'simple1':
-        eval_str = "np.sign(X[:, 2])*np.abs(X[:, 2])**2.5 + 5*np.cos(X[:, 3]) - 5"
-    elif test == 'simple2':
-        eval_str = "np.sign(X[:, 2])*np.abs(X[:, 2])**3.5 + 1/(np.abs(X[:, 0])+1)"
-    elif test == 'simple3':
-        eval_str = "np.exp(X[:, 0]/2) + 12.0 + np.log(np.abs(X[:, 0])*10 + 1)"
-    elif test == 'simple4':
-        eval_str = "1.0 + 3*X[:, 0]**2 - 0.5*X[:, 0]**3 + 0.1*X[:, 0]**4"
-    elif test == 'simple5':
-        eval_str = "(np.exp(X[:, 3]) + 3)/(np.abs(X[:, 1]) + np.cos(X[:, 0]) + 1.1)"
-    X = np.random.randn(100, 5) * 3
-    y = eval(eval_str)
-    print("Running on", eval_str)
-    return X, y
 
 
 def _handle_feature_selection(X, select_k_features, use_custom_variable_names, variable_names, y):
