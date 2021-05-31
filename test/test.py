@@ -60,13 +60,15 @@ class TestBest(unittest.TestCase):
                 multioutput=False, nout=1)
 
     def test_best(self):
+        self.assertEqual(best(self.equations), sympy.cos(sympy.Symbol('x0'))**2)
         self.assertEqual(best(), sympy.cos(sympy.Symbol('x0'))**2)
 
     def test_best_tex(self):
+        self.assertEqual(best_tex(self.equations), '\\cos^{2}{\\left(x_{0} \\right)}')
         self.assertEqual(best_tex(), '\\cos^{2}{\\left(x_{0} \\right)}')
 
     def test_best_lambda(self):
-        f = best_callable()
         X = np.random.randn(10, 2)
         y = np.cos(X[:, 0])**2
-        np.testing.assert_almost_equal(f(X), y)
+        for f in [best_callable(), best_callable(self.equations))]:
+            np.testing.assert_almost_equal(f(X), y)
