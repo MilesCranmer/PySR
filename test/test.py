@@ -112,11 +112,12 @@ class TestFeatureSelection(unittest.TestCase):
         X = np.random.randn(20000, 5)
         y = X[:, 2]**2 + X[:, 3]**2
         var_names = [f'x{i}' for i in range(5)]
-        selected_X, selected_var_names = _handle_feature_selection(
+        selected_X, selected_var_names, selection = _handle_feature_selection(
                 X, select_k_features=2,
                 use_custom_variable_names=True,
                 variable_names=[f'x{i}' for i in range(5)],
                 y=y)
+        self.assertTrue((2 in selection) and (3 in selection))
         self.assertEqual(set(selected_var_names), set('x2 x3'.split(' ')))
         np.testing.assert_array_equal(
                 np.sort(selected_X, axis=1),

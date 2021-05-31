@@ -14,12 +14,19 @@ from pathlib import Path
 from datetime import datetime
 import warnings
 
-global_equation_file = 'hall_of_fame.csv'
-global_n_features = None
-global_variable_names = []
-global_extra_sympy_mappings = {}
-global_multioutput = False
-global_nout = 1
+global_state = dict(
+    equation_file='hall_of_fame.csv',
+    n_features=None,
+    variable_names=[],
+    extra_sympy_mappings={},
+    extra_torch_mappings={},
+    extra_jax_mappings={},
+    output_jax_format=False,
+    output_torch_format=False,
+    multioutput=False,
+    nout=1,
+    selection=None
+)
 
 sympy_mappings = {
     'div':  lambda x, y : x/y,
@@ -62,16 +69,20 @@ sympy_mappings = {
 
 class CallableEquation(object):
     """Simple wrapper for numpy lambda functions built with sympy"""
-    def __init__(self, sympy_symbols, eqn):
+    def __init__(self, sympy_symbols, eqn, selection=None):
         self._sympy = eqn
         self._sympy_symbols = sympy_symbols
+        self._selection = selection
         self._lambda = lambdify(sympy_symbols, eqn)
 
     def __repr__(self):
         return f"PySRFunction(X=>{self._sympy})"
 
     def __call__(self, X):
-        return self._lambda(*X.T)
+        if self._selection is not None:
+            return self._lambda(*X[:, self._selection].T)
+        else:
+            return self._lambda(*X.T)
 
 def pysr(X, y, weights=None,
          binary_operators=None,
@@ -284,7 +295,7 @@ def pysr(X, y, weights=None,
     if maxsize > 40:
         warnings.warn("Note: Using a large maxsize for the equation search will be slow and use significant memory. You should consider turning `useFrequency` to False, and perhaps use `warmupMaxsizeBy`.")
 
-    X, variable_names = _handle_feature_selection(
+    X, variable_names, selection = _handle_feature_selection(
             X, select_k_features,
             use_custom_variable_names, variable_names, y
         )
@@ -343,6 +354,7 @@ def pysr(X, y, weights=None,
                  julia_project=julia_project, loss=loss,
                  output_jax_format=output_jax_format,
                  output_torch_format=output_torch_format,
+                 selection=selection,
                  multioutput=multioutput, nout=nout)
 
     kwargs = {**_set_paths(tempdir), **kwargs}
@@ -391,21 +403,13 @@ def pysr(X, y, weights=None,
     return equations
 
 
+def _set_globals(X, **kwargs):
+    global global_state
 
-def _set_globals(X, equation_file, extra_sympy_mappings, variable_names,
-                multioutput, nout, **kwargs):
-    global global_n_features
-    global global_equation_file
-    global global_variable_names
-    global global_extra_sympy_mappings
-    global global_multioutput
-    global global_nout
-    global_n_features = X.shape[1]
-    global_equation_file = equation_file
-    global_variable_names = variable_names
-    global_extra_sympy_mappings = extra_sympy_mappings
-    global_multioutput = multioutput
-    global_nout = nout
+    global_state['n_features'] = X.shape[1]
+    for key, value in kwargs.items():
+        if key in global_state:
+            global_state[key] = value
 
 
 def _final_pysr_process(julia_optimization, runfile_filename, timeout, **kwargs):
@@ -668,7 +672,9 @@ def _handle_feature_selection(X, select_k_features, use_custom_variable_names, v
 
         if use_custom_variable_names:
             variable_names = [variable_names[selection[i]] for i in range(len(selection))]
-    return X, variable_names
+    else:
+        selection = None
+    return X, variable_names, selection
 
 
 def _set_paths(tempdir):
@@ -732,33 +738,38 @@ def run_feature_selection(X, y, select_k_features):
     return selector.get_support(indices=True)
 
 def get_hof(equation_file=None, n_features=None, variable_names=None,
-            extra_sympy_mappings=None, output_jax_format=False,
-            output_torch_format=False,
+            output_jax_format=None, output_torch_format=None,
+            selection=None, extra_sympy_mappings=None, 
             extra_jax_mappings=None, extra_torch_mappings=None,
             multioutput=None, nout=None, **kwargs):
     """Get the equations from a hall of fame file. If no arguments
     entered, the ones used previously from a call to PySR will be used."""
 
-    global global_n_features
-    global global_equation_file
-    global global_variable_names
-    global global_extra_sympy_mappings
-    global global_multioutput
-    global global_nout
+    global global_state
 
-    if equation_file is None: equation_file = global_equation_file
-    if n_features is None: n_features = global_n_features
-    if variable_names is None: variable_names = global_variable_names
-    if extra_sympy_mappings is None: extra_sympy_mappings = global_extra_sympy_mappings
-    if multioutput is None: multioutput = global_multioutput
-    if nout is None: nout = global_nout
+    if equation_file is None: equation_file = global_state['equation_file']
+    if n_features is None: n_features = global_state['n_features']
+    if variable_names is None: variable_names = global_state['variable_names']
+    if extra_sympy_mappings is None: extra_sympy_mappings = global_state['extra_sympy_mappings']
+    if extra_jax_mappings is None: extra_jax_mappings = global_state['extra_jax_mappings']
+    if extra_torch_mappings is None: extra_torch_mappings = global_state['extra_torch_mappings']
+    if output_torch_format is None: output_torch_format = global_state['output_torch_format']
+    if output_jax_format is None: output_jax_format = global_state['output_jax_format']
+    if multioutput is None: multioutput = global_state['multioutput']
+    if nout is None: nout = global_state['nout']
 
-    global_equation_file = equation_file
-    global_n_features = n_features
-    global_variable_names = variable_names
-    global_extra_sympy_mappings = extra_sympy_mappings
-    global_multioutput = multioutput
-    global_nout = nout
+    global_state['selection'] = selection
+    global_state['equation_file'] = equation_file
+    global_state['n_features'] = n_features
+    global_state['variable_names'] = variable_names
+    global_state['extra_sympy_mappings'] = extra_sympy_mappings
+    global_state['extra_jax_mappings'] = extra_jax_mappings
+    global_state['extra_torch_mappings'] = extra_torch_mappings
+    global_state['output_torch_format'] = output_torch_format
+    global_state['output_jax_format'] = output_jax_format
+    global_state['multioutput'] = multioutput
+    global_state['nout'] = nout
+    global_state['selection'] = selection
 
     try:
         if multioutput:
@@ -797,18 +808,18 @@ def get_hof(equation_file=None, n_features=None, variable_names=None,
             sympy_format.append(eqn)
 
             # Numpy:
-            lambda_format.append(CallableEquation(sympy_symbols, eqn))
+            lambda_format.append(CallableEquation(sympy_symbols, eqn, selection))
 
             # JAX:
             if output_jax_format:
                 from .export_jax import sympy2jax
-                func, params = sympy2jax(eqn, sympy_symbols)
+                func, params = sympy2jax(eqn, sympy_symbols, selection)
                 jax_format.append({'callable': func, 'parameters': params})
 
             # Torch:
             if output_torch_format:
                 from .export_torch import sympy2torch
-                module = sympy2torch(eqn, sympy_symbols)
+                module = sympy2torch(eqn, sympy_symbols, selection)
                 torch_format.append(module)
 
             curMSE = output.loc[i, 'MSE']
