@@ -1,21 +1,20 @@
 import unittest
 import numpy as np
-from pysr import sympy2jax, get_hof
 import pandas as pd
-from jax import numpy as jnp
-from jax import random
-from jax import grad
+from pysr import sympy2torch, get_hof
+import torch
 import sympy
 
-class TestJAX(unittest.TestCase):
-    def test_sympy2jax(self):
+class TestTorch(unittest.TestCase):
+    def test_sympy2torch(self):
         x, y, z = sympy.symbols('x y z')
         cosx = 1.0 * sympy.cos(x) + y
-        key = random.PRNGKey(0)
-        X = random.normal(key, (1000, 2))
-        true = 1.0 * jnp.cos(X[:, 0]) + X[:, 1]
-        f, params = sympy2jax(cosx, [x, y, z])
-        self.assertTrue(jnp.all(jnp.isclose(f(X, params), true)).item())
+        X = torch.randn((1000, 3))
+        true = 1.0 * torch.cos(X[:, 0]) + X[:, 1]
+        torch_module = sympy2torch(cosx, [x, y, z])
+        self.assertTrue(
+                np.all(np.isclose(torch_module(X).detach().numpy(), true.detach().numpy()))
+        )
     def test_pipeline(self):
         X = np.random.randn(100, 2)
         equations = pd.DataFrame({
@@ -29,11 +28,11 @@ class TestJAX(unittest.TestCase):
 
         equations = get_hof(
                 'equation_file.csv', n_features=2, variables_names='x0 x1'.split(' '),
-                extra_sympy_mappings={}, output_jax_format=True,
+                extra_sympy_mappings={}, output_torch_format=True,
                 multioutput=False, nout=1)
 
-        jformat = equations.iloc[-1].jax_format
+        tformat = equations.iloc[-1].torch_format
         np.testing.assert_almost_equal(
-                np.array(jformat['callable'](jnp.array(X), jformat['parameters'])),
+                tformat(torch.tensor(X)).detach().numpy(),
                 np.square(np.cos(X[:, 0]))
         )

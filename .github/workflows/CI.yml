@@ -61,16 +61,22 @@ jobs:
             python setup.py install
       - name: "Install Coverage tool"
         run: pip install coverage coveralls
+      - name: "Run tests"
+        run: coverage run --source=pysr --omit='*/feynman_problems.py' -m unittest test.test
+        shell: bash
       - name: "Install JAX"
         if: matrix.os != 'windows-latest'
         run: pip install jax jaxlib # (optional import)
         shell: bash
-      - name: "Run tests"
-        run: coverage run --source=pysr --omit='*/feynman_problems.py' -m unittest test.test
-        shell: bash
       - name: "Run JAX tests"
         if: matrix.os != 'windows-latest'
         run: coverage run --append --source=pysr --omit='*/feynman_problems.py' -m unittest test.test_jax
+        shell: bash
+      - name: "Install Torch"
+        run: pip install torch # (optional import)
+        shell: bash
+      - name: "Run Torch tests"
+        run: coverage run --append --source=pysr --omit='*/feynman_problems.py' -m unittest test.test_torch
         shell: bash
       - name: Coveralls
         env:
