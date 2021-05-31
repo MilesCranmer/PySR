@@ -6,10 +6,13 @@ import torch
 import sympy
 
 class TestTorch(unittest.TestCase):
+    def setUp(self):
+        np.random.seed(0)
+
     def test_sympy2torch(self):
         x, y, z = sympy.symbols('x y z')
         cosx = 1.0 * sympy.cos(x) + y
-        X = torch.randn((1000, 3))
+        X = torch.tensor(np.random.randn(1000, 3))
         true = 1.0 * torch.cos(X[:, 0]) + X[:, 1]
         torch_module = sympy2torch(cosx, [x, y, z])
         self.assertTrue(
@@ -34,5 +37,6 @@ class TestTorch(unittest.TestCase):
         tformat = equations.iloc[-1].torch_format
         np.testing.assert_almost_equal(
                 tformat(torch.tensor(X)).detach().numpy(),
-                np.square(np.cos(X[:, 1])) #Selection 1st feature
+                np.square(np.cos(X[:, 1])), #Selection 1st feature
+                decimal=4
         )

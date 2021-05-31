@@ -53,10 +53,12 @@ class TestPipeline(unittest.TestCase):
 
         np.testing.assert_almost_equal(
                 best_callable()[0](self.X),
-                self.X[:, 0]**2)
+                self.X[:, 0]**2,
+                decimal=4)
         np.testing.assert_almost_equal(
                 best_callable()[1](self.X),
-                self.X[:, 1]**2)
+                self.X[:, 1]**2,
+                decimal=4)
 
     def test_empty_operators_single_input(self):
         X = np.random.randn(100, 1)
@@ -96,19 +98,20 @@ class TestBest(unittest.TestCase):
         X = np.random.randn(10, 2)
         y = np.cos(X[:, 0])**2
         for f in [best_callable(), best_callable(self.equations)]:
-            np.testing.assert_almost_equal(f(X), y)
+            np.testing.assert_almost_equal(f(X), y, decimal=4)
 
 
 class TestFeatureSelection(unittest.TestCase):
-    def test_feature_selection(self):
+    def setUp(self):
         np.random.seed(0)
-        X = np.random.randn(20001, 5)
+
+    def test_feature_selection(self):
+        X = np.random.randn(20000, 5)
         y = X[:, 2]**2 + X[:, 3]**2
         selected = run_feature_selection(X, y, select_k_features=2)
         self.assertEqual(sorted(selected), [2, 3])
 
     def test_feature_selection_handler(self):
-        np.random.seed(0)
         X = np.random.randn(20000, 5)
         y = X[:, 2]**2 + X[:, 3]**2
         var_names = [f'x{i}' for i in range(5)]

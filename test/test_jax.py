@@ -8,6 +8,9 @@ from jax import grad
 import sympy
 
 class TestJAX(unittest.TestCase):
+    def setUp(self):
+        np.random.seed(0)
+
     def test_sympy2jax(self):
         x, y, z = sympy.symbols('x y z')
         cosx = 1.0 * sympy.cos(x) + y
@@ -35,5 +38,6 @@ class TestJAX(unittest.TestCase):
         jformat = equations.iloc[-1].jax_format
         np.testing.assert_almost_equal(
                 np.array(jformat['callable'](jnp.array(X), jformat['parameters'])),
-                np.square(np.cos(X[:, 1])) # Select feature 1
+                np.square(np.cos(X[:, 1])), # Select feature 1
+                decimal=4
         )
