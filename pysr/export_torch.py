@@ -1,11 +1,5 @@
 import collections as co
-import functools as ft
 import sympy
-
-def _reduce(fn):
-    def fn_(*args):
-        return ft.reduce(fn, args)
-    return fn_
 
 torch_initialized = False
 torch = None
