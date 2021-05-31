@@ -117,7 +117,7 @@ def pysr(X, y, weights=None,
          extra_jax_mappings=None,
          equation_file=None,
          verbosity=1e9,
-         progress=True,
+         progress=None,
          maxsize=20,
          fast_cycle=False,
          maxdepth=None,
@@ -273,6 +273,16 @@ def pysr(X, y, weights=None,
     if constraints is None:
         constraints = {}
 
+    if progress is not None:
+        if progress and ('buffer' in sys.stdout.__dir__()):
+            warnings.warn("Note: it looks like you are running in Jupyter. The progress bar will be turned off.")
+            progress = False
+    else:
+        if 'buffer' in sys.stdout.__dir__():
+            progress = True
+        else:
+            progress = False
+
     assert optimizer_algorithm in ['NelderMead', 'BFGS']
 
     if isinstance(X, pd.DataFrame):
@@ -421,7 +431,7 @@ def _final_pysr_process(julia_optimization, runfile_filename, timeout, **kwargs)
         command = [f'timeout', f'{timeout}'] + command
     _cmd_runner(command, **kwargs)
 
-def _cmd_runner(command, **kwargs):
+def _cmd_runner(command, progress, **kwargs):
     if kwargs['verbosity'] > 0:
         print("Running on", ' '.join(command))
     process = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=-1)
@@ -429,15 +439,19 @@ def _cmd_runner(command, **kwargs):
         while True:
             line = process.stdout.readline()
             if not line: break
-            decoded_line = (line.decode('utf-8')
-                                .replace('\\033[K',  '\033[K')
-                                .replace('\\033[1A', '\033[1A')
-                                .replace('\\033[1B', '\033[1B')
-                                .replace('\\r',      '\r')
-                                .encode(sys.stdout.encoding, errors='replace'))
-
-            sys.stdout.buffer.write(decoded_line)
-            sys.stdout.flush()
+            decoded_line = line.decode('utf-8')
+            if progress:
+                decoded_line = (decoded_line
+                                    .replace('\\033[K',  '\033[K')
+                                    .replace('\\033[1A', '\033[1A')
+                                    .replace('\\033[1B', '\033[1B')
+                                    .replace('\\r',      '\r')
+                                    .encode(sys.stdout.encoding, errors='replace')
+                                    )
+                sys.stdout.buffer.write(decoded_line)
+                sys.stdout.flush()
+            else:
+                print(decoded_line, end='')
 
         process.stdout.close()
         process.wait()
