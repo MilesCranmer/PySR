@@ -25,7 +25,7 @@ jobs:
       matrix:
         julia-version: ['1.5.0', '1.6.1']
         python-version: ['3.6', '3.8']
-        os: [ubuntu-latest]
+        os: [windows-latest]
     
     steps:
       - uses: actions/checkout@v1.0.0
@@ -62,35 +62,11 @@ jobs:
       - name: "Install Coverage tool"
         run: pip install coverage coveralls
       - name: "Run tests"
-        run: coverage run --source=pysr --omit='*/feynman_problems.py' -m unittest test.test
-        shell: bash
-      - name: "Install JAX"
-        run: pip install jax jaxlib # (optional import)
-        shell: bash
-      - name: "Run JAX tests"
-        run: coverage run --append --source=pysr --omit='*/feynman_problems.py' -m unittest test.test_jax
+        run: python -m unittest test.test
         shell: bash
       - name: "Install Torch"
         run: pip install torch # (optional import)
         shell: bash
       - name: "Run Torch tests"
-        run: coverage run --append --source=pysr --omit='*/feynman_problems.py' -m unittest test.test_torch
+        run: python -m unittest test.test_torch
         shell: bash
-      - name: Coveralls
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COVERALLS_FLAG_NAME: ${{ matrix.test-name }}
-          COVERALLS_PARALLEL: true
-        run: coveralls --service=github
-  coveralls:
-    name: Indicate completion to coveralls.io
-    needs: test
-    runs-on: ubuntu-latest
-    container: python:3-slim
-    steps:
-      - name: Finished
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-            pip install coveralls
-            coveralls --finish
