@@ -1,18 +1,20 @@
 # [PySR](https://github.com/MilesCranmer/PySR)
+**Parallelized symbolic regression built on Julia, and interfaced by Python.
+Uses regularized evolution, simulated annealing, and gradient-free optimization.**
+| **Docs** | **pip** |
+|---|---|
+|[![Documentation Status](https://readthedocs.org/projects/pysr/badge/?version=latest)](https://pysr.readthedocs.io/en/latest/?badge=latest)|[![PyPI version](https://badge.fury.io/py/pysr.svg)](https://badge.fury.io/py/pysr)|
 
 (pronounced like *py* as in python, and then *sur* as in surface)
 
-[![Documentation Status](https://readthedocs.org/projects/pysr/badge/?version=latest)](https://pysr.readthedocs.io/en/latest/?badge=latest)
-[![PyPI version](https://badge.fury.io/py/pysr.svg)](https://badge.fury.io/py/pysr)
-![.github/workflows/CI.yml](https://github.com/MilesCranmer/PySR/workflows/.github/workflows/CI.yml/badge.svg)
-[![Coverage Status](https://coveralls.io/repos/github/MilesCranmer/PySR/badge.svg)](https://coveralls.io/github/MilesCranmer/PySR)
-
-**Parallelized symbolic regression built on Julia, and interfaced by Python.
-Uses regularized evolution, simulated annealing, and gradient-free optimization.**
-
 [Cite this software](https://github.com/MilesCranmer/PySR/blob/master/CITATION.md)
 
-[Documentation](https://pysr.readthedocs.io/en/latest)
+
+### Test status:
+| **Linux** | **Windows** | **macOS** | **Coverage** | 
+|---|---|---|---|
+|[![.github/workflows/CI.yml](https://github.com/MilesCranmer/PySR/actions/workflows/CI.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI.yml)|[![.github/workflows/CI_Windows.yml](https://github.com/MilesCranmer/PySR/actions/workflows/CI_Windows.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_Windows.yml)|![.github/workflows/CI.yml](https://github.com/MilesCranmer/PySR/workflows/.github/workflows/CI.yml/badge.svg)|[![Coverage Status](https://coveralls.io/repos/github/MilesCranmer/PySR/badge.svg)](https://coveralls.io/github/MilesCranmer/PySR)|
+
 
 Check out [SymbolicRegression.jl](https://github.com/MilesCranmer/SymbolicRegression.jl) for
 the pure-Julia backend of this package.
