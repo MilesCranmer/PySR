@@ -1,4 +1,4 @@
-name: CI_w
+name: CI_m
 
 on:
   push:
@@ -27,7 +27,7 @@ jobs:
       matrix:
         julia-version: ['1.6.1']
         python-version: ['3.8']
-        os: [windows-latest]
+        os: [macos-latest]
     
     steps:
       - uses: actions/checkout@v1.0.0
@@ -63,6 +63,12 @@ jobs:
             python setup.py install
       - name: "Run tests"
         run: python -m unittest test.test
+        shell: bash
+      - name: "Install JAX"
+        run: pip install jax jaxlib # (optional import)
+        shell: bash
+      - name: "Run JAX tests"
+        run: python -m unittest test.test_jax
         shell: bash
       - name: "Install Torch"
         run: pip install torch # (optional import)
