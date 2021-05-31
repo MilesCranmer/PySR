@@ -1,6 +1,7 @@
 import unittest
 import numpy as np
-from pysr import sympy2torch
+import pandas as pd
+from pysr import sympy2torch, get_hof
 import torch
 import sympy
 
@@ -13,4 +14,25 @@ class TestTorch(unittest.TestCase):
         torch_module = sympy2torch(cosx, [x, y, z])
         self.assertTrue(
                 np.all(np.isclose(torch_module(X).detach().numpy(), true.detach().numpy()))
+        )
+    def test_pipeline(self):
+        X = np.random.randn(100, 2)
+        equations = pd.DataFrame({
+            'Equation': ['1.0', 'cos(x0)', 'square(cos(x0))'],
+            'MSE': [1.0, 0.1, 1e-5],
+            'Complexity': [1, 2, 3]
+            })
+
+        equations['Complexity MSE Equation'.split(' ')].to_csv(
+                'equation_file.csv.bkup', sep='|')
+
+        equations = get_hof(
+                'equation_file.csv', n_features=2, variables_names='x0 x1'.split(' '),
+                extra_sympy_mappings={}, output_torch_format=True,
+                multioutput=False, nout=1)
+
+        tformat = equations.iloc[-1].torch_format
+        np.testing.assert_almost_equal(
+                tformat(torch.tensor(X)).detach().numpy(),
+                np.square(np.cos(X[:, 0]))
         )
