@@ -70,5 +70,5 @@ class TestBest(unittest.TestCase):
     def test_best_lambda(self):
         X = np.random.randn(10, 2)
         y = np.cos(X[:, 0])**2
-        for f in [best_callable(), best_callable(self.equations))]:
+        for f in [best_callable(), best_callable(self.equations)]:
             np.testing.assert_almost_equal(f(X), y)
