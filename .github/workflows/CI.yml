@@ -66,26 +66,18 @@ jobs:
         run: pip install jax jaxlib # (optional import)
         shell: bash
       - name: "Run tests"
-        run: |
-            cd test
-            coverage run --source=pysr --omit=feynman_problems.py -m unittest test
-            cd ..
+        run: coverage run --source=pysr --omit='*/feynman_problems.py' -m unittest test.test
         shell: bash
       - name: "Run JAX tests"
         if: matrix.os != 'windows-latest'
-        run: |
-            cd test
-            coverage run --append --source=pysr --omit=feynman_problems.py -m unittest test_jax
-            cd ..
+        run: coverage run --append --source=pysr --omit='*/feynman_problems.py' -m unittest test.test_jax
         shell: bash
       - name: Coveralls
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COVERALLS_FLAG_NAME: ${{ matrix.test-name }}
           COVERALLS_PARALLEL: true
-        run: |
-            cd test
-            coveralls --service=github
+        run: coveralls --service=github
   coveralls:
     name: Indicate completion to coveralls.io
     needs: test
