@@ -1,7 +1,8 @@
 import unittest
 import numpy as np
-from pysr import pysr
+from pysr import pysr, get_hof, best, best_tex, best_callable
 import sympy
+import pandas as pd
 
 class TestPipeline(unittest.TestCase):
     def setUp(self):
@@ -40,3 +41,32 @@ class TestPipeline(unittest.TestCase):
 
         print(equations)
         self.assertLessEqual(equations.iloc[-1]['MSE'], 1e-4)
+
+class TestBest(unittest.TestCase):
+    def setUp(self):
+        equations = pd.DataFrame({
+            'Equation': ['1.0', 'cos(x0)', 'square(cos(x0))'],
+            'MSE': [1.0, 0.1, 1e-5],
+            'Complexity': [1, 2, 3]
+            })
+
+        equations['Complexity MSE Equation'.split(' ')].to_csv(
+                'equation_file.csv.bkup', sep='|')
+
+        self.equations = get_hof(
+                'equation_file.csv', n_features=2,
+                variables_names='x0 x1'.split(' '),
+                extra_sympy_mappings={}, output_jax_format=False,
+                multioutput=False, nout=1)
+
+    def test_best(self):
+        self.assertEqual(best(), sympy.cos(sympy.Symbol('x0'))**2)
+
+    def test_best_tex(self):
+        self.assertEqual(best_tex(), '\\cos^{2}{\\left(x_{0} \\right)}')
+
+    def test_best_lambda(self):
+        f = best_callable()
+        X = np.random.randn(10, 2)
+        y = np.cos(X[:, 0])**2
+        np.testing.assert_almost_equal(f(X), y)
