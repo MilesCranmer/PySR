@@ -66,13 +66,21 @@ jobs:
         run: pip install jax jaxlib # (optional import)
         shell: bash
       - name: "Run tests"
-        run: coverage run --source=pysr --omit=pysr/feynman_problems.py test/test.py
+        run: |
+            cd test
+            coverage run --source=pysr --omit=pysr.feynman_problems -m unittest test
+            cd ..
         shell: bash
       - name: "Run JAX tests"
         if: matrix.os != 'windows-latest'
-        run: coverage run --append --source=pysr --omit=pysr/feynman_problems.py test/test_jax.py
+        run: |
+            cd test
+            coverage run --append --source=pysr --omit=pysr.feynman_problems -m unittest test_jax
+            cd ..
         shell: bash
       - name: Coveralls
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: coveralls --service=github
+        run: |
+            cd test
+            coveralls --service=github
