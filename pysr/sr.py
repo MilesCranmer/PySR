@@ -67,23 +67,6 @@ sympy_mappings = {
     'gamma': lambda x   : sympy.gamma(x),
 }
 
-class CallableEquation(object):
-    """Simple wrapper for numpy lambda functions built with sympy"""
-    def __init__(self, sympy_symbols, eqn, selection=None):
-        self._sympy = eqn
-        self._sympy_symbols = sympy_symbols
-        self._selection = selection
-        self._lambda = lambdify(sympy_symbols, eqn)
-
-    def __repr__(self):
-        return f"PySRFunction(X=>{self._sympy})"
-
-    def __call__(self, X):
-        if self._selection is not None:
-            return self._lambda(*X[:, self._selection].T)
-        else:
-            return self._lambda(*X.T)
-
 def pysr(X, y, weights=None,
          binary_operators=None,
          unary_operators=None,
@@ -922,3 +905,22 @@ def _yesno(question):
     if ans == 'y':
         return True
     return False
+
+
+class CallableEquation(object):
+    """Simple wrapper for numpy lambda functions built with sympy"""
+    def __init__(self, sympy_symbols, eqn, selection=None):
+        self._sympy = eqn
+        self._sympy_symbols = sympy_symbols
+        self._selection = selection
+        self._lambda = lambdify(sympy_symbols, eqn)
+
+    def __repr__(self):
+        return f"PySRFunction(X=>{self._sympy})"
+
+    def __call__(self, X):
+        if self._selection is not None:
+            return self._lambda(*X[:, self._selection].T)
+        else:
+            return self._lambda(*X.T)
+
