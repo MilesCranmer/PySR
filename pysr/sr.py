@@ -750,6 +750,7 @@ def get_hof(equation_file=None, n_features=None, variable_names=None,
     if output_jax_format is None: output_jax_format = global_state['output_jax_format']
     if multioutput is None: multioutput = global_state['multioutput']
     if nout is None: nout = global_state['nout']
+    if selection is None: selection = global_state['selection']
 
     global_state['selection'] = selection
     global_state['equation_file'] = equation_file
@@ -812,7 +813,7 @@ def get_hof(equation_file=None, n_features=None, variable_names=None,
             # Torch:
             if output_torch_format:
                 from .export_torch import sympy2torch
-                module = sympy2torch(eqn, sympy_symbols, selection)
+                module = sympy2torch(eqn, sympy_symbols, selection=selection)
                 torch_format.append(module)
 
             curMSE = output.loc[i, 'MSE']
