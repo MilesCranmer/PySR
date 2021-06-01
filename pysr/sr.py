@@ -264,10 +264,14 @@ def pysr(X, y, weights=None,
         variable_names = list(X.columns)
         X = np.array(X)
 
-    use_custom_variable_names = (len(variable_names) != 0)
 
     if len(X.shape) == 1:
         X = X[:, None]
+
+    if len(variable_names) == 0:
+        variable_names = [f'x{i}' for i in range(X.shape[1])]
+
+    use_custom_variable_names = (len(variable_names) != 0)
 
     _check_assertions(X, binary_operators, unary_operators,
                      use_custom_variable_names, variable_names, weights, y)
