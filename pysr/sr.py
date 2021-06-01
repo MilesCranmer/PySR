@@ -130,118 +130,124 @@ def pysr(X, y, weights=None,
     equations, but you should adjust `niterations`,
     `binary_operators`, `unary_operators` to your requirements.
 
-    :param X: np.ndarray or pandas.DataFrame, 2D array. Rows are examples, \
-        columns are features. If pandas DataFrame, the columns are used \
+    # Arguments
+
+    X (np.ndarray/pandas.DataFrame): 2D array. Rows are examples,
+        columns are features. If pandas DataFrame, the columns are used
         for variable names (so make sure they don't contain spaces).
-    :param y: np.ndarray, 1D array (rows are examples) or 2D array (rows \
-        are examples, columns are outputs). Putting in a 2D array will \
+    y (np.ndarray): 1D array (rows are examples) or 2D array (rows
+        are examples, columns are outputs). Putting in a 2D array will
         trigger a search for equations for each feature of y.
-    :param weights: np.ndarray, same shape as y. Each element is how to \
-        weight the mean-square-error loss for that particular element \
+    weights (np.ndarray): same shape as y. Each element is how to
+        weight the mean-square-error loss for that particular element
         of y.
-    :param binary_operators: list, List of strings giving the binary operators \
+    binary_operators (list): List of strings giving the binary operators
         in Julia's Base. Default is ["+", "-", "*", "/",].
-    :param unary_operators: list, Same but for operators taking a single scalar. \
+    unary_operators (list): Same but for operators taking a single scalar.
         Default is [].
-    :param procs: int, Number of processes (=number of populations running).
-    :param loss: str, String of Julia code specifying the loss function. \
-        Can either be a loss from LossFunctions.jl, or your own \
-        loss written as a function. Examples of custom written losses \
-        include: `myloss(x, y) = abs(x-y)` for non-weighted, or  \
-        `myloss(x, y, w) = w*abs(x-y)` for weighted. \
-        Among the included losses, these are as follows. Regression: \
-        `LPDistLoss{P}()`, `L1DistLoss()`, `L2DistLoss()` (mean square), \
-        `LogitDistLoss()`, `HuberLoss(d)`, `L1EpsilonInsLoss(ϵ)`, \
-        `L2EpsilonInsLoss(ϵ)`, `PeriodicLoss(c)`, `QuantileLoss(τ)`. \
-        Classification: `ZeroOneLoss()`, `PerceptronLoss()`, `L1HingeLoss()`, \
-        `SmoothedL1HingeLoss(γ)`, `ModifiedHuberLoss()`, `L2MarginLoss()`, \
+    procs (int): Number of processes (=number of populations running).
+    loss (str): String of Julia code specifying the loss function.
+        Can either be a loss from LossFunctions.jl, or your own
+        loss written as a function. Examples of custom written losses
+        include: `myloss(x, y) = abs(x-y)` for non-weighted, or 
+        `myloss(x, y, w) = w*abs(x-y)` for weighted.
+        Among the included losses, these are as follows. Regression:
+        `LPDistLoss{P}()`, `L1DistLoss()`, `L2DistLoss()` (mean square),
+        `LogitDistLoss()`, `HuberLoss(d)`, `L1EpsilonInsLoss(ϵ)`,
+        `L2EpsilonInsLoss(ϵ)`, `PeriodicLoss(c)`, `QuantileLoss(τ)`.
+        Classification: `ZeroOneLoss()`, `PerceptronLoss()`, `L1HingeLoss()`,
+        `SmoothedL1HingeLoss(γ)`, `ModifiedHuberLoss()`, `L2MarginLoss()`,
         `ExpLoss()`, `SigmoidLoss()`, `DWDMarginLoss(q)`.
-    :param populations: int, Number of populations running.
-    :param niterations: int, Number of iterations of the algorithm to run. The best \
-        equations are printed, and migrate between populations, at the \
+    populations (int): Number of populations running.
+    niterations (int): Number of iterations of the algorithm to run. The best
+        equations are printed, and migrate between populations, at the
         end of each.
-    :param ncyclesperiteration: int, Number of total mutations to run, per 10 \
+    ncyclesperiteration (int): Number of total mutations to run, per 10
         samples of the population, per iteration.
-    :param alpha: float, Initial temperature.
-    :param annealing: bool, Whether to use annealing. You should (and it is default).
-    :param fractionReplaced: float, How much of population to replace with migrating \
+    alpha (float): Initial temperature.
+    annealing (bool): Whether to use annealing. You should (and it is default).
+    fractionReplaced (float): How much of population to replace with migrating
         equations from other populations.
-    :param fractionReplacedHof: float, How much of population to replace with migrating \
+    fractionReplacedHof (float): How much of population to replace with migrating
         equations from hall of fame.
-    :param npop: int, Number of individuals in each population
-    :param parsimony: float, Multiplicative factor for how much to punish complexity.
-    :param migration: bool, Whether to migrate.
-    :param hofMigration: bool, Whether to have the hall of fame migrate.
-    :param shouldOptimizeConstants: bool, Whether to numerically optimize \
+    npop (int): Number of individuals in each population
+    parsimony (float): Multiplicative factor for how much to punish complexity.
+    migration (bool): Whether to migrate.
+    hofMigration (bool): Whether to have the hall of fame migrate.
+    shouldOptimizeConstants (bool): Whether to numerically optimize
         constants (Nelder-Mead/Newton) at the end of each iteration.
-    :param topn: int, How many top individuals migrate from each population.
-    :param perturbationFactor: float, Constants are perturbed by a max \
-        factor of (perturbationFactor*T + 1). Either multiplied by this \
+    topn (int): How many top individuals migrate from each population.
+    perturbationFactor (float): Constants are perturbed by a max
+        factor of (perturbationFactor*T + 1). Either multiplied by this
         or divided by this.
-    :param weightAddNode: float, Relative likelihood for mutation to add a node
-    :param weightInsertNode: float, Relative likelihood for mutation to insert a node
-    :param weightDeleteNode: float, Relative likelihood for mutation to delete a node
-    :param weightDoNothing: float, Relative likelihood for mutation to leave the individual
-    :param weightMutateConstant: float, Relative likelihood for mutation to change \
+    weightAddNode (float): Relative likelihood for mutation to add a node
+    weightInsertNode (float): Relative likelihood for mutation to insert a node
+    weightDeleteNode (float): Relative likelihood for mutation to delete a node
+    weightDoNothing (float): Relative likelihood for mutation to leave the individual
+    weightMutateConstant (float): Relative likelihood for mutation to change
         the constant slightly in a random direction.
-    :param weightMutateOperator: float, Relative likelihood for mutation to swap \
+    weightMutateOperator (float): Relative likelihood for mutation to swap
         an operator.
-    :param weightRandomize: float, Relative likelihood for mutation to completely \
+    weightRandomize (float): Relative likelihood for mutation to completely
         delete and then randomly generate the equation
-    :param weightSimplify: float, Relative likelihood for mutation to simplify \
+    weightSimplify (float): Relative likelihood for mutation to simplify
         constant parts by evaluation
-    :param timeout: float, Time in seconds to timeout search
-    :param equation_file: str, Where to save the files (.csv separated by |)
-    :param verbosity: int, What verbosity level to use. 0 means minimal print statements.
-    :param progress: bool, Whether to use a progress bar instead of printing to stdout.
-    :param maxsize: int, Max size of an equation.
-    :param maxdepth: int, Max depth of an equation. You can use both maxsize and maxdepth. \
+    timeout (float): Time in seconds to timeout search
+    equation_file (str): Where to save the files (.csv separated by |)
+    verbosity (int): What verbosity level to use. 0 means minimal print statements.
+    progress (bool): Whether to use a progress bar instead of printing to stdout.
+    maxsize (int): Max size of an equation.
+    maxdepth (int): Max depth of an equation. You can use both maxsize and maxdepth.
         maxdepth is by default set to = maxsize, which means that it is redundant.
-    :param fast_cycle: bool, (experimental) - batch over population subsamples. This \
-        is a slightly different algorithm than regularized evolution, but does cycles \
+    fast_cycle (bool): (experimental) - batch over population subsamples. This
+        is a slightly different algorithm than regularized evolution, but does cycles
         15% faster. May be algorithmically less efficient.
-    :param variable_names: list, a list of names for the variables, other \
+    variable_names (list): a list of names for the variables, other
         than "x0", "x1", etc.
-    :param batching: bool, whether to compare population members on small batches \
-        during evolution. Still uses full dataset for comparing against \
+    batching (bool): whether to compare population members on small batches
+        during evolution. Still uses full dataset for comparing against
         hall of fame.
-    :param batchSize: int, the amount of data to use if doing batching.
-    :param select_k_features: (None, int), whether to run feature selection in \
-        Python using random forests, before passing to the symbolic regression \
-        code. None means no feature selection; an int means select that many \
+    batchSize (int): the amount of data to use if doing batching.
+    select_k_features (None/int), whether to run feature selection in
+        Python using random forests, before passing to the symbolic regression
+        code. None means no feature selection; an int means select that many
         features.
-    :param warmupMaxsizeBy: float, whether to slowly increase max size from \
-        a small number up to the maxsize (if greater than 0). \
-        If greater than 0, says the fraction of training time at which \
+    warmupMaxsizeBy (float): whether to slowly increase max size from
+        a small number up to the maxsize (if greater than 0).
+        If greater than 0, says the fraction of training time at which
         the current maxsize will reach the user-passed maxsize.
-    :param constraints: dict of int (unary) or 2-tuples (binary), \
-        this enforces maxsize constraints on the individual \
-        arguments of operators. E.g., `'pow': (-1, 1)` \
-        says that power laws can have any complexity left argument, but only \
+    constraints (dict): Dictionary of `int` (unary operators)
+        or tuples of two `int`s (binary),
+        this enforces maxsize constraints on the individual
+        arguments of operators. e.g., `'pow': (-1, 1)`
+        says that power laws can have any complexity left argument, but only
         1 complexity exponent. Use this to force more interpretable solutions.
-    :param useFrequency: bool, whether to measure the frequency of complexities, \
-        and use that instead of parsimony to explore equation space. Will \
+    useFrequency (bool): whether to measure the frequency of complexities,
+        and use that instead of parsimony to explore equation space. Will
         naturally find equations of all complexities.
-    :param julia_optimization: int, Optimization level (0, 1, 2, 3)
-    :param tempdir: str or None, directory for the temporary files
-    :param delete_tempfiles: bool, whether to delete the temporary files after finishing
-    :param julia_project: str or None, a Julia environment location containing \
-        a Project.toml (and potentially the source code for SymbolicRegression.jl). \
-        Default gives the Python package directory, where a Project.toml file \
+    julia_optimization (int): Optimization level (0, 1, 2, 3)
+    tempdir (str/None): directory for the temporary files
+    delete_tempfiles (bool): whether to delete the temporary files after finishing
+    julia_project (str/None): a Julia environment location containing
+        a Project.toml (and potentially the source code for SymbolicRegression.jl).
+        Default gives the Python package directory, where a Project.toml file
         should be present from the install.
-    :param user_input: Whether to ask for user input or not for installing (to \
+    user_input (bool): Whether to ask for user input or not for installing (to
         be used for automated scripts). Will choose to install when asked.
-    :param update: Whether to automatically update Julia packages.
-    :param temp_equation_file: Whether to put the hall of fame file in \
-        the temp directory. Deletion is then controlled with the \
+    update (bool): Whether to automatically update Julia packages.
+    temp_equation_file (bool): Whether to put the hall of fame file in
+        the temp directory. Deletion is then controlled with the
         delete_tempfiles argument.
-    :param output_jax_format: Whether to create a 'jax_format' column in the output, \
+    output_jax_format (bool): Whether to create a 'jax_format' column in the output,
         containing jax-callable functions and the default parameters in a jax array.
-    :param output_torch_format: Whether to create a 'torch_format' column in the output, \
+    output_torch_format (bool): Whether to create a 'torch_format' column in the output,
         containing a torch module with trainable parameters.
-    :returns: pd.DataFrame or list, Results dataframe, \
-        giving complexity, MSE, and equations (as strings), as well as functional \
-        forms. If list, each element corresponds to a dataframe of equations \
+    
+    # Returns
+
+    equations (pd.DataFrame/list): Results dataframe,
+        giving complexity, MSE, and equations (as strings), as well as functional
+        forms. If list, each element corresponds to a dataframe of equations
         for each output.
     """
     if binary_operators is None:
