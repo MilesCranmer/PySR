@@ -15,7 +15,8 @@ may find useful include:
 - `batching`, `batchSize`
 - `variable_names` (or pandas input)
 - Constraining operator complexity
-- LaTeX, SymPy, and callable equation output
+- LaTeX, SymPy
+- Callable exports: numpy, pytorch, jax
 - `loss`
 
 These are described below
@@ -144,7 +145,7 @@ The other terms say that each multiplication can only have sub-expressions
 of up to complexity 3 (e.g., 5.0 + x2) in each side, and cosine can only operate on
 expressions of complexity 5 (e.g., 5.0 + x2 exp(x3)).
 
-## LaTeX, SymPy, callables
+## LaTeX, SymPy
 
 The `pysr` command will return a pandas dataframe. The `sympy_format`
 column gives sympy equations, and the `lambda_format` gives callable
@@ -158,6 +159,42 @@ You can call the functions `best()` to get the sympy format
 for the best equation, using the `score` column to sort equations.
 `best_latex()` returns the LaTeX form of this, and `best_callable()`
 returns a callable function.
+
+
+## Callable exports: numpy, pytorch, jax
+
+By default, the dataframe of equations will contain columns
+with the identifier `lambda_format`. These are simple functions
+which correspond to the equation, but executed
+with numpy functions. You can pass your `X` matrix to these functions
+just as you did to the `pysr` call. Thus, this allows
+you to numerically evaluate the equations over different output.
+
+
+One can do the same thing for PyTorch, which uses code
+from [sympytorch](https://github.com/patrick-kidger/sympytorch),
+and for JAX, which uses code from
+[sympy2jax](https://github.com/MilesCranmer/sympy2jax).
+
+For torch, set the argument `output_torch_format=True`, which
+will generate a column `torch_format`. Each element of this column
+is a PyTorch module which runs the equation, using PyTorch functions,
+over `X` (as a PyTorch tensor). This is differentiable, and the
+parameters of this PyTorch module correspond to the learned parameters
+in the equation, and are trainable.
+
+For jax, set the argument `output_jax_format=True`, which
+will generate a column `jax_format`. Each element of this column
+is a dictionary containing a `'callable'` (a JAX function),
+and `'parameters'` (a list of parameters in the equation).
+One can execute this function with: `element['callable'](X, element['parameters'])`.
+Since the parameter list is a jax array, this therefore lets you also 
+train the parameters within JAX (and is differentiable).
+
+If you forget to turn these on when calling the function initially,
+you can re-run `get_hof(output_jax_format=True)`, and it will re-use
+the equations and other state properties, assuming you haven't
+re-run `pysr` in the meantime!
 
 ## `loss`
 
