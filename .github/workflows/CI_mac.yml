@@ -71,7 +71,7 @@ jobs:
         run: python -m unittest test.test_jax
         shell: bash
       - name: "Install Torch"
-        run: pip install torch sympytorch # (optional import)
+        run: pip install torch # (optional import)
         shell: bash
       - name: "Run Torch tests"
         run: python -m unittest test.test_torch
