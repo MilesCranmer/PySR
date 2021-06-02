@@ -123,7 +123,9 @@ def pysr(X, y, weights=None,
          optimizer_algorithm="BFGS",
          optimizer_nrestarts=3,
          optimize_probability=1.0,
-         optimizer_iterations=10
+         optimizer_iterations=10,
+         tournament_selection_n=10,
+         tournament_selection_p=1.0
          ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
@@ -234,6 +236,10 @@ def pysr(X, y, weights=None,
     :type output_jax_format: bool
     :param output_torch_format: Whether to create a 'torch_format' column in the output, containing a torch module with trainable parameters.
     :type output_torch_format: bool
+    :param tournament_selection_n: Number of expressions to consider in each tournament.
+    :type tournament_selection_n: int
+    :param tournament_selection_p: Probability of selecting the best expression in each tournament. The probability will decay as p*(1-p)^n for other expressions, sorted by loss.
+    :type tournament_selection_p: float
     :returns: Results dataframe, giving complexity, MSE, and equations (as strings), as well as functional forms. If list, each element corresponds to a dataframe of equations for each output.
     :type: pd.DataFrame/list
     """
@@ -259,11 +265,11 @@ def pysr(X, y, weights=None,
             progress = False
 
     assert optimizer_algorithm in ['NelderMead', 'BFGS']
+    assert tournament_selection_n < npop
 
     if isinstance(X, pd.DataFrame):
         variable_names = list(X.columns)
         X = np.array(X)
-
 
     if len(X.shape) == 1:
         X = X[:, None]
@@ -344,7 +350,9 @@ def pysr(X, y, weights=None,
                  output_jax_format=output_jax_format,
                  output_torch_format=output_torch_format,
                  selection=selection,
-                 multioutput=multioutput, nout=nout)
+                 multioutput=multioutput, nout=nout,
+                 tournament_selection_n=tournament_selection_n,
+                 tournament_selection_p=tournament_selection_p)
 
     kwargs = {**_set_paths(tempdir), **kwargs}
 
@@ -515,7 +523,9 @@ def _make_hyperparams_julia_str(X, alpha, annealing, batchSize, batching, binary
                                variable_names, warmupMaxsizeBy, weightAddNode,
                                ncyclesperiteration, fractionReplaced, topn, verbosity, progress, loss,
                                weightDeleteNode, weightDoNothing, weightInsertNode, weightMutateConstant,
-                               weightMutateOperator, weightRandomize, weightSimplify, weights, **kwargs):
+                               weightMutateOperator, weightRandomize, weightSimplify, weights,
+                               tournament_selection_n, tournament_selection_p,
+                               **kwargs):
     try:
         term_width = shutil.get_terminal_size().columns
     except:
@@ -586,6 +596,8 @@ mutationWeights=[
 warmupMaxsizeBy={warmupMaxsizeBy:f}f0,
 useFrequency={"true" if useFrequency else "false"},
 npop={npop:d},
+ns={tournament_selection_n:d},
+probPickFirst={tournament_selection_p:f}f0,
 ncyclesperiteration={ncyclesperiteration:d},
 fractionReplaced={fractionReplaced:f}f0,
 topn={topn:d},
