@@ -255,7 +255,7 @@ def pysr(X, y, weights=None,
         constraints = {}
 
     if progress is not None:
-        if progress and ('buffer' in sys.stdout.__dir__()):
+        if progress and ('buffer' not in sys.stdout.__dir__()):
             warnings.warn("Note: it looks like you are running in Jupyter. The progress bar will be turned off.")
             progress = False
     else:
