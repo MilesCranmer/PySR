@@ -779,7 +779,7 @@ def get_hof(equation_file=None, n_features=None, variable_names=None,
 
     try:
         if multioutput:
-            all_outputs = [pd.read_csv(f'out{i}_' + str(equation_file) + '.bkup', sep="|") for i in range(1, nout+1)]
+            all_outputs = [pd.read_csv(str(equation_file) + f'.out{i}' + '.bkup', sep="|") for i in range(1, nout+1)]
         else:
             all_outputs = [pd.read_csv(str(equation_file) + '.bkup', sep="|")]
     except FileNotFoundError:
