@@ -7,16 +7,20 @@ import collections as co
 import functools as ft
 import sympy
 
+
 def _reduce(fn):
     def fn_(*args):
         return ft.reduce(fn, args)
+
     return fn_
+
 
 torch_initialized = False
 torch = None
 _global_func_lookup = None
 _Node = None
 SingleSymPyModule = None
+
 
 def _initialize_torch():
     global torch_initialized
@@ -29,6 +33,7 @@ def _initialize_torch():
     # but still allow this module to be loaded in __init__
     if not torch_initialized:
         import torch as _torch
+
         torch = _torch
 
         _global_func_lookup = {
@@ -85,6 +90,7 @@ def _initialize_torch():
 
         class _Node(torch.nn.Module):
             """SympyTorch code from https://github.com/patrick-kidger/sympytorch"""
+
             def __init__(self, *, expr, _memodict, _func_lookup, **kwargs):
                 super().__init__(**kwargs)
 
@@ -95,9 +101,13 @@ def _initialize_torch():
                     self._torch_func = lambda: self._value
                     self._args = ()
                 elif issubclass(expr.func, sympy.UnevaluatedExpr):
-                    if len(expr.args) != 1 or not issubclass(expr.args[0].func, sympy.Float):
-                        raise ValueError("UnevaluatedExpr should only be used to wrap floats.")
-                    self.register_buffer('_value', torch.tensor(float(expr.args[0])))
+                    if len(expr.args) != 1 or not issubclass(
+                        expr.args[0].func, sympy.Float
+                    ):
+                        raise ValueError(
+                            "UnevaluatedExpr should only be used to wrap floats."
+                        )
+                    self.register_buffer("_value", torch.tensor(float(expr.args[0])))
                     self._torch_func = lambda: self._value
                     self._args = ()
                 elif issubclass(expr.func, sympy.Integer):
@@ -117,7 +127,12 @@ def _initialize_torch():
                         try:
                             arg_ = _memodict[arg]
                         except KeyError:
-                            arg_ = type(self)(expr=arg, _memodict=_memodict, _func_lookup=_func_lookup, **kwargs)
+                            arg_ = type(self)(
+                                expr=arg,
+                                _memodict=_memodict,
+                                _func_lookup=_func_lookup,
+                                **kwargs,
+                            )
                             _memodict[arg] = arg_
                         args.append(arg_)
                     self._args = torch.nn.ModuleList(args)
@@ -133,19 +148,22 @@ def _initialize_torch():
                     args.append(arg_)
                 return self._torch_func(*args)
 
-
         class SingleSymPyModule(torch.nn.Module):
             """SympyTorch code from https://github.com/patrick-kidger/sympytorch"""
-            def __init__(self, expression, symbols_in,
-                         selection=None, extra_funcs=None, **kwargs):
+
+            def __init__(
+                self, expression, symbols_in, selection=None, extra_funcs=None, **kwargs
+            ):
                 super().__init__(**kwargs)
-                
+
                 if extra_funcs is None:
                     extra_funcs = {}
                 _func_lookup = co.ChainMap(_global_func_lookup, extra_funcs)
 
                 _memodict = {}
-                self._node = _Node(expr=expression, _memodict=_memodict, _func_lookup=_func_lookup)
+                self._node = _Node(
+                    expr=expression, _memodict=_memodict, _func_lookup=_func_lookup
+                )
                 self._expression_string = str(expression)
                 self._selection = selection
                 self.symbols_in = [str(symbol) for symbol in symbols_in]
@@ -156,13 +174,11 @@ def _initialize_torch():
             def forward(self, X):
                 if self._selection is not None:
                     X = X[:, self._selection]
-                symbols = {symbol: X[:, i]
-                           for i, symbol in enumerate(self.symbols_in)}
+                symbols = {symbol: X[:, i] for i, symbol in enumerate(self.symbols_in)}
                 return self._node(symbols)
 
 
-def sympy2torch(expression, symbols_in,
-                selection=None, extra_torch_mappings=None):
+def sympy2torch(expression, symbols_in, selection=None, extra_torch_mappings=None):
     """Returns a module for a given sympy expression with trainable parameters;
 
     This function will assume the input to the module is a matrix X, where
@@ -172,6 +188,6 @@ def sympy2torch(expression, symbols_in,
 
     _initialize_torch()
 
-    return SingleSymPyModule(expression, symbols_in,
-                             selection=selection,
-                             extra_funcs=extra_torch_mappings)
+    return SingleSymPyModule(
+        expression, symbols_in, selection=selection, extra_funcs=extra_torch_mappings
+    )

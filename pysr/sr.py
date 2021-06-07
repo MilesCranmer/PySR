@@ -15,7 +15,7 @@ from datetime import datetime
 import warnings
 
 global_state = dict(
-    equation_file='hall_of_fame.csv',
+    equation_file="hall_of_fame.csv",
     n_features=None,
     variable_names=[],
     extra_sympy_mappings={},
@@ -25,108 +25,112 @@ global_state = dict(
     output_torch_format=False,
     multioutput=False,
     nout=1,
-    selection=None
+    selection=None,
 )
 
 sympy_mappings = {
-    'div':  lambda x, y : x/y,
-    'mult': lambda x, y : x*y,
-    'sqrt_abs':lambda x    : sympy.sqrt(abs(x)),
-    'square':lambda x   : x**2,
-    'cube': lambda x    : x**3,
-    'plus': lambda x, y : x + y,
-    'sub':  lambda x, y : x - y,
-    'neg':  lambda x    : -x,
-    'pow':  lambda x, y : abs(x)**y,
-    'cos':  lambda x    : sympy.cos(x),
-    'sin':  lambda x    : sympy.sin(x),
-    'tan':  lambda x    : sympy.tan(x),
-    'cosh': lambda x    : sympy.cosh(x),
-    'sinh': lambda x    : sympy.sinh(x),
-    'tanh': lambda x    : sympy.tanh(x),
-    'exp':  lambda x    : sympy.exp(x),
-    'acos': lambda x    : sympy.acos(x),
-    'asin': lambda x    : sympy.asin(x),
-    'atan': lambda x    : sympy.atan(x),
-    'acosh':lambda x    : sympy.acosh(abs(x) + 1),
-    'acosh_abs':lambda x : sympy.acosh(abs(x) + 1),
-    'asinh':lambda x    : sympy.asinh(x),
-    'atanh':lambda x    : sympy.atanh(sympy.Mod(x+1, 2)-1),
-    'atanh_clip':lambda x : sympy.atanh(sympy.Mod(x+1, 2)-1),
-    'abs':  lambda x    : abs(x),
-    'mod':  lambda x, y : sympy.Mod(x, y),
-    'erf':  lambda x    : sympy.erf(x),
-    'erfc': lambda x    : sympy.erfc(x),
-    'log_abs': lambda x : sympy.log(abs(x)),
-    'log10_abs':lambda x : sympy.log(abs(x), 10),
-    'log2_abs': lambda x : sympy.log(abs(x), 2),
-    'log1p_abs': lambda x : sympy.log(abs(x) + 1),
-    'floor': lambda x   : sympy.floor(x),
-    'ceil': lambda x    : sympy.ceil(x),
-    'sign': lambda x    : sympy.sign(x),
-    'gamma': lambda x   : sympy.gamma(x),
+    "div": lambda x, y: x / y,
+    "mult": lambda x, y: x * y,
+    "sqrt_abs": lambda x: sympy.sqrt(abs(x)),
+    "square": lambda x: x ** 2,
+    "cube": lambda x: x ** 3,
+    "plus": lambda x, y: x + y,
+    "sub": lambda x, y: x - y,
+    "neg": lambda x: -x,
+    "pow": lambda x, y: abs(x) ** y,
+    "cos": lambda x: sympy.cos(x),
+    "sin": lambda x: sympy.sin(x),
+    "tan": lambda x: sympy.tan(x),
+    "cosh": lambda x: sympy.cosh(x),
+    "sinh": lambda x: sympy.sinh(x),
+    "tanh": lambda x: sympy.tanh(x),
+    "exp": lambda x: sympy.exp(x),
+    "acos": lambda x: sympy.acos(x),
+    "asin": lambda x: sympy.asin(x),
+    "atan": lambda x: sympy.atan(x),
+    "acosh": lambda x: sympy.acosh(abs(x) + 1),
+    "acosh_abs": lambda x: sympy.acosh(abs(x) + 1),
+    "asinh": lambda x: sympy.asinh(x),
+    "atanh": lambda x: sympy.atanh(sympy.Mod(x + 1, 2) - 1),
+    "atanh_clip": lambda x: sympy.atanh(sympy.Mod(x + 1, 2) - 1),
+    "abs": lambda x: abs(x),
+    "mod": lambda x, y: sympy.Mod(x, y),
+    "erf": lambda x: sympy.erf(x),
+    "erfc": lambda x: sympy.erfc(x),
+    "log_abs": lambda x: sympy.log(abs(x)),
+    "log10_abs": lambda x: sympy.log(abs(x), 10),
+    "log2_abs": lambda x: sympy.log(abs(x), 2),
+    "log1p_abs": lambda x: sympy.log(abs(x) + 1),
+    "floor": lambda x: sympy.floor(x),
+    "ceil": lambda x: sympy.ceil(x),
+    "sign": lambda x: sympy.sign(x),
+    "gamma": lambda x: sympy.gamma(x),
 }
 
-def pysr(X, y, weights=None,
-         binary_operators=None,
-         unary_operators=None,
-         procs=4,
-         loss='L2DistLoss()',
-         populations=20,
-         niterations=100,
-         ncyclesperiteration=300,
-         alpha=0.1,
-         annealing=False,
-         fractionReplaced=0.10,
-         fractionReplacedHof=0.10,
-         npop=1000,
-         parsimony=1e-4,
-         migration=True,
-         hofMigration=True,
-         shouldOptimizeConstants=True,
-         topn=10,
-         weightAddNode=1,
-         weightInsertNode=3,
-         weightDeleteNode=3,
-         weightDoNothing=1,
-         weightMutateConstant=10,
-         weightMutateOperator=1,
-         weightRandomize=1,
-         weightSimplify=0.01,
-         perturbationFactor=1.0,
-         timeout=None,
-         extra_sympy_mappings=None,
-         extra_torch_mappings=None,
-         extra_jax_mappings=None,
-         equation_file=None,
-         verbosity=1e9,
-         progress=None,
-         maxsize=20,
-         fast_cycle=False,
-         maxdepth=None,
-         variable_names=None,
-         batching=False,
-         batchSize=50,
-         select_k_features=None,
-         warmupMaxsizeBy=0.0,
-         constraints=None,
-         useFrequency=True,
-         tempdir=None,
-         delete_tempfiles=True,
-         julia_optimization=3,
-         julia_project=None,
-         user_input=True,
-         update=True,
-         temp_equation_file=False,
-         output_jax_format=False,
-         output_torch_format=False,
-         optimizer_algorithm="BFGS",
-         optimizer_nrestarts=3,
-         optimize_probability=1.0,
-         optimizer_iterations=10,
-         tournament_selection_n=10,
-         tournament_selection_p=1.0
-         ):
+
+def pysr(
+    X,
+    y,
+    weights=None,
+    binary_operators=None,
+    unary_operators=None,
+    procs=4,
+    loss="L2DistLoss()",
+    populations=20,
+    niterations=100,
+    ncyclesperiteration=300,
+    alpha=0.1,
+    annealing=False,
+    fractionReplaced=0.10,
+    fractionReplacedHof=0.10,
+    npop=1000,
+    parsimony=1e-4,
+    migration=True,
+    hofMigration=True,
+    shouldOptimizeConstants=True,
+    topn=10,
+    weightAddNode=1,
+    weightInsertNode=3,
+    weightDeleteNode=3,
+    weightDoNothing=1,
+    weightMutateConstant=10,
+    weightMutateOperator=1,
+    weightRandomize=1,
+    weightSimplify=0.01,
+    perturbationFactor=1.0,
+    timeout=None,
+    extra_sympy_mappings=None,
+    extra_torch_mappings=None,
+    extra_jax_mappings=None,
+    equation_file=None,
+    verbosity=1e9,
+    progress=None,
+    maxsize=20,
+    fast_cycle=False,
+    maxdepth=None,
+    variable_names=None,
+    batching=False,
+    batchSize=50,
+    select_k_features=None,
+    warmupMaxsizeBy=0.0,
+    constraints=None,
+    useFrequency=True,
+    tempdir=None,
+    delete_tempfiles=True,
+    julia_optimization=3,
+    julia_project=None,
+    user_input=True,
+    update=True,
+    temp_equation_file=False,
+    output_jax_format=False,
+    output_torch_format=False,
+    optimizer_algorithm="BFGS",
+    optimizer_nrestarts=3,
+    optimize_probability=1.0,
+    optimizer_iterations=10,
+    tournament_selection_n=10,
+    tournament_selection_p=1.0,
+):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
     equations, but you should adjust `niterations`,
@@ -244,7 +248,7 @@ def pysr(X, y, weights=None,
     :type: pd.DataFrame/list
     """
     if binary_operators is None:
-        binary_operators = '+ * - /'.split(' ')
+        binary_operators = "+ * - /".split(" ")
     if unary_operators is None:
         unary_operators = []
     if extra_sympy_mappings is None:
@@ -255,16 +259,18 @@ def pysr(X, y, weights=None,
         constraints = {}
 
     if progress is not None:
-        if progress and ('buffer' not in sys.stdout.__dir__()):
-            warnings.warn("Note: it looks like you are running in Jupyter. The progress bar will be turned off.")
+        if progress and ("buffer" not in sys.stdout.__dir__()):
+            warnings.warn(
+                "Note: it looks like you are running in Jupyter. The progress bar will be turned off."
+            )
             progress = False
     else:
-        if 'buffer' in sys.stdout.__dir__():
+        if "buffer" in sys.stdout.__dir__():
             progress = True
         else:
             progress = False
 
-    assert optimizer_algorithm in ['NelderMead', 'BFGS']
+    assert optimizer_algorithm in ["NelderMead", "BFGS"]
     assert tournament_selection_n < npop
 
     if isinstance(X, pd.DataFrame):
@@ -275,25 +281,34 @@ def pysr(X, y, weights=None,
         X = X[:, None]
 
     if len(variable_names) == 0:
-        variable_names = [f'x{i}' for i in range(X.shape[1])]
+        variable_names = [f"x{i}" for i in range(X.shape[1])]
 
-    use_custom_variable_names = (len(variable_names) != 0)
+    use_custom_variable_names = len(variable_names) != 0
 
-    _check_assertions(X, binary_operators, unary_operators,
-                     use_custom_variable_names, variable_names, weights, y)
+    _check_assertions(
+        X,
+        binary_operators,
+        unary_operators,
+        use_custom_variable_names,
+        variable_names,
+        weights,
+        y,
+    )
     _check_for_julia_installation()
 
-
     if len(X) > 10000 and not batching:
-        warnings.warn("Note: you are running with more than 10,000 datapoints. You should consider turning on batching (https://pysr.readthedocs.io/en/latest/docs/options/#batching). You should also reconsider if you need that many datapoints. Unless you have a large amount of noise (in which case you should smooth your dataset first), generally < 10,000 datapoints is enough to find a functional form with symbolic regression. More datapoints will lower the search speed.")
+        warnings.warn(
+            "Note: you are running with more than 10,000 datapoints. You should consider turning on batching (https://pysr.readthedocs.io/en/latest/docs/options/#batching). You should also reconsider if you need that many datapoints. Unless you have a large amount of noise (in which case you should smooth your dataset first), generally < 10,000 datapoints is enough to find a functional form with symbolic regression. More datapoints will lower the search speed."
+        )
 
     if maxsize > 40:
-        warnings.warn("Note: Using a large maxsize for the equation search will be exponentially slower and use significant memory. You should consider turning `useFrequency` to False, and perhaps use `warmupMaxsizeBy`.")
+        warnings.warn(
+            "Note: Using a large maxsize for the equation search will be exponentially slower and use significant memory. You should consider turning `useFrequency` to False, and perhaps use `warmupMaxsizeBy`."
+        )
 
     X, variable_names, selection = _handle_feature_selection(
-            X, select_k_features,
-            use_custom_variable_names, variable_names, y
-        )
+        X, select_k_features, use_custom_variable_names, variable_names, y
+    )
 
     if maxdepth is None:
         maxdepth = maxsize
@@ -312,81 +327,102 @@ def pysr(X, y, weights=None,
     else:
         raise NotImplementedError("y shape not supported!")
 
-    kwargs = dict(X=X, y=y, weights=weights,
-                 alpha=alpha, annealing=annealing, batchSize=batchSize,
-                 batching=batching, binary_operators=binary_operators,
-                 fast_cycle=fast_cycle,
-                 fractionReplaced=fractionReplaced,
-                 ncyclesperiteration=ncyclesperiteration,
-                 niterations=niterations, npop=npop, topn=topn,
-                 verbosity=verbosity, progress=progress, update=update,
-                 julia_optimization=julia_optimization, timeout=timeout,
-                 fractionReplacedHof=fractionReplacedHof,
-                 hofMigration=hofMigration, maxdepth=maxdepth,
-                 maxsize=maxsize, migration=migration,
-                 optimizer_algorithm=optimizer_algorithm,
-                 optimizer_nrestarts=optimizer_nrestarts,
-                 optimize_probability=optimize_probability,
-                 optimizer_iterations=optimizer_iterations,
-                 parsimony=parsimony, perturbationFactor=perturbationFactor,
-                 populations=populations, procs=procs,
-                 shouldOptimizeConstants=shouldOptimizeConstants,
-                 unary_operators=unary_operators, useFrequency=useFrequency,
-                 use_custom_variable_names=use_custom_variable_names,
-                 variable_names=variable_names, warmupMaxsizeBy=warmupMaxsizeBy,
-                 weightAddNode=weightAddNode,
-                 weightDeleteNode=weightDeleteNode,
-                 weightDoNothing=weightDoNothing,
-                 weightInsertNode=weightInsertNode,
-                 weightMutateConstant=weightMutateConstant,
-                 weightMutateOperator=weightMutateOperator,
-                 weightRandomize=weightRandomize,
-                 weightSimplify=weightSimplify,
-                 constraints=constraints,
-                 extra_sympy_mappings=extra_sympy_mappings,
-                 extra_jax_mappings=extra_jax_mappings,
-                 extra_torch_mappings=extra_torch_mappings,
-                 julia_project=julia_project, loss=loss,
-                 output_jax_format=output_jax_format,
-                 output_torch_format=output_torch_format,
-                 selection=selection,
-                 multioutput=multioutput, nout=nout,
-                 tournament_selection_n=tournament_selection_n,
-                 tournament_selection_p=tournament_selection_p)
+    kwargs = dict(
+        X=X,
+        y=y,
+        weights=weights,
+        alpha=alpha,
+        annealing=annealing,
+        batchSize=batchSize,
+        batching=batching,
+        binary_operators=binary_operators,
+        fast_cycle=fast_cycle,
+        fractionReplaced=fractionReplaced,
+        ncyclesperiteration=ncyclesperiteration,
+        niterations=niterations,
+        npop=npop,
+        topn=topn,
+        verbosity=verbosity,
+        progress=progress,
+        update=update,
+        julia_optimization=julia_optimization,
+        timeout=timeout,
+        fractionReplacedHof=fractionReplacedHof,
+        hofMigration=hofMigration,
+        maxdepth=maxdepth,
+        maxsize=maxsize,
+        migration=migration,
+        optimizer_algorithm=optimizer_algorithm,
+        optimizer_nrestarts=optimizer_nrestarts,
+        optimize_probability=optimize_probability,
+        optimizer_iterations=optimizer_iterations,
+        parsimony=parsimony,
+        perturbationFactor=perturbationFactor,
+        populations=populations,
+        procs=procs,
+        shouldOptimizeConstants=shouldOptimizeConstants,
+        unary_operators=unary_operators,
+        useFrequency=useFrequency,
+        use_custom_variable_names=use_custom_variable_names,
+        variable_names=variable_names,
+        warmupMaxsizeBy=warmupMaxsizeBy,
+        weightAddNode=weightAddNode,
+        weightDeleteNode=weightDeleteNode,
+        weightDoNothing=weightDoNothing,
+        weightInsertNode=weightInsertNode,
+        weightMutateConstant=weightMutateConstant,
+        weightMutateOperator=weightMutateOperator,
+        weightRandomize=weightRandomize,
+        weightSimplify=weightSimplify,
+        constraints=constraints,
+        extra_sympy_mappings=extra_sympy_mappings,
+        extra_jax_mappings=extra_jax_mappings,
+        extra_torch_mappings=extra_torch_mappings,
+        julia_project=julia_project,
+        loss=loss,
+        output_jax_format=output_jax_format,
+        output_torch_format=output_torch_format,
+        selection=selection,
+        multioutput=multioutput,
+        nout=nout,
+        tournament_selection_n=tournament_selection_n,
+        tournament_selection_p=tournament_selection_p,
+    )
 
     kwargs = {**_set_paths(tempdir), **kwargs}
 
     if temp_equation_file:
-        equation_file = kwargs['tmpdir'] / f'hall_of_fame.csv'
+        equation_file = kwargs["tmpdir"] / f"hall_of_fame.csv"
     elif equation_file is None:
         date_time = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")[:-3]
-        equation_file = 'hall_of_fame_' + date_time + '.csv'
+        equation_file = "hall_of_fame_" + date_time + ".csv"
 
     kwargs = {**dict(equation_file=equation_file), **kwargs}
 
-
-    pkg_directory = kwargs['pkg_directory']
+    pkg_directory = kwargs["pkg_directory"]
     manifest_file = None
-    if kwargs['julia_project'] is not None:
-        manifest_filepath = Path(kwargs['julia_project']) / 'Manifest.toml'
+    if kwargs["julia_project"] is not None:
+        manifest_filepath = Path(kwargs["julia_project"]) / "Manifest.toml"
     else:
-        manifest_filepath = pkg_directory / 'Manifest.toml'
+        manifest_filepath = pkg_directory / "Manifest.toml"
 
-    kwargs['need_install'] = False
+    kwargs["need_install"] = False
 
     if not (manifest_filepath).is_file():
-        kwargs['need_install'] = (not user_input) or _yesno("I will install Julia packages using PySR's Project.toml file. OK?")
-        if kwargs['need_install']:
+        kwargs["need_install"] = (not user_input) or _yesno(
+            "I will install Julia packages using PySR's Project.toml file. OK?"
+        )
+        if kwargs["need_install"]:
             print("OK. I will install at launch.")
             assert update
 
-    kwargs['def_hyperparams'] = _create_inline_operators(**kwargs)
+    kwargs["def_hyperparams"] = _create_inline_operators(**kwargs)
 
     _handle_constraints(**kwargs)
 
-    kwargs['constraints_str'] = _make_constraints_str(**kwargs)
-    kwargs['def_hyperparams'] = _make_hyperparams_julia_str(**kwargs)
-    kwargs['def_datasets'] = _make_datasets_julia_str(**kwargs)
+    kwargs["constraints_str"] = _make_constraints_str(**kwargs)
+    kwargs["def_hyperparams"] = _make_hyperparams_julia_str(**kwargs)
+    kwargs["def_datasets"] = _make_datasets_julia_str(**kwargs)
 
     _create_julia_files(**kwargs)
     _final_pysr_process(**kwargs)
@@ -395,7 +431,7 @@ def pysr(X, y, weights=None,
     equations = get_hof(**kwargs)
 
     if delete_tempfiles:
-        shutil.rmtree(kwargs['tmpdir'])
+        shutil.rmtree(kwargs["tmpdir"])
 
     return equations
 
@@ -403,7 +439,7 @@ def pysr(X, y, weights=None,
 def _set_globals(X, **kwargs):
     global global_state
 
-    global_state['n_features'] = X.shape[1]
+    global_state["n_features"] = X.shape[1]
     for key, value in kwargs.items():
         if key in global_state:
             global_state[key] = value
@@ -411,34 +447,37 @@ def _set_globals(X, **kwargs):
 
 def _final_pysr_process(julia_optimization, runfile_filename, timeout, **kwargs):
     command = [
-        f'julia', f'-O{julia_optimization:d}',
+        f"julia",
+        f"-O{julia_optimization:d}",
         str(runfile_filename),
     ]
     if timeout is not None:
-        command = [f'timeout', f'{timeout}'] + command
+        command = [f"timeout", f"{timeout}"] + command
     _cmd_runner(command, **kwargs)
 
+
 def _cmd_runner(command, progress, **kwargs):
-    if kwargs['verbosity'] > 0:
-        print("Running on", ' '.join(command))
+    if kwargs["verbosity"] > 0:
+        print("Running on", " ".join(command))
     process = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=-1)
     try:
         while True:
             line = process.stdout.readline()
-            if not line: break
-            decoded_line = line.decode('utf-8')
+            if not line:
+                break
+            decoded_line = line.decode("utf-8")
             if progress:
-                decoded_line = (decoded_line
-                                    .replace('\\033[K',  '\033[K')
-                                    .replace('\\033[1A', '\033[1A')
-                                    .replace('\\033[1B', '\033[1B')
-                                    .replace('\\r',      '\r')
-                                    .encode(sys.stdout.encoding, errors='replace')
-                                    )
+                decoded_line = (
+                    decoded_line.replace("\\033[K", "\033[K")
+                    .replace("\\033[1A", "\033[1A")
+                    .replace("\\033[1B", "\033[1B")
+                    .replace("\\r", "\r")
+                    .encode(sys.stdout.encoding, errors="replace")
+                )
                 sys.stdout.buffer.write(decoded_line)
                 sys.stdout.flush()
             else:
-                print(decoded_line, end='')
+                print(decoded_line, end="")
 
         process.stdout.close()
         process.wait()
@@ -446,62 +485,94 @@ def _cmd_runner(command, progress, **kwargs):
         print("Killing process... will return when done.")
         process.kill()
 
-def _create_julia_files(dataset_filename, def_datasets,  hyperparam_filename, def_hyperparams,
-                        fractionReplaced, ncyclesperiteration, niterations, npop,
-                        runfile_filename, topn, verbosity, julia_project, procs, weights,
-                        X, variable_names, pkg_directory, need_install, update, **kwargs):
-    with open(hyperparam_filename, 'w') as f:
+
+def _create_julia_files(
+    dataset_filename,
+    def_datasets,
+    hyperparam_filename,
+    def_hyperparams,
+    fractionReplaced,
+    ncyclesperiteration,
+    niterations,
+    npop,
+    runfile_filename,
+    topn,
+    verbosity,
+    julia_project,
+    procs,
+    weights,
+    X,
+    variable_names,
+    pkg_directory,
+    need_install,
+    update,
+    **kwargs,
+):
+    with open(hyperparam_filename, "w") as f:
         print(def_hyperparams, file=f)
-    with open(dataset_filename, 'w') as f:
+    with open(dataset_filename, "w") as f:
         print(def_datasets, file=f)
-    with open(runfile_filename, 'w') as f:
+    with open(runfile_filename, "w") as f:
         if julia_project is None:
             julia_project = pkg_directory
         else:
             julia_project = Path(julia_project)
-        print(f'import Pkg', file=f)
+        print(f"import Pkg", file=f)
         print(f'Pkg.activate("{_escape_filename(julia_project)}")', file=f)
         if need_install:
-            print(f'Pkg.instantiate()', file=f)
-            print(f'Pkg.update()', file=f)
-            print(f'Pkg.precompile()', file=f)
+            print(f"Pkg.instantiate()", file=f)
+            print(f"Pkg.update()", file=f)
+            print(f"Pkg.precompile()", file=f)
         elif update:
-            print(f'Pkg.update()', file=f)
-        print(f'using SymbolicRegression', file=f)
+            print(f"Pkg.update()", file=f)
+        print(f"using SymbolicRegression", file=f)
         print(f'include("{_escape_filename(hyperparam_filename)}")', file=f)
         print(f'include("{_escape_filename(dataset_filename)}")', file=f)
         if len(variable_names) == 0:
             varMap = "[" + ",".join([f'"x{i}"' for i in range(X.shape[1])]) + "]"
         else:
-            varMap = "[" + ",".join(['"' + vname + '"' for vname in variable_names]) + "]"
+            varMap = (
+                "[" + ",".join(['"' + vname + '"' for vname in variable_names]) + "]"
+            )
 
         if weights is not None:
-            print(f'EquationSearch(X, y, weights=weights, niterations={niterations:d}, varMap={varMap}, options=options, numprocs={procs})', file=f)
+            print(
+                f"EquationSearch(X, y, weights=weights, niterations={niterations:d}, varMap={varMap}, options=options, numprocs={procs})",
+                file=f,
+            )
         else:
-            print(f'EquationSearch(X, y, niterations={niterations:d}, varMap={varMap}, options=options, numprocs={procs})', file=f)
+            print(
+                f"EquationSearch(X, y, niterations={niterations:d}, varMap={varMap}, options=options, numprocs={procs})",
+                file=f,
+            )
 
 
-def _make_datasets_julia_str(X, X_filename, weights, weights_filename, y, y_filename,
-                            multioutput, **kwargs):
+def _make_datasets_julia_str(
+    X, X_filename, weights, weights_filename, y, y_filename, multioutput, **kwargs
+):
     def_datasets = """using DelimitedFiles"""
-    np.savetxt(X_filename, X.astype(np.float32), delimiter=',')
+    np.savetxt(X_filename, X.astype(np.float32), delimiter=",")
     if multioutput:
-        np.savetxt(y_filename, y.astype(np.float32), delimiter=',')
+        np.savetxt(y_filename, y.astype(np.float32), delimiter=",")
     else:
-        np.savetxt(y_filename, y.reshape(-1, 1).astype(np.float32), delimiter=',')
+        np.savetxt(y_filename, y.reshape(-1, 1).astype(np.float32), delimiter=",")
     if weights is not None:
         if multioutput:
-            np.savetxt(weights_filename, weights.astype(np.float32), delimiter=',')
+            np.savetxt(weights_filename, weights.astype(np.float32), delimiter=",")
         else:
-            np.savetxt(weights_filename, weights.reshape(-1, 1).astype(np.float32), delimiter=',')
+            np.savetxt(
+                weights_filename,
+                weights.reshape(-1, 1).astype(np.float32),
+                delimiter=",",
+            )
     def_datasets += f"""
 X = copy(transpose(readdlm("{_escape_filename(X_filename)}", ',', Float32, '\\n')))"""
 
     if multioutput:
-        def_datasets+= f"""
+        def_datasets += f"""
 y = copy(transpose(readdlm("{_escape_filename(y_filename)}", ',', Float32, '\\n')))"""
     else:
-        def_datasets+= f"""
+        def_datasets += f"""
 y = readdlm("{_escape_filename(y_filename)}", ',', Float32, '\\n')[:, 1]"""
 
     if weights is not None:
@@ -513,30 +584,69 @@ weights = copy(transpose(readdlm("{_escape_filename(weights_filename)}", ',', Fl
 weights = readdlm("{_escape_filename(weights_filename)}", ',', Float32, '\\n')[:, 1]"""
     return def_datasets
 
-def _make_hyperparams_julia_str(X, alpha, annealing, batchSize, batching, binary_operators, constraints_str,
-                               def_hyperparams, equation_file, fast_cycle, fractionReplacedHof, hofMigration,
-                               maxdepth, maxsize, migration,
-                               optimizer_algorithm, optimizer_nrestarts,
-                               optimize_probability, optimizer_iterations, npop,
-                               parsimony, perturbationFactor, populations, procs, shouldOptimizeConstants,
-                               unary_operators, useFrequency, use_custom_variable_names,
-                               variable_names, warmupMaxsizeBy, weightAddNode,
-                               ncyclesperiteration, fractionReplaced, topn, verbosity, progress, loss,
-                               weightDeleteNode, weightDoNothing, weightInsertNode, weightMutateConstant,
-                               weightMutateOperator, weightRandomize, weightSimplify, weights,
-                               tournament_selection_n, tournament_selection_p,
-                               **kwargs):
+
+def _make_hyperparams_julia_str(
+    X,
+    alpha,
+    annealing,
+    batchSize,
+    batching,
+    binary_operators,
+    constraints_str,
+    def_hyperparams,
+    equation_file,
+    fast_cycle,
+    fractionReplacedHof,
+    hofMigration,
+    maxdepth,
+    maxsize,
+    migration,
+    optimizer_algorithm,
+    optimizer_nrestarts,
+    optimize_probability,
+    optimizer_iterations,
+    npop,
+    parsimony,
+    perturbationFactor,
+    populations,
+    procs,
+    shouldOptimizeConstants,
+    unary_operators,
+    useFrequency,
+    use_custom_variable_names,
+    variable_names,
+    warmupMaxsizeBy,
+    weightAddNode,
+    ncyclesperiteration,
+    fractionReplaced,
+    topn,
+    verbosity,
+    progress,
+    loss,
+    weightDeleteNode,
+    weightDoNothing,
+    weightInsertNode,
+    weightMutateConstant,
+    weightMutateOperator,
+    weightRandomize,
+    weightSimplify,
+    weights,
+    tournament_selection_n,
+    tournament_selection_p,
+    **kwargs,
+):
     try:
         term_width = shutil.get_terminal_size().columns
     except:
-        _, term_width = subprocess.check_output(['stty', 'size']).split()
+        _, term_width = subprocess.check_output(["stty", "size"]).split()
+
     def tuple_fix(ops):
         if len(ops) > 1:
-            return ', '.join(ops)
+            return ", ".join(ops)
         elif len(ops) == 0:
-            return ''
+            return ""
         else:
-            return ops[0] + ','
+            return ops[0] + ","
 
     def_hyperparams += f"""\n
 plus=(+)
@@ -606,7 +716,7 @@ progress={'true' if progress else 'false'},
 terminal_width={term_width:d}
 """
 
-    def_hyperparams += '\n)'
+    def_hyperparams += "\n)"
     return def_hyperparams
 
 
@@ -639,16 +749,20 @@ def _handle_constraints(binary_operators, constraints, unary_operators, **kwargs
     for op in binary_operators:
         if op not in constraints:
             constraints[op] = (-1, -1)
-        if op in ['plus', 'sub']:
+        if op in ["plus", "sub"]:
             if constraints[op][0] != constraints[op][1]:
                 raise NotImplementedError(
-                    "You need equal constraints on both sides for - and *, due to simplification strategies.")
-        elif op == 'mult':
+                    "You need equal constraints on both sides for - and *, due to simplification strategies."
+                )
+        elif op == "mult":
             # Make sure the complex expression is in the left side.
             if constraints[op][0] == -1:
                 continue
             elif constraints[op][1] == -1 or constraints[op][0] < constraints[op][1]:
-                constraints[op][0], constraints[op][1] = constraints[op][1], constraints[op][0]
+                constraints[op][0], constraints[op][1] = (
+                    constraints[op][1],
+                    constraints[op][0],
+                )
 
 
 def _create_inline_operators(binary_operators, unary_operators, **kwargs):
@@ -656,27 +770,33 @@ def _create_inline_operators(binary_operators, unary_operators, **kwargs):
     for op_list in [binary_operators, unary_operators]:
         for i in range(len(op_list)):
             op = op_list[i]
-            is_user_defined_operator = '(' in op
+            is_user_defined_operator = "(" in op
 
             if is_user_defined_operator:
                 def_hyperparams += op + "\n"
                 # Cut off from the first non-alphanumeric char:
                 first_non_char = [
-                    j for j in range(len(op))
-                    if not (op[j].isalpha() or op[j].isdigit())][0]
+                    j
+                    for j in range(len(op))
+                    if not (op[j].isalpha() or op[j].isdigit())
+                ][0]
                 function_name = op[:first_non_char]
                 op_list[i] = function_name
     return def_hyperparams
 
 
-def _handle_feature_selection(X, select_k_features, use_custom_variable_names, variable_names, y):
+def _handle_feature_selection(
+    X, select_k_features, use_custom_variable_names, variable_names, y
+):
     if select_k_features is not None:
         selection = run_feature_selection(X, y, select_k_features)
         print(f"Using features {selection}")
         X = X[:, selection]
 
         if use_custom_variable_names:
-            variable_names = [variable_names[selection[i]] for i in range(len(selection))]
+            variable_names = [
+                variable_names[selection[i]] for i in range(len(selection))
+            ]
     else:
         selection = None
     return X, variable_names, selection
@@ -687,22 +807,34 @@ def _set_paths(tempdir):
     pkg_directory = Path(__file__).parents[1]
     default_project_file = pkg_directory / "Project.toml"
     tmpdir = Path(tempfile.mkdtemp(dir=tempdir))
-    hyperparam_filename = tmpdir / f'hyperparams.jl'
-    dataset_filename = tmpdir / f'dataset.jl'
-    runfile_filename = tmpdir / f'runfile.jl'
+    hyperparam_filename = tmpdir / f"hyperparams.jl"
+    dataset_filename = tmpdir / f"dataset.jl"
+    runfile_filename = tmpdir / f"runfile.jl"
     X_filename = tmpdir / "X.csv"
     y_filename = tmpdir / "y.csv"
     weights_filename = tmpdir / "weights.csv"
-    return dict(pkg_directory=pkg_directory,
-	    default_project_file=default_project_file,
-	    X_filename=X_filename,
-            dataset_filename=dataset_filename,
-            hyperparam_filename=hyperparam_filename,
-            runfile_filename=runfile_filename, tmpdir=tmpdir,
-            weights_filename=weights_filename, y_filename=y_filename)
+    return dict(
+        pkg_directory=pkg_directory,
+        default_project_file=default_project_file,
+        X_filename=X_filename,
+        dataset_filename=dataset_filename,
+        hyperparam_filename=hyperparam_filename,
+        runfile_filename=runfile_filename,
+        tmpdir=tmpdir,
+        weights_filename=weights_filename,
+        y_filename=y_filename,
+    )
 
 
-def _check_assertions(X, binary_operators, unary_operators, use_custom_variable_names, variable_names, weights, y):
+def _check_assertions(
+    X,
+    binary_operators,
+    unary_operators,
+    use_custom_variable_names,
+    variable_names,
+    weights,
+    y,
+):
     # Check for potential errors before they happen
     assert len(unary_operators) + len(binary_operators) > 0
     assert len(X.shape) == 2
@@ -714,76 +846,108 @@ def _check_assertions(X, binary_operators, unary_operators, use_custom_variable_
     if use_custom_variable_names:
         assert len(variable_names) == X.shape[1]
 
+
 def _check_for_julia_installation():
     try:
         process = subprocess.Popen(["julia", "-v"], stdout=subprocess.PIPE, bufsize=-1)
         while True:
             line = process.stdout.readline()
-            if not line: break
+            if not line:
+                break
         process.stdout.close()
         process.wait()
     except FileNotFoundError:
         import os
-        raise RuntimeError(f"Your current $PATH is: {os.environ['PATH']}\nPySR could not start julia. Make sure julia is installed and on your $PATH.")
+
+        raise RuntimeError(
+            f"Your current $PATH is: {os.environ['PATH']}\nPySR could not start julia. Make sure julia is installed and on your $PATH."
+        )
     process.kill()
 
 
 def run_feature_selection(X, y, select_k_features):
     """Use a gradient boosting tree regressor as a proxy for finding
-        the k most important features in X, returning indices for those
-        features as output."""
+    the k most important features in X, returning indices for those
+    features as output."""
 
     from sklearn.ensemble import RandomForestRegressor
     from sklearn.feature_selection import SelectFromModel, SelectKBest
 
     clf = RandomForestRegressor(n_estimators=100, max_depth=3, random_state=0)
     clf.fit(X, y)
-    selector = SelectFromModel(clf, threshold=-np.inf,
-            max_features=select_k_features, prefit=True)
+    selector = SelectFromModel(
+        clf, threshold=-np.inf, max_features=select_k_features, prefit=True
+    )
     return selector.get_support(indices=True)
 
-def get_hof(equation_file=None, n_features=None, variable_names=None,
-            output_jax_format=None, output_torch_format=None,
-            selection=None, extra_sympy_mappings=None, 
-            extra_jax_mappings=None, extra_torch_mappings=None,
-            multioutput=None, nout=None, **kwargs):
+
+def get_hof(
+    equation_file=None,
+    n_features=None,
+    variable_names=None,
+    output_jax_format=None,
+    output_torch_format=None,
+    selection=None,
+    extra_sympy_mappings=None,
+    extra_jax_mappings=None,
+    extra_torch_mappings=None,
+    multioutput=None,
+    nout=None,
+    **kwargs,
+):
     """Get the equations from a hall of fame file. If no arguments
     entered, the ones used previously from a call to PySR will be used."""
 
     global global_state
 
-    if equation_file is None: equation_file = global_state['equation_file']
-    if n_features is None: n_features = global_state['n_features']
-    if variable_names is None: variable_names = global_state['variable_names']
-    if extra_sympy_mappings is None: extra_sympy_mappings = global_state['extra_sympy_mappings']
-    if extra_jax_mappings is None: extra_jax_mappings = global_state['extra_jax_mappings']
-    if extra_torch_mappings is None: extra_torch_mappings = global_state['extra_torch_mappings']
-    if output_torch_format is None: output_torch_format = global_state['output_torch_format']
-    if output_jax_format is None: output_jax_format = global_state['output_jax_format']
-    if multioutput is None: multioutput = global_state['multioutput']
-    if nout is None: nout = global_state['nout']
-    if selection is None: selection = global_state['selection']
+    if equation_file is None:
+        equation_file = global_state["equation_file"]
+    if n_features is None:
+        n_features = global_state["n_features"]
+    if variable_names is None:
+        variable_names = global_state["variable_names"]
+    if extra_sympy_mappings is None:
+        extra_sympy_mappings = global_state["extra_sympy_mappings"]
+    if extra_jax_mappings is None:
+        extra_jax_mappings = global_state["extra_jax_mappings"]
+    if extra_torch_mappings is None:
+        extra_torch_mappings = global_state["extra_torch_mappings"]
+    if output_torch_format is None:
+        output_torch_format = global_state["output_torch_format"]
+    if output_jax_format is None:
+        output_jax_format = global_state["output_jax_format"]
+    if multioutput is None:
+        multioutput = global_state["multioutput"]
+    if nout is None:
+        nout = global_state["nout"]
+    if selection is None:
+        selection = global_state["selection"]
 
-    global_state['selection'] = selection
-    global_state['equation_file'] = equation_file
-    global_state['n_features'] = n_features
-    global_state['variable_names'] = variable_names
-    global_state['extra_sympy_mappings'] = extra_sympy_mappings
-    global_state['extra_jax_mappings'] = extra_jax_mappings
-    global_state['extra_torch_mappings'] = extra_torch_mappings
-    global_state['output_torch_format'] = output_torch_format
-    global_state['output_jax_format'] = output_jax_format
-    global_state['multioutput'] = multioutput
-    global_state['nout'] = nout
-    global_state['selection'] = selection
+    global_state["selection"] = selection
+    global_state["equation_file"] = equation_file
+    global_state["n_features"] = n_features
+    global_state["variable_names"] = variable_names
+    global_state["extra_sympy_mappings"] = extra_sympy_mappings
+    global_state["extra_jax_mappings"] = extra_jax_mappings
+    global_state["extra_torch_mappings"] = extra_torch_mappings
+    global_state["output_torch_format"] = output_torch_format
+    global_state["output_jax_format"] = output_jax_format
+    global_state["multioutput"] = multioutput
+    global_state["nout"] = nout
+    global_state["selection"] = selection
 
     try:
         if multioutput:
-            all_outputs = [pd.read_csv(str(equation_file) + f'.out{i}' + '.bkup', sep="|") for i in range(1, nout+1)]
+            all_outputs = [
+                pd.read_csv(str(equation_file) + f".out{i}" + ".bkup", sep="|")
+                for i in range(1, nout + 1)
+            ]
         else:
-            all_outputs = [pd.read_csv(str(equation_file) + '.bkup', sep="|")]
+            all_outputs = [pd.read_csv(str(equation_file) + ".bkup", sep="|")]
     except FileNotFoundError:
-        raise RuntimeError("Couldn't find equation file! The equation search likely exited before a single iteration completed.")
+        raise RuntimeError(
+            "Couldn't find equation file! The equation search likely exited before a single iteration completed."
+        )
 
     ret_outputs = []
 
@@ -798,19 +962,16 @@ def get_hof(equation_file=None, n_features=None, variable_names=None,
             jax_format = []
         if output_torch_format:
             torch_format = []
-        use_custom_variable_names = (len(variable_names) != 0)
-        local_sympy_mappings = {
-                **extra_sympy_mappings,
-                **sympy_mappings
-        }
+        use_custom_variable_names = len(variable_names) != 0
+        local_sympy_mappings = {**extra_sympy_mappings, **sympy_mappings}
 
         if use_custom_variable_names:
             sympy_symbols = [sympy.Symbol(variable_names[i]) for i in range(n_features)]
         else:
-            sympy_symbols = [sympy.Symbol('x%d'%i) for i in range(n_features)]
+            sympy_symbols = [sympy.Symbol("x%d" % i) for i in range(n_features)]
 
         for i in range(len(output)):
-            eqn = sympify(output.loc[i, 'Equation'], locals=local_sympy_mappings)
+            eqn = sympify(output.loc[i, "Equation"], locals=local_sympy_mappings)
             sympy_format.append(eqn)
 
             # Numpy:
@@ -819,37 +980,46 @@ def get_hof(equation_file=None, n_features=None, variable_names=None,
             # JAX:
             if output_jax_format:
                 from .export_jax import sympy2jax
+
                 func, params = sympy2jax(eqn, sympy_symbols, selection)
-                jax_format.append({'callable': func, 'parameters': params})
+                jax_format.append({"callable": func, "parameters": params})
 
             # Torch:
             if output_torch_format:
                 from .export_torch import sympy2torch
+
                 module = sympy2torch(eqn, sympy_symbols, selection=selection)
                 torch_format.append(module)
 
-            curMSE = output.loc[i, 'MSE']
-            curComplexity = output.loc[i, 'Complexity']
+            curMSE = output.loc[i, "MSE"]
+            curComplexity = output.loc[i, "Complexity"]
 
             if lastMSE is None:
                 cur_score = 0.0
             else:
-                cur_score = - np.log(curMSE/lastMSE)/(curComplexity - lastComplexity)
+                cur_score = -np.log(curMSE / lastMSE) / (curComplexity - lastComplexity)
 
             scores.append(cur_score)
             lastMSE = curMSE
             lastComplexity = curComplexity
 
-        output['score'] = np.array(scores)
-        output['sympy_format'] = sympy_format
-        output['lambda_format'] = lambda_format
-        output_cols = ['Complexity', 'MSE', 'score', 'Equation', 'sympy_format', 'lambda_format']
+        output["score"] = np.array(scores)
+        output["sympy_format"] = sympy_format
+        output["lambda_format"] = lambda_format
+        output_cols = [
+            "Complexity",
+            "MSE",
+            "score",
+            "Equation",
+            "sympy_format",
+            "lambda_format",
+        ]
         if output_jax_format:
-            output_cols += ['jax_format']
-            output['jax_format'] = jax_format
+            output_cols += ["jax_format"]
+            output["jax_format"] = jax_format
         if output_torch_format:
-            output_cols += ['torch_format']
-            output['torch_format'] = torch_format
+            output_cols += ["torch_format"]
+            output["torch_format"] = torch_format
 
         ret_outputs.append(output[output_cols])
 
@@ -858,67 +1028,80 @@ def get_hof(equation_file=None, n_features=None, variable_names=None,
     else:
         return ret_outputs[0]
 
+
 def best_row(equations=None):
     """Return the best row of a hall of fame file using the score column.
     By default this uses the last equation file.
     """
-    if equations is None: equations = get_hof()
+    if equations is None:
+        equations = get_hof()
     if isinstance(equations, list):
-        return [eq.iloc[np.argmax(eq['score'])] for eq in equations]
+        return [eq.iloc[np.argmax(eq["score"])] for eq in equations]
     else:
-        return equations.iloc[np.argmax(equations['score'])]
+        return equations.iloc[np.argmax(equations["score"])]
+
 
 def best_tex(equations=None):
     """Return the equation with the best score, in latex format
     By default this uses the last equation file.
     """
-    if equations is None: equations = get_hof()
+    if equations is None:
+        equations = get_hof()
     if isinstance(equations, list):
-        return [sympy.latex(best_row(eq)['sympy_format'].simplify()) for eq in equations]
+        return [
+            sympy.latex(best_row(eq)["sympy_format"].simplify()) for eq in equations
+        ]
     else:
-        return sympy.latex(best_row(equations)['sympy_format'].simplify())
+        return sympy.latex(best_row(equations)["sympy_format"].simplify())
+
 
 def best(equations=None):
     """Return the equation with the best score, in sympy format.
     By default this uses the last equation file.
     """
-    if equations is None: equations = get_hof()
+    if equations is None:
+        equations = get_hof()
     if isinstance(equations, list):
-        return [best_row(eq)['sympy_format'].simplify() for eq in equations]
+        return [best_row(eq)["sympy_format"].simplify() for eq in equations]
     else:
-        return best_row(equations)['sympy_format'].simplify()
+        return best_row(equations)["sympy_format"].simplify()
+
 
 def best_callable(equations=None):
     """Return the equation with the best score, in callable format.
     By default this uses the last equation file.
     """
-    if equations is None: equations = get_hof()
+    if equations is None:
+        equations = get_hof()
     if isinstance(equations, list):
-        return [best_row(eq)['lambda_format'] for eq in equations]
+        return [best_row(eq)["lambda_format"] for eq in equations]
     else:
-        return best_row(equations)['lambda_format']
+        return best_row(equations)["lambda_format"]
+
 
 def _escape_filename(filename):
     """Turns a file into a string representation with correctly escaped backslashes"""
     repr = str(filename)
-    repr = repr.replace('\\', '\\\\')
+    repr = repr.replace("\\", "\\\\")
     return repr
+
 
 # https://gist.github.com/garrettdreyfus/8153571
 def _yesno(question):
     """Simple Yes/No Function."""
-    prompt = f'{question} (y/n): '
+    prompt = f"{question} (y/n): "
     ans = input(prompt).strip().lower()
-    if ans not in ['y', 'n']:
-        print(f'{ans} is invalid, please try again...')
+    if ans not in ["y", "n"]:
+        print(f"{ans} is invalid, please try again...")
         return _yesno(question)
-    if ans == 'y':
+    if ans == "y":
         return True
     return False
 
 
 class CallableEquation(object):
     """Simple wrapper for numpy lambda functions built with sympy"""
+
     def __init__(self, sympy_symbols, eqn, selection=None):
         self._sympy = eqn
         self._sympy_symbols = sympy_symbols
@@ -933,4 +1116,3 @@ class CallableEquation(object):
             return self._lambda(*X[:, self._selection].T)
         else:
             return self._lambda(*X.T)
-
