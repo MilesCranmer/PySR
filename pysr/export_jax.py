@@ -58,14 +58,16 @@ def sympy2jaxtext(expr, parameters, symbols_in):
     elif issubclass(expr.func, sympy.Integer):
         return f"{int(expr)}"
     elif issubclass(expr.func, sympy.Symbol):
-        return f"X[:, {[i for i in range(len(symbols_in)) if symbols_in[i] == expr][0]}]"
+        return (
+            f"X[:, {[i for i in range(len(symbols_in)) if symbols_in[i] == expr][0]}]"
+        )
     else:
         _func = _jnp_func_lookup[expr.func]
         args = [sympy2jaxtext(arg, parameters, symbols_in) for arg in expr.args]
         if _func == MUL:
-            return ' * '.join(['(' + arg + ')' for arg in args])
+            return " * ".join(["(" + arg + ")" for arg in args])
         elif _func == ADD:
-            return ' + '.join(['(' + arg + ')' for arg in args])
+            return " + ".join(["(" + arg + ")" for arg in args])
         else:
             return f'{_func}({", ".join(args)})'
 
@@ -74,6 +76,7 @@ jax_initialized = False
 jax = None
 jnp = None
 jsp = None
+
 
 def _initialize_jax():
     global jax_initialized
@@ -85,6 +88,7 @@ def _initialize_jax():
         import jax as _jax
         from jax import numpy as _jnp
         from jax.scipy import special as _jsp
+
         jax = _jax
         jnp = _jnp
         jsp = _jsp
@@ -169,7 +173,7 @@ def sympy2jax(expression, symbols_in, selection=None):
 
     parameters = []
     functional_form_text = sympy2jaxtext(expression, parameters, symbols_in)
-    hash_string = 'A_' + str(abs(hash(str(expression) + str(symbols_in))))
+    hash_string = "A_" + str(abs(hash(str(expression) + str(symbols_in))))
     text = f"def {hash_string}(X, parameters):\n"
     if selection is not None:
         # Impose the feature selection:
