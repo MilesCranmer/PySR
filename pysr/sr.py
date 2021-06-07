@@ -62,7 +62,7 @@ sympy_mappings = {
     "log2_abs": lambda x: sympy.log(abs(x), 2),
     "log1p_abs": lambda x: sympy.log(abs(x) + 1),
     "floor": sympy.floor,
-    "ceil": sympy.ceil,
+    "ceil": sympy.ceiling,
     "sign": sympy.sign,
     "gamma": sympy.gamma,
 }
