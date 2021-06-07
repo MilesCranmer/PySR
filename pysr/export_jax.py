@@ -55,21 +55,19 @@ def sympy2jaxtext(expr, parameters, symbols_in):
     if issubclass(expr.func, sympy.Float):
         parameters.append(float(expr))
         return f"parameters[{len(parameters) - 1}]"
-    elif issubclass(expr.func, sympy.Integer):
+    if issubclass(expr.func, sympy.Integer):
         return f"{int(expr)}"
-    elif issubclass(expr.func, sympy.Symbol):
+    if issubclass(expr.func, sympy.Symbol):
         return (
             f"X[:, {[i for i in range(len(symbols_in)) if symbols_in[i] == expr][0]}]"
         )
-    else:
-        _func = _jnp_func_lookup[expr.func]
-        args = [sympy2jaxtext(arg, parameters, symbols_in) for arg in expr.args]
-        if _func == MUL:
-            return " * ".join(["(" + arg + ")" for arg in args])
-        elif _func == ADD:
-            return " + ".join(["(" + arg + ")" for arg in args])
-        else:
-            return f'{_func}({", ".join(args)})'
+    _func = _jnp_func_lookup[expr.func]
+    args = [sympy2jaxtext(arg, parameters, symbols_in) for arg in expr.args]
+    if _func == MUL:
+        return " * ".join(["(" + arg + ")" for arg in args])
+    if _func == ADD:
+        return " + ".join(["(" + arg + ")" for arg in args])
+    return f'{_func}({", ".join(args)})'
 
 
 jax_initialized = False
