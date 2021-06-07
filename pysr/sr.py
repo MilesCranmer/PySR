@@ -643,10 +643,9 @@ def _make_hyperparams_julia_str(
     def tuple_fix(ops):
         if len(ops) > 1:
             return ", ".join(ops)
-        elif len(ops) == 0:
+        if len(ops) == 0:
             return ""
-        else:
-            return ops[0] + ","
+        return ops[0] + ","
 
     def_hyperparams += f"""\n
 plus=(+)
@@ -1025,8 +1024,7 @@ def get_hof(
 
     if multioutput:
         return ret_outputs
-    else:
-        return ret_outputs[0]
+    return ret_outputs[0]
 
 
 def best_row(equations=None):
@@ -1037,8 +1035,7 @@ def best_row(equations=None):
         equations = get_hof()
     if isinstance(equations, list):
         return [eq.iloc[np.argmax(eq["score"])] for eq in equations]
-    else:
-        return equations.iloc[np.argmax(equations["score"])]
+    return equations.iloc[np.argmax(equations["score"])]
 
 
 def best_tex(equations=None):
@@ -1051,8 +1048,7 @@ def best_tex(equations=None):
         return [
             sympy.latex(best_row(eq)["sympy_format"].simplify()) for eq in equations
         ]
-    else:
-        return sympy.latex(best_row(equations)["sympy_format"].simplify())
+    return sympy.latex(best_row(equations)["sympy_format"].simplify())
 
 
 def best(equations=None):
@@ -1063,8 +1059,7 @@ def best(equations=None):
         equations = get_hof()
     if isinstance(equations, list):
         return [best_row(eq)["sympy_format"].simplify() for eq in equations]
-    else:
-        return best_row(equations)["sympy_format"].simplify()
+    return best_row(equations)["sympy_format"].simplify()
 
 
 def best_callable(equations=None):
@@ -1075,8 +1070,7 @@ def best_callable(equations=None):
         equations = get_hof()
     if isinstance(equations, list):
         return [best_row(eq)["lambda_format"] for eq in equations]
-    else:
-        return best_row(equations)["lambda_format"]
+    return best_row(equations)["lambda_format"]
 
 
 def _escape_filename(filename):
@@ -1114,5 +1108,4 @@ class CallableEquation(object):
     def __call__(self, X):
         if self._selection is not None:
             return self._lambda(*X[:, self._selection].T)
-        else:
-            return self._lambda(*X.T)
+        return self._lambda(*X.T)
