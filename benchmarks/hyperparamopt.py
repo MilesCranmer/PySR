@@ -8,7 +8,6 @@ import pysr
 import time
 
 import contextlib
-import numpy as np
 
 
 @contextlib.contextmanager
