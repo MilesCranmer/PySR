@@ -85,7 +85,7 @@ class TestPipeline(unittest.TestCase):
     def test_noisy(self):
 
         np.random.seed(1)
-        y = self.X[:, [0, 1]] ** 2 + np.random.randn(self.X.shape[0]) * 0.05
+        y = self.X[:, [0, 1]] ** 2 + np.random.randn(self.X.shape[0], 1) * 0.05
         equations = pysr(
             self.X,
             y,
@@ -96,8 +96,8 @@ class TestPipeline(unittest.TestCase):
             procs=0,
             denoise=True,
         )
-        self.assertLessEqual(best_row(equations=equations)[0]["MSE"], 1e-4)
-        self.assertLessEqual(best_row(equations=equations)[1]["MSE"], 1e-4)
+        self.assertLessEqual(best_row(equations=equations)[0]["MSE"], 1e-2)
+        self.assertLessEqual(best_row(equations=equations)[1]["MSE"], 1e-2)
 
 
 class TestBest(unittest.TestCase):
