@@ -62,7 +62,7 @@ def run_trial(args):
 
     print(f"Starting", str(args))
     try:
-        trials = []
+        local_trials = []
         for i in range(len(eval_str)):
             print(f"Starting test {i}")
             for j in range(ntrials):
@@ -81,15 +81,15 @@ def run_trial(args):
                 )
                 if len(trial) == 0:
                     raise ValueError
-                trials.append(
+                local_trials.append(
                     np.min(trial["MSE"]) ** 0.5 / np.std(eval(eval_str[i - 1]))
                 )
-                print(f"Test {i} trial {j} with", str(args), f"got {trials[-1]}")
+                print(f"Test {i} trial {j} with", str(args), f"got {local_trials[-1]}")
 
     except ValueError:
         print(f"Broken", str(args))
         return {"status": "ok", "loss": np.inf}  # or 'fail' if nan loss
-    loss = np.average(trials)
+    loss = np.average(local_trials)
     print(f"Finished with {loss}", str(args))
 
     return {"status": "ok", "loss": loss}  # or 'fail' if nan loss
@@ -127,15 +127,15 @@ def merge_trials(trials1, trials2_slice):
 
     for trial in trials2_slice:
         tid = trial["tid"] + max_tid + 1
-        hyperopt_trial = Trials().new_trial_docs(
+        local_hyperopt_trial = Trials().new_trial_docs(
             tids=[None], specs=[None], results=[None], miscs=[None]
         )
-        hyperopt_trial[0] = trial
-        hyperopt_trial[0]["tid"] = tid
-        hyperopt_trial[0]["misc"]["tid"] = tid
-        for key in hyperopt_trial[0]["misc"]["idxs"].keys():
-            hyperopt_trial[0]["misc"]["idxs"][key] = [tid]
-        trials1.insert_trial_docs(hyperopt_trial)
+        local_hyperopt_trial[0] = trial
+        local_hyperopt_trial[0]["tid"] = tid
+        local_hyperopt_trial[0]["misc"]["tid"] = tid
+        for key in local_hyperopt_trial[0]["misc"]["idxs"].keys():
+            local_hyperopt_trial[0]["misc"]["idxs"][key] = [tid]
+        trials1.insert_trial_docs(local_hyperopt_trial)
         trials1.refresh()
     return trials1
 
