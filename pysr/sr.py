@@ -491,7 +491,6 @@ def _create_julia_files(
     hyperparam_filename,
     def_hyperparams,
     niterations,
-    npop,
     runfile_filename,
     julia_project,
     procs,
@@ -748,7 +747,7 @@ def _handle_constraints(binary_operators, constraints, unary_operators, **kwargs
             # Make sure the complex expression is in the left side.
             if constraints[op][0] == -1:
                 continue
-            elif constraints[op][1] == -1 or constraints[op][0] < constraints[op][1]:
+            if constraints[op][1] == -1 or constraints[op][0] < constraints[op][1]:
                 constraints[op][0], constraints[op][1] = (
                     constraints[op][1],
                     constraints[op][0],
