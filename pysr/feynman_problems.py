@@ -63,7 +63,6 @@ class FeynmanProblem(Problem):
             d["log"] = np.log  # Quite sure the Feynman dataset has no base 10 logs
             d["arcsin"] = np.arcsin
             self.y = eval(self.form, d)
-        return
 
     def __str__(self):
         return f"Feynman Equation: {self.eq_id}|Form: {self.form}"
@@ -153,7 +152,6 @@ def do_feynman_experiments_parallel(
         writer.writerow(["ID", "Predicted", "True", "Time"])
         for i in range(len(ids)):
             writer.writerow([ids[i], predictions[i], true_equations[i], time_takens[i]])
-    return
 
 
 def do_feynman_experiments(
@@ -183,4 +181,3 @@ def do_feynman_experiments(
         writer.writerow(["ID", "Predicted", "True", "Time"])
         for i in range(len(ids)):
             writer.writerow([ids[i], predictions[i], true_equations[i], time_takens[i]])
-    return
