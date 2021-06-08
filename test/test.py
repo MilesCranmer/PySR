@@ -1,7 +1,8 @@
 import unittest
+from unittest.mock import patch
 import numpy as np
 from pysr import pysr, get_hof, best, best_tex, best_callable, best_row
-from pysr.sr import run_feature_selection, _handle_feature_selection
+from pysr.sr import run_feature_selection, _handle_feature_selection, _yesno
 import sympy
 from sympy import lambdify
 import pandas as pd
@@ -147,3 +148,11 @@ class TestFeatureSelection(unittest.TestCase):
         np.testing.assert_array_equal(
             np.sort(selected_X, axis=1), np.sort(X[:, [2, 3]], axis=1)
         )
+
+class TestHelperFunctions(unittest.TestCase):
+
+    @patch('builtins.input', side_effect=['y', 'n'])
+    def test_yesno(self, mock_input):
+        # Assert that the yes/no function correctly deals with y/n
+        self.assertEqual(_yesno("Test"), True)
+        self.assertEqual(_yesno("Test"), False)
