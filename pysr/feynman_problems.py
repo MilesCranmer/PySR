@@ -92,7 +92,7 @@ class FeynmanProblem(Problem):
                     ret.append(p)
                 except Exception as e:
                     traceback.print_exc()
-                    print(f"FAILED ON ROW {i}")
+                    print(f"FAILED ON ROW {i} with {e}")
                 ind += 1
         return ret
 
@@ -168,7 +168,6 @@ def do_feynman_experiments(
     problems = FeynmanProblem.mk_problems(
         first=first, gen=True, dp=dp, data_dir=data_dir
     )
-    indx = range(len(problems))
     ids = []
     predictions = []
     true_equations = []

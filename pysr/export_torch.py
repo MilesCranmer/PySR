@@ -17,16 +17,12 @@ def _reduce(fn):
 
 torch_initialized = False
 torch = None
-_global_func_lookup = None
-_Node = None
 SingleSymPyModule = None
 
 
 def _initialize_torch():
     global torch_initialized
     global torch
-    global _global_func_lookup
-    global _Node
     global SingleSymPyModule
 
     # Way to lazy load torch, only if this is called,
@@ -148,7 +144,7 @@ def _initialize_torch():
                     args.append(arg_)
                 return self._torch_func(*args)
 
-        class SingleSymPyModule(torch.nn.Module):
+        class _SingleSymPyModule(torch.nn.Module):
             """SympyTorch code from https://github.com/patrick-kidger/sympytorch"""
 
             def __init__(
@@ -176,6 +172,8 @@ def _initialize_torch():
                     X = X[:, self._selection]
                 symbols = {symbol: X[:, i] for i, symbol in enumerate(self.symbols_in)}
                 return self._node(symbols)
+
+        SingleSymPyModule = _SingleSymPyModule
 
 
 def sympy2torch(expression, symbols_in, selection=None, extra_torch_mappings=None):

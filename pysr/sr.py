@@ -400,7 +400,6 @@ def pysr(
     kwargs = {**dict(equation_file=equation_file), **kwargs}
 
     pkg_directory = kwargs["pkg_directory"]
-    manifest_file = None
     if kwargs["julia_project"] is not None:
         manifest_filepath = Path(kwargs["julia_project"]) / "Manifest.toml"
     else:

@@ -48,10 +48,10 @@ class TestPipeline(unittest.TestCase):
         w[w >= 0.5] = 1.0
 
         # Double equation when weights are 0:
-        y += (1 - w) * y
+        y = (2 - w) * y
         # Thus, pysr needs to use the weights to find the right equation!
 
-        equations = pysr(
+        pysr(
             self.X,
             y,
             weights=w,
@@ -140,7 +140,7 @@ class TestFeatureSelection(unittest.TestCase):
             X,
             select_k_features=2,
             use_custom_variable_names=True,
-            variable_names=[f"x{i}" for i in range(5)],
+            variable_names=var_names,
             y=y,
         )
         self.assertTrue((2 in selection) and (3 in selection))
