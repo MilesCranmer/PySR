@@ -392,7 +392,7 @@ def pysr(
     kwargs = {**_set_paths(tempdir), **kwargs}
 
     if temp_equation_file:
-        equation_file = kwargs["tmpdir"] / f"hall_of_fame.csv"
+        equation_file = kwargs["tmpdir"] / "hall_of_fame.csv"
     elif equation_file is None:
         date_time = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")[:-3]
         equation_file = "hall_of_fame_" + date_time + ".csv"
@@ -446,12 +446,12 @@ def _set_globals(X, **kwargs):
 
 def _final_pysr_process(julia_optimization, runfile_filename, timeout, **kwargs):
     command = [
-        f"julia",
+        "julia",
         f"-O{julia_optimization:d}",
         str(runfile_filename),
     ]
     if timeout is not None:
-        command = [f"timeout", f"{timeout}"] + command
+        command = ["timeout", f"{timeout}"] + command
     _cmd_runner(command, **kwargs)
 
 
@@ -515,8 +515,8 @@ def _create_julia_files(
         print(f'Pkg.activate("{_escape_filename(julia_project)}")', file=f)
         if need_install:
             print(f"Pkg.instantiate()", file=f)
-            print(f"Pkg.update()", file=f)
-            print(f"Pkg.precompile()", file=f)
+            print("Pkg.update()", file=f)
+            print("Pkg.precompile()", file=f)
         elif update:
             print(f"Pkg.update()", file=f)
         print(f"using SymbolicRegression", file=f)
@@ -798,7 +798,7 @@ def _set_paths(tempdir):
     tmpdir = Path(tempfile.mkdtemp(dir=tempdir))
     hyperparam_filename = tmpdir / f"hyperparams.jl"
     dataset_filename = tmpdir / f"dataset.jl"
-    runfile_filename = tmpdir / f"runfile.jl"
+    runfile_filename = tmpdir / "runfile.jl"
     X_filename = tmpdir / "X.csv"
     y_filename = tmpdir / "y.csv"
     weights_filename = tmpdir / "weights.csv"
