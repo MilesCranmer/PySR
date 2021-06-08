@@ -130,6 +130,8 @@ def pysr(
     optimizer_iterations=10,
     tournament_selection_n=10,
     tournament_selection_p=1.0,
+    denoise=False,
+    Xresampled=None,
 ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
@@ -244,6 +246,8 @@ def pysr(
     :type tournament_selection_n: int
     :param tournament_selection_p: Probability of selecting the best expression in each tournament. The probability will decay as p*(1-p)^n for other expressions, sorted by loss.
     :type tournament_selection_p: float
+    :param denoise: Whether to use a Gaussian Process to denoise the data before inputting to PySR. Can help PySR fit noisy data.
+    :type denoise: bool
     :returns: Results dataframe, giving complexity, MSE, and equations (as strings), as well as functional forms. If list, each element corresponds to a dataframe of equations for each output.
     :type: pd.DataFrame/list
     """
@@ -327,6 +331,24 @@ def pysr(
     else:
         raise NotImplementedError("y shape not supported!")
 
+    if denoise:
+        if weights is not None:
+            raise NotImplementedError(
+                "No weights for denoising - the weights are learned."
+            )
+        if Xresampled is not None and selection is not None:
+            # Select among only the selected features:
+            Xresampled = Xresampled[:, selection]
+        if multioutput:
+            y = np.stack(
+                [_denoise(X, y[:, i], Xresampled=Xresampled)[1] for i in range(nout)],
+                axis=1,
+            )
+            if Xresampled is not None:
+                X = Xresampled
+        else:
+            X, y = _denoise(X, y, Xresampled=Xresampled)
+
     kwargs = dict(
         X=X,
         y=y,
@@ -387,6 +409,7 @@ def pysr(
         nout=nout,
         tournament_selection_n=tournament_selection_n,
         tournament_selection_p=tournament_selection_p,
+        denoise=denoise,
     )
 
     kwargs = {**_set_paths(tempdir), **kwargs}
@@ -1080,6 +1103,20 @@ def _yesno(question):
     if ans == "y":
         return True
     return False
+
+
+def _denoise(X, y, Xresampled=None):
+    """Denoise the dataset using a Gaussian process"""
+    from sklearn.gaussian_process import GaussianProcessRegressor
+    from sklearn.gaussian_process.kernels import RBF, WhiteKernel, ConstantKernel
+
+    gp_kernel = RBF(np.ones(X.shape[1])) + WhiteKernel(1e-1) + ConstantKernel()
+    gpr = GaussianProcessRegressor(kernel=gp_kernel, n_restarts_optimizer=50)
+    gpr.fit(X, y)
+    if Xresampled is not None:
+        return Xresampled, gpr.predict(Xresampled)
+
+    return X, gpr.predict(X)
 
 
 class CallableEquation(object):

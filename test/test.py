@@ -82,6 +82,23 @@ class TestPipeline(unittest.TestCase):
 
         self.assertLessEqual(equations.iloc[-1]["MSE"], 1e-4)
 
+    def test_noisy(self):
+
+        np.random.seed(1)
+        y = self.X[:, [0, 1]] ** 2 + np.random.randn(self.X.shape[0]) * 0.05
+        equations = pysr(
+            self.X,
+            y,
+            unary_operators=["sq(x) = x^2"],
+            binary_operators=["plus"],
+            extra_sympy_mappings={"sq": lambda x: x ** 2},
+            **self.default_test_kwargs,
+            procs=0,
+            denoise=True,
+        )
+        self.assertLessEqual(best_row(equations=equations)[0]["MSE"], 1e-4)
+        self.assertLessEqual(best_row(equations=equations)[1]["MSE"], 1e-4)
+
 
 class TestBest(unittest.TestCase):
     def setUp(self):
