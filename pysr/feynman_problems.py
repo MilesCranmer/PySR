@@ -70,7 +70,7 @@ class FeynmanProblem(Problem):
     def __repr__(self):
         return str(self)
 
-    def mk_problems(first=100, gen=False, dp=500, data_dir=FEYNMAN_DATASET):
+    def mk_problems(self, first=100, gen=False, dp=500, data_dir=FEYNMAN_DATASET):
         """
 
         first: the first "first" equations from the dataset will be made into problems
