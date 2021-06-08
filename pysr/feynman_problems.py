@@ -3,6 +3,7 @@ import csv
 import traceback
 from .sr import pysr, best
 from pathlib import Path
+from functools import partial
 
 PKG_DIR = Path(__file__).parents[1]
 FEYNMAN_DATASET = PKG_DIR / "datasets" / "FeynmanEquations.csv"
@@ -136,7 +137,8 @@ def do_feynman_experiments_parallel(
     pool = mp.Pool()
     results = []
     with tqdm(total=len(problems)) as pbar:
-        for i, res in enumerate(pool.imap(run_on_problem, problems)):
+        f = partial(run_on_problem, verbosity=verbosity)
+        for i, res in enumerate(pool.imap(f, problems)):
             results.append(res)
             pbar.update()
     for res in results:
