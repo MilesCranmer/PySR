@@ -1065,7 +1065,7 @@ def best_callable(equations=None):
 def _escape_filename(filename):
     """Turns a file into a string representation with correctly escaped backslashes"""
     str_repr = str(filename)
-    str_repr = repr.replace("\\", "\\\\")
+    str_repr = str_repr.replace("\\", "\\\\")
     return str_repr
 
 
