@@ -60,7 +60,7 @@ def run_trial(args):
         "X[:, 0] * np.sin(2*np.pi * (X[:, 1] * X[:, 2] - X[:, 3] / X[:, 4])) + 3.0",
     ]
 
-    print(f"Starting", str(args))
+    print("Starting", str(args))
     try:
         local_trials = []
         for i in range(len(eval_str)):
@@ -87,7 +87,7 @@ def run_trial(args):
                 print(f"Test {i} trial {j} with", str(args), f"got {local_trials[-1]}")
 
     except ValueError:
-        print(f"Broken", str(args))
+        print("Broken", str(args))
         return {"status": "ok", "loss": np.inf}  # or 'fail' if nan loss
     loss = np.average(local_trials)
     print(f"Finished with {loss}", str(args))
