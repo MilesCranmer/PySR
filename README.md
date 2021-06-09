@@ -61,7 +61,9 @@ pip install pysr
 ```
 
 The first launch will automatically install the Julia packages
-required.
+required. Most common issues at this stage are solved
+by [tweaking the Julia package server](https://github.com/MilesCranmer/PySR/issues/27).
+to use up-to-date packages.
 
 # Quickstart
 
