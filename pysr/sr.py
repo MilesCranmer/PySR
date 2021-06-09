@@ -434,10 +434,8 @@ def pysr(
     pkg_directory = kwargs["pkg_directory"]
     if kwargs["julia_project"] is not None:
         manifest_filepath = Path(kwargs["julia_project"]) / "Manifest.toml"
-        kwargs["julia_project"] = Path(kwargs["julia_project"])
     else:
         manifest_filepath = pkg_directory / "Manifest.toml"
-        kwargs["julia_project"] = pkg_directory
 
     kwargs["need_install"] = False
 
@@ -486,6 +484,7 @@ def _start_julia_daemon(
         return
 
     s = "import Pkg;"
+    s += 'Pkg.add("DaemonMode");'
     if need_install:
         s += "Pkg.instantiate();"
         s += "Pkg.update();"
