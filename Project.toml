@@ -1,5 +1,4 @@
 [deps]
-DaemonMode = "d749ddd5-2b29-4920-8305-6ff5a704e36e"
 SymbolicRegression = "8254be44-1295-4e6a-a16d-46603ac705cb"
 
 [compat]
