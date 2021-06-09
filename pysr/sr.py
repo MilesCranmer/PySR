@@ -484,7 +484,6 @@ def _start_julia_daemon(
         return
 
     s = "import Pkg;"
-    s += 'Pkg.add("DaemonMode");'
     if need_install:
         s += "Pkg.instantiate();"
         s += "Pkg.update();"
