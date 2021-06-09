@@ -69,21 +69,18 @@ class TestPipeline(unittest.TestCase):
             best_callable()[1](self.X), self.X[:, 1] ** 2, decimal=4
         )
 
-    def test_empty_operators_single_input_daemon(self):
-        for i in range(2):
-            np.random.seed(i)
-            X = np.random.randn(100, 1)
-            y = X[:, 0] + 3.0
-            equations = pysr(
-                X,
-                y,
-                unary_operators=[],
-                binary_operators=["plus"],
-                **self.default_test_kwargs,
-                daemon_mode=True,
-            )
+    def test_empty_operators_single_input(self):
+        X = np.random.randn(100, 1)
+        y = X[:, 0] + 3.0
+        equations = pysr(
+            X,
+            y,
+            unary_operators=[],
+            binary_operators=["plus"],
+            **self.default_test_kwargs,
+        )
 
-            self.assertLessEqual(equations.iloc[-1]["MSE"], 1e-4)
+        self.assertLessEqual(equations.iloc[-1]["MSE"], 1e-4)
 
     def test_noisy(self):
 
