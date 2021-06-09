@@ -13,6 +13,8 @@ import shutil
 from pathlib import Path
 from datetime import datetime
 import warnings
+import shlex
+import time
 
 global_state = dict(
     equation_file="hall_of_fame.csv",
@@ -26,6 +28,7 @@ global_state = dict(
     multioutput=False,
     nout=1,
     selection=None,
+    daemon=None,
 )
 
 sympy_mappings = {
@@ -132,6 +135,7 @@ def pysr(
     tournament_selection_p=1.0,
     denoise=False,
     Xresampled=None,
+    daemon_mode=False,
 ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
@@ -248,6 +252,10 @@ def pysr(
     :type tournament_selection_p: float
     :param denoise: Whether to use a Gaussian Process to denoise the data before inputting to PySR. Can help PySR fit noisy data.
     :type denoise: bool
+    :param Xresampled:
+    :type Xresampled: np.ndarray/None
+    :param daemon_mode: Whether to use DaemonMode.jl for Julia. This will let you quickly restart PySR between calls.
+    :type daemon_mode: bool
     :returns: Results dataframe, giving complexity, MSE, and equations (as strings), as well as functional forms. If list, each element corresponds to a dataframe of equations for each output.
     :type: pd.DataFrame/list
     """
@@ -410,6 +418,7 @@ def pysr(
         tournament_selection_n=tournament_selection_n,
         tournament_selection_p=tournament_selection_p,
         denoise=denoise,
+        daemon_mode=daemon_mode,
     )
 
     kwargs = {**_set_paths(tempdir), **kwargs}
@@ -467,12 +476,53 @@ def _set_globals(X, **kwargs):
             global_state[key] = value
 
 
-def _final_pysr_process(julia_optimization, runfile_filename, timeout, **kwargs):
-    command = [
-        "julia",
-        f"-O{julia_optimization:d}",
-        str(runfile_filename),
-    ]
+def _start_julia_daemon(
+    julia_optimization, julia_project, need_install, update, **kwargs
+):
+    global global_state
+    if global_state["daemon"] is not None:
+        return
+
+    s = "import Pkg;"
+    if need_install:
+        s += "Pkg.instantiate();"
+        s += "Pkg.update();"
+        s += "Pkg.precompile();"
+    elif update:
+        s += "Pkg.update();"
+    command = shlex.split(
+        f"julia --startup-file=no -O{julia_optimization:d} --project={julia_project} -e"
+        f" '{s}using DaemonMode; println(\"Julia server starting!\"); serve(3000, true)'"
+    )
+    print("Running on", " ".join(command))
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=-1)
+    while True:
+        line = process.stdout.readline()
+        if not line:
+            break
+        decoded_line = line.decode("utf-8")
+        print(decoded_line, end="")
+        if "Julia server starting!" in decoded_line:
+            break
+
+    time.sleep(5)
+    print("Finished starting Julia daemon.")
+    global_state["daemon"] = process
+
+
+def _final_pysr_process(
+    julia_optimization, julia_project, runfile_filename, timeout, daemon_mode, **kwargs
+):
+    if daemon_mode:
+        _start_julia_daemon(
+            julia_optimization=julia_optimization, julia_project=julia_project, **kwargs
+        )
+        command = shlex.split(
+            f"julia --startup-file=no --project={julia_project}"
+            f" -e 'using DaemonMode; runargs()' {runfile_filename}"
+        )
+    else:
+        command = shlex.split(f"julia -O{julia_optimization:d} {runfile_filename}")
     if timeout is not None:
         command = ["timeout", f"{timeout}"] + command
     _cmd_runner(command, **kwargs)
@@ -523,6 +573,7 @@ def _create_julia_files(
     pkg_directory,
     need_install,
     update,
+    daemon_mode,
     **kwargs,
 ):
     with open(hyperparam_filename, "w") as f:
@@ -534,14 +585,14 @@ def _create_julia_files(
             julia_project = pkg_directory
         else:
             julia_project = Path(julia_project)
-        print(f"import Pkg", file=f)
-        print(f'Pkg.activate("{_escape_filename(julia_project)}")', file=f)
-        if need_install:
-            print(f"Pkg.instantiate()", file=f)
-            print("Pkg.update()", file=f)
-            print("Pkg.precompile()", file=f)
-        elif update:
-            print(f"Pkg.update()", file=f)
+        if not daemon_mode:
+            print(f"import Pkg", file=f)
+            if need_install:
+                print(f"Pkg.instantiate()", file=f)
+                print("Pkg.update()", file=f)
+                print("Pkg.precompile()", file=f)
+            elif update:
+                print(f"Pkg.update()", file=f)
         print(f"using SymbolicRegression", file=f)
         print(f'include("{_escape_filename(hyperparam_filename)}")', file=f)
         print(f'include("{_escape_filename(dataset_filename)}")', file=f)
