@@ -137,6 +137,8 @@ def pysr(
     Note: most default parameters have been tuned over several example
     equations, but you should adjust `niterations`,
     `binary_operators`, `unary_operators` to your requirements.
+    You can view more detailed explanations of the options on the
+    [options page](https://pysr.readthedocs.io/en/latest/docs/options/) of the documentation.
 
     :param X: 2D array. Rows are examples, columns are features. If pandas DataFrame, the columns are used for variable names (so make sure they don't contain spaces).
     :type X: np.ndarray/pandas.DataFrame
