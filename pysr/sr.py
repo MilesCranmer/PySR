@@ -309,6 +309,8 @@ def pysr(
         warnings.warn(
             "Note: Using a large maxsize for the equation search will be exponentially slower and use significant memory. You should consider turning `useFrequency` to False, and perhaps use `warmupMaxsizeBy`."
         )
+    if maxsize < 7:
+        raise NotImplementedError("PySR requires a maxsize of at least 7")
 
     X, variable_names, selection = _handle_feature_selection(
         X, select_k_features, use_custom_variable_names, variable_names, y
