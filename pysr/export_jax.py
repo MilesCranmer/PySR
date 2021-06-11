@@ -63,7 +63,14 @@ def sympy2jaxtext(expr, parameters, symbols_in, extra_jax_mappings=None):
         )
     if extra_jax_mappings is None:
         extra_jax_mappings = {}
-    _func = {**_jnp_func_lookup, **extra_jax_mappings}[expr.func]
+    try:
+        _func = {**_jnp_func_lookup, **extra_jax_mappings}[expr.func]
+    except KeyError:
+        raise KeyError(
+            f"Function {expr.func} was not found in JAX function mappings."
+            "Please add it to extra_jax_mappings in the format, e.g., "
+            "{sympy.sqrt: 'jnp.sqrt'}."
+        )
     args = [
         sympy2jaxtext(
             arg, parameters, symbols_in, extra_jax_mappings=extra_jax_mappings

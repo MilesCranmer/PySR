@@ -117,7 +117,14 @@ def _initialize_torch():
                     self._torch_func = lambda value: value
                     self._args = ((lambda memodict: memodict[expr.name]),)
                 else:
-                    self._torch_func = _func_lookup[expr.func]
+                    try:
+                        self._torch_func = _func_lookup[expr.func]
+                    except KeyError:
+                        raise KeyError(
+                            f"Function {expr.func} was not found in Torch function mappings."
+                            "Please add it to extra_torch_mappings in the format, e.g., "
+                            "{sympy.sqrt: torch.sqrt}."
+                        )
                     args = []
                     for arg in expr.args:
                         try:
