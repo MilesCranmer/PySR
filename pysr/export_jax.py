@@ -51,7 +51,7 @@ _jnp_func_lookup = {
 }
 
 
-def sympy2jaxtext(expr, parameters, symbols_in):
+def sympy2jaxtext(expr, parameters, symbols_in, extra_jax_mappings=None):
     if issubclass(expr.func, sympy.Float):
         parameters.append(float(expr))
         return f"parameters[{len(parameters) - 1}]"
@@ -61,8 +61,15 @@ def sympy2jaxtext(expr, parameters, symbols_in):
         return (
             f"X[:, {[i for i in range(len(symbols_in)) if symbols_in[i] == expr][0]}]"
         )
-    _func = _jnp_func_lookup[expr.func]
-    args = [sympy2jaxtext(arg, parameters, symbols_in) for arg in expr.args]
+    if extra_jax_mappings is None:
+        extra_jax_mappings = {}
+    _func = {**_jnp_func_lookup, **extra_jax_mappings}[expr.func]
+    args = [
+        sympy2jaxtext(
+            arg, parameters, symbols_in, extra_jax_mappings=extra_jax_mappings
+        )
+        for arg in expr.args
+    ]
     if _func == MUL:
         return " * ".join(["(" + arg + ")" for arg in args])
     if _func == ADD:
@@ -92,7 +99,7 @@ def _initialize_jax():
         jsp = _jsp
 
 
-def sympy2jax(expression, symbols_in, selection=None):
+def sympy2jax(expression, symbols_in, selection=None, extra_jax_mappings=None):
     """Returns a function f and its parameters;
     the function takes an input matrix, and a list of arguments:
             f(X, parameters)
@@ -170,7 +177,9 @@ def sympy2jax(expression, symbols_in, selection=None):
     global jsp
 
     parameters = []
-    functional_form_text = sympy2jaxtext(expression, parameters, symbols_in)
+    functional_form_text = sympy2jaxtext(
+        expression, parameters, symbols_in, extra_jax_mappings
+    )
     hash_string = "A_" + str(abs(hash(str(expression) + str(symbols_in))))
     text = f"def {hash_string}(X, parameters):\n"
     if selection is not None:

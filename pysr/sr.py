@@ -289,6 +289,20 @@ def pysr(
     if len(variable_names) == 0:
         variable_names = [f"x{i}" for i in range(X.shape[1])]
 
+    if extra_jax_mappings is not None:
+        for key, value in extra_jax_mappings:
+            if not isinstance(value, str):
+                raise NotImplementedError(
+                    "extra_jax_mappings must have keys that are strings! e.g., {sympy.sqrt: 'jnp.sqrt'}."
+                )
+
+    if extra_torch_mappings is not None:
+        for key, value in extra_jax_mappings:
+            if not callable(value):
+                raise NotImplementedError(
+                    "extra_torch_mappings must be callable functions! e.g., {sympy.sqrt: torch.sqrt}."
+                )
+
     use_custom_variable_names = len(variable_names) != 0
 
     _check_assertions(
@@ -996,14 +1010,24 @@ def get_hof(
             if output_jax_format:
                 from .export_jax import sympy2jax
 
-                func, params = sympy2jax(eqn, sympy_symbols, selection)
+                func, params = sympy2jax(
+                    eqn,
+                    sympy_symbols,
+                    selection=selection,
+                    extra_jax_mappings=extra_jax_mappings,
+                )
                 jax_format.append({"callable": func, "parameters": params})
 
             # Torch:
             if output_torch_format:
                 from .export_torch import sympy2torch
 
-                module = sympy2torch(eqn, sympy_symbols, selection=selection)
+                module = sympy2torch(
+                    eqn,
+                    sympy_symbols,
+                    selection=selection,
+                    extra_torch_mappings=extra_torch_mappings,
+                )
                 torch_format.append(module)
 
             curMSE = output.loc[i, "MSE"]
