@@ -76,12 +76,7 @@ def _initialize_torch():
             sympy.Not: torch.logical_not,
             sympy.Max: torch.max,
             sympy.Min: torch.min,
-            # Matrices
-            sympy.MatAdd: torch.add,
-            sympy.HadamardProduct: torch.mul,
-            sympy.Trace: torch.trace,
-            # Note: May raise error for integer matrices.
-            sympy.Determinant: torch.det,
+            sympy.Mod: torch.fmod,
         }
 
         class _Node(torch.nn.Module):
