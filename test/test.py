@@ -60,6 +60,7 @@ class TestPipeline(unittest.TestCase):
             extra_sympy_mappings={"sq": lambda x: x ** 2},
             **self.default_test_kwargs,
             procs=0,
+            temp_equation_file=True,
         )
 
         np.testing.assert_almost_equal(
