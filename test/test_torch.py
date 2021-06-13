@@ -51,3 +51,20 @@ class TestTorch(unittest.TestCase):
             np.square(np.cos(X[:, 1])),  # Selection 1st feature
             decimal=4,
         )
+
+    def test_mod_mapping(self):
+        x, y, z = sympy.symbols("x y z")
+        expression = x ** 2 + sympy.atanh(sympy.Mod(y + 1, 2) - 1) * 3.2 * z
+
+        module = sympy2torch(expression, [x, y, z])
+
+        X = torch.rand(100, 3).float() * 10
+
+        true_out = (
+            X[:, 0] ** 2 + torch.atanh(torch.fmod(X[:, 1] + 1, 2) - 1) * 3.2 * X[:, 2]
+        )
+        torch_out = module(X)
+
+        np.testing.assert_array_almost_equal(
+            true_out.detach(), torch_out.detach(), decimal=4
+        )
