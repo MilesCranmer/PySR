@@ -48,7 +48,11 @@ renderer:
       name: operators
       source: docs/operators.md
       preamble: {weight: 3}
+    - title: Examples
+      name: examples
+      source: docs/examples.md
+      preamble: {weight: 4}
     - title: API Documentation
       contents:
         - pysr.sr.*
-      preamble: {weight: 4}
+      preamble: {weight: 5}
