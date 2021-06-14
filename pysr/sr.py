@@ -1143,7 +1143,7 @@ def _denoise(X, y, Xresampled=None):
     return X, gpr.predict(X)
 
 
-class CallableEquation(object):
+class CallableEquation:
     """Simple wrapper for numpy lambda functions built with sympy"""
 
     def __init__(self, sympy_symbols, eqn, selection=None):
