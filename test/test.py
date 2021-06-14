@@ -41,7 +41,7 @@ class TestPipeline(unittest.TestCase):
         self.assertLessEqual(equations[0].iloc[-1]["MSE"], 1e-4)
         self.assertLessEqual(equations[1].iloc[-1]["MSE"], 1e-4)
 
-    def test_multioutput_weighted_with_callable(self):
+    def test_multioutput_weighted_with_callable_temp_equation(self):
         y = self.X[:, [0, 1]] ** 2
         w = np.random.rand(*y.shape)
         w[w < 0.5] = 0.0
@@ -61,6 +61,7 @@ class TestPipeline(unittest.TestCase):
             **self.default_test_kwargs,
             procs=0,
             temp_equation_file=True,
+            delete_tempfiles=False,
         )
 
         np.testing.assert_almost_equal(
