@@ -995,8 +995,8 @@ def get_hof(
         else:
             sympy_symbols = [sympy.Symbol("x%d" % i) for i in range(n_features)]
 
-        for i in range(len(output)):
-            eqn = sympify(output.loc[i, "Equation"], locals=local_sympy_mappings)
+        for _, eqn_row in output.iterrows():
+            eqn = sympify(eqn_row["Equation"], locals=local_sympy_mappings)
             sympy_format.append(eqn)
 
             # Numpy:
@@ -1026,8 +1026,8 @@ def get_hof(
                 )
                 torch_format.append(module)
 
-            curMSE = output.loc[i, "MSE"]
-            curComplexity = output.loc[i, "Complexity"]
+            curMSE = eqn_row["MSE"]
+            curComplexity = eqn_row["Complexity"]
 
             if lastMSE is None:
                 cur_score = 0.0
