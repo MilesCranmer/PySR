@@ -264,17 +264,16 @@ def pysr(
     if constraints is None:
         constraints = {}
 
+    buffer_available = "buffer" in sys.stdout.__dir__()
+
     if progress is not None:
-        if progress and ("buffer" not in sys.stdout.__dir__()):
+        if progress and not buffer_available:
             warnings.warn(
                 "Note: it looks like you are running in Jupyter. The progress bar will be turned off."
             )
             progress = False
     else:
-        if "buffer" in sys.stdout.__dir__():
-            progress = True
-        else:
-            progress = False
+        progress = buffer_available
 
     assert optimizer_algorithm in ["NelderMead", "BFGS"]
     assert tournament_selection_n < npop
