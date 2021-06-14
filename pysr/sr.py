@@ -289,14 +289,14 @@ def pysr(
         variable_names = [f"x{i}" for i in range(X.shape[1])]
 
     if extra_jax_mappings is not None:
-        for key, value in extra_jax_mappings:
+        for value in extra_jax_mappings.values():
             if not isinstance(value, str):
                 raise NotImplementedError(
                     "extra_jax_mappings must have keys that are strings! e.g., {sympy.sqrt: 'jnp.sqrt'}."
                 )
 
     if extra_torch_mappings is not None:
-        for key, value in extra_jax_mappings:
+        for value in extra_jax_mappings.values():
             if not callable(value):
                 raise NotImplementedError(
                     "extra_torch_mappings must be callable functions! e.g., {sympy.sqrt: torch.sqrt}."
@@ -797,8 +797,7 @@ def _handle_constraints(binary_operators, constraints, unary_operators, **kwargs
 def _create_inline_operators(binary_operators, unary_operators, **kwargs):
     def_hyperparams = ""
     for op_list in [binary_operators, unary_operators]:
-        for i in range(len(op_list)):
-            op = op_list[i]
+        for i, op in enumerate(op_list):
             is_user_defined_operator = "(" in op
 
             if is_user_defined_operator:
@@ -806,8 +805,8 @@ def _create_inline_operators(binary_operators, unary_operators, **kwargs):
                 # Cut off from the first non-alphanumeric char:
                 first_non_char = [
                     j
-                    for j in range(len(op))
-                    if not (op[j].isalpha() or op[j].isdigit())
+                    for j, char in enumerate(op)
+                    if not (char.isalpha() or char.isdigit())
                 ][0]
                 function_name = op[:first_non_char]
                 op_list[i] = function_name
@@ -823,9 +822,7 @@ def _handle_feature_selection(
         X = X[:, selection]
 
         if use_custom_variable_names:
-            variable_names = [
-                variable_names[selection[i]] for i in range(len(selection))
-            ]
+            variable_names = [variable_names[i] for i in selection]
     else:
         selection = None
     return X, variable_names, selection
