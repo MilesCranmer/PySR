@@ -15,7 +15,7 @@ for more complex searches).
 kwargs = dict(populations=5, niterations=5, annealing=True)
 ```
 
-1. Simple search
+## 1. Simple search
 
 Here's a simple example where we turn off multiprocessing,
 and find the expression `2 cos(x3) + x0^2 - 2`.
@@ -27,7 +27,7 @@ expressions = pysr(X, y, binary_operators=["+", "-", "*", "/"], **kwargs)
 print(best(expressions))
 ```
 
-2. Custom operator
+## 2. Custom operator
 
 Here, we define a custom operator and use it to find an expression:
 
@@ -44,7 +44,7 @@ expressions = pysr(
 print(best(expressions))
 ```
 
-3. Multiple outputs
+## 3. Multiple outputs
 
 Here, we do the same thing, but with multiple expressions at once,
 each requiring a different feature.
@@ -60,7 +60,7 @@ expressions = pysr(
 )
 ```
 
-4. Plotting an expression
+## 4. Plotting an expression
 
 Here, let's use the same equations, but get a format we can actually
 use and test. We can add this option after a search via the `get_hof`
@@ -106,4 +106,5 @@ plt.ylabel('Prediction')
 plt.show()
 ```
 Which gives us:
-![](./images/example_plot.png)
+
+![](https://github.com/MilesCranmer/PySR/raw/master/docs/images/example_plot.png)
