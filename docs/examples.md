@@ -17,8 +17,8 @@ kwargs = dict(populations=5, niterations=5, annealing=True)
 
 ## 1. Simple search
 
-Here's a simple example where we turn off multiprocessing,
-and find the expression `2 cos(x3) + x0^2 - 2`.
+Here's a simple example where we 
+find the expression `2 cos(x3) + x0^2 - 2`.
 
 ```python
 X = 2 * np.random.randn(100, 5)
