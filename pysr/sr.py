@@ -132,6 +132,7 @@ def pysr(
     tournament_selection_p=1.0,
     denoise=False,
     Xresampled=None,
+    precision=32,
 ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
@@ -250,6 +251,8 @@ def pysr(
     :type tournament_selection_p: float
     :param denoise: Whether to use a Gaussian Process to denoise the data before inputting to PySR. Can help PySR fit noisy data.
     :type denoise: bool
+    :param precision: What precision to use for the data. By default this is 32 (float32), but you can select 64 or 16 as well.
+    :type precision: int
     :returns: Results dataframe, giving complexity, MSE, and equations (as strings), as well as functional forms. If list, each element corresponds to a dataframe of equations for each output.
     :type: pd.DataFrame/list
     """
@@ -427,6 +430,7 @@ def pysr(
         tournament_selection_n=tournament_selection_n,
         tournament_selection_p=tournament_selection_p,
         denoise=denoise,
+        precision=precision,
     )
 
     kwargs = {**_set_paths(tempdir), **kwargs}
@@ -582,40 +586,53 @@ def _create_julia_files(
 
 
 def _make_datasets_julia_str(
-    X, X_filename, weights, weights_filename, y, y_filename, multioutput, **kwargs
+    X,
+    X_filename,
+    weights,
+    weights_filename,
+    y,
+    y_filename,
+    multioutput,
+    precision,
+    **kwargs,
 ):
     def_datasets = """using DelimitedFiles"""
-    np.savetxt(X_filename, X.astype(np.float32), delimiter=",")
+    julia_dtype = {16: "Float16", 32: "Float32", 64: "Float64"}[precision]
+    np_dtype = {16: np.float16, 32: np.float32, 64: np.float64}[precision]
+
+    np.savetxt(X_filename, X.astype(np_dtype), delimiter=",")
     if multioutput:
-        np.savetxt(y_filename, y.astype(np.float32), delimiter=",")
+        np.savetxt(y_filename, y.astype(np_dtype), delimiter=",")
     else:
-        np.savetxt(y_filename, y.reshape(-1, 1).astype(np.float32), delimiter=",")
+        np.savetxt(y_filename, y.reshape(-1, 1).astype(np_dtype), delimiter=",")
+
     if weights is not None:
         if multioutput:
-            np.savetxt(weights_filename, weights.astype(np.float32), delimiter=",")
+            np.savetxt(weights_filename, weights.astype(np_dtype), delimiter=",")
         else:
             np.savetxt(
                 weights_filename,
-                weights.reshape(-1, 1).astype(np.float32),
+                weights.reshape(-1, 1).astype(np_dtype),
                 delimiter=",",
             )
+
     def_datasets += f"""
-X = copy(transpose(readdlm("{_escape_filename(X_filename)}", ',', Float32, '\\n')))"""
+X = copy(transpose(readdlm("{_escape_filename(X_filename)}", ',', {julia_dtype}, '\\n')))"""
 
     if multioutput:
         def_datasets += f"""
-y = copy(transpose(readdlm("{_escape_filename(y_filename)}", ',', Float32, '\\n')))"""
+y = copy(transpose(readdlm("{_escape_filename(y_filename)}", ',', {julia_dtype}, '\\n')))"""
     else:
         def_datasets += f"""
-y = readdlm("{_escape_filename(y_filename)}", ',', Float32, '\\n')[:, 1]"""
+y = readdlm("{_escape_filename(y_filename)}", ',', {julia_dtype}, '\\n')[:, 1]"""
 
     if weights is not None:
         if multioutput:
             def_datasets += f"""
-weights = copy(transpose(readdlm("{_escape_filename(weights_filename)}", ',', Float32, '\\n')))"""
+weights = copy(transpose(readdlm("{_escape_filename(weights_filename)}", ',', {julia_dtype}, '\\n')))"""
         else:
             def_datasets += f"""
-weights = readdlm("{_escape_filename(weights_filename)}", ',', Float32, '\\n')[:, 1]"""
+weights = readdlm("{_escape_filename(weights_filename)}", ',', {julia_dtype}, '\\n')[:, 1]"""
     return def_datasets
 
 
