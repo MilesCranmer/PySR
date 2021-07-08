@@ -593,7 +593,7 @@ def _create_julia_files(
             )
         else:
             print(
-                f"EquationSearch(X, y, niterations={niterations:d}, varMap={varMap}, options=options, numprocs={cprocs})",
+                f"EquationSearch(X, y, niterations={niterations:d}, varMap={varMap}, options=options, numprocs={cprocs}, multithreading={'true' if multithreading else 'false'})",
                 file=f,
             )
 
