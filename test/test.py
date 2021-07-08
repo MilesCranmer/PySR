@@ -26,6 +26,14 @@ class TestPipeline(unittest.TestCase):
         print(equations)
         self.assertLessEqual(equations.iloc[-1]["MSE"], 1e-4)
 
+    def test_threading(self):
+        y = self.X[:, 0]
+        equations = pysr(
+            self.X, y, **self.default_test_kwargs, procs=2, multithreading=True
+        )
+        print(equations)
+        self.assertLessEqual(equations.iloc[-1]["MSE"], 1e-4)
+
     def test_multioutput_custom_operator(self):
         y = self.X[:, [0, 1]] ** 2
         equations = pysr(
