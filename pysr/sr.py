@@ -133,6 +133,7 @@ def pysr(
     denoise=False,
     Xresampled=None,
     precision=32,
+    multithreading=False,
 ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
@@ -253,6 +254,8 @@ def pysr(
     :type denoise: bool
     :param precision: What precision to use for the data. By default this is 32 (float32), but you can select 64 or 16 as well.
     :type precision: int
+    :param multithreading: Use multithreading instead of distributed
+    :type multithreading: bool
     :returns: Results dataframe, giving complexity, MSE, and equations (as strings), as well as functional forms. If list, each element corresponds to a dataframe of equations for each output.
     :type: pd.DataFrame/list
     """
@@ -431,6 +434,7 @@ def pysr(
         tournament_selection_p=tournament_selection_p,
         denoise=denoise,
         precision=precision,
+        multithreading=multithreading,
     )
 
     kwargs = {**_set_paths(tempdir), **kwargs}
@@ -488,12 +492,19 @@ def _set_globals(X, **kwargs):
             global_state[key] = value
 
 
-def _final_pysr_process(julia_optimization, runfile_filename, timeout, **kwargs):
+def _final_pysr_process(
+    julia_optimization, runfile_filename, timeout, multithreading, procs, **kwargs
+):
     command = [
         "julia",
         f"-O{julia_optimization:d}",
-        str(runfile_filename),
     ]
+
+    if multithreading:
+        command.append("--threads")
+        command.append(f"{procs}")
+
+    command.append(str(runfile_filename))
     if timeout is not None:
         command = ["timeout", f"{timeout}"] + command
     _cmd_runner(command, **kwargs)
@@ -544,6 +555,7 @@ def _create_julia_files(
     pkg_directory,
     need_install,
     update,
+    multithreading,
     **kwargs,
 ):
     with open(hyperparam_filename, "w") as f:
@@ -573,14 +585,15 @@ def _create_julia_files(
                 "[" + ",".join(['"' + vname + '"' for vname in variable_names]) + "]"
             )
 
+        cprocs = 0 if multithreading else procs
         if weights is not None:
             print(
-                f"EquationSearch(X, y, weights=weights, niterations={niterations:d}, varMap={varMap}, options=options, numprocs={procs})",
+                f"EquationSearch(X, y, weights=weights, niterations={niterations:d}, varMap={varMap}, options=options, numprocs={cprocs}, multithreading={'true' if multithreading else 'false'})",
                 file=f,
             )
         else:
             print(
-                f"EquationSearch(X, y, niterations={niterations:d}, varMap={varMap}, options=options, numprocs={procs})",
+                f"EquationSearch(X, y, niterations={niterations:d}, varMap={varMap}, options=options, numprocs={cprocs}, multithreading={'true' if multithreading else 'false'})",
                 file=f,
             )
 
