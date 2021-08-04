@@ -70,30 +70,31 @@ class FeynmanProblem(Problem):
     def __repr__(self):
         return str(self)
 
-    def mk_problems(self, first=100, gen=False, dp=500, data_dir=FEYNMAN_DATASET):
-        """
 
-        first: the first "first" equations from the dataset will be made into problems
-        data_dir: the path pointing to the Feynman Equations csv
-        returns: list of FeynmanProblems
-        """
-        ret = []
-        with open(data_dir) as csvfile:
-            ind = 0
-            reader = csv.DictReader(csvfile)
-            for i, row in enumerate(reader):
-                if ind > first:
-                    break
-                if row["Filename"] == "":
-                    continue
-                try:
-                    p = FeynmanProblem(row, gen=gen, dp=dp)
-                    ret.append(p)
-                except Exception as e:
-                    traceback.print_exc()
-                    print(f"FAILED ON ROW {i} with {e}")
-                ind += 1
-        return ret
+def mk_problems(first=100, gen=False, dp=500, data_dir=FEYNMAN_DATASET):
+    """
+
+    first: the first "first" equations from the dataset will be made into problems
+    data_dir: the path pointing to the Feynman Equations csv
+    returns: list of FeynmanProblems
+    """
+    ret = []
+    with open(data_dir) as csvfile:
+        ind = 0
+        reader = csv.DictReader(csvfile)
+        for i, row in enumerate(reader):
+            if ind > first:
+                break
+            if row["Filename"] == "":
+                continue
+            try:
+                p = FeynmanProblem(row, gen=gen, dp=dp)
+                ret.append(p)
+            except Exception as e:
+                traceback.print_exc()
+                print(f"FAILED ON ROW {i} with {e}")
+            ind += 1
+    return ret
 
 
 def run_on_problem(problem, verbosity=0, multiprocessing=True):
@@ -126,9 +127,7 @@ def do_feynman_experiments_parallel(
     import multiprocessing as mp
     from tqdm import tqdm
 
-    problems = FeynmanProblem.mk_problems(
-        first=first, gen=True, dp=dp, data_dir=data_dir
-    )
+    problems = mk_problems(first=first, gen=True, dp=dp, data_dir=data_dir)
     ids = []
     predictions = []
     true_equations = []
@@ -163,9 +162,7 @@ def do_feynman_experiments(
 ):
     from tqdm import tqdm
 
-    problems = FeynmanProblem.mk_problems(
-        first=first, gen=True, dp=dp, data_dir=data_dir
-    )
+    problems = mk_problems(first=first, gen=True, dp=dp, data_dir=data_dir)
     ids = []
     predictions = []
     true_equations = []
