@@ -1,6 +1,9 @@
-# [PySR](https://github.com/MilesCranmer/PySR)
-**Parallelized symbolic regression built on Julia, and interfaced by Python.
-Uses regularized evolution, simulated annealing, and gradient-free optimization.**
+<img src="https://raw.githubusercontent.com/MilesCranmer/PySR/master/pysr_logo.svg" width="400" />
+
+**PySR: parallel symbolic regression built on Julia, and interfaced by Python.**
+
+Uses regularized evolution, simulated annealing, and gradient-free optimization.
+
 | **Docs** | **pip** |
 |---|---|
 |[![Documentation Status](https://readthedocs.org/projects/pysr/badge/?version=latest)](https://pysr.readthedocs.io/en/latest/?badge=latest)|[![PyPI version](https://badge.fury.io/py/pysr.svg)](https://badge.fury.io/py/pysr)|
