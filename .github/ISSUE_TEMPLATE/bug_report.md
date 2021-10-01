@@ -20,7 +20,7 @@ A clear and concise description of what the bug is.
 - What dataset are you running on?
 
 **Error message**
-Add the error message here, or whatever other information would be useful for debugging.
+Add the error message here, or whatever other information would be useful for debugging. Please set `procs=0` when running to get a useful error message, otherwise the error will be hidden within different workers.
 
 **Additional context**
 Add any other context about the problem here.
