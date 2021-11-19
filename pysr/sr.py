@@ -133,7 +133,7 @@ def pysr(
     denoise=False,
     Xresampled=None,
     precision=32,
-    multithreading=False,
+    multithreading=True,
 ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
