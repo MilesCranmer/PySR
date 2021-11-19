@@ -133,7 +133,7 @@ def pysr(
     denoise=False,
     Xresampled=None,
     precision=32,
-    multithreading=True,
+    multithreading=None,
 ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
@@ -254,7 +254,7 @@ def pysr(
     :type denoise: bool
     :param precision: What precision to use for the data. By default this is 32 (float32), but you can select 64 or 16 as well.
     :type precision: int
-    :param multithreading: Use multithreading instead of distributed
+    :param multithreading: Use multithreading instead of distributed backend. Default is yes. Using procs=0 will turn off both.
     :type multithreading: bool
     :returns: Results dataframe, giving complexity, MSE, and equations (as strings), as well as functional forms. If list, each element corresponds to a dataframe of equations for each output.
     :type: pd.DataFrame/list
@@ -269,6 +269,10 @@ def pysr(
         variable_names = []
     if constraints is None:
         constraints = {}
+    if multithreading is None:
+        # Default is multithreading=True, unless explicitly set,
+        # or procs is set to 0 (serial mode).
+        multithreading = procs != 0
 
     buffer_available = "buffer" in sys.stdout.__dir__()
 

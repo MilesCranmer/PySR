@@ -13,7 +13,6 @@ class TestPipeline(unittest.TestCase):
         self.default_test_kwargs = dict(
             niterations=10,
             populations=4,
-            multithreading=False,
             user_input=False,
             annealing=True,
             useFrequency=False,
@@ -27,10 +26,10 @@ class TestPipeline(unittest.TestCase):
         print(equations)
         self.assertLessEqual(equations.iloc[-1]["MSE"], 1e-4)
 
-    def test_multithreading(self):
+    def test_multiprocessing(self):
         y = self.X[:, 0]
         equations = pysr(
-            self.X, y, **self.default_test_kwargs, procs=2, multithreading=True
+            self.X, y, **self.default_test_kwargs, procs=2, multithreading=False
         )
         print(equations)
         self.assertLessEqual(equations.iloc[-1]["MSE"], 1e-4)
