@@ -20,7 +20,11 @@ A clear and concise description of what the bug is.
 - What dataset are you running on?
 
 **Error message**
-Add the error message here, or whatever other information would be useful for debugging. Please set `procs=0` when running to get a useful error message, otherwise the error will be hidden within different workers.
+Add the error message here, or whatever other information would be useful for debugging.
+
+If the error is "Couldn't find equation file...", this error indicates something
+went wrong with the backend. Please scroll up and copy 
+the output of Julia, rather than the output of python.
 
 **Additional context**
 Add any other context about the problem here.
