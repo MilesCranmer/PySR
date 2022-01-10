@@ -27,6 +27,8 @@ global_state = dict(
     selection=None,
 )
 
+already_ran_with_pyjulia = False
+
 sympy_mappings = {
     "div": lambda x, y: x / y,
     "mult": lambda x, y: x * y,
@@ -513,12 +515,14 @@ def pysr(
         kwargs["def_datasets"] = _make_datasets_julia_str(**kwargs)
 
     _create_julia_files(**kwargs)
+    global already_ran_with_pyjulia
     if pyjulia:
         # Read entire file as a single string:
         with open(kwargs["runfile_filename"], "r") as f:
             runfile_string = f.read()
         print("Running main runfile in PyJulia!")
         Main.eval(runfile_string)
+        already_ran_with_pyjulia = True
     else:
         _final_pysr_process(**kwargs)
 
@@ -608,6 +612,7 @@ def _create_julia_files(
     pyjulia,
     **kwargs,
 ):
+    global already_ran_with_pyjulia
     with open(hyperparam_filename, "w") as f:
         print(def_hyperparams, file=f)
 
@@ -620,15 +625,18 @@ def _create_julia_files(
             julia_project = pkg_directory
         else:
             julia_project = Path(julia_project)
-        print(f"import Pkg", file=f)
-        print(f'Pkg.activate("{_escape_filename(julia_project)}")', file=f)
-        if need_install:
-            print(f"Pkg.instantiate()", file=f)
-            print("Pkg.update()", file=f)
-            print("Pkg.precompile()", file=f)
-        elif update:
-            print(f"Pkg.update()", file=f)
-        print(f"using SymbolicRegression", file=f)
+
+        if not already_ran_with_pyjulia:
+            print(f"import Pkg", file=f)
+            print(f'Pkg.activate("{_escape_filename(julia_project)}")', file=f)
+            if need_install:
+                print(f"Pkg.instantiate()", file=f)
+                print("Pkg.update()", file=f)
+                print("Pkg.precompile()", file=f)
+            elif update:
+                print(f"Pkg.update()", file=f)
+            print(f"using SymbolicRegression", file=f)
+
         print(f'include("{_escape_filename(hyperparam_filename)}")', file=f)
 
         if not pyjulia:
