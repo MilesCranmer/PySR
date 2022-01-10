@@ -12,6 +12,7 @@ from datetime import datetime
 import warnings
 from multiprocessing import cpu_count
 
+Main = None
 global_state = dict(
     equation_file="hall_of_fame.csv",
     n_features=None,
@@ -132,6 +133,7 @@ def pysr(
     Xresampled=None,
     precision=32,
     multithreading=None,
+    pyjulia=False,
 ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
@@ -254,6 +256,8 @@ def pysr(
     :type precision: int
     :param multithreading: Use multithreading instead of distributed backend. Default is yes. Using procs=0 will turn off both.
     :type multithreading: bool
+    :param pyjulia: Whether to use PyJulia instead of julia binary. PyJulia should reduce startup time for repeat calls.
+    :type pyjulia: bool
     :returns: Results dataframe, giving complexity, MSE, and equations (as strings), as well as functional forms. If list, each element corresponds to a dataframe of equations for each output.
     :type: pd.DataFrame/list
     """
@@ -272,12 +276,28 @@ def pysr(
         # or procs is set to 0 (serial mode).
         multithreading = procs != 0
 
-    buffer_available = "buffer" in sys.stdout.__dir__()
+    # Start up Julia:
+    global Main
+    if pyjulia and Main is None:
+        if not multithreading:
+            raise AssertionError(
+                "PyJulia does not support multiprocessing. Turn multithreading=True."
+            )
+
+        os.environ["JULIA_NUM_THREADS"] = str(procs)
+        from julia import Main
+
+    buffer_available = "buffer" in sys.stdout.__dir__() and not pyjulia
 
     if progress is not None:
         if progress and not buffer_available:
             warnings.warn(
                 "Note: it looks like you are running in Jupyter. The progress bar will be turned off."
+            )
+            progress = False
+        if progress and pyjulia:
+            warnings.warn(
+                "Note: it looks like you are using PyJulia. The progress bar will be turned off."
             )
             progress = False
     else:
@@ -321,7 +341,8 @@ def pysr(
         weights,
         y,
     )
-    _check_for_julia_installation()
+    if not pyjulia:
+        _check_for_julia_installation()
 
     if len(X) > 10000 and not batching:
         warnings.warn(
@@ -437,6 +458,7 @@ def pysr(
         denoise=denoise,
         precision=precision,
         multithreading=multithreading,
+        pyjulia=pyjulia,
     )
 
     kwargs = {**_set_paths(tempdir), **kwargs}
@@ -457,7 +479,7 @@ def pysr(
 
     kwargs["need_install"] = False
 
-    if not (manifest_filepath).is_file():
+    if not (manifest_filepath).is_file() and not pyjulia:
         kwargs["need_install"] = (not user_input) or _yesno(
             "I will install Julia packages using PySR's Project.toml file. OK?"
         )
@@ -471,10 +493,35 @@ def pysr(
 
     kwargs["constraints_str"] = _make_constraints_str(**kwargs)
     kwargs["def_hyperparams"] = _make_hyperparams_julia_str(**kwargs)
-    kwargs["def_datasets"] = _make_datasets_julia_str(**kwargs)
+
+    if pyjulia:
+        np_dtype = {16: np.float16, 32: np.float32, 64: np.float64}[precision]
+
+        Main.X = np.array(X, dtype=np_dtype).T
+        if len(y.shape) == 1:
+            Main.y = np.array(y, dtype=np_dtype)
+        else:
+            Main.y = np.array(y, dtype=np_dtype).T
+        if weights is not None:
+            if len(weights.shape) == 1:
+                Main.weights = np.array(weights, dtype=np_dtype)
+            else:
+                Main.weights = np.array(weights, dtype=np_dtype).T
+
+        kwargs["def_datasets"] = ""
+    else:
+        kwargs["def_datasets"] = _make_datasets_julia_str(**kwargs)
 
     _create_julia_files(**kwargs)
-    _final_pysr_process(**kwargs)
+    if pyjulia:
+        # Read entire file as a single string:
+        with open(kwargs["runfile_filename"], "r") as f:
+            runfile_string = f.read()
+        print("Running main runfile in PyJulia!")
+        Main.eval(runfile_string)
+    else:
+        _final_pysr_process(**kwargs)
+
     _set_globals(**kwargs)
 
     equations = get_hof(**kwargs)
@@ -558,12 +605,16 @@ def _create_julia_files(
     need_install,
     update,
     multithreading,
+    pyjulia,
     **kwargs,
 ):
     with open(hyperparam_filename, "w") as f:
         print(def_hyperparams, file=f)
-    with open(dataset_filename, "w") as f:
-        print(def_datasets, file=f)
+
+    if not pyjulia:
+        with open(dataset_filename, "w") as f:
+            print(def_datasets, file=f)
+
     with open(runfile_filename, "w") as f:
         if julia_project is None:
             julia_project = pkg_directory
@@ -579,7 +630,10 @@ def _create_julia_files(
             print(f"Pkg.update()", file=f)
         print(f"using SymbolicRegression", file=f)
         print(f'include("{_escape_filename(hyperparam_filename)}")', file=f)
-        print(f'include("{_escape_filename(dataset_filename)}")', file=f)
+
+        if not pyjulia:
+            print(f'include("{_escape_filename(dataset_filename)}")', file=f)
+
         if len(variable_names) == 0:
             varMap = "[" + ",".join([f'"x{i}"' for i in range(X.shape[1])]) + "]"
         else:
