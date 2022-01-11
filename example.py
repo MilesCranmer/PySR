@@ -18,7 +18,6 @@ equations = pysr(
         "inv(x) = 1/x",
     ],
     loss="loss(x, y) = abs(x - y)",  # Custom loss function
-    julia_project="../SymbolicRegression.jl",
 )  # Define your own operator! (Julia syntax)
 
 ...  # (you can use ctl-c to exit early)
