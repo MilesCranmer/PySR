@@ -518,10 +518,8 @@ def pysr(
     global already_ran_with_pyjulia
     if pyjulia:
         # Read entire file as a single string:
-        with open(kwargs["runfile_filename"], "r") as f:
-            runfile_string = f.read()
         print("Running main runfile in PyJulia!")
-        Main.eval(runfile_string)
+        Main.eval(f"include('{_escape_filename(kwargs['runfile_filename'])}')")
         already_ran_with_pyjulia = True
     else:
         _final_pysr_process(**kwargs)
