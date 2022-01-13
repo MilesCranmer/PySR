@@ -25,8 +25,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        julia-version: ['1.6.1']
-        python-version: ['3.8']
+        julia-version: ['1.7.1']
+        python-version: ['3.9']
         os: [windows-latest]
     
     steps:
