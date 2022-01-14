@@ -423,23 +423,24 @@ def pysr(
     except:
         _, term_width = subprocess.check_output(["stty", "size"]).split()
 
-    from julia import Pkg
+    if not already_ran:
+        from julia import Pkg
 
-    Pkg.activate(f"{_escape_filename(julia_project)}")
-    if need_install:
-        Pkg.instantiate()
-        Pkg.update()
-        Pkg.precompile()
-    elif update:
-        Pkg.update()
+        Pkg.activate(f"{_escape_filename(julia_project)}")
+        if need_install:
+            Pkg.instantiate()
+            Pkg.update()
+            Pkg.precompile()
+        elif update:
+            Pkg.update()
 
-    Main.eval("using SymbolicRegression")
+        Main.eval("using SymbolicRegression")
 
-    Main.plus = Main.eval("(+)")
-    Main.sub = Main.eval("(-)")
-    Main.mult = Main.eval("(*)")
-    Main.pow = Main.eval("(^)")
-    Main.div = Main.eval("(/)")
+        Main.plus = Main.eval("(+)")
+        Main.sub = Main.eval("(-)")
+        Main.mult = Main.eval("(*)")
+        Main.pow = Main.eval("(^)")
+        Main.div = Main.eval("(/)")
 
     Main.custom_loss = Main.eval(loss)
 
