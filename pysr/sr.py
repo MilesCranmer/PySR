@@ -624,7 +624,7 @@ def _create_julia_files(
         else:
             julia_project = Path(julia_project)
 
-        if not already_ran_with_pyjulia:
+        if (pyjulia and not already_ran_with_pyjulia) or (not pyjulia):
             print(f"import Pkg", file=f)
             print(f'Pkg.activate("{_escape_filename(julia_project)}")', file=f)
             if need_install:
