@@ -281,12 +281,13 @@ def pysr(
     # Start up Julia:
     global Main
     if pyjulia and Main is None:
-        if not multithreading:
-            raise AssertionError(
-                "PyJulia does not support multiprocessing. Turn multithreading=True."
-            )
+        # if not multithreading:
+        #     raise AssertionError(
+        #         "PyJulia does not support multiprocessing. Turn multithreading=True."
+        #     )
 
-        os.environ["JULIA_NUM_THREADS"] = str(procs)
+        if multithreading:
+            os.environ["JULIA_NUM_THREADS"] = str(procs)
         from julia import Main
 
     buffer_available = "buffer" in sys.stdout.__dir__() and not pyjulia
@@ -560,7 +561,7 @@ def pysr(
     else:
         kwargs["def_datasets"] = _make_datasets_julia_str(**kwargs)
 
-    _create_julia_files(**kwargs)
+        _create_julia_files(**kwargs)
         _final_pysr_process(**kwargs)
 
     _set_globals(**kwargs)
@@ -649,24 +650,24 @@ def _create_julia_files(
     with open(hyperparam_filename, "w") as f:
         print(def_hyperparams, file=f)
 
-        with open(dataset_filename, "w") as f:
-            print(def_datasets, file=f)
+    with open(dataset_filename, "w") as f:
+        print(def_datasets, file=f)
 
     with open(runfile_filename, "w") as f:
 
-            print(f"import Pkg", file=f)
-            print(f'Pkg.activate("{_escape_filename(julia_project)}")', file=f)
-            if need_install:
-                print(f"Pkg.instantiate()", file=f)
-                print("Pkg.update()", file=f)
-                print("Pkg.precompile()", file=f)
-            elif update:
-                print(f"Pkg.update()", file=f)
-            print(f"using SymbolicRegression", file=f)
+        print(f"import Pkg", file=f)
+        print(f'Pkg.activate("{_escape_filename(julia_project)}")', file=f)
+        if need_install:
+            print(f"Pkg.instantiate()", file=f)
+            print("Pkg.update()", file=f)
+            print("Pkg.precompile()", file=f)
+        elif update:
+            print(f"Pkg.update()", file=f)
+        print(f"using SymbolicRegression", file=f)
 
         print(f'include("{_escape_filename(hyperparam_filename)}")', file=f)
 
-            print(f'include("{_escape_filename(dataset_filename)}")', file=f)
+        print(f'include("{_escape_filename(dataset_filename)}")', file=f)
 
         varMap = _make_varmap(X, variable_names)
 
