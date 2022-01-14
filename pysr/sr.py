@@ -27,7 +27,7 @@ global_state = dict(
     selection=None,
 )
 
-already_ran_with_pyjulia = False
+already_ran = False
 
 sympy_mappings = {
     "div": lambda x, y: x / y,
@@ -99,7 +99,6 @@ def pysr(
     weightRandomize=1,
     weightSimplify=0.01,
     perturbationFactor=1.0,
-    timeout=None,
     extra_sympy_mappings=None,
     extra_torch_mappings=None,
     extra_jax_mappings=None,
@@ -118,7 +117,6 @@ def pysr(
     useFrequency=True,
     tempdir=None,
     delete_tempfiles=True,
-    julia_optimization=3,
     julia_project=None,
     user_input=True,
     update=True,
@@ -135,7 +133,6 @@ def pysr(
     Xresampled=None,
     precision=32,
     multithreading=None,
-    pyjulia=False,
 ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
@@ -202,8 +199,6 @@ def pysr(
     :type weightRandomize: float
     :param weightSimplify: Relative likelihood for mutation to simplify constant parts by evaluation
     :type weightSimplify: float
-    :param timeout: Time in seconds to timeout search
-    :type timeout: float
     :param equation_file: Where to save the files (.csv separated by |)
     :type equation_file: str
     :param verbosity: What verbosity level to use. 0 means minimal print statements.
@@ -230,8 +225,6 @@ def pysr(
     :type constraints: dict
     :param useFrequency: whether to measure the frequency of complexities, and use that instead of parsimony to explore equation space. Will naturally find equations of all complexities.
     :type useFrequency: bool
-    :param julia_optimization: Optimization level (0, 1, 2, 3)
-    :type julia_optimization: int
     :param tempdir: directory for the temporary files
     :type tempdir: str/None
     :param delete_tempfiles: whether to delete the temporary files after finishing
@@ -258,11 +251,11 @@ def pysr(
     :type precision: int
     :param multithreading: Use multithreading instead of distributed backend. Default is yes. Using procs=0 will turn off both.
     :type multithreading: bool
-    :param pyjulia: Whether to use PyJulia instead of julia binary. PyJulia should reduce startup time for repeat calls.
-    :type pyjulia: bool
     :returns: Results dataframe, giving complexity, MSE, and equations (as strings), as well as functional forms. If list, each element corresponds to a dataframe of equations for each output.
     :type: pd.DataFrame/list
     """
+    global already_ran
+
     if binary_operators is None:
         binary_operators = "+ * - /".split(" ")
     if unary_operators is None:
@@ -278,29 +271,19 @@ def pysr(
         # or procs is set to 0 (serial mode).
         multithreading = procs != 0
 
-    # Start up Julia:
     global Main
-    if pyjulia and Main is None:
-        # if not multithreading:
-        #     raise AssertionError(
-        #         "PyJulia does not support multiprocessing. Turn multithreading=True."
-        #     )
-
+    if Main is None:
         if multithreading:
             os.environ["JULIA_NUM_THREADS"] = str(procs)
+
         from julia import Main
 
-    buffer_available = "buffer" in sys.stdout.__dir__() and not pyjulia
+    buffer_available = "buffer" in sys.stdout.__dir__()
 
     if progress is not None:
         if progress and not buffer_available:
             warnings.warn(
                 "Note: it looks like you are running in Jupyter. The progress bar will be turned off."
-            )
-            progress = False
-        if progress and pyjulia:
-            warnings.warn(
-                "Note: it looks like you are using PyJulia. The progress bar will be turned off."
             )
             progress = False
     else:
@@ -344,8 +327,6 @@ def pysr(
         weights,
         y,
     )
-    if not pyjulia:
-        _check_for_julia_installation()
 
     if len(X) > 10000 and not batching:
         warnings.warn(
@@ -398,503 +379,212 @@ def pysr(
         else:
             X, y = _denoise(X, y, Xresampled=Xresampled)
 
-    kwargs = dict(
-        X=X,
-        y=y,
-        weights=weights,
-        alpha=alpha,
-        annealing=annealing,
-        batchSize=batchSize,
-        batching=batching,
-        binary_operators=binary_operators,
-        fast_cycle=fast_cycle,
-        fractionReplaced=fractionReplaced,
-        ncyclesperiteration=ncyclesperiteration,
-        niterations=niterations,
-        npop=npop,
-        topn=topn,
-        verbosity=verbosity,
-        progress=progress,
-        update=update,
-        julia_optimization=julia_optimization,
-        timeout=timeout,
-        fractionReplacedHof=fractionReplacedHof,
-        hofMigration=hofMigration,
-        maxdepth=maxdepth,
-        maxsize=maxsize,
-        migration=migration,
-        optimizer_algorithm=optimizer_algorithm,
-        optimizer_nrestarts=optimizer_nrestarts,
-        optimize_probability=optimize_probability,
-        optimizer_iterations=optimizer_iterations,
-        parsimony=parsimony,
-        perturbationFactor=perturbationFactor,
-        populations=populations,
-        procs=procs,
-        shouldOptimizeConstants=shouldOptimizeConstants,
-        unary_operators=unary_operators,
-        useFrequency=useFrequency,
-        use_custom_variable_names=use_custom_variable_names,
-        variable_names=variable_names,
-        warmupMaxsizeBy=warmupMaxsizeBy,
-        weightAddNode=weightAddNode,
-        weightDeleteNode=weightDeleteNode,
-        weightDoNothing=weightDoNothing,
-        weightInsertNode=weightInsertNode,
-        weightMutateConstant=weightMutateConstant,
-        weightMutateOperator=weightMutateOperator,
-        weightRandomize=weightRandomize,
-        weightSimplify=weightSimplify,
-        constraints=constraints,
-        extra_sympy_mappings=extra_sympy_mappings,
-        extra_jax_mappings=extra_jax_mappings,
-        extra_torch_mappings=extra_torch_mappings,
-        julia_project=julia_project,
-        loss=loss,
-        output_jax_format=output_jax_format,
-        output_torch_format=output_torch_format,
-        selection=selection,
-        multioutput=multioutput,
-        nout=nout,
-        tournament_selection_n=tournament_selection_n,
-        tournament_selection_p=tournament_selection_p,
-        denoise=denoise,
-        precision=precision,
-        multithreading=multithreading,
-        pyjulia=pyjulia,
-    )
-
-    kwargs = {**_set_paths(tempdir), **kwargs}
+    pkg_directory = Path(__file__).parents[1]
+    default_project_file = pkg_directory / "Project.toml"
+    tmpdir = Path(tempfile.mkdtemp(dir=tempdir))
 
     if temp_equation_file:
-        equation_file = kwargs["tmpdir"] / "hall_of_fame.csv"
+        equation_file = tmpdir / "hall_of_fame.csv"
     elif equation_file is None:
         date_time = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")[:-3]
         equation_file = "hall_of_fame_" + date_time + ".csv"
 
-    kwargs = {**dict(equation_file=equation_file), **kwargs}
-
-    pkg_directory = kwargs["pkg_directory"]
-    if kwargs["julia_project"] is not None:
-        manifest_filepath = Path(kwargs["julia_project"]) / "Manifest.toml"
-    else:
+    if julia_project is None:
         manifest_filepath = pkg_directory / "Manifest.toml"
-
-    # Set julia project to correct directory:
-    if kwargs["julia_project"] is None:
-        kwargs["julia_project"] = pkg_directory
+        julia_project = pkg_directory
     else:
-        kwargs["julia_project"] = Path(kwargs["julia_project"])
+        manifest_filepath = Path(julia_project) / "Manifest.toml"
+        julia_project = Path(julia_project)
 
-    kwargs["need_install"] = False
+    need_install = False
 
     if not (manifest_filepath).is_file() and not pyjulia:
-        kwargs["need_install"] = (not user_input) or _yesno(
+        need_install = (not user_input) or _yesno(
             "I will install Julia packages using PySR's Project.toml file. OK?"
         )
-        if kwargs["need_install"]:
+        if need_install:
             print("OK. I will install at launch.")
             assert update
 
-    global already_ran_with_pyjulia
+    _create_inline_operators(
+        binary_operators=binary_operators, unary_operators=unary_operators
+    )
+    _handle_constraints(
+        binary_operators=binary_operators,
+        unary_operators=unary_operators,
+        constraints=constraints,
+    )
 
-    kwargs["def_hyperparams"] = _create_inline_operators(**kwargs)
-    _handle_constraints(**kwargs)
-    kwargs["constraints_str"] = _make_constraints_str(**kwargs)
-    kwargs["def_hyperparams"] = _make_hyperparams_julia_str(**kwargs)
+    una_constraints = [constraints[op] for op in unary_operators]
+    bin_constraints = [constraints[op] for op in binary_operators]
 
-    if pyjulia:
-
-        from julia import Pkg
-
-        Pkg.activate(f"{_escape_filename(kwargs['julia_project'])}")
-        if kwargs["need_install"]:
-            Pkg.instantiate()
-            Pkg.update()
-            Pkg.precompile()
-        elif update:
-            Pkg.update()
-        from julia import SymbolicRegression
-
-        already_ran_with_pyjulia = True
-
-        X = kwargs["X"]
-        y = kwargs["y"]
-        weights = kwargs["weights"]
-        def_hyperparams = kwargs["def_hyperparams"]
-        variable_names = kwargs["variable_names"]
-        multithreading = kwargs["multithreading"]
-        procs = kwargs["procs"]
-        niterations = kwargs["niterations"]
-        precision = kwargs["precision"]
-        np_dtype = {16: np.float16, 32: np.float32, 64: np.float64}[precision]
-
-        Main.X = np.array(X, dtype=np_dtype).T
-        if len(y.shape) == 1:
-            Main.y = np.array(y, dtype=np_dtype)
-        else:
-            Main.y = np.array(y, dtype=np_dtype).T
-        if weights is not None:
-            if len(weights.shape) == 1:
-                Main.weights = np.array(weights, dtype=np_dtype)
-            else:
-                Main.weights = np.array(weights, dtype=np_dtype).T
-        else:
-            Main.weights = None
-
-        Main.eval(def_hyperparams)
-
-        varMap = Main.eval(_make_varmap(X, variable_names))
-        cprocs = 0 if multithreading else procs
-
-        SymbolicRegression.EquationSearch(
-            Main.X,
-            Main.y,
-            weights=Main.weights,
-            niterations=niterations,
-            varMap=varMap,
-            options=Main.options,
-            numprocs=cprocs,
-            multithreading=multithreading,
-        )
-
-    else:
-        kwargs["def_datasets"] = _make_datasets_julia_str(**kwargs)
-
-        _create_julia_files(**kwargs)
-        _final_pysr_process(**kwargs)
-
-    _set_globals(**kwargs)
-    equations = get_hof(**kwargs)
-
-    if delete_tempfiles:
-        shutil.rmtree(kwargs["tmpdir"])
-
-    return equations
-
-
-def _set_globals(X, **kwargs):
-    global global_state
-
-    global_state["n_features"] = X.shape[1]
-    for key, value in kwargs.items():
-        if key in global_state:
-            global_state[key] = value
-
-
-def _final_pysr_process(
-    julia_optimization, runfile_filename, timeout, multithreading, procs, **kwargs
-):
-    command = [
-        "julia",
-        f"-O{julia_optimization:d}",
-    ]
-
-    if multithreading:
-        command.append("--threads")
-        command.append(f"{procs}")
-
-    command.append(str(runfile_filename))
-    if timeout is not None:
-        command = ["timeout", f"{timeout}"] + command
-    _cmd_runner(command, **kwargs)
-
-
-def _cmd_runner(command, progress, **kwargs):
-    if kwargs["verbosity"] > 0:
-        print("Running on", " ".join(command))
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=-1)
-    try:
-        while True:
-            line = process.stdout.readline()
-            if not line:
-                break
-            decoded_line = line.decode("utf-8")
-            if progress:
-                decoded_line = (
-                    decoded_line.replace("\\033[K", "\033[K")
-                    .replace("\\033[1A", "\033[1A")
-                    .replace("\\033[1B", "\033[1B")
-                    .replace("\\r", "\r")
-                    .encode(sys.stdout.encoding, errors="replace")
-                )
-                sys.stdout.buffer.write(decoded_line)
-                sys.stdout.flush()
-            else:
-                print(decoded_line, end="")
-
-        process.stdout.close()
-        process.wait()
-    except KeyboardInterrupt:
-        print("Killing process... will return when done.")
-        process.kill()
-
-
-def _create_julia_files(
-    dataset_filename,
-    def_datasets,
-    hyperparam_filename,
-    def_hyperparams,
-    niterations,
-    runfile_filename,
-    julia_project,
-    procs,
-    weights,
-    X,
-    variable_names,
-    need_install,
-    update,
-    multithreading,
-    **kwargs,
-):
-    with open(hyperparam_filename, "w") as f:
-        print(def_hyperparams, file=f)
-
-    with open(dataset_filename, "w") as f:
-        print(def_datasets, file=f)
-
-    with open(runfile_filename, "w") as f:
-
-        print(f"import Pkg", file=f)
-        print(f'Pkg.activate("{_escape_filename(julia_project)}")', file=f)
-        if need_install:
-            print(f"Pkg.instantiate()", file=f)
-            print("Pkg.update()", file=f)
-            print("Pkg.precompile()", file=f)
-        elif update:
-            print(f"Pkg.update()", file=f)
-        print(f"using SymbolicRegression", file=f)
-
-        print(f'include("{_escape_filename(hyperparam_filename)}")', file=f)
-
-        print(f'include("{_escape_filename(dataset_filename)}")', file=f)
-
-        varMap = _make_varmap(X, variable_names)
-
-        cprocs = 0 if multithreading else procs
-        if weights is not None:
-            print(
-                f"EquationSearch(X, y, weights=weights, niterations={niterations:d}, varMap={varMap}, options=options, numprocs={cprocs}, multithreading={'true' if multithreading else 'false'})",
-                file=f,
-            )
-        else:
-            print(
-                f"EquationSearch(X, y, niterations={niterations:d}, varMap={varMap}, options=options, numprocs={cprocs}, multithreading={'true' if multithreading else 'false'})",
-                file=f,
-            )
-
-
-def _make_varmap(X, variable_names):
-    if len(variable_names) == 0:
-        return "[" + ",".join([f'"x{i}"' for i in range(X.shape[1])]) + "]"
-    else:
-        return "[" + ",".join(['"' + vname + '"' for vname in variable_names]) + "]"
-
-
-def _make_datasets_julia_str(
-    X,
-    X_filename,
-    weights,
-    weights_filename,
-    y,
-    y_filename,
-    multioutput,
-    precision,
-    **kwargs,
-):
-    def_datasets = """using DelimitedFiles"""
-    julia_dtype = {16: "Float16", 32: "Float32", 64: "Float64"}[precision]
-    np_dtype = {16: np.float16, 32: np.float32, 64: np.float64}[precision]
-
-    np.savetxt(X_filename, X.astype(np_dtype), delimiter=",")
-    if multioutput:
-        np.savetxt(y_filename, y.astype(np_dtype), delimiter=",")
-    else:
-        np.savetxt(y_filename, y.reshape(-1, 1).astype(np_dtype), delimiter=",")
-
-    if weights is not None:
-        if multioutput:
-            np.savetxt(weights_filename, weights.astype(np_dtype), delimiter=",")
-        else:
-            np.savetxt(
-                weights_filename,
-                weights.reshape(-1, 1).astype(np_dtype),
-                delimiter=",",
-            )
-
-    def_datasets += f"""
-X = copy(transpose(readdlm("{_escape_filename(X_filename)}", ',', {julia_dtype}, '\\n')))"""
-
-    if multioutput:
-        def_datasets += f"""
-y = copy(transpose(readdlm("{_escape_filename(y_filename)}", ',', {julia_dtype}, '\\n')))"""
-    else:
-        def_datasets += f"""
-y = readdlm("{_escape_filename(y_filename)}", ',', {julia_dtype}, '\\n')[:, 1]"""
-
-    if weights is not None:
-        if multioutput:
-            def_datasets += f"""
-weights = copy(transpose(readdlm("{_escape_filename(weights_filename)}", ',', {julia_dtype}, '\\n')))"""
-        else:
-            def_datasets += f"""
-weights = readdlm("{_escape_filename(weights_filename)}", ',', {julia_dtype}, '\\n')[:, 1]"""
-    return def_datasets
-
-
-def _make_hyperparams_julia_str(
-    X,
-    alpha,
-    annealing,
-    batchSize,
-    batching,
-    binary_operators,
-    constraints_str,
-    def_hyperparams,
-    equation_file,
-    fast_cycle,
-    fractionReplacedHof,
-    hofMigration,
-    maxdepth,
-    maxsize,
-    migration,
-    optimizer_algorithm,
-    optimizer_nrestarts,
-    optimize_probability,
-    optimizer_iterations,
-    npop,
-    parsimony,
-    perturbationFactor,
-    populations,
-    shouldOptimizeConstants,
-    unary_operators,
-    useFrequency,
-    warmupMaxsizeBy,
-    weightAddNode,
-    ncyclesperiteration,
-    fractionReplaced,
-    topn,
-    verbosity,
-    progress,
-    loss,
-    weightDeleteNode,
-    weightDoNothing,
-    weightInsertNode,
-    weightMutateConstant,
-    weightMutateOperator,
-    weightRandomize,
-    weightSimplify,
-    tournament_selection_n,
-    tournament_selection_p,
-    **kwargs,
-):
     try:
         term_width = shutil.get_terminal_size().columns
     except:
         _, term_width = subprocess.check_output(["stty", "size"]).split()
 
-    def tuple_fix(ops):
-        if len(ops) > 1:
-            return ", ".join(ops)
-        if len(ops) == 0:
-            return ""
-        return ops[0] + ","
+    from julia import Pkg
 
-    def_hyperparams += f"""\n
-plus=(+)
-sub=(-)
-mult=(*)
-square=SymbolicRegression.square
-cube=SymbolicRegression.cube
-pow=(^)
-div=(/)
-log_abs=SymbolicRegression.log_abs
-log2_abs=SymbolicRegression.log2_abs
-log10_abs=SymbolicRegression.log10_abs
-log1p_abs=SymbolicRegression.log1p_abs
-acosh_abs=SymbolicRegression.acosh_abs
-atanh_clip=SymbolicRegression.atanh_clip
-sqrt_abs=SymbolicRegression.sqrt_abs
-neg=SymbolicRegression.neg
-greater=SymbolicRegression.greater
-relu=SymbolicRegression.relu
-logical_or=SymbolicRegression.logical_or
-logical_and=SymbolicRegression.logical_and
-_custom_loss = {loss}
+    Pkg.activate(f"{_escape_filename(julia_project)}")
+    if need_install:
+        Pkg.instantiate()
+        Pkg.update()
+        Pkg.precompile()
+    elif update:
+        Pkg.update()
 
-options = SymbolicRegression.Options(binary_operators={'(' + tuple_fix(binary_operators) + ')'},
-unary_operators={'(' + tuple_fix(unary_operators) + ')'},
-{constraints_str}
-parsimony={parsimony:f}f0,
-loss=_custom_loss,
-alpha={alpha:f}f0,
-maxsize={maxsize:d},
-maxdepth={maxdepth:d},
-fast_cycle={'true' if fast_cycle else 'false'},
-migration={'true' if migration else 'false'},
-hofMigration={'true' if hofMigration else 'false'},
-fractionReplacedHof={fractionReplacedHof}f0,
-shouldOptimizeConstants={'true' if shouldOptimizeConstants else 'false'},
-hofFile="{_escape_filename(equation_file)}",
-npopulations={populations:d},
-optimizer_algorithm="{optimizer_algorithm}",
-optimizer_nrestarts={optimizer_nrestarts:d},
-optimize_probability={optimize_probability:f}f0,
-optimizer_iterations={optimizer_iterations:d},
-perturbationFactor={perturbationFactor:f}f0,
-annealing={"true" if annealing else "false"},
-batching={"true" if batching else "false"},
-batchSize={min([batchSize, len(X)]) if batching else len(X):d},
-mutationWeights=[
-    {weightMutateConstant:f},
-    {weightMutateOperator:f},
-    {weightAddNode:f},
-    {weightInsertNode:f},
-    {weightDeleteNode:f},
-    {weightSimplify:f},
-    {weightRandomize:f},
-    {weightDoNothing:f}
-],
-warmupMaxsizeBy={warmupMaxsizeBy:f}f0,
-useFrequency={"true" if useFrequency else "false"},
-npop={npop:d},
-ns={tournament_selection_n:d},
-probPickFirst={tournament_selection_p:f}f0,
-ncyclesperiteration={ncyclesperiteration:d},
-fractionReplaced={fractionReplaced:f}f0,
-topn={topn:d},
-verbosity=round(Int32, {verbosity:f}),
-progress={'true' if progress else 'false'},
-terminal_width={term_width:d}
-"""
+    Main.eval("using SymbolicRegression")
 
-    def_hyperparams += "\n)"
-    return def_hyperparams
+    Main.plus = Main.eval("(+)")
+    Main.sub = Main.eval("(-)")
+    Main.mult = Main.eval("(*)")
+    Main.pow = Main.eval("(^)")
+    Main.div = Main.eval("(/)")
+
+    Main.custom_loss = Main.eval(loss)
+
+    mutationWeights = [
+        float(weightMutateConstant),
+        float(weightMutateOperator),
+        float(weightAddNode),
+        float(weightInsertNode),
+        float(weightDeleteNode),
+        float(weightSimplify),
+        float(weightRandomize),
+        float(weightDoNothing),
+    ]
+
+    options = Main.Options(
+        binary_operators=Main.eval(str(tuple(binary_operators)).replace("'", "")),
+        unary_operators=Main.eval(str(tuple(unary_operators)).replace("'", "")),
+        bin_constraints=bin_constraints,
+        una_constraints=una_constraints,
+        parsimony=float(parsimony),
+        loss=Main.custom_loss,
+        alpha=float(alpha),
+        maxsize=int(maxsize),
+        maxdepth=int(maxdepth),
+        fast_cycle=fast_cycle,
+        migration=migration,
+        hofMigration=hofMigration,
+        fractionReplacedHof=float(fractionReplacedHof),
+        shouldOptimizeConstants=shouldOptimizeConstants,
+        hofFile=_escape_filename(equation_file),
+        npopulations=int(populations),
+        optimizer_algorithm=optimizer_algorithm,
+        optimizer_nrestarts=int(optimizer_nrestarts),
+        optimize_probability=float(optimize_probability),
+        optimizer_iterations=int(optimizer_iterations),
+        perturbationFactor=float(perturbationFactor),
+        annealing=annealing,
+        batching=batching,
+        batchSize=int(min([batchSize, len(X)]) if batching else len(X)),
+        mutationWeights=mutationWeights,
+        warmupMaxsizeBy=float(warmupMaxsizeBy),
+        useFrequency=useFrequency,
+        npop=int(npop),
+        ns=int(tournament_selection_n),
+        probPickFirst=float(tournament_selection_p),
+        ncyclesperiteration=int(ncyclesperiteration),
+        fractionReplaced=float(fractionReplaced),
+        topn=int(topn),
+        verbosity=int(verbosity),
+        progress=progress,
+        terminal_width=int(term_width),
+    )
+
+    np_dtype = {16: np.float16, 32: np.float32, 64: np.float64}[precision]
+
+    Main.X = np.array(X, dtype=np_dtype).T
+    if len(y.shape) == 1:
+        Main.y = np.array(y, dtype=np_dtype)
+    else:
+        Main.y = np.array(y, dtype=np_dtype).T
+    if weights is not None:
+        if len(weights.shape) == 1:
+            Main.weights = np.array(weights, dtype=np_dtype)
+        else:
+            Main.weights = np.array(weights, dtype=np_dtype).T
+    else:
+        Main.weights = None
+
+    cprocs = 0 if multithreading else procs
+
+    output_equations = Main.EquationSearch(
+        Main.X,
+        Main.y,
+        weights=Main.weights,
+        niterations=int(niterations),
+        varMap=variable_names,
+        options=options,
+        numprocs=int(cprocs),
+        multithreading=bool(multithreading),
+    )
+
+    _set_globals(
+        X=X,
+        equation_file=equation_file,
+        variable_names=variable_names,
+        extra_sympy_mappings=extra_sympy_mappings,
+        extra_torch_mappings=extra_torch_mappings,
+        extra_jax_mappings=extra_jax_mappings,
+        output_jax_format=output_jax_format,
+        output_torch_format=output_torch_format,
+        multioutput=multioutput,
+        nout=nout,
+        selection=selection,
+    )
+
+    equations = get_hof(
+        equation_file=equation_file,
+        n_features=X.shape[1],
+        variable_names=variable_names,
+        output_jax_format=output_jax_format,
+        output_torch_format=output_torch_format,
+        selection=selection,
+        extra_sympy_mappings=extra_sympy_mappings,
+        extra_jax_mappings=extra_jax_mappings,
+        extra_torch_mappings=extra_torch_mappings,
+        multioutput=multioutput,
+        nout=nout,
+    )
+
+    if delete_tempfiles:
+        shutil.rmtree(tmpdir)
+
+    return equations, output_equations
 
 
-def _make_constraints_str(binary_operators, constraints, unary_operators, **kwargs):
-    constraints_str = "una_constraints = ["
-    first = True
-    for op in unary_operators:
-        val = constraints[op]
-        if not first:
-            constraints_str += ", "
-        constraints_str += f"{val:d}"
-        first = False
-    constraints_str += """],
-bin_constraints = ["""
-    first = True
-    for op in binary_operators:
-        tup = constraints[op]
-        if not first:
-            constraints_str += ", "
-        constraints_str += f"({tup[0]:d}, {tup[1]:d})"
-        first = False
-    constraints_str += "],"
-    return constraints_str
+def _set_globals(
+    *,
+    X,
+    equation_file,
+    variable_names,
+    extra_sympy_mappings,
+    extra_torch_mappings,
+    extra_jax_mappings,
+    output_jax_format,
+    output_torch_format,
+    multioutput,
+    nout,
+    selection,
+):
+    global global_state
+
+    global_state["n_features"] = X.shape[1]
+    global_state["equation_file"] = equation_file
+    global_state["variable_names"] = variable_names
+    global_state["extra_sympy_mappings"] = extra_sympy_mappings
+    global_state["extra_torch_mappings"] = extra_torch_mappings
+    global_state["extra_jax_mappings"] = extra_jax_mappings
+    global_state["output_jax_format"] = output_jax_format
+    global_state["output_torch_format"] = output_torch_format
+    global_state["multioutput"] = multioutput
+    global_state["nout"] = nout
+    global_state["selection"] = selection
 
 
-def _handle_constraints(binary_operators, constraints, unary_operators, **kwargs):
+def _handle_constraints(binary_operators, unary_operators, constraints):
     for op in unary_operators:
         if op not in constraints:
             constraints[op] = -1
@@ -917,14 +607,14 @@ def _handle_constraints(binary_operators, constraints, unary_operators, **kwargs
                 )
 
 
-def _create_inline_operators(binary_operators, unary_operators, **kwargs):
-    def_hyperparams = ""
+def _create_inline_operators(binary_operators, unary_operators):
+    global Main
     for op_list in [binary_operators, unary_operators]:
         for i, op in enumerate(op_list):
             is_user_defined_operator = "(" in op
 
             if is_user_defined_operator:
-                def_hyperparams += op + "\n"
+                Main.eval(op)
                 # Cut off from the first non-alphanumeric char:
                 first_non_char = [
                     j
@@ -933,7 +623,6 @@ def _create_inline_operators(binary_operators, unary_operators, **kwargs):
                 ][0]
                 function_name = op[:first_non_char]
                 op_list[i] = function_name
-    return def_hyperparams
 
 
 def _handle_feature_selection(
@@ -949,30 +638,6 @@ def _handle_feature_selection(
     else:
         selection = None
     return X, variable_names, selection
-
-
-def _set_paths(tempdir):
-    # System-independent paths
-    pkg_directory = Path(__file__).parents[1]
-    default_project_file = pkg_directory / "Project.toml"
-    tmpdir = Path(tempfile.mkdtemp(dir=tempdir))
-    hyperparam_filename = tmpdir / f"hyperparams.jl"
-    dataset_filename = tmpdir / f"dataset.jl"
-    runfile_filename = tmpdir / "runfile.jl"
-    X_filename = tmpdir / "X.csv"
-    y_filename = tmpdir / "y.csv"
-    weights_filename = tmpdir / "weights.csv"
-    return dict(
-        pkg_directory=pkg_directory,
-        default_project_file=default_project_file,
-        X_filename=X_filename,
-        dataset_filename=dataset_filename,
-        hyperparam_filename=hyperparam_filename,
-        runfile_filename=runfile_filename,
-        tmpdir=tmpdir,
-        weights_filename=weights_filename,
-        y_filename=y_filename,
-    )
 
 
 def _check_assertions(
@@ -994,23 +659,6 @@ def _check_assertions(
         assert X.shape[0] == weights.shape[0]
     if use_custom_variable_names:
         assert len(variable_names) == X.shape[1]
-
-
-def _check_for_julia_installation():
-    try:
-        process = subprocess.Popen(["julia", "-v"], stdout=subprocess.PIPE, bufsize=-1)
-        while True:
-            line = process.stdout.readline()
-            if not line:
-                break
-        process.stdout.close()
-        process.wait()
-    except FileNotFoundError:
-
-        raise RuntimeError(
-            f"Your current $PATH is: {os.environ['PATH']}\nPySR could not start julia. Make sure julia is installed and on your $PATH."
-        )
-    process.kill()
 
 
 def run_feature_selection(X, y, select_k_features):
