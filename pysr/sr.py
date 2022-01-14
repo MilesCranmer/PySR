@@ -12,6 +12,22 @@ from datetime import datetime
 import warnings
 from multiprocessing import cpu_count
 
+
+def install(julia_project=None):
+    import julia
+
+    julia.install()
+
+    julia_project = _get_julia_project(julia_project)
+
+    from julia import Pkg
+
+    Pkg.activate(f"{_escape_filename(julia_project)}")
+    Pkg.instantiate()
+    Pkg.update()
+    Pkg.precompile()
+
+
 Main = None
 global_state = dict(
     equation_file="hall_of_fame.csv",
@@ -277,6 +293,18 @@ def pysr(
         if multithreading:
             os.environ["JULIA_NUM_THREADS"] = str(procs)
 
+        from julia.core import JuliaInfo
+
+        info = JuliaInfo.load(julia="julia")
+        if not info.is_pycall_built():
+            raise ImportError(
+                """
+Required dependencies are not installed or built.  Run the following code in the Python REPL:
+
+    >>> import pysr
+    >>> pysr.install()"""
+            )
+
         from julia import Main
 
     buffer_available = "buffer" in sys.stdout.__dir__()
@@ -380,8 +408,8 @@ def pysr(
         else:
             X, y = _denoise(X, y, Xresampled=Xresampled)
 
-    pkg_directory = Path(__file__).parents[1]
-    default_project_file = pkg_directory / "Project.toml"
+    julia_project = _get_julia_project(julia_project)
+
     tmpdir = Path(tempfile.mkdtemp(dir=tempdir))
 
     if temp_equation_file:
@@ -389,13 +417,6 @@ def pysr(
     elif equation_file is None:
         date_time = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")[:-3]
         equation_file = "hall_of_fame_" + date_time + ".csv"
-
-    if julia_project is None:
-        manifest_filepath = pkg_directory / "Manifest.toml"
-        julia_project = pkg_directory
-    else:
-        manifest_filepath = Path(julia_project) / "Manifest.toml"
-        julia_project = Path(julia_project)
 
     _create_inline_operators(
         binary_operators=binary_operators, unary_operators=unary_operators
@@ -418,11 +439,18 @@ def pysr(
         from julia import Pkg
 
         Pkg.activate(f"{_escape_filename(julia_project)}")
-        if update is not False:
-            Pkg.instantiate()
-            Pkg.update()
-            Pkg.precompile()
+        try:
+            Pkg.resolve()
+        except RuntimeError as e:
+            raise ImportError(
+                f"""
+Required dependencies are not installed or built.  Run the following code in the Python REPL:
 
+    >>> import pysr
+    >>> pysr.install()
+    
+Tried to activate project {julia_project} but failed."""
+            ) from e
         Main.eval("using SymbolicRegression")
 
         Main.plus = Main.eval("(+)")
@@ -926,3 +954,10 @@ class CallableEquation:
         if self._selection is not None:
             return self._lambda(*X[:, self._selection].T)
         return self._lambda(*X.T)
+
+
+def _get_julia_project(julia_project):
+    pkg_directory = Path(__file__).parents[1]
+    if julia_project is None:
+        return pkg_directory
+    return Path(julia_project)

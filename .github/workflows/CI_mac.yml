@@ -61,7 +61,7 @@ jobs:
             python -m pip install --upgrade pip
             pip install -r requirements.txt
             python setup.py install
-            python -c 'import julia; julia.install()'
+            python -c 'import pysr; pysr.install()'
       - name: "Run tests"
         run: python -m unittest test.test
         shell: bash

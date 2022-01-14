@@ -62,11 +62,13 @@ and [linux](https://julialang.org/downloads/platform/#linux_and_freebsd).
 
 You can install PySR with:
 ```bash
-pip install pysr
+pip3 install pysr
+python3 -c 'import pysr; pysr.install()'
 ```
+The second line will install the required Julia packages.
 
-The first launch will automatically install the Julia packages
-required. Most common issues at this stage are solved
+
+Most common issues at this stage are solved
 by [tweaking the Julia package server](https://github.com/MilesCranmer/PySR/issues/27).
 to use up-to-date packages.
 
