@@ -479,6 +479,12 @@ def pysr(
     else:
         manifest_filepath = pkg_directory / "Manifest.toml"
 
+    # Set julia project to correct directory:
+    if kwargs["julia_project"] is None:
+        kwargs["julia_project"] = pkg_directory
+    else:
+        kwargs["julia_project"] = Path(kwargs["julia_project"])
+
     kwargs["need_install"] = False
 
     if not (manifest_filepath).is_file() and not pyjulia:
@@ -489,14 +495,37 @@ def pysr(
             print("OK. I will install at launch.")
             assert update
 
+    global already_ran_with_pyjulia
+
     kwargs["def_hyperparams"] = _create_inline_operators(**kwargs)
-
     _handle_constraints(**kwargs)
-
     kwargs["constraints_str"] = _make_constraints_str(**kwargs)
     kwargs["def_hyperparams"] = _make_hyperparams_julia_str(**kwargs)
 
     if pyjulia:
+
+        from julia import Pkg
+
+        Pkg.activate(f"{_escape_filename(kwargs['julia_project'])}")
+        if kwargs["need_install"]:
+            Pkg.instantiate()
+            Pkg.update()
+            Pkg.precompile()
+        elif update:
+            Pkg.update()
+        from julia import SymbolicRegression
+
+        already_ran_with_pyjulia = True
+
+        X = kwargs["X"]
+        y = kwargs["y"]
+        weights = kwargs["weights"]
+        def_hyperparams = kwargs["def_hyperparams"]
+        variable_names = kwargs["variable_names"]
+        multithreading = kwargs["multithreading"]
+        procs = kwargs["procs"]
+        niterations = kwargs["niterations"]
+        precision = kwargs["precision"]
         np_dtype = {16: np.float16, 32: np.float32, 64: np.float64}[precision]
 
         Main.X = np.array(X, dtype=np_dtype).T
@@ -509,23 +538,32 @@ def pysr(
                 Main.weights = np.array(weights, dtype=np_dtype)
             else:
                 Main.weights = np.array(weights, dtype=np_dtype).T
+        else:
+            Main.weights = None
 
-        kwargs["def_datasets"] = ""
+        Main.eval(def_hyperparams)
+
+        varMap = Main.eval(_make_varmap(X, variable_names))
+        cprocs = 0 if multithreading else procs
+
+        SymbolicRegression.EquationSearch(
+            Main.X,
+            Main.y,
+            weights=Main.weights,
+            niterations=niterations,
+            varMap=varMap,
+            options=Main.options,
+            numprocs=cprocs,
+            multithreading=multithreading,
+        )
+
     else:
         kwargs["def_datasets"] = _make_datasets_julia_str(**kwargs)
 
     _create_julia_files(**kwargs)
-    global already_ran_with_pyjulia
-    if pyjulia:
-        # Read entire file as a single string:
-        print("Running main runfile in PyJulia!")
-        Main.eval(f"include('{_escape_filename(kwargs['runfile_filename'])}')")
-        already_ran_with_pyjulia = True
-    else:
         _final_pysr_process(**kwargs)
 
     _set_globals(**kwargs)
-
     equations = get_hof(**kwargs)
 
     if delete_tempfiles:
@@ -603,28 +641,19 @@ def _create_julia_files(
     weights,
     X,
     variable_names,
-    pkg_directory,
     need_install,
     update,
     multithreading,
-    pyjulia,
     **kwargs,
 ):
-    global already_ran_with_pyjulia
     with open(hyperparam_filename, "w") as f:
         print(def_hyperparams, file=f)
 
-    if not pyjulia:
         with open(dataset_filename, "w") as f:
             print(def_datasets, file=f)
 
     with open(runfile_filename, "w") as f:
-        if julia_project is None:
-            julia_project = pkg_directory
-        else:
-            julia_project = Path(julia_project)
 
-        if (pyjulia and not already_ran_with_pyjulia) or (not pyjulia):
             print(f"import Pkg", file=f)
             print(f'Pkg.activate("{_escape_filename(julia_project)}")', file=f)
             if need_install:
@@ -637,15 +666,9 @@ def _create_julia_files(
 
         print(f'include("{_escape_filename(hyperparam_filename)}")', file=f)
 
-        if not pyjulia:
             print(f'include("{_escape_filename(dataset_filename)}")', file=f)
 
-        if len(variable_names) == 0:
-            varMap = "[" + ",".join([f'"x{i}"' for i in range(X.shape[1])]) + "]"
-        else:
-            varMap = (
-                "[" + ",".join(['"' + vname + '"' for vname in variable_names]) + "]"
-            )
+        varMap = _make_varmap(X, variable_names)
 
         cprocs = 0 if multithreading else procs
         if weights is not None:
@@ -658,6 +681,13 @@ def _create_julia_files(
                 f"EquationSearch(X, y, niterations={niterations:d}, varMap={varMap}, options=options, numprocs={cprocs}, multithreading={'true' if multithreading else 'false'})",
                 file=f,
             )
+
+
+def _make_varmap(X, variable_names):
+    if len(variable_names) == 0:
+        return "[" + ",".join([f'"x{i}"' for i in range(X.shape[1])]) + "]"
+    else:
+        return "[" + ",".join(['"' + vname + '"' for vname in variable_names]) + "]"
 
 
 def _make_datasets_julia_str(
