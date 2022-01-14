@@ -396,16 +396,6 @@ def pysr(
         manifest_filepath = Path(julia_project) / "Manifest.toml"
         julia_project = Path(julia_project)
 
-    need_install = False
-
-    if not (manifest_filepath).is_file() and not pyjulia:
-        need_install = (not user_input) or _yesno(
-            "I will install Julia packages using PySR's Project.toml file. OK?"
-        )
-        if need_install:
-            print("OK. I will install at launch.")
-            assert update
-
     _create_inline_operators(
         binary_operators=binary_operators, unary_operators=unary_operators
     )
@@ -427,12 +417,10 @@ def pysr(
         from julia import Pkg
 
         Pkg.activate(f"{_escape_filename(julia_project)}")
-        if need_install:
+        if update is not False:
             Pkg.instantiate()
             Pkg.update()
             Pkg.precompile()
-        elif update:
-            Pkg.update()
 
         Main.eval("using SymbolicRegression")
 
