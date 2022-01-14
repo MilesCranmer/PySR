@@ -25,6 +25,7 @@ global_state = dict(
     multioutput=False,
     nout=1,
     selection=None,
+    raw_julia_output=None,
 )
 
 already_ran = False
@@ -499,7 +500,7 @@ def pysr(
 
     cprocs = 0 if multithreading else procs
 
-    output_equations = Main.EquationSearch(
+    raw_julia_output = Main.EquationSearch(
         Main.X,
         Main.y,
         weights=Main.weights,
@@ -522,6 +523,7 @@ def pysr(
         multioutput=multioutput,
         nout=nout,
         selection=selection,
+        raw_julia_output=raw_julia_output,
     )
 
     equations = get_hof(
@@ -541,7 +543,7 @@ def pysr(
     if delete_tempfiles:
         shutil.rmtree(tmpdir)
 
-    return equations, output_equations
+    return equations
 
 
 def _set_globals(
@@ -557,6 +559,7 @@ def _set_globals(
     multioutput,
     nout,
     selection,
+    raw_julia_output,
 ):
     global global_state
 
@@ -571,6 +574,7 @@ def _set_globals(
     global_state["multioutput"] = multioutput
     global_state["nout"] = nout
     global_state["selection"] = selection
+    global_state["raw_julia_output"] = raw_julia_output
 
 
 def _handle_constraints(binary_operators, unary_operators, constraints):
