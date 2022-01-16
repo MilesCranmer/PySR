@@ -149,6 +149,7 @@ def pysr(
     Xresampled=None,
     precision=32,
     multithreading=None,
+    **kwargs,
 ):
     """Run symbolic regression to fit f(X[i, :]) ~ y[i] for all i.
     Note: most default parameters have been tuned over several example
@@ -265,6 +266,8 @@ def pysr(
     :type precision: int
     :param multithreading: Use multithreading instead of distributed backend. Default is yes. Using procs=0 will turn off both.
     :type multithreading: bool
+    :param **kwargs: Other options passed to SymbolicRegression.Options, for example, if you modify SymbolicRegression.jl to include additional arguments.
+    :type **kwargs: dict
     :returns: Results dataframe, giving complexity, MSE, and equations (as strings), as well as functional forms. If list, each element corresponds to a dataframe of equations for each output.
     :type: pd.DataFrame/list
     """
@@ -507,6 +510,7 @@ Tried to activate project {julia_project} but failed."""
         verbosity=int(verbosity),
         progress=progress,
         terminal_width=int(term_width),
+        **kwargs,
     )
 
     np_dtype = {16: np.float16, 32: np.float32, 64: np.float64}[precision]
