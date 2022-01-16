@@ -1067,7 +1067,10 @@ def get_hof(
             if lastMSE is None:
                 cur_score = 0.0
             else:
-                cur_score = -np.log(curMSE / lastMSE) / (curComplexity - lastComplexity)
+                if curMSE > 0.0:
+                    cur_score = -np.log(curMSE / lastMSE) / (curComplexity - lastComplexity)
+                else:
+                    cur_score = np.inf
 
             scores.append(cur_score)
             lastMSE = curMSE
