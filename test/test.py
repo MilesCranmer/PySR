@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 import numpy as np
-from pysr import pysr, get_hof, best, best_tex, best_callable, best_row
+from pysr import pysr, get_hof, best, best_tex, best_callable, best_row, PySRRegressor
 from pysr.sr import run_feature_selection, _handle_feature_selection, _yesno
 import sympy
 from sympy import lambdify
@@ -78,18 +78,19 @@ class TestPipeline(unittest.TestCase):
             best_callable()[1](self.X), self.X[:, 1] ** 2, decimal=4
         )
 
-    def test_empty_operators_single_input(self):
+    def test_empty_operators_single_input_sklearn(self):
         X = np.random.randn(100, 1)
         y = X[:, 0] + 3.0
-        equations = pysr(
-            X,
-            y,
+        regressor = PySRRegressor(
+            model_selection="accuracy",
             unary_operators=[],
             binary_operators=["plus"],
             **self.default_test_kwargs,
         )
+        regressor.fit(X, y)
 
-        self.assertLessEqual(equations.iloc[-1]["MSE"], 1e-4)
+        self.assertLessEqual(regressor.equations.iloc[-1]["MSE"], 1e-4)
+        np.testing_assert_almost_equal(regressor.predict(X), y, decimal=1)
 
     def test_noisy(self):
 
