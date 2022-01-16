@@ -124,6 +124,10 @@ which gives:
 x0**2 + 2.000016*cos(x3) - 1.9999845
 ```
 
+The second and additional calls of `pysr` will be significantly
+faster in startup time, since the first call to Julia will compile
+and cache functions from the symbolic regression backend.
+
 One can also use `best_tex` to get the LaTeX form,
 or `best_callable` to get a function you can call.
 This uses a score which balances complexity and error;
