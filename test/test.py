@@ -90,7 +90,7 @@ class TestPipeline(unittest.TestCase):
         regressor.fit(X, y)
 
         self.assertLessEqual(regressor.equations.iloc[-1]["MSE"], 1e-4)
-        np.testing_assert_almost_equal(regressor.predict(X), y, decimal=1)
+        np.testing.assert_almost_equal(regressor.predict(X), y, decimal=1)
 
     def test_noisy(self):
 
