@@ -13,6 +13,7 @@ import shutil
 from pathlib import Path
 from datetime import datetime
 import warnings
+from multiprocessing import cpu_count
 
 global_state = dict(
     equation_file="hall_of_fame.csv",
@@ -74,7 +75,7 @@ def pysr(
     weights=None,
     binary_operators=None,
     unary_operators=None,
-    procs=4,
+    procs=cpu_count(),
     loss="L2DistLoss()",
     populations=20,
     niterations=100,
