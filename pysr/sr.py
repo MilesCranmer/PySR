@@ -135,7 +135,6 @@ def pysr(
     tempdir=None,
     delete_tempfiles=True,
     julia_project=None,
-    user_input=True,
     update=True,
     temp_equation_file=False,
     output_jax_format=False,
@@ -248,8 +247,6 @@ def pysr(
     :type delete_tempfiles: bool
     :param julia_project: a Julia environment location containing a Project.toml (and potentially the source code for SymbolicRegression.jl).  Default gives the Python package directory, where a Project.toml file should be present from the install.
     :type julia_project: str/None
-    :param user_input: Whether to ask for user input or not for installing (to be used for automated scripts). Will choose to install when asked.
-    :type user_input: bool
     :param update: Whether to automatically update Julia packages.
     :type update: bool
     :param temp_equation_file: Whether to put the hall of fame file in the temp directory. Deletion is then controlled with the delete_tempfiles argument.
@@ -439,18 +436,19 @@ Required dependencies are not installed or built.  Run the following code in the
         from julia import Pkg
 
         Pkg.activate(f"{_escape_filename(julia_project)}")
-        try:
-            Pkg.resolve()
-        except RuntimeError as e:
-            raise ImportError(
-                f"""
+        if update:
+            try:
+                Pkg.resolve()
+            except RuntimeError as e:
+                raise ImportError(
+                    f"""
 Required dependencies are not installed or built.  Run the following code in the Python REPL:
 
     >>> import pysr
     >>> pysr.install()
-    
+        
 Tried to activate project {julia_project} but failed."""
-            ) from e
+                ) from e
         Main.eval("using SymbolicRegression")
 
         Main.plus = Main.eval("(+)")
@@ -629,7 +627,6 @@ def _handle_constraints(binary_operators, unary_operators, constraints):
 
 
 def _create_inline_operators(binary_operators, unary_operators):
-    global Main
     for op_list in [binary_operators, unary_operators]:
         for i, op in enumerate(op_list):
             is_user_defined_operator = "(" in op
