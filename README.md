@@ -65,7 +65,8 @@ You can install PySR with:
 pip3 install pysr
 python3 -c 'import pysr; pysr.install()'
 ```
-The second line will install the required Julia packages.
+The second line will install and update the required Julia packages, including
+`PyCall.jl`.
 
 
 Most common issues at this stage are solved
