@@ -42,10 +42,11 @@ class PySRRegressor(BaseEstimator):
         else:
             raise NotImplementedError
 
-    def fit(self, X, y):
+    def fit(self, X, y, weights=None):
         self.equations = pysr(
             X=X,
             y=y,
+            weights=weights,
             **self.params,
         )
         return self
