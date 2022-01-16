@@ -1,5 +1,6 @@
 from pysr import pysr, best_row
 from sklearn.base import BaseEstimator
+import inspect
 
 
 class PySRRegressor(BaseEstimator):
@@ -42,12 +43,28 @@ class PySRRegressor(BaseEstimator):
         else:
             raise NotImplementedError
 
-    def fit(self, X, y, weights=None):
+    def fit(self, X, y, weights=None, variable_names=None):
+        """Search for equations to fit the dataset.
+
+        :param X: 2D array. Rows are examples, columns are features. If pandas DataFrame, the columns are used for variable names (so make sure they don't contain spaces).
+        :type X: np.ndarray/pandas.DataFrame
+        :param y: 1D array (rows are examples) or 2D array (rows are examples, columns are outputs). Putting in a 2D array will trigger a search for equations for each feature of y.
+        :type y: np.ndarray
+        :param weights: Optional. Same shape as y. Each element is how to weight the mean-square-error loss for that particular element of y.
+        :type weights: np.ndarray
+        :param variable_names: a list of names for the variables, other than "x0", "x1", etc.
+        :type variable_names: list
+        """
+        if variable_names is None:
+            if "variable_names" in self.params:
+                variable_names = self.params["variable_names"]
+
         self.equations = pysr(
             X=X,
             y=y,
             weights=weights,
-            **self.params,
+            variable_names=variable_names,
+            **{k: v for k, v in self.params.items() if k != "variable_names"},
         )
         return self
 
@@ -56,3 +73,20 @@ class PySRRegressor(BaseEstimator):
         np_format = equation_row["lambda_format"]
 
         return np_format(X)
+
+
+# Add the docs from pysr() to PySRRegressor():
+
+_pysr_docstring_split = []
+_start_recording = False
+for line in inspect.getdoc(pysr).split("\n"):
+    # Skip docs on "X" and "y"
+    if ":param binary_operators:" in line:
+        _start_recording = True
+    if ":returns:" in line:
+        _start_recording = False
+    if _start_recording:
+        _pysr_docstring_split.append(line)
+_pysr_docstring = "\n\t".join(_pysr_docstring_split)
+
+PySRRegressor.__init__.__doc__ += _pysr_docstring
