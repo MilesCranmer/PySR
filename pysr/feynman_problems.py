@@ -1,6 +1,5 @@
 import numpy as np
 import csv
-import traceback
 from .sr import pysr, best
 from pathlib import Path
 from functools import partial

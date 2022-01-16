@@ -685,7 +685,7 @@ def run_feature_selection(X, y, select_k_features):
     features as output."""
 
     from sklearn.ensemble import RandomForestRegressor
-    from sklearn.feature_selection import SelectFromModel, SelectKBest
+    from sklearn.feature_selection import SelectFromModel
 
     clf = RandomForestRegressor(n_estimators=100, max_depth=3, random_state=0)
     clf.fit(X, y)
