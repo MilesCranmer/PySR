@@ -27,4 +27,4 @@ RUN julia -e 'using Pkg; Pkg.add("SymbolicRegression")'
 # Install IPython and other useful libraries:
 RUN pip3 install ipython jupyter matplotlib
 
-CMD ["ipython"]
+CMD ["bash"]

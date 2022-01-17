@@ -70,6 +70,21 @@ required. Most common issues at this stage are solved
 by [tweaking the Julia package server](https://github.com/MilesCranmer/PySR/issues/27).
 to use up-to-date packages.
 
+## Docker
+
+You can also test out PySR in Docker, without
+installing it locally, by running the following command in
+the root directory of this repo:
+```bash
+docker build --pull --rm -f "Dockerfile" -t pysr "."
+```
+This builds an image called `pysr`. You can then run this with:
+```bash
+docker run -it --rm -v "$PWD:/data" pysr ipython
+```
+which will link the current directory to the container's `/data` directory
+and then launch ipython.
+
 # Quickstart
 
 Here is some demo code (also found in `example.py`)
