@@ -12,3 +12,5 @@ dist
 *.pyproj
 *.sln
 pysr/.vs/
+pysr.egg-info
+Manifest.toml
