@@ -23,8 +23,8 @@ def install(julia_project=None):
     from julia import Pkg
 
     Pkg.activate(f"{_escape_filename(julia_project)}")
-    Pkg.instantiate()
     Pkg.update()
+    Pkg.instantiate()
     Pkg.precompile()
 
 
