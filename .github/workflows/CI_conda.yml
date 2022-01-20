@@ -72,5 +72,5 @@ jobs:
         run: python3 test/test_static_libpython_warning.py
         shell: bash -l {0}
       - name: "Run tests"
-        run: python3 -m unittest discover -s test
+        run: python3 -m unittest test.test
         shell: bash -l {0}
