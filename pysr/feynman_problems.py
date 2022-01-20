@@ -1,6 +1,5 @@
 import numpy as np
 import csv
-import traceback
 from .sr import pysr, best
 from pathlib import Path
 from functools import partial
@@ -80,20 +79,14 @@ def mk_problems(first=100, gen=False, dp=500, data_dir=FEYNMAN_DATASET):
     """
     ret = []
     with open(data_dir) as csvfile:
-        ind = 0
         reader = csv.DictReader(csvfile)
         for i, row in enumerate(reader):
-            if ind > first:
+            if i > first:
                 break
             if row["Filename"] == "":
                 continue
-            try:
-                p = FeynmanProblem(row, gen=gen, dp=dp)
-                ret.append(p)
-            except Exception as e:
-                traceback.print_exc()
-                print(f"FAILED ON ROW {i} with {e}")
-            ind += 1
+            p = FeynmanProblem(row, gen=gen, dp=dp)
+            ret.append(p)
     return ret
 
 

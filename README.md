@@ -62,11 +62,14 @@ and [linux](https://julialang.org/downloads/platform/#linux_and_freebsd).
 
 You can install PySR with:
 ```bash
-pip install pysr
+pip3 install pysr
+python3 -c 'import pysr; pysr.install()'
 ```
+The second line will install and update the required Julia packages, including
+`PyCall.jl`.
 
-The first launch will automatically install the Julia packages
-required. Most common issues at this stage are solved
+
+Most common issues at this stage are solved
 by [tweaking the Julia package server](https://github.com/MilesCranmer/PySR/issues/27).
 to use up-to-date packages.
 
@@ -120,6 +123,10 @@ which gives:
 ```python
 x0**2 + 2.000016*cos(x3) - 1.9999845
 ```
+
+The second and additional calls of `pysr` will be significantly
+faster in startup time, since the first call to Julia will compile
+and cache functions from the symbolic regression backend.
 
 One can also use `best_tex` to get the LaTeX form,
 or `best_callable` to get a function you can call.

@@ -1,0 +1,13 @@
+name: test
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - sympy
+  - pandas
+  - numpy
+  - scikit-learn
+  - setuptools
+  - pip
+  - pip:
+    - julia

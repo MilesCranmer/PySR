@@ -5,14 +5,14 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pysr",
-    version="0.6.14",
+    version="0.7.0a1",
     author="Miles Cranmer",
     author_email="miles.cranmer@gmail.com",
     description="Simple and efficient symbolic regression",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/MilesCranmer/pysr",
-    install_requires=["numpy", "pandas", "sympy"],
+    install_requires=["julia", "numpy", "pandas", "sympy"],
     packages=setuptools.find_packages(),
     package_data={"pysr": ["../Project.toml", "../datasets/*"]},
     include_package_data=False,

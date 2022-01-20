@@ -13,7 +13,6 @@ class TestPipeline(unittest.TestCase):
         self.default_test_kwargs = dict(
             niterations=10,
             populations=4,
-            user_input=False,
             annealing=True,
             useFrequency=False,
         )

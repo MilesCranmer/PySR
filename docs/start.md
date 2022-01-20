@@ -7,20 +7,14 @@ Install Julia - see [downloads](https://julialang.org/downloads/), and
 then instructions for [mac](https://julialang.org/downloads/platform/#macos)
 and [linux](https://julialang.org/downloads/platform/#linux_and_freebsd).
 (Don't use the `conda-forge` version; it doesn't seem to work properly.)
-Then, at the command line,
-install the `Optim` and `SpecialFunctions` packages via:
 
+You can install PySR with:
 ```bash
-julia -e 'import Pkg; Pkg.add("Optim"); Pkg.add("SpecialFunctions")'
+pip3 install pysr
+python3 -c 'import pysr; pysr.install()'
 ```
-
-For python, you need to have Python 3, numpy, sympy, and pandas installed.
-
-You can install this package from PyPI with:
-
-```bash
-pip install pysr
-```
+The second line will install and update the required Julia packages, including
+`PyCall.jl`.
 
 ## Quickstart
 
@@ -47,6 +41,10 @@ which gives:
 ```python
 x0**2 + 2.000016*cos(x3) - 1.9999845
 ```
+
+The second and additional calls of `pysr` will be significantly
+faster in startup time, since the first call to Julia will compile
+and cache functions from the symbolic regression backend.
 
 One can also use `best_tex` to get the LaTeX form,
 or `best_callable` to get a function you can call.
