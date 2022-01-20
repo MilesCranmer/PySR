@@ -12,6 +12,8 @@ from datetime import datetime
 import warnings
 from multiprocessing import cpu_count
 
+is_julia_warning_silenced = False
+
 
 def install(julia_project=None):
     import julia
@@ -20,6 +22,7 @@ def install(julia_project=None):
 
     julia_project = _get_julia_project(julia_project)
 
+    init_julia()
     from julia import Pkg
 
     Pkg.activate(f"{_escape_filename(julia_project)}")
@@ -293,19 +296,7 @@ def pysr(
         if multithreading:
             os.environ["JULIA_NUM_THREADS"] = str(procs)
 
-        from julia.core import JuliaInfo
-
-        info = JuliaInfo.load(julia="julia")
-        if not info.is_pycall_built():
-            raise ImportError(
-                """
-Required dependencies are not installed or built.  Run the following code in the Python REPL:
-
-    >>> import pysr
-    >>> pysr.install()"""
-            )
-
-        from julia import Main
+        Main = init_julia()
 
     buffer_available = "buffer" in sys.stdout.__dir__()
 
@@ -964,3 +955,49 @@ def _get_julia_project(julia_project):
     if julia_project is None:
         return pkg_directory
     return Path(julia_project)
+
+
+def silence_julia_warning():
+    global is_julia_warning_silenced
+    is_julia_warning_silenced = True
+
+
+def init_julia():
+    """Initialize julia binary, turning off compiled modules if needed."""
+    global is_julia_warning_silenced
+    from julia.core import JuliaInfo, UnsupportedPythonError
+
+    info = JuliaInfo.load(julia="julia")
+    if not info.is_pycall_built():
+        raise ImportError(
+            """
+    Required dependencies are not installed or built.  Run the following code in the Python REPL:
+
+    >>> import pysr
+    >>> pysr.install()"""
+        )
+
+    Main = None
+    try:
+        from julia import Main as _Main
+
+        Main = _Main
+    except UnsupportedPythonError:
+        if not is_julia_warning_silenced:
+            warnings.warn(
+                """
+Your Python version is statically linked to libpython. For example, this could be the python included with conda, or maybe your system's built-in python.
+This will still work, but the precompilation cache for Julia will be turned off, which may result in slower startup times on the initial pysr() call.
+
+To install a Python version that is dynamically linked to libpython, pyenv is recommended (https://github.com/pyenv/pyenv).
+
+To silence this warning, you can run pysr.silence_julia_warning() after importing pysr."""
+            )
+        from julia.core import Julia
+
+        jl = Julia(compiled_modules=False)
+        from julia import Main as _Main
+
+        Main = _Main
+
+    return Main
