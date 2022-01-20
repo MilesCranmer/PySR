@@ -57,20 +57,22 @@ jobs:
       - name: "Set up Conda"
         uses: conda-incubator/setup-miniconda@v2
         with:
+          miniforge-variant: Mambaforge
+          miniforge-version: latest
           auto-activate-base: true
-          auto-update-conda: true
           channels: conda-forge
           python-version: ${{ matrix.python-version }}
+          activate-environment: test
       - name: "Install PySR"
         run: |
-            python -m pip install --upgrade pip
-            conda install -c conda-forge $(cat requirements.txt | grep -v "julia" | xargs echo | sed "s/_/-/g")
+            mamba install -c conda-forge pip $(cat requirements.txt | grep -v "julia" | xargs echo | sed "s/_/-/g")
+            python -m pip install julia
             python setup.py install
             python -c 'import pysr; pysr.install()'
       - name: "Ensure that static libpython warning appears"
         run: python test/test_static_libpython_warning.py
       - name: "Install Coverage tool"
-        run: pip install coverage coveralls
+        run: mamba install -c conda-forge coverage coveralls
       - name: "Run tests"
         run: coverage run --source=pysr --omit='*/feynman_problems.py' -m unittest test.test
         shell: bash
