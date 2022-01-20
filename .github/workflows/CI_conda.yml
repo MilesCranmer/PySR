@@ -67,10 +67,10 @@ jobs:
         run: |
             python3 -m pip install .
             python3 -c 'import pysr; pysr.install()'
-        shell: bash
+        shell: bash -l {0}
       - name: "Ensure that static libpython warning appears"
         run: python3 test/test_static_libpython_warning.py
-        shell: bash
+        shell: bash -l {0}
       - name: "Run tests"
         run: python3 -m unittest discover -s test
-        shell: bash
+        shell: bash -l {0}
