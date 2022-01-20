@@ -60,37 +60,17 @@ jobs:
           miniforge-variant: Mambaforge
           miniforge-version: latest
           auto-activate-base: true
-          channels: conda-forge
           python-version: ${{ matrix.python-version }}
           activate-environment: test
+          environment-file: environment.yml
       - name: "Install PySR"
         run: |
-            mamba install -c conda-forge pip $(cat requirements.txt | grep -v "julia" | xargs echo | sed "s/_/-/g")
-            python -m pip install julia
-            python setup.py install
-            python -c 'import pysr; pysr.install()'
-      - name: "Ensure that static libpython warning appears"
-        run: python test/test_static_libpython_warning.py
-      - name: "Install Coverage tool"
-        run: mamba install -c conda-forge coverage coveralls
-      - name: "Run tests"
-        run: coverage run --source=pysr --omit='*/feynman_problems.py' -m unittest test.test
+            python3 -m pip install .
+            python3 -c 'import pysr; pysr.install()'
         shell: bash
-      - name: Coveralls
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COVERALLS_FLAG_NAME: ${{ matrix.test-name }}
-          COVERALLS_PARALLEL: true
-        run: coveralls --service=github
-  coveralls:
-    name: Indicate completion to coveralls.io
-    needs: test
-    runs-on: ubuntu-latest
-    container: python:3-slim
-    steps:
-      - name: Finished
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-            pip install coveralls
-            coveralls --finish
+      - name: "Ensure that static libpython warning appears"
+        run: python3 test/test_static_libpython_warning.py
+        shell: bash
+      - name: "Run tests"
+        run: python3 -m unittest discover -s test
+        shell: bash
