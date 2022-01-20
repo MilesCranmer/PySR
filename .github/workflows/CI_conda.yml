@@ -65,7 +65,7 @@ jobs:
         run: |
             python -m pip install --upgrade pip
             conda install -c conda-forge $(cat requirements.txt | grep -v "julia" | xargs echo | sed "s/_/-/g")
-            pip install .
+            python setup.py install
             python -c 'import pysr; pysr.install()'
       - name: "Ensure that static libpython warning appears"
         run: python test/test_static_libpython_warning.py
