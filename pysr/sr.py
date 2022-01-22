@@ -29,6 +29,10 @@ def install(julia_project=None):
     Pkg.update()
     Pkg.instantiate()
     Pkg.precompile()
+    warnings.warn(
+        "It is recommended to restart Python after installing PySR's dependencies,"
+        " so that the Julia environment is properly initialized."
+    )
 
 
 Main = None
