@@ -68,9 +68,30 @@ jobs:
             python3 -m pip install .
             python3 -c 'import pysr; pysr.install()'
         shell: bash -l {0}
+      - name: "Install Coverage tool"
+        run: python3 -m pip install coverage coveralls
+        shell: bash -l {0}
       - name: "Ensure that static libpython warning appears"
-        run: python3 test/test_static_libpython_warning.py
+        run: coverage run --source=pysr --omit='*/feynman_problems.py' test/test_static_libpython_warning.py
         shell: bash -l {0}
       - name: "Run tests"
-        run: python3 -m unittest test.test
+        run: coverage run --append --source=pysr --omit='*/feynman_problems.py' -m unittest test.test
         shell: bash -l {0}
+      - name: Coveralls
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COVERALLS_FLAG_NAME: ${{ matrix.test-name }}
+          COVERALLS_PARALLEL: true
+        run: coveralls --service=github
+  coveralls:
+    name: Indicate completion to coveralls.io
+    needs: test
+    runs-on: ubuntu-latest
+    container: python:3-slim
+    steps:
+      - name: Finished
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+            pip install coveralls
+            coveralls --finish
