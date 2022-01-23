@@ -323,6 +323,8 @@ def pysr(
     if len(X.shape) == 1:
         X = X[:, None]
 
+    assert not isinstance(y, pd.DataFrame)
+
     if len(variable_names) == 0:
         variable_names = [f"x{i}" for i in range(X.shape[1])]
 
@@ -364,9 +366,7 @@ def pysr(
     if maxsize < 7:
         raise NotImplementedError("PySR requires a maxsize of at least 7")
 
-    X, variable_names, selection = _handle_feature_selection(
-        X, select_k_features, use_custom_variable_names, variable_names, y
-    )
+    X, selection = _handle_feature_selection(X, select_k_features, y, variable_names)
 
     if maxdepth is None:
         maxdepth = maxsize
@@ -390,9 +390,18 @@ def pysr(
             raise NotImplementedError(
                 "No weights for denoising - the weights are learned."
             )
-        if Xresampled is not None and selection is not None:
+        if Xresampled is not None:
             # Select among only the selected features:
-            Xresampled = Xresampled[:, selection]
+            if isinstance(Xresampled, pd.DataFrame):
+                # Handle Xresampled is pandas dataframe
+                if selection is not None:
+                    Xresampled = Xresampled[[variable_names[i] for i in selection]]
+                else:
+                    Xresampled = Xresampled[variable_names]
+                Xresampled = np.array(Xresampled)
+            else:
+                if selection is not None:
+                    Xresampled = Xresampled[:, selection]
         if multioutput:
             y = np.stack(
                 [_denoise(X, y[:, i], Xresampled=Xresampled)[1] for i in range(nout)],
@@ -531,7 +540,7 @@ Tried to activate project {julia_project} but failed."""
         Main.y,
         weights=Main.weights,
         niterations=int(niterations),
-        varMap=variable_names,
+        varMap=[variable_names[i] for i in selection],
         options=options,
         numprocs=int(cprocs),
         multithreading=bool(multithreading),
@@ -645,19 +654,15 @@ def _create_inline_operators(binary_operators, unary_operators):
                 op_list[i] = function_name
 
 
-def _handle_feature_selection(
-    X, select_k_features, use_custom_variable_names, variable_names, y
-):
+def _handle_feature_selection(X, select_k_features, y, variable_names):
     if select_k_features is not None:
         selection = run_feature_selection(X, y, select_k_features)
-        print(f"Using features {selection}")
+        print(f"Using features {[variable_names[i] for i in selection]}")
         X = X[:, selection]
 
-        if use_custom_variable_names:
-            variable_names = [variable_names[i] for i in selection]
     else:
         selection = None
-    return X, variable_names, selection
+    return X, selection
 
 
 def _check_assertions(
@@ -791,7 +796,9 @@ def get_hof(
             sympy_format.append(eqn)
 
             # Numpy:
-            lambda_format.append(CallableEquation(sympy_symbols, eqn, selection))
+            lambda_format.append(
+                CallableEquation(sympy_symbols, eqn, selection, variable_names)
+            )
 
             # JAX:
             if output_jax_format:
@@ -942,16 +949,20 @@ def _denoise(X, y, Xresampled=None):
 class CallableEquation:
     """Simple wrapper for numpy lambda functions built with sympy"""
 
-    def __init__(self, sympy_symbols, eqn, selection=None):
+    def __init__(self, sympy_symbols, eqn, selection=None, variable_names=None):
         self._sympy = eqn
         self._sympy_symbols = sympy_symbols
         self._selection = selection
+        self._variable_names = variable_names
         self._lambda = lambdify(sympy_symbols, eqn)
 
     def __repr__(self):
         return f"PySRFunction(X=>{self._sympy})"
 
     def __call__(self, X):
+        if isinstance(X, pd.DataFrame):
+            X = np.array(X[self._variable_names])
+
         if self._selection is not None:
             return self._lambda(*X[:, self._selection].T)
         return self._lambda(*X.T)

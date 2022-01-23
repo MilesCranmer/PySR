@@ -98,8 +98,9 @@ class TestPipeline(unittest.TestCase):
         equations = pysr(
             self.X,
             y,
-            unary_operators=["sq(x) = x^2"],
-            binary_operators=["plus"],
+            # Test that passing a single operator works:
+            unary_operators="sq(x) = x^2",
+            binary_operators="plus",
             extra_sympy_mappings={"sq": lambda x: x ** 2},
             **self.default_test_kwargs,
             procs=0,
@@ -107,6 +108,52 @@ class TestPipeline(unittest.TestCase):
         )
         self.assertLessEqual(best_row(equations=equations)[0]["MSE"], 1e-2)
         self.assertLessEqual(best_row(equations=equations)[1]["MSE"], 1e-2)
+
+    def test_pandas_resample(self):
+        np.random.seed(1)
+        X = pd.DataFrame(
+            {
+                "T": np.random.randn(500),
+                "x": np.random.randn(500),
+                "unused_feature": np.random.randn(500),
+            }
+        )
+        true_fn = lambda x: np.array(x["T"] + x["x"] ** 2 + 1.323837)
+        y = true_fn(X)
+        noise = np.random.randn(500) * 0.01
+        y = y + noise
+        # Resampled array is a different order of features:
+        Xresampled = pd.DataFrame(
+            {
+                "unused_feature": np.random.randn(100),
+                "x": np.random.randn(100),
+                "T": np.random.randn(100),
+            }
+        )
+        equations = pysr(
+            X,
+            y,
+            unary_operators=[],
+            binary_operators=["+", "*", "/", "-"],
+            **self.default_test_kwargs,
+            Xresampled=Xresampled,
+            denoise=True,
+            select_k_features=2,
+        )
+        self.assertNotIn("unused_feature", best_tex())
+        self.assertIn("T", best_tex())
+        self.assertIn("x", best_tex())
+        self.assertLessEqual(equations.iloc[-1]["MSE"], 1e-2)
+        fn = best_callable()
+        self.assertListEqual(list(sorted(fn._selection)), [0, 1])
+        X2 = pd.DataFrame(
+            {
+                "T": np.random.randn(100),
+                "unused_feature": np.random.randn(100),
+                "x": np.random.randn(100),
+            }
+        )
+        self.assertLess(np.average((fn(X2) - true_fn(X2)) ** 2), 1e-2)
 
 
 class TestBest(unittest.TestCase):
