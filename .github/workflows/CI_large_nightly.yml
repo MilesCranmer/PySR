@@ -13,6 +13,9 @@ on:
 jobs:
   test:
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash -l {0}
     strategy:
       matrix:
         julia-version: ['1.5.0', '1.6.1', '1.7.1', 'nightly']
@@ -26,7 +29,6 @@ jobs:
         with:
           version: ${{ matrix.julia-version }}
       - name: "Change package server"
-        shell: bash
         env:
             JULIA_PKG_SERVER: ""
         run: |
@@ -43,4 +45,3 @@ jobs:
             python -c 'import pysr; pysr.install()'
       - name: "Run tests"
         run: python -m unittest test.test
-        shell: bash

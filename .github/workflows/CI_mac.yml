@@ -23,6 +23,9 @@ on:
 jobs:
   test:
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash -l {0}
     strategy:
       matrix:
         julia-version: ['1.7.1']
@@ -36,7 +39,6 @@ jobs:
         with:
           version: ${{ matrix.julia-version }}
       - name: "Change package server"
-        shell: bash
         env:
             JULIA_PKG_SERVER: ""
         run: |
@@ -64,16 +66,11 @@ jobs:
             python -c 'import pysr; pysr.install()'
       - name: "Run tests"
         run: python -m unittest test.test
-        shell: bash
       - name: "Install JAX"
         run: pip install jax jaxlib # (optional import)
-        shell: bash
       - name: "Run JAX tests"
         run: python -m unittest test.test_jax
-        shell: bash
       - name: "Install Torch"
         run: pip install torch # (optional import)
-        shell: bash
       - name: "Run Torch tests"
         run: python -m unittest test.test_torch
-        shell: bash
