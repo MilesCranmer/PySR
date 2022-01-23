@@ -1,7 +1,6 @@
 import unittest
 from unittest.mock import patch
 import numpy as np
-from uritemplate import variables
 from pysr import pysr, get_hof, best, best_tex, best_callable, best_row
 from pysr.sr import run_feature_selection, _handle_feature_selection, _yesno
 import sympy
