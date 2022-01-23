@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import patch
 import numpy as np
+from uritemplate import variables
 from pysr import pysr, get_hof, best, best_tex, best_callable, best_row
 from pysr.sr import run_feature_selection, _handle_feature_selection, _yesno
 import sympy
@@ -219,6 +220,7 @@ class TestFeatureSelection(unittest.TestCase):
             y=y,
         )
         self.assertTrue((2 in selection) and (3 in selection))
+        selected_var_names = [var_names[i] for i in selection]
         self.assertEqual(set(selected_var_names), set("x2 x3".split(" ")))
         np.testing.assert_array_equal(
             np.sort(selected_X, axis=1), np.sort(X[:, [2, 3]], axis=1)
