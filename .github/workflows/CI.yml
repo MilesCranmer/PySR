@@ -132,7 +132,7 @@ jobs:
       - name: "Install Coverage tool"
         run: python3 -m pip install coverage coveralls
       - name: "Ensure that static libpython warning appears"
-        run: coverage run --source=pysr --omit='*/feynman_problems.py' -m unittest test.test_static_libpython_warning.py
+        run: coverage run --source=pysr --omit='*/feynman_problems.py' -m unittest test.test_static_libpython_warning
       - name: "Run tests"
         run: coverage run --append --source=pysr --omit='*/feynman_problems.py' -m unittest test.test
       - name: Coveralls
