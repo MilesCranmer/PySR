@@ -20,7 +20,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
 
     def __repr__(self):
         if self.equations is None:
-            return "PySRRegressor.equations=None"
+            return "PySRRegressor.equations = None"
 
         equations = self.equations
         selected = ["" for _ in range(len(equations))]

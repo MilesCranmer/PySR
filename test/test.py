@@ -87,7 +87,10 @@ class TestPipeline(unittest.TestCase):
             binary_operators=["plus"],
             **self.default_test_kwargs,
         )
+        self.assertTrue("None" in regressor.__repr__())
         regressor.fit(X, y)
+        self.assertTrue("None" not in regressor.__repr__())
+        self.assertTrue(">>>>" in regressor.__repr__())
 
         self.assertLessEqual(regressor.equations.iloc[-1]["MSE"], 1e-4)
         np.testing.assert_almost_equal(regressor.predict(X), y, decimal=1)
