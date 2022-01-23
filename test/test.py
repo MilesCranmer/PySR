@@ -95,6 +95,15 @@ class TestPipeline(unittest.TestCase):
         self.assertLessEqual(regressor.equations.iloc[-1]["MSE"], 1e-4)
         np.testing.assert_almost_equal(regressor.predict(X), y, decimal=1)
 
+        # Tweak model selection:
+        regressor.set_params(model_selection="best")
+        self.assertEqual(regressor.get_params()["model_selection"], "best")
+        self.assertTrue("None" not in regressor.__repr__())
+        self.assertTrue(">>>>" in regressor.__repr__())
+
+        # "best" model_selection should also give a decent loss:
+        np.testing.assert_almost_equal(regressor.predict(X), y, decimal=1)
+
     def test_noisy(self):
 
         np.random.seed(1)
