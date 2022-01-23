@@ -1,9 +1,10 @@
 from pysr import pysr, best_row
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator, RegressorMixin
 import inspect
+import pandas as pd
 
 
-class PySRRegressor(BaseEstimator):
+class PySRRegressor(BaseEstimator, RegressorMixin):
     def __init__(self, model_selection="accuracy", **params):
         """Initialize settings for pysr.pysr call.
 
@@ -18,7 +19,30 @@ class PySRRegressor(BaseEstimator):
         self.equations = None
 
     def __repr__(self):
-        return f"PySRRegressor(equations={self.get_best()['sympy_format']})"
+        if self.equations is None:
+            return "PySRRegressor.equations=None"
+
+        equations = self.equations
+        selected = ["" for _ in range(len(equations))]
+        if self.model_selection == "accuracy":
+            chosen_row = -1
+        elif self.model_selection == "best":
+            chosen_row = equations["score"].idxmax()
+        else:
+            raise NotImplementedError
+        selected[chosen_row] = ">"
+        output = "PySRRegressor.equations=[\n"
+        repr_equations = pd.DataFrame(
+            dict(
+                selected=selected,
+                score=equations["score"],
+                MSE=equations["MSE"],
+                Complexity=equations["Complexity"],
+            )
+        )
+        output += repr_equations.__repr__()
+        output += "\n]"
+        return output
 
     def set_params(self, **params):
         """Set parameters for pysr.pysr call or model_selection strategy."""
