@@ -25,7 +25,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     defaults:
       run:
-        shell: bash -l {0}
+        shell: bash
     strategy:
       matrix:
         julia-version: ['1.7.1']
