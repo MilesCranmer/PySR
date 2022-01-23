@@ -15,7 +15,7 @@ from multiprocessing import cpu_count
 is_julia_warning_silenced = False
 
 
-def install(julia_project=None):
+def install(julia_project=None): # pragma: no cover
     import julia
 
     julia.install()
