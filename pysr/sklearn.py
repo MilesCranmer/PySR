@@ -36,6 +36,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             dict(
                 selected=selected,
                 score=equations["score"],
+                Equation=equations["Equation"],
                 MSE=equations["MSE"],
                 Complexity=equations["Complexity"],
             )
