@@ -343,6 +343,7 @@ def pysr(
                 )
 
     use_custom_variable_names = len(variable_names) != 0
+    # TODO: this is always true.
 
     _check_assertions(
         X,
@@ -366,7 +367,9 @@ def pysr(
     if maxsize < 7:
         raise NotImplementedError("PySR requires a maxsize of at least 7")
 
-    X, selection = _handle_feature_selection(X, select_k_features, y, variable_names)
+    X, selection = _handle_feature_selection(
+        X, select_k_features, y, variable_names
+    )
 
     if maxdepth is None:
         maxdepth = maxsize
@@ -540,7 +543,7 @@ Tried to activate project {julia_project} but failed."""
         Main.y,
         weights=Main.weights,
         niterations=int(niterations),
-        varMap=[variable_names[i] for i in selection],
+        varMap=([variable_names[i] for i in selection] if selection else None),
         options=options,
         numprocs=int(cprocs),
         multithreading=bool(multithreading),
@@ -654,7 +657,9 @@ def _create_inline_operators(binary_operators, unary_operators):
                 op_list[i] = function_name
 
 
-def _handle_feature_selection(X, select_k_features, y, variable_names):
+def _handle_feature_selection(
+    X, select_k_features, y, variable_names
+):
     if select_k_features is not None:
         selection = run_feature_selection(X, y, select_k_features)
         print(f"Using features {[variable_names[i] for i in selection]}")
@@ -796,9 +801,7 @@ def get_hof(
             sympy_format.append(eqn)
 
             # Numpy:
-            lambda_format.append(
-                CallableEquation(sympy_symbols, eqn, selection, variable_names)
-            )
+            lambda_format.append(CallableEquation(sympy_symbols, eqn, selection, variable_names))
 
             # JAX:
             if output_jax_format:
