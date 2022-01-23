@@ -30,11 +30,11 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             chosen_row = equations["score"].idxmax()
         else:
             raise NotImplementedError
-        selected[chosen_row] = ">"
-        output = "PySRRegressor.equations=[\n"
+        selected[chosen_row] = ">>>>"
+        output = "PySRRegressor.equations = [\n"
         repr_equations = pd.DataFrame(
             dict(
-                selected=selected,
+                pick=selected,
                 score=equations["score"],
                 Equation=equations["Equation"],
                 MSE=equations["MSE"],
