@@ -568,6 +568,8 @@ Tried to activate project {julia_project} but failed."""
     if delete_tempfiles:
         shutil.rmtree(tmpdir)
 
+    already_ran = True
+
     return equations
 
 
