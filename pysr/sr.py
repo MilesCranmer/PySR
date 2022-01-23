@@ -426,6 +426,7 @@ def pysr(
     bin_constraints = [constraints[op] for op in binary_operators]
 
     try:
+        # TODO: is this needed since Julia now prints directly to stdout?
         term_width = shutil.get_terminal_size().columns
     except:
         _, term_width = subprocess.check_output(["stty", "size"]).split()
