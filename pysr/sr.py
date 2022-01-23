@@ -541,7 +541,11 @@ Tried to activate project {julia_project} but failed."""
         Main.y,
         weights=Main.weights,
         niterations=int(niterations),
-        varMap=([variable_names[i] for i in selection] if selection else None),
+        varMap=(
+            variable_names
+            if selection is None
+            else [variable_names[i] for i in selection]
+        ),
         options=options,
         numprocs=int(cprocs),
         multithreading=bool(multithreading),

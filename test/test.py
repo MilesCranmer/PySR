@@ -209,10 +209,9 @@ class TestFeatureSelection(unittest.TestCase):
         X = np.random.randn(20000, 5)
         y = X[:, 2] ** 2 + X[:, 3] ** 2
         var_names = [f"x{i}" for i in range(5)]
-        selected_X, selected_var_names, selection = _handle_feature_selection(
+        selected_X, selection = _handle_feature_selection(
             X,
             select_k_features=2,
-            use_custom_variable_names=True,
             variable_names=var_names,
             y=y,
         )
