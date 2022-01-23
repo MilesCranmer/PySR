@@ -957,10 +957,15 @@ class CallableEquation:
 
 
 def _get_julia_project(julia_project):
-    pkg_directory = Path(__file__).parents[1]
     if julia_project is None:
-        return pkg_directory
-    return Path(julia_project)
+        # Create temp directory:
+        tmp_dir = tempfile.mkdtemp()
+        tmp_dir = Path(tmp_dir)
+        # Create Project.toml in temp dir:
+        _write_project_file(tmp_dir)
+        return tmp_dir
+    else:
+        return Path(julia_project)
 
 
 def silence_julia_warning():
@@ -1007,3 +1012,24 @@ To silence this warning, you can run pysr.silence_julia_warning() after importin
         Main = _Main
 
     return Main
+
+
+def _write_project_file(tmp_dir):
+    """This writes a Julia Project.toml to a temporary directory
+
+    The reason we need this is because sometimes Python will compile a project to binary,
+    and then Julia can't read the Project.toml file. It is more reliable to have Python
+    simply create the Project.toml from scratch.
+    """
+
+    project_toml = """
+[deps]
+SymbolicRegression = "8254be44-1295-4e6a-a16d-46603ac705cb"
+
+[compat]
+SymbolicRegression = "0.6.19"
+julia = "1.5"
+    """
+
+    project_toml_path = tmp_dir / "Project.toml"
+    project_toml_path.write_text(project_toml)

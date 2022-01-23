@@ -60,6 +60,7 @@
 - [x] Record density over complexity. Favor equations that have a density we have not explored yet. Want the final density to be evenly distributed.
 - [x] Do printing from Python side. Then we can do simplification and pretty-printing.
 - [x] Sympy printing
+- [x] Store Project.toml inside PySR's python code, rather than copied to site-packages.
 - [ ] Sort these todo lists by priority
 
 - [ ] Automatically convert log, log10, log2, pow to the correct operators.
