@@ -1044,7 +1044,7 @@ def _write_project_file(tmp_dir):
 SymbolicRegression = "8254be44-1295-4e6a-a16d-46603ac705cb"
 
 [compat]
-SymbolicRegression = "0.6.19"
+SymbolicRegression = "0.7.0"
 julia = "1.5"
     """
 
