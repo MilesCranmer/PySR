@@ -64,6 +64,7 @@
 - [ ] Sort these todo lists by priority
 
 - [ ] Automatically convert log, log10, log2, pow to the correct operators.
+- [ ] I think the simplification isn't working correctly (post-merging SymbolicUtils.)
 
 ## Feature ideas
 
