@@ -121,7 +121,7 @@ def pysr(
     weightMutateConstant=10,
     weightMutateOperator=1,
     weightRandomize=1,
-    weightSimplify=0.01,
+    weightSimplify=0.002,
     perturbationFactor=1.0,
     extra_sympy_mappings=None,
     extra_torch_mappings=None,
