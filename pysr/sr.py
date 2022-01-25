@@ -121,7 +121,7 @@ def pysr(
     weightMutateConstant=10,
     weightMutateOperator=1,
     weightRandomize=1,
-    weightSimplify=0.01,
+    weightSimplify=0.002,
     perturbationFactor=1.0,
     extra_sympy_mappings=None,
     extra_torch_mappings=None,
@@ -445,19 +445,22 @@ def pysr(
         from julia import Pkg
 
         Pkg.activate(f"{_escape_filename(julia_project)}")
-        if update:
-            try:
+        try:
+            if update:
                 Pkg.resolve()
-            except RuntimeError as e:
-                raise ImportError(
-                    f"""
+                Pkg.instantiate()
+            else:
+                Pkg.instantiate()
+        except RuntimeError as e:
+            raise ImportError(
+                f"""
 Required dependencies are not installed or built.  Run the following code in the Python REPL:
 
     >>> import pysr
     >>> pysr.install()
-        
+    
 Tried to activate project {julia_project} but failed."""
-                ) from e
+            ) from e
         Main.eval("using SymbolicRegression")
 
         Main.plus = Main.eval("(+)")
@@ -1044,7 +1047,7 @@ def _write_project_file(tmp_dir):
 SymbolicRegression = "8254be44-1295-4e6a-a16d-46603ac705cb"
 
 [compat]
-SymbolicRegression = "0.6.19"
+SymbolicRegression = "0.7.0"
 julia = "1.5"
     """
 
