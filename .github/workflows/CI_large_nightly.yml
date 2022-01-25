@@ -9,6 +9,7 @@ on:
     # This means the job will run at 5am EST.
     - cron: "0 10 * * *"
     # This will automatically run on master branch only.
+  workflow_dispatch:
 
 jobs:
   test:
