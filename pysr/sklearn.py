@@ -93,22 +93,32 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         )
         return self
 
+    def refresh(self):
+        # Updates self.equations with any new options passed,
+        # such as extra_sympy_mappings.
+        self.equations = get_hof(**self.params)
+
     def predict(self, X):
+        self.refresh()
         np_format = self.get_best()["lambda_format"]
         return np_format(X)
 
     def sympy(self):
+        self.refresh()
         return self.get_best()["sympy_format"]
 
     def latex(self):
+        self.refresh()
         return self.sympy().simplify()
 
     def jax(self):
-        self.equations = get_hof(output_jax_format=True)
+        self.set_params(output_jax_format=True)
+        self.refresh()
         return self.get_best()["jax_format"]
 
     def pytorch(self):
-        self.equations = get_hof(output_torch_format=True)
+        self.set_params(output_torch_format=True)
+        self.refresh()
         return self.get_best()["torch_format"]
 
 
