@@ -198,18 +198,6 @@ def best_tex(*args, **kwargs):
 def best_callable(*args, **kwargs):
     raise NotImplementedError("`best_callable` has been deprecated. Please use the `PySRRegressor` interface. After fitting, you can use `.predict(X)` to use the best callable.")
 
-# https://gist.github.com/garrettdreyfus/8153571
-def _yesno(question):
-    """Simple Yes/No Function."""
-    prompt = f"{question} (y/n): "
-    ans = input(prompt).strip().lower()
-    if ans not in ["y", "n"]:
-        print(f"{ans} is invalid, please try again...")
-        return _yesno(question)
-    if ans == "y":
-        return True
-    return False
-
 
 def _denoise(X, y, Xresampled=None):
     """Denoise the dataset using a Gaussian process"""
