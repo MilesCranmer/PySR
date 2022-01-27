@@ -37,4 +37,4 @@ jobs:
       - name: Build docker
         run: docker build -t pysr .
       - name: Test docker
-        run: docker run --rm -it pysr 'python3 -m unittest test.test'
+        run: docker run --rm pysr 'python3 -m unittest test.test'
