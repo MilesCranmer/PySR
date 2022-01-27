@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from pysr import sympy2jax, get_hof
+from pysr import sympy2jax, get_hof, PySRRegressor
 import pandas as pd
 from jax import numpy as jnp
 from jax import random
@@ -46,7 +46,9 @@ class TestJAX(unittest.TestCase):
             selection=[1, 2, 3],
         )
 
-        jformat = equations.iloc[-1].jax_format
+        model = PySRRegressor()
+        jformat = model.jax()
+
         np.testing.assert_almost_equal(
             np.array(jformat["callable"](jnp.array(X), jformat["parameters"])),
             np.square(np.cos(X[:, 1])),  # Select feature 1

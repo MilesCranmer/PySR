@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import pandas as pd
-from pysr import sympy2torch, get_hof
+from pysr import sympy2torch, get_hof, PySRRegressor
 import torch
 import sympy
 
@@ -84,7 +84,7 @@ class TestTorch(unittest.TestCase):
             "equation_file_custom_operator.csv.bkup", sep="|"
         )
 
-        equations = get_hof(
+        get_hof(
             "equation_file_custom_operator.csv",
             n_features=3,
             variables_names="x1 x2 x3".split(" "),
@@ -96,7 +96,10 @@ class TestTorch(unittest.TestCase):
             selection=[0, 1, 2],
         )
 
-        tformat = equations.iloc[-1].torch_format
+        model = PySRRegressor()
+        # Will automatically use the set global state from get_hof.
+        tformat = model.pytorch()
+
         np.testing.assert_almost_equal(
             tformat(torch.tensor(X)).detach().numpy(),
             np.sin(X[:, 0]),  # Selection 1st feature
