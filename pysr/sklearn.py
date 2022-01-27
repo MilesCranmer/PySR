@@ -100,6 +100,9 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
     def sympy(self):
         return self.get_best()["sympy_format"]
 
+    def latex(self):
+        return self.sympy().simplify()
+
     def jax(self):
         self.equations = get_hof(output_jax_format=True)
         return self.get_best()["jax_format"]

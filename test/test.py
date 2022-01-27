@@ -193,13 +193,18 @@ class TestBest(unittest.TestCase):
             nout=1,
         )
 
+        self.model = PySRRegressor()
+        self.model.equations = self.equations
+
     def test_best(self):
         self.assertEqual(best(self.equations), sympy.cos(sympy.Symbol("x0")) ** 2)
         self.assertEqual(best(), sympy.cos(sympy.Symbol("x0")) ** 2)
+        self.assertEqual(self.model.sympy(), sympy.cos(sympy.Symbol("x0")) ** 2)
 
     def test_best_tex(self):
         self.assertEqual(best_tex(self.equations), "\\cos^{2}{\\left(x_{0} \\right)}")
         self.assertEqual(best_tex(), "\\cos^{2}{\\left(x_{0} \\right)}")
+        self.assertEqual(self.model.latex(), "\\cos^{2}{\\left(x_{0} \\right)}")
 
     def test_best_lambda(self):
         X = np.random.randn(10, 2)
