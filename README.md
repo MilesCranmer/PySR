@@ -73,7 +73,84 @@ Most common issues at this stage are solved
 by [tweaking the Julia package server](https://github.com/MilesCranmer/PySR/issues/27).
 to use up-to-date packages.
 
-## Docker
+# Quickstart
+
+Let's create a PySR example. First, let's import
+numpy to generate some test data:
+```python
+import numpy as np
+
+X = 2 * np.random.randn(100, 5)
+y = 2.5382 * np.cos(X[:, 3]) + X[:, 0] ** 2 - 0.5
+```
+We have created a dataset with 100 datapoints, with 5 features each.
+The relation we wish to model is $2.5382 \cos(x_3) + x_0^2 - 0.5$.
+
+Now, let's create a PySR model and train it.
+PySR's main interface is in the style of scikit-learn:
+```python
+from pysr import PySRRegressor
+model = PySRRegressor(
+    niterations=5,
+    populations=8,
+    binary_operators=["+", "*"],
+    unary_operators=[
+        "cos",
+        "exp",
+        "sin",
+    ],
+    model_selection="best",
+)
+```
+This will set up the model for 5 iterations of the search code, which contains hundreds of thousands of mutations and equation evaluations.
+
+Let's train this model on our dataset:
+```python
+model.fit(X, y)
+```
+Internally, this launches a Julia process which will do a multithreaded search for equations to fit the dataset.
+
+Equations will be printed during training, and once you are satisfied, you may 
+quit early by hitting 'q' and then \<enter\>.
+
+After the model has been fit, you can run `model.predict(X)`
+to see the predictions on a given dataset.
+
+You may run:
+```python
+print(model)
+```
+to print the learned equations, which for the above should be close to:
+```python
+PySRRegressor.equations = [
+   pick      score                                           Equation           MSE  Complexity
+0         0.000000                                           3.598587  3.044337e+01           1
+1         1.074135                                          (x0 * x0)  3.552313e+00           3
+2         0.023611                          (-0.40477127 + (x0 * x0))  3.388464e+00           5
+3         0.855682                              ((x0 * x0) + cos(x3))  1.440074e+00           6
+4         0.876831                ((x0 * x0) + (2.5026207 * cos(x3)))  2.493328e-01           8
+5  >>>>  10.687394  ((-0.5000114 + (x0 * x0)) + (2.5382013 * cos(x...  1.299652e-10          10
+6         2.573098  ((-0.50000024 + (x0 * x0)) + (2.5382 * sin(1.5...  7.565937e-13          12
+]
+```
+This arrow in the `pick` column indicates which equation is currently selected by your
+`model_selection` strategy for prediction.
+(You may change `model_selection` after `.fit(X, y)` as well.)
+
+`model.equations` is a pandas DataFrame containing all equations, including callable format 
+(`lambda_format`),
+SymPy format (`sympy_format`), and even JAX and PyTorch format 
+(both of which are differentiable).
+
+
+### Notes
+
+- `score` - a metric akin to Occam's razor; you should use this to help select the "true" equation.
+- `sympy_format` - sympy equation.
+- `lambda_format` - a lambda function for that equation, that you can pass values through.
+
+
+# Docker
 
 You can also test out PySR in Docker, without
 installing it locally, by running the following command in
@@ -87,57 +164,3 @@ docker run -it --rm -v "$PWD:/data" pysr ipython
 ```
 which will link the current directory to the container's `/data` directory
 and then launch ipython.
-
-# Quickstart
-
-Here is some demo code (also found in `example.py`)
-```python
-import numpy as np
-from pysr import pysr, best
-
-# Dataset
-X = 2 * np.random.randn(100, 5)
-y = 2 * np.cos(X[:, 3]) + X[:, 0] ** 2 - 2
-
-# Learn equations
-equations = pysr(
-    X,
-    y,
-    niterations=5,
-    binary_operators=["+", "*"],
-    unary_operators=[
-        "cos",
-        "exp",
-        "sin",  # Pre-defined library of operators (see docs)
-        "inv(x) = 1/x",  # Define your own operator! (Julia syntax)
-    ],
-)
-
-...# (you can use ctl-c to exit early)
-
-print(best(equations))
-```
-
-which gives:
-
-```python
-x0**2 + 2.000016*cos(x3) - 1.9999845
-```
-
-The second and additional calls of `pysr` will be significantly
-faster in startup time, since the first call to Julia will compile
-and cache functions from the symbolic regression backend.
-
-One can also use `best_tex` to get the LaTeX form,
-or `best_callable` to get a function you can call.
-This uses a score which balances complexity and error;
-however, one can see the full list of equations with:
-```python
-print(equations)
-```
-This is a pandas table, with additional columns:
-
-- `MSE` - the mean square error of the formula
-- `score` - a metric akin to Occam's razor; you should use this to help select the "true" equation.
-- `sympy_format` - sympy equation.
-- `lambda_format` - a lambda function for that equation, that you can pass values through.
