@@ -1,4 +1,4 @@
-from pysr import pysr, best_row
+from pysr import pysr, best_row, get_hof
 from sklearn.base import BaseEstimator, RegressorMixin
 import inspect
 import pandas as pd
@@ -94,14 +94,22 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         return self
 
     def predict(self, X):
-        equation_row = self.get_best()
-        np_format = equation_row["lambda_format"]
-
+        np_format = self.get_best()["lambda_format"]
         return np_format(X)
+
+    def sympy(self):
+        return self.get_best()["sympy_format"]
+
+    def jax(self):
+        self.equations = get_hof(output_jax_format=True)
+        return self.get_best()["jax_format"]
+
+    def pytorch(self):
+        self.equations = get_hof(output_torch_format=True)
+        return self.get_best()["torch_format"]
 
 
 # Add the docs from pysr() to PySRRegressor():
-
 _pysr_docstring_split = []
 _start_recording = False
 for line in inspect.getdoc(pysr).split("\n"):

@@ -198,17 +198,18 @@ over `X` (as a PyTorch tensor). This is differentiable, and the
 parameters of this PyTorch module correspond to the learned parameters
 in the equation, and are trainable.
 ```python
-output = model.pytorch()
-output['callable'](X)
+torch_model = model.pytorch()
+torch_model(X)
 ```
+**Warning: If you are using custom operators, you must define `extra_torch_mappings` or `extra_jax_mappings` (both are `dict` of callables) to provide an equivalent definition of the functions.** (At any time you can set these parameters or any others with `model.set_params`.)
 
-For JAX, you can equivalently set the argument `output_jax_format=True`.
+For JAX, you can equivalently call `model.jax()`
 This will return a dictionary containing a `'callable'` (a JAX function),
 and `'parameters'` (a list of parameters in the equation).
 You can execute this function with:
 ```python
-output = model.jax()
-output['callable'](X, output['parameters'])
+jax_model = model.jax()
+jax_model['callable'](X, jax_model['parameters'])
 ```
 Since the parameter list is a jax array, this therefore lets you also 
 train the parameters within JAX (and is differentiable).
@@ -226,26 +227,29 @@ Here are some additional examples:
 
 abs(x-y) loss
 ```python
-pysr(..., loss="f(x, y) = abs(x - y)^1.5")
+PySRRegressor(..., loss="f(x, y) = abs(x - y)^1.5")
 ```
 Note that the function name doesn't matter:
 ```python
-pysr(..., loss="loss(x, y) = abs(x * y)")
+PySRRegressor(..., loss="loss(x, y) = abs(x * y)")
 ```
 With weights:
 ```python
-pysr(..., weights=weights, loss="myloss(x, y, w) = w * abs(x - y)") 
+model = PySRRegressor(..., loss="myloss(x, y, w) = w * abs(x - y)") 
+model.fit(..., weights=weights)
 ```
 Weights can be used in arbitrary ways:
 ```python
-pysr(..., weights=weights, loss="myloss(x, y, w) = abs(x - y)^2/w^2")
+model = PySRRegressor(..., weights=weights, loss="myloss(x, y, w) = abs(x - y)^2/w^2")
+model.fit(..., weights=weights)
 ```
 Built-in loss (faster) (see [losses](https://astroautomata.com/SymbolicRegression.jl/dev/losses/)).
 This one computes the L3 norm:
 ```python
-pysr(..., loss="LPDistLoss{3}()")
+PySRRegressor(..., loss="LPDistLoss{3}()")
 ```
 Can also uses these losses for weighted (weighted-average):
 ```python
-pysr(..., weights=weights, loss="LPDistLoss{3}()")
+model = PySRRegressor(..., weights=weights, loss="LPDistLoss{3}()")
+model.fit(..., weights=weights)
 ```
