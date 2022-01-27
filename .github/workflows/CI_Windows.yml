@@ -1,4 +1,4 @@
-name: CI_w
+name: Windows
 
 on:
   push:

@@ -1,4 +1,4 @@
-name: CI_large_nightly
+name: large_nightly
 
 # This CI only runs once per day, but tries
 # many different configurations.
