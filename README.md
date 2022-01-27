@@ -155,7 +155,9 @@ the root directory of this repo:
 ```bash
 docker build --pull --rm -f "Dockerfile" -t pysr "."
 ```
-This builds an image called `pysr`. You can then run this with:
+This builds an image called `pysr`. If you have issues building (for example, on Apple Silicon),
+you can emulate an architecture that works by including: `--platform linux/amd64`.
+You can then run this with:
 ```bash
 docker run -it --rm -v "$PWD:/data" pysr ipython
 ```

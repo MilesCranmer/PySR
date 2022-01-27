@@ -1,5 +1,3 @@
-# Getting Started
-
 # Installation
 PySR uses both Julia and Python, so you need to have both installed.
 
@@ -21,7 +19,7 @@ Most common issues at this stage are solved
 by [tweaking the Julia package server](https://github.com/MilesCranmer/PySR/issues/27).
 to use up-to-date packages.
 
-## Quickstart
+# Quickstart
 
 Let's create a PySR example. First, let's import
 numpy to generate some test data:
@@ -103,7 +101,9 @@ the root directory of this repo:
 ```bash
 docker build --pull --rm -f "Dockerfile" -t pysr "."
 ```
-This builds an image called `pysr`. You can then run this with:
+This builds an image called `pysr`. If you have issues building (for example, on Apple Silicon),
+you can emulate an architecture that works by including: `--platform linux/amd64`.
+You can then run this with:
 ```bash
 docker run -it --rm -v "$PWD:/data" pysr ipython
 ```
