@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - '*'
+    paths:
+      - 'test/**'
+      - 'pysr/**'
+      - '.github/workflows/**'
+      - 'setup.py'
+      - 'Project.toml'
+  pull_request:
+    branches:
+      - '*'
+    paths:
+      - 'test/**'
+      - 'pysr/**'
+      - '.github/workflows/**'
+      - 'setup.py'
+      - 'Project.toml'
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      matrix:
+        julia-version: ['1.7.1']
+        python-version: ['3.9']
+        os: [ubuntu-latest]
+    
+    steps:
+      - uses: actions/checkout@v1.0.0
+      - name: Build docker
+        run: docker build -t pysr .
+      - name: Test docker
+        run: docker run --rm -it pysr 'python3 -m unittest test.test'

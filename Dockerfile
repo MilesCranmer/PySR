@@ -40,4 +40,7 @@ RUN pip3 install .
 # Install Julia pre-requisites:
 RUN python3 -c 'import pysr; pysr.install()'
 
+# Add tests
+ADD ./test/ /pysr/test/
+
 CMD ["bash"]
