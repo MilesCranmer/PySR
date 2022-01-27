@@ -189,6 +189,9 @@ def _escape_filename(filename):
 def best(*args, **kwargs):
     raise NotImplementedError("`best` has been deprecated. Please use the `PySRRegressor` interface. After fitting, you can return `.sympy()` to get the sympy representation of the best equation.")
 
+def best_row(*args, **kwargs):
+    raise NotImplementedError("`best_row` has been deprecated. Please use the `PySRRegressor` interface. After fitting, you can run `print(model)` to view the best equation.")
+
 def best_tex(*args, **kwargs):
     raise NotImplementedError("`best_tex` has been deprecated. Please use the `PySRRegressor` interface. After fitting, you can return `.latex()` to get the sympy representation of the best equation.")
 
