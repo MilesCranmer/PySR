@@ -37,7 +37,6 @@ RUN pip3 install -r /pysr/requirements.txt
 # Install PySR:
 # We do a minimal copy so it doesn't need to rerun at every file change:
 ADD ./setup.py /pysr/setup.py
-ADD ./README.md /pysr/README.md
 ADD ./pysr/ /pysr/pysr/
 RUN pip3 install .
 
