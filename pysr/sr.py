@@ -593,7 +593,6 @@ Tried to activate project {julia_project} but failed."""
 
 def _set_globals(
     *,
-    X,
     equation_file,
     variable_names,
     extra_sympy_mappings,
@@ -605,10 +604,19 @@ def _set_globals(
     nout,
     selection,
     raw_julia_output,
+    X=None,
+    n_features=None
 ):
     global global_state
 
-    global_state["n_features"] = X.shape[1]
+    if n_features is None and X is not None:
+        global_state["n_features"] = X.shape[1]
+    elif X is None and n_features is not None:
+        global_state["n_features"] = n_features
+    elif X is not None and n_features is not None:
+        assert X.shape[1] == n_features
+        global_state["n_features"] = n_features
+
     global_state["equation_file"] = equation_file
     global_state["variable_names"] = variable_names
     global_state["extra_sympy_mappings"] = extra_sympy_mappings
