@@ -317,7 +317,7 @@ julia = "1.5"
 class PySRRegressor(BaseEstimator, RegressorMixin):
     def __init__(
         self,
-        model_selection="accuracy",
+        model_selection="best",
         weights=None,
         binary_operators=None,
         unary_operators=None,
@@ -388,7 +388,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         You can view more detailed explanations of the options on the
         [options page](https://pysr.readthedocs.io/en/latest/docs/options/) of the documentation.
 
-        :param model_selection: How to select a model. Can be 'accuracy' or 'best'. 'best' will optimize a combination of complexity and accuracy.
+        :param model_selection: How to select a model. Can be 'accuracy' or 'best'. The default, 'best', will optimize a combination of complexity and accuracy.
         :type model_selection: str
         :param binary_operators: List of strings giving the binary operators in Julia's Base. Default is ["+", "-", "*", "/",].
         :type binary_operators: list
