@@ -34,7 +34,6 @@ RUN pip3 install -r /pysr/requirements.txt
 # We do a minimal copy so it doesn't need to rerun at every file change:
 ADD ./setup.py /pysr/setup.py
 ADD ./README.md /pysr/README.md
-Add ./Project.toml /pysr/Project.toml
 ADD ./pysr/ /pysr/pysr/
 RUN pip3 install .
 
