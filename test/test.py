@@ -91,7 +91,7 @@ class TestPipeline(unittest.TestCase):
         self.assertTrue("None" not in regressor.__repr__())
         self.assertTrue(">>>>" in regressor.__repr__())
 
-        self.assertLessEqual(regressor.equations.iloc[-1]["MSE"], 1e-4)
+        self.assertLessEqual(regressor.equations.iloc[-1]["loss"], 1e-4)
         np.testing.assert_almost_equal(regressor.predict(X), y, decimal=1)
 
         # Tweak model selection:
@@ -181,18 +181,17 @@ class TestBest(unittest.TestCase):
             "equation_file.csv.bkup", sep="|"
         )
 
-        self.equations = get_hof(
-            "equation_file.csv",
-            n_features=2,
+        self.model = PySRRegressor(
+            equation_file="equation_file.csv",
             variables_names="x0 x1".split(" "),
             extra_sympy_mappings={},
             output_jax_format=False,
             multioutput=False,
             nout=1,
         )
-
-        self.model = PySRRegressor()
-        self.model.equations = self.equations
+        self.model.n_features = 2
+        self.model.refresh()
+        self.equations = self.model.equations
 
     def test_best(self):
         self.assertEqual(self.model.sympy(), sympy.cos(sympy.Symbol("x0")) ** 2)
@@ -233,11 +232,3 @@ class TestFeatureSelection(unittest.TestCase):
         np.testing.assert_array_equal(
             np.sort(selected_X, axis=1), np.sort(X[:, [2, 3]], axis=1)
         )
-
-
-class TestHelperFunctions(unittest.TestCase):
-    @patch("builtins.input", side_effect=["y", "n"])
-    def test_yesno(self, mock_input):
-        # Assert that the yes/no function correctly deals with y/n
-        self.assertEqual(_yesno("Test"), True)
-        self.assertEqual(_yesno("Test"), False)

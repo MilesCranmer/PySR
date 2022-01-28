@@ -914,7 +914,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 y = np.stack(
                     [
                         _denoise(X, y[:, i], Xresampled=Xresampled)[1]
-                        for i in range(nout)
+                        for i in range(self.nout)
                     ],
                     axis=1,
                 )
