@@ -1,8 +1,8 @@
 import unittest
 from unittest.mock import patch
 import numpy as np
-from pysr import pysr, get_hof, best, best_tex, best_callable, best_row, PySRRegressor
-from pysr.sr import run_feature_selection, _handle_feature_selection, _yesno
+from pysr import PySRRegressor
+from pysr.sr import run_feature_selection, _handle_feature_selection
 import sympy
 from sympy import lambdify
 import pandas as pd
@@ -21,32 +21,33 @@ class TestPipeline(unittest.TestCase):
 
     def test_linear_relation(self):
         y = self.X[:, 0]
-        equations = pysr(self.X, y, **self.default_test_kwargs)
-        print(equations)
-        self.assertLessEqual(equations.iloc[-1]["MSE"], 1e-4)
+        model = PySRRegressor(**self.default_test_kwargs)
+        model.fit(self.X, y)
+        model.set_params(model_selection="accuracy")
+        print(model.equations)
+        self.assertLessEqual(model.get_best()["loss"], 1e-4)
 
     def test_multiprocessing(self):
         y = self.X[:, 0]
-        equations = pysr(
-            self.X, y, **self.default_test_kwargs, procs=2, multithreading=False
-        )
-        print(equations)
-        self.assertLessEqual(equations.iloc[-1]["MSE"], 1e-4)
+        model = PySRRegressor(**self.default_test_kwargs, procs=2, multithreading=False)
+        model.fit(self.X, y)
+        print(model.equations)
+        self.assertLessEqual(model.equations.iloc[-1]["loss"], 1e-4)
 
     def test_multioutput_custom_operator(self):
         y = self.X[:, [0, 1]] ** 2
-        equations = pysr(
-            self.X,
-            y,
+        model = PySRRegressor(
             unary_operators=["sq(x) = x^2"],
-            binary_operators=["plus"],
             extra_sympy_mappings={"sq": lambda x: x ** 2},
+            binary_operators=["plus"],
             **self.default_test_kwargs,
             procs=0,
         )
+        model.fit(self.X, y)
+        equations = model.equations
         print(equations)
-        self.assertLessEqual(equations[0].iloc[-1]["MSE"], 1e-4)
-        self.assertLessEqual(equations[1].iloc[-1]["MSE"], 1e-4)
+        self.assertLessEqual(equations[0].iloc[-1]["loss"], 1e-4)
+        self.assertLessEqual(equations[1].iloc[-1]["loss"], 1e-4)
 
     def test_multioutput_weighted_with_callable_temp_equation(self):
         y = self.X[:, [0, 1]] ** 2
@@ -58,10 +59,7 @@ class TestPipeline(unittest.TestCase):
         y = (2 - w) * y
         # Thus, pysr needs to use the weights to find the right equation!
 
-        pysr(
-            self.X,
-            y,
-            weights=w,
+        model = PySRRegressor(
             unary_operators=["sq(x) = x^2"],
             binary_operators=["plus"],
             extra_sympy_mappings={"sq": lambda x: x ** 2},
@@ -70,12 +68,13 @@ class TestPipeline(unittest.TestCase):
             temp_equation_file=True,
             delete_tempfiles=False,
         )
+        model.fit(self.X, y, weights=w)
 
         np.testing.assert_almost_equal(
-            best_callable()[0](self.X), self.X[:, 0] ** 2, decimal=4
+            model.predict(self.X)[:, 0], self.X[:, 0] ** 2, decimal=4
         )
         np.testing.assert_almost_equal(
-            best_callable()[1](self.X), self.X[:, 1] ** 2, decimal=4
+            model.predict(self.X)[:, 1], self.X[:, 1] ** 2, decimal=4
         )
 
     def test_empty_operators_single_input_sklearn(self):
@@ -108,9 +107,7 @@ class TestPipeline(unittest.TestCase):
 
         np.random.seed(1)
         y = self.X[:, [0, 1]] ** 2 + np.random.randn(self.X.shape[0], 1) * 0.05
-        equations = pysr(
-            self.X,
-            y,
+        model = PySRRegressor(
             # Test that passing a single operator works:
             unary_operators="sq(x) = x^2",
             binary_operators="plus",
@@ -119,8 +116,9 @@ class TestPipeline(unittest.TestCase):
             procs=0,
             denoise=True,
         )
-        self.assertLessEqual(best_row(equations=equations)[0]["MSE"], 1e-2)
-        self.assertLessEqual(best_row(equations=equations)[1]["MSE"], 1e-2)
+        model.fit(self.X, y)
+        self.assertLessEqual(model.get_best()[1]["loss"], 1e-2)
+        self.assertLessEqual(model.get_best()[1]["loss"], 1e-2)
 
     def test_pandas_resample(self):
         np.random.seed(1)
@@ -143,9 +141,7 @@ class TestPipeline(unittest.TestCase):
                 "T": np.random.randn(100),
             }
         )
-        equations = pysr(
-            X,
-            y,
+        model = PySRRegressor(
             unary_operators=[],
             binary_operators=["+", "*", "/", "-"],
             **self.default_test_kwargs,
@@ -153,11 +149,12 @@ class TestPipeline(unittest.TestCase):
             denoise=True,
             select_k_features=2,
         )
-        self.assertNotIn("unused_feature", best_tex())
-        self.assertIn("T", best_tex())
-        self.assertIn("x", best_tex())
-        self.assertLessEqual(equations.iloc[-1]["MSE"], 1e-2)
-        fn = best_callable()
+        model.fit(X, y)
+        self.assertNotIn("unused_feature", model.latex())
+        self.assertIn("T", model.latex())
+        self.assertIn("x", model.latex())
+        self.assertLessEqual(model.get_best()["loss"], 1e-2)
+        fn = model.get_best()['lambda_format']
         self.assertListEqual(list(sorted(fn._selection)), [0, 1])
         X2 = pd.DataFrame(
             {
@@ -167,6 +164,7 @@ class TestPipeline(unittest.TestCase):
             }
         )
         self.assertLess(np.average((fn(X2) - true_fn(X2)) ** 2), 1e-2)
+        self.assertLess(np.average((model.predict(X2) - true_fn(X2)) ** 2), 1e-2)
 
 
 class TestBest(unittest.TestCase):

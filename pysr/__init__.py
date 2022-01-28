@@ -1,6 +1,6 @@
 from .sr import (
     pysr,
-    get_hof,
+    PySRRegressor,
     best,
     best_tex,
     best_callable,
@@ -11,4 +11,3 @@ from .sr import (
 from .feynman_problems import Problem, FeynmanProblem
 from .export_jax import sympy2jax
 from .export_torch import sympy2torch
-from .sklearn import PySRRegressor

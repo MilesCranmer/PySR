@@ -179,24 +179,35 @@ def run_feature_selection(X, y, select_k_features):
     return selector.get_support(indices=True)
 
 
-
 def _escape_filename(filename):
     """Turns a file into a string representation with correctly escaped backslashes"""
     str_repr = str(filename)
     str_repr = str_repr.replace("\\", "\\\\")
     return str_repr
 
+
 def best(*args, **kwargs):
-    raise NotImplementedError("`best` has been deprecated. Please use the `PySRRegressor` interface. After fitting, you can return `.sympy()` to get the sympy representation of the best equation.")
+    raise NotImplementedError(
+        "`best` has been deprecated. Please use the `PySRRegressor` interface. After fitting, you can return `.sympy()` to get the sympy representation of the best equation."
+    )
+
 
 def best_row(*args, **kwargs):
-    raise NotImplementedError("`best_row` has been deprecated. Please use the `PySRRegressor` interface. After fitting, you can run `print(model)` to view the best equation.")
+    raise NotImplementedError(
+        "`best_row` has been deprecated. Please use the `PySRRegressor` interface. After fitting, you can run `print(model)` to view the best equation."
+    )
+
 
 def best_tex(*args, **kwargs):
-    raise NotImplementedError("`best_tex` has been deprecated. Please use the `PySRRegressor` interface. After fitting, you can return `.latex()` to get the sympy representation of the best equation.")
+    raise NotImplementedError(
+        "`best_tex` has been deprecated. Please use the `PySRRegressor` interface. After fitting, you can return `.latex()` to get the sympy representation of the best equation."
+    )
+
 
 def best_callable(*args, **kwargs):
-    raise NotImplementedError("`best_callable` has been deprecated. Please use the `PySRRegressor` interface. After fitting, you can use `.predict(X)` to use the best callable.")
+    raise NotImplementedError(
+        "`best_callable` has been deprecated. Please use the `PySRRegressor` interface. After fitting, you can use `.predict(X)` to use the best callable."
+    )
 
 
 def _denoise(X, y, Xresampled=None):
@@ -647,7 +658,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             "nout",
             "selection",
             "variable_names",
-            "julia_project"
+            "julia_project",
         ]
 
     def __repr__(self):
@@ -668,9 +679,9 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             dict(
                 pick=selected,
                 score=equations["score"],
-                Equation=equations["Equation"],
-                MSE=equations["MSE"],
-                Complexity=equations["Complexity"],
+                equation=equations["equation"],
+                loss=equations["loss"],
+                complexity=equations["complexity"],
             )
         )
         output += repr_equations.__repr__()
@@ -1036,15 +1047,33 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
 
         try:
             if self.multioutput:
-                all_outputs = [
-                    pd.read_csv(
+                all_outputs = []
+                for i in range(1, self.nout + 1):
+                    df = pd.read_csv(
                         str(self.equation_file) + f".out{i}" + ".bkup",
                         sep="|",
                     )
-                    for i in range(1, self.nout + 1)
-                ]
+                    # Rename Complexity column to complexity:
+                    df.rename(
+                        columns={
+                            "Complexity": "complexity",
+                            "MSE": "loss",
+                            "Equation": "equation",
+                        },
+                        inplace=True,
+                    )
+
+                    all_outputs.append(df)
             else:
                 all_outputs = [pd.read_csv(str(self.equation_file) + ".bkup", sep="|")]
+                all_outputs[-1].rename(
+                    columns={
+                        "Complexity": "complexity",
+                        "MSE": "loss",
+                        "Equation": "equation",
+                    },
+                    inplace=True,
+                )
         except FileNotFoundError:
             raise RuntimeError(
                 "Couldn't find equation file! The equation search likely exited before a single iteration completed."
@@ -1079,7 +1108,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 ]
 
             for _, eqn_row in output.iterrows():
-                eqn = sympify(eqn_row["Equation"], locals=local_sympy_mappings)
+                eqn = sympify(eqn_row["equation"], locals=local_sympy_mappings)
                 sympy_format.append(eqn)
 
                 # Numpy:
@@ -1113,8 +1142,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                     )
                     torch_format.append(module)
 
-                curMSE = eqn_row["MSE"]
-                curComplexity = eqn_row["Complexity"]
+                curMSE = eqn_row["loss"]
+                curComplexity = eqn_row["complexity"]
 
                 if lastMSE is None:
                     cur_score = 0.0
@@ -1134,10 +1163,10 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             output["sympy_format"] = sympy_format
             output["lambda_format"] = lambda_format
             output_cols = [
-                "Complexity",
-                "MSE",
+                "complexity",
+                "loss",
                 "score",
-                "Equation",
+                "equation",
                 "sympy_format",
                 "lambda_format",
             ]
