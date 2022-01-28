@@ -1,6 +1,7 @@
 .dataset*.jl
 .hyperparams*.jl
 *.csv
+*.csv.out*
 *.bkup
 performance*txt
 *.out
