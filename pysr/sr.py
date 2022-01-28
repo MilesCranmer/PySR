@@ -722,7 +722,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         del deep
         return {
             **self.params,
-            **{p: self.__getattribute__(key) for key in self.surface_parameters},
+            **{key: self.__getattribute__(key) for key in self.surface_parameters},
         }
 
     def get_best(self):
