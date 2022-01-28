@@ -636,9 +636,11 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
 
         # Stored equations:
         self.equations = None
+        self.params_hash = None
+        self.raw_julia_state = None
+        self.raw_julia_hof = None
 
         self.multioutput = None
-        self.raw_julia_output = None
         self.equation_file = equation_file
         self.n_features = None
         self.extra_sympy_mappings = extra_sympy_mappings
@@ -654,7 +656,6 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         self.surface_parameters = [
             "model_selection",
             "multioutput",
-            "raw_julia_output",
             "equation_file",
             "n_features",
             "extra_sympy_mappings",
@@ -1046,6 +1047,21 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             float(weightDoNothing),
         ]
 
+        all_params = {
+            **{k: self.__getattribute__(k) for k in self.surface_parameters}
+            ** self.params
+        }
+        if self.params_hash is not None:
+            if hash(all_params) != self.params_hash:
+                warnings.warn(
+                    "Warning: PySR options have changed since the last run. "
+                    "This is experimental and may not work. "
+                    "For example, if the operators change, or even their order,",
+                    " the saved equations will be in the wrong format."
+                )
+
+        self.params_hash = hash(all_params)
+
         options = Main.Options(
             binary_operators=Main.eval(str(tuple(binary_operators)).replace("'", "")),
             unary_operators=Main.eval(str(tuple(unary_operators)).replace("'", "")),
@@ -1085,6 +1101,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             optimizer_iterations=self.params["optimizer_iterations"],
             perturbationFactor=self.params["perturbationFactor"],
             annealing=self.params["annealing"],
+            stateReturn=True,  # Required for state saving.
         )
 
         np_dtype = {16: np.float16, 32: np.float32, 64: np.float64}[
@@ -1106,7 +1123,9 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
 
         cprocs = 0 if multithreading else procs
 
-        self.raw_julia_output = Main.EquationSearch(
+        # Julia return value:
+        # state = (returnPops, hallOfFame)
+        self.raw_julia_state, self.raw_julia_hof = Main.EquationSearch(
             Main.X,
             Main.y,
             weights=Main.weights,
@@ -1119,6 +1138,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             options=options,
             numprocs=int(cprocs),
             multithreading=bool(multithreading),
+            saved_state=self.raw_julia_state,
         )
 
         self.variable_names = variable_names
