@@ -665,27 +665,46 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         if self.equations is None:
             return "PySRRegressor.equations = None"
 
-        equations = self.equations
-        selected = ["" for _ in range(len(equations))]
-        if self.model_selection == "accuracy":
-            chosen_row = -1
-        elif self.model_selection == "best":
-            chosen_row = equations["score"].idxmax()
-        else:
-            raise NotImplementedError
-        selected[chosen_row] = ">>>>"
         output = "PySRRegressor.equations = [\n"
-        repr_equations = pd.DataFrame(
-            dict(
-                pick=selected,
-                score=equations["score"],
-                equation=equations["equation"],
-                loss=equations["loss"],
-                complexity=equations["complexity"],
+
+        equations = self.equations
+        if not isinstance(equations, list):
+            all_equations = [equations]
+        else:
+            all_equations = equations
+
+        for i, equations in enumerate(all_equations):
+            selected = ["" for _ in range(len(equations))]
+            if self.model_selection == "accuracy":
+                chosen_row = -1
+            elif self.model_selection == "best":
+                chosen_row = equations["score"].idxmax()
+            else:
+                raise NotImplementedError
+            selected[chosen_row] = ">>>>"
+            repr_equations = pd.DataFrame(
+                dict(
+                    pick=selected,
+                    score=equations["score"],
+                    equation=equations["equation"],
+                    loss=equations["loss"],
+                    complexity=equations["complexity"],
+                )
             )
-        )
-        output += repr_equations.__repr__()
-        output += "\n]"
+
+            if len(all_equations) > 1:
+                output += "[\n"
+
+            for line in repr_equations.__repr__().split("\n"):
+                output += "\t" + line + "\n"
+
+            if len(all_equations) > 1:
+                output += "]"
+
+            if i < len(all_equations) - 1:
+                output += ", "
+
+        output += "]"
         return output
 
     def set_params(self, **params):
@@ -708,13 +727,19 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
 
     def get_best(self):
         if self.equations is None:
-            return 0.0
+            raise ValueError("No equations have been generated yet.")
         if self.model_selection == "accuracy":
+            if isinstance(self.equations, list):
+                return [eq.iloc[-1] for eq in self.equations]
             return self.equations.iloc[-1]
         elif self.model_selection == "best":
-            return best_row(self.equations)
+            if isinstance(self.equations, list):
+                return [eq.iloc[eq["score"].idxmax()] for eq in self.equations]
+            return self.equations.iloc[self.equations["score"].idxmax()]
         else:
-            raise NotImplementedError
+            raise NotImplementedError(
+                f"{self.model_selection} is not a valid model selection strategy."
+            )
 
     def fit(self, X, y, weights=None, variable_names=None):
         """Search for equations to fit the dataset.
@@ -747,26 +772,40 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
 
     def predict(self, X):
         self.refresh()
-        np_format = self.get_best()["lambda_format"]
-        return np_format(X)
+        best = self.get_best()
+        if self.multioutput:
+            return np.stack([eq["lambda_format"](X) for eq in best], axis=1)
+        return best["lambda_format"](X)
 
     def sympy(self):
         self.refresh()
-        return self.get_best()["sympy_format"]
+        best = self.get_best()
+        if self.multioutput:
+            return [eq["sympy_format"] for eq in best]
+        return best["sympy_format"]
 
     def latex(self):
         self.refresh()
-        return self.sympy().simplify()
+        sympy_representation = self.sympy()
+        if self.multioutput:
+            return [sympy.latex(s) for s in sympy_representation]
+        return sympy.latex(sympy_representation)
 
     def jax(self):
         self.set_params(output_jax_format=True)
         self.refresh()
-        return self.get_best()["jax_format"]
-
+        best = self.get_best()
+        if self.multioutput:
+            return [eq["jax_format"] for eq in best]
+        return best["jax_format"]
+        
     def pytorch(self):
         self.set_params(output_torch_format=True)
         self.refresh()
-        return self.get_best()["torch_format"]
+        best = self.get_best()
+        if self.multioutput:
+            return [eq["torch_format"] for eq in best]
+        return best["torch_format"]
 
     def _run(self, X, y, weights, variable_names):
         global already_ran
@@ -846,11 +885,11 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
 
         if len(y.shape) == 1 or (len(y.shape) == 2 and y.shape[1] == 1):
             self.multioutput = False
-            nout = 1
+            self.nout = 1
             y = y.reshape(-1)
         elif len(y.shape) == 2:
             self.multioutput = True
-            nout = y.shape[1]
+            self.nout = y.shape[1]
         else:
             raise NotImplementedError("y shape not supported!")
 
@@ -1182,3 +1221,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         if self.multioutput:
             return ret_outputs
         return ret_outputs[0]
+
+    def score(self, X, y):
+        del X
+        del y
+        raise NotImplementedError

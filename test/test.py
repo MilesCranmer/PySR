@@ -171,13 +171,13 @@ class TestBest(unittest.TestCase):
     def setUp(self):
         equations = pd.DataFrame(
             {
-                "Equation": ["1.0", "cos(x0)", "square(cos(x0))"],
-                "MSE": [1.0, 0.1, 1e-5],
-                "Complexity": [1, 2, 3],
+                "equation": ["1.0", "cos(x0)", "square(cos(x0))"],
+                "loss": [1.0, 0.1, 1e-5],
+                "complexity": [1, 2, 3],
             }
         )
 
-        equations["Complexity MSE Equation".split(" ")].to_csv(
+        equations["complexity loss equation".split(" ")].to_csv(
             "equation_file.csv.bkup", sep="|"
         )
 
@@ -195,19 +195,15 @@ class TestBest(unittest.TestCase):
         self.model.equations = self.equations
 
     def test_best(self):
-        self.assertEqual(best(self.equations), sympy.cos(sympy.Symbol("x0")) ** 2)
-        self.assertEqual(best(), sympy.cos(sympy.Symbol("x0")) ** 2)
         self.assertEqual(self.model.sympy(), sympy.cos(sympy.Symbol("x0")) ** 2)
 
     def test_best_tex(self):
-        self.assertEqual(best_tex(self.equations), "\\cos^{2}{\\left(x_{0} \\right)}")
-        self.assertEqual(best_tex(), "\\cos^{2}{\\left(x_{0} \\right)}")
         self.assertEqual(self.model.latex(), "\\cos^{2}{\\left(x_{0} \\right)}")
 
     def test_best_lambda(self):
         X = np.random.randn(10, 2)
         y = np.cos(X[:, 0]) ** 2
-        for f in [best_callable(), best_callable(self.equations)]:
+        for f in [self.model.predict, self.equations.iloc[-1]['lambda_format']]:
             np.testing.assert_almost_equal(f(X), y, decimal=4)
 
 
