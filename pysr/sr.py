@@ -798,7 +798,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         if self.multioutput:
             return [eq["jax_format"] for eq in best]
         return best["jax_format"]
-        
+
     def pytorch(self):
         self.set_params(output_torch_format=True)
         self.refresh()

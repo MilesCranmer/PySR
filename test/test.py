@@ -154,7 +154,7 @@ class TestPipeline(unittest.TestCase):
         self.assertIn("T", model.latex())
         self.assertIn("x", model.latex())
         self.assertLessEqual(model.get_best()["loss"], 1e-2)
-        fn = model.get_best()['lambda_format']
+        fn = model.get_best()["lambda_format"]
         self.assertListEqual(list(sorted(fn._selection)), [0, 1])
         X2 = pd.DataFrame(
             {
@@ -202,7 +202,7 @@ class TestBest(unittest.TestCase):
     def test_best_lambda(self):
         X = np.random.randn(10, 2)
         y = np.cos(X[:, 0]) ** 2
-        for f in [self.model.predict, self.equations.iloc[-1]['lambda_format']]:
+        for f in [self.model.predict, self.equations.iloc[-1]["lambda_format"]]:
             np.testing.assert_almost_equal(f(X), y, decimal=4)
 
 
