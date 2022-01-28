@@ -239,9 +239,9 @@ class CallableEquation:
 
     def __call__(self, X):
         if isinstance(X, pd.DataFrame):
-            X = np.array(X[self._variable_names])
-
-        if self._selection is not None:
+            # Lambda function takes as argument:
+            return self._lambda(**{k: X[k].values for k in X.columns})
+        elif self._selection is not None:
             return self._lambda(*X[:, self._selection].T)
         return self._lambda(*X.T)
 
