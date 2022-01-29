@@ -1048,16 +1048,16 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         ]
 
         all_params = {
-            **{k: self.__getattribute__(k) for k in self.surface_parameters}
-            ** self.params
+            **{k: self.__getattribute__(k) for k in self.surface_parameters},
+            **self.params,
         }
         if self.params_hash is not None:
             if hash(all_params) != self.params_hash:
                 warnings.warn(
                     "Warning: PySR options have changed since the last run. "
                     "This is experimental and may not work. "
-                    "For example, if the operators change, or even their order,",
-                    " the saved equations will be in the wrong format."
+                    "For example, if the operators change, or even their order,"
+                    " the saved equations will be in the wrong format.",
                 )
 
         self.params_hash = hash(all_params)
