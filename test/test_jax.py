@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from pysr import sympy2jax, get_hof, PySRRegressor
+from pysr import sympy2jax, PySRRegressor
 import pandas as pd
 from jax import numpy as jnp
 from jax import random
@@ -35,18 +35,17 @@ class TestJAX(unittest.TestCase):
             "equation_file.csv.bkup", sep="|"
         )
 
-        equations = get_hof(
-            "equation_file.csv",
-            n_features=2,
-            variables_names="x1 x2 x3".split(" "),
-            extra_sympy_mappings={},
+        model = PySRRegressor(
+            equation_file="equation_file.csv",
             output_jax_format=True,
+            variables_names="x1 x2 x3".split(" "),
             multioutput=False,
             nout=1,
             selection=[1, 2, 3],
         )
 
-        model = PySRRegressor()
+        model.n_features = 2
+        model.refresh()
         jformat = model.jax()
 
         np.testing.assert_almost_equal(
