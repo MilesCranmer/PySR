@@ -546,6 +546,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                     raise NotImplementedError(
                         "extra_jax_mappings must have keys that are strings! e.g., {sympy.sqrt: 'jnp.sqrt'}."
                     )
+        else:
+            extra_jax_mappings = {}
 
         if extra_torch_mappings is not None:
             for value in extra_jax_mappings.values():
@@ -553,6 +555,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                     raise NotImplementedError(
                         "extra_torch_mappings must be callable functions! e.g., {sympy.sqrt: torch.sqrt}."
                     )
+        else:
+            extra_torch_mappings = {}
 
         if maxsize > 40:
             warnings.warn(
