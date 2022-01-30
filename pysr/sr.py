@@ -12,6 +12,8 @@ from datetime import datetime
 import warnings
 from multiprocessing import cpu_count
 from sklearn.base import BaseEstimator, RegressorMixin
+from collections import OrderedDict
+from hashlib import sha256
 
 is_julia_warning_silenced = False
 
@@ -1047,12 +1049,27 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             float(weightDoNothing),
         ]
 
-        all_params = {
+        params_to_hash = {
             **{k: self.__getattribute__(k) for k in self.surface_parameters},
             **self.params,
         }
+        params_excluded_from_hash = [
+            "niterations",
+        ]
+        # Delete these^ from params_to_hash:
+        params_to_hash = {
+            k: v
+            for k, v in params_to_hash.items()
+            if k not in params_excluded_from_hash
+        }
+
+        # Sort params_to_hash by key:
+        params_to_hash = OrderedDict(sorted(params_to_hash.items()))
+        # Hash all parameters:
+        cur_hash = sha256(str(params_to_hash).encode()).hexdigest()
+
         if self.params_hash is not None:
-            if hash(all_params) != self.params_hash:
+            if cur_hash != self.params_hash:
                 warnings.warn(
                     "Warning: PySR options have changed since the last run. "
                     "This is experimental and may not work. "
@@ -1060,7 +1077,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                     " the saved equations will be in the wrong format.",
                 )
 
-        self.params_hash = hash(all_params)
+        self.params_hash = cur_hash
 
         options = Main.Options(
             binary_operators=Main.eval(str(tuple(binary_operators)).replace("'", "")),
