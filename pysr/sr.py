@@ -796,6 +796,12 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         return sympy.latex(sympy_representation)
 
     def jax(self):
+        if self.using_pandas:
+            warnings.warn(
+                "PySR's JAX modules are not set up to work with a "
+                "model that was trained on pandas dataframes. "
+                "Train on an array instead to ensure everything works as planned."
+            )
         self.set_params(output_jax_format=True)
         self.refresh()
         best = self.get_best()
@@ -804,6 +810,12 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         return best["jax_format"]
 
     def pytorch(self):
+        if self.using_pandas:
+            warnings.warn(
+                "PySR's PyTorch modules are not set up to work with a "
+                "model that was trained on pandas dataframes. "
+                "Train on an array instead to ensure everything works as planned."
+            )
         self.set_params(output_torch_format=True)
         self.refresh()
         best = self.get_best()
@@ -854,6 +866,9 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
 
             variable_names = list(X.columns)
             X = np.array(X)
+            self.using_pandas = True
+        else:
+            self.using_pandas = False
 
         if len(X.shape) == 1:
             X = X[:, None]
