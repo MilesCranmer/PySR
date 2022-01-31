@@ -15,4 +15,4 @@ dist
 pysr/.vs/
 pysr.egg-info
 Manifest.toml
-workflow
+docs/
