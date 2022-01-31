@@ -25,7 +25,7 @@ class TestJAX(unittest.TestCase):
         X = np.random.randn(100, 10)
         equations = pd.DataFrame(
             {
-                "Equation": ["1.0", "cos(x0)", "square(cos(x0))"],
+                "Equation": ["1.0", "cos(x1)", "square(cos(x1))"],
                 "MSE": [1.0, 0.1, 1e-5],
                 "Complexity": [1, 2, 3],
             }
@@ -45,6 +45,7 @@ class TestJAX(unittest.TestCase):
         )
 
         model.n_features = 2
+        model.using_pandas = False
         model.refresh()
         jformat = model.jax()
 
