@@ -322,7 +322,7 @@ def _write_project_file(tmp_dir):
 SymbolicRegression = "8254be44-1295-4e6a-a16d-46603ac705cb"
 
 [compat]
-SymbolicRegression = "0.7.1"
+SymbolicRegression = "0.7.2"
 julia = "1.5"
     """
 
@@ -640,7 +640,6 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         self.equations = None
         self.params_hash = None
         self.raw_julia_state = None
-        self.raw_julia_hof = None
 
         self.multioutput = None
         self.equation_file = equation_file
@@ -861,6 +860,12 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             return [eq["torch_format"] for eq in best]
         return best["torch_format"]
 
+    def reset(self):
+        """Reset the search state."""
+        self.equations = None
+        self.params_hash = None
+        self.raw_julia_state = None
+
     def _run(self, X, y, weights, variable_names):
         global already_ran
         global Main
@@ -1074,7 +1079,9 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                     "Warning: PySR options have changed since the last run. "
                     "This is experimental and may not work. "
                     "For example, if the operators change, or even their order,"
-                    " the saved equations will be in the wrong format.",
+                    " the saved equations will be in the wrong format."
+                    "\n\n"
+                    "To reset the search state, run `.reset()`. "
                 )
 
         self.params_hash = cur_hash
@@ -1140,9 +1147,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
 
         cprocs = 0 if multithreading else procs
 
-        # Julia return value:
-        # state = (returnPops, hallOfFame)
-        self.raw_julia_state, self.raw_julia_hof = Main.EquationSearch(
+        self.raw_julia_state = Main.EquationSearch(
             Main.X,
             Main.y,
             weights=Main.weights,
