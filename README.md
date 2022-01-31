@@ -98,8 +98,10 @@ model = PySRRegressor(
         "cos",
         "exp",
         "sin",
+        "inv(x) = 1/x",  # Custom operator (julia syntax)
     ],
     model_selection="best",
+    loss="loss(x, y) = (x - y)^2",  # Custom loss function (julia syntax)
 )
 ```
 This will set up the model for 5 iterations of the search code, which contains hundreds of thousands of mutations and equation evaluations.

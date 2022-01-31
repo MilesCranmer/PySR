@@ -13,11 +13,10 @@ model = PySRRegressor(
         "cos",
         "exp",
         "sin",
-        "inv(x)=1/x",  # Custom operator (julia syntax)
+        "inv(x) = 1/x",  # Custom operator (julia syntax)
     ],
     model_selection="best",
     loss="loss(x, y) = (x - y)^2",  # Custom loss function (julia syntax)
-    multithreading=False,
 )
 
 model.fit(X, y)
