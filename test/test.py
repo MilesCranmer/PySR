@@ -77,7 +77,7 @@ class TestPipeline(unittest.TestCase):
             model.predict(self.X)[:, 1], self.X[:, 1] ** 2, decimal=4
         )
 
-    def test_empty_operators_single_input_sklearn(self):
+    def test_empty_operators_single_input_multirun(self):
         X = np.random.randn(100, 1)
         y = X[:, 0] + 3.0
         regressor = PySRRegressor(
@@ -93,6 +93,14 @@ class TestPipeline(unittest.TestCase):
 
         self.assertLessEqual(regressor.equations.iloc[-1]["loss"], 1e-4)
         np.testing.assert_almost_equal(regressor.predict(X), y, decimal=1)
+
+        # Test if repeated fit works:
+        regressor.niterations = 0
+        regressor.fit(X, y)
+
+        self.assertLessEqual(regressor.equations.iloc[-1]["loss"], 1e-4)
+        np.testing.assert_almost_equal(regressor.predict(X), y, decimal=1)
+
 
         # Tweak model selection:
         regressor.set_params(model_selection="best")
