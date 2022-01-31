@@ -670,7 +670,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
 
     def __repr__(self):
         """Prints all current equations fitted by the model.
-        
+
         The string `>>>>` denotes which equation is selected by the
         `model_selection`.
         """
@@ -819,7 +819,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
 
     def jax(self):
         """Return jax representation of the equation(s) chosen by `model_selection`.
-        
+
         Each equation (multiple given if there are multiple outputs) is a dictionary
         containing {"callable": func, "parameters": params}. To call `func`, pass
         func(X, params). This function is differentiable using `jax.grad`.
@@ -839,7 +839,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
 
     def pytorch(self):
         """Return pytorch representation of the equation(s) chosen by `model_selection`.
-        
+
         Each equation (multiple given if there are multiple outputs) is a PyTorch module
         containing the parameters as trainable attributes. You can use the module like
         any other PyTorch module: `module(X)`, where `X` is a tensor with the same
