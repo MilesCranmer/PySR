@@ -10,6 +10,7 @@ on:
       - '.github/workflows/**'
       - 'setup.py'
       - 'Project.toml'
+      - 'Dockerfile'
   pull_request:
     branches:
       - '*'
@@ -19,6 +20,7 @@ on:
       - '.github/workflows/**'
       - 'setup.py'
       - 'Project.toml'
+      - 'Dockerfile'
 
 jobs:
   test:
