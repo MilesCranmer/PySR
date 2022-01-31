@@ -17,6 +17,9 @@ is_julia_warning_silenced = False
 
 
 def install(julia_project=None):  # pragma: no cover
+    """Install PyCall.jl and all required dependencies for SymbolicRegression.jl.
+
+    Also updates the local Julia registry."""
     import julia
 
     julia.install()
@@ -405,14 +408,26 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         :type binary_operators: list
         :param unary_operators: Same but for operators taking a single scalar. Default is [].
         :type unary_operators: list
-        :param procs: Number of processes (=number of populations running).
-        :type procs: int
-        :param loss: String of Julia code specifying the loss function.  Can either be a loss from LossFunctions.jl, or your own loss written as a function. Examples of custom written losses include: `myloss(x, y) = abs(x-y)` for non-weighted, or `myloss(x, y, w) = w*abs(x-y)` for weighted.  Among the included losses, these are as follows. Regression: `LPDistLoss{P}()`, `L1DistLoss()`, `L2DistLoss()` (mean square), `LogitDistLoss()`, `HuberLoss(d)`, `L1EpsilonInsLoss(ϵ)`, `L2EpsilonInsLoss(ϵ)`, `PeriodicLoss(c)`, `QuantileLoss(τ)`.  Classification: `ZeroOneLoss()`, `PerceptronLoss()`, `L1HingeLoss()`, `SmoothedL1HingeLoss(γ)`, `ModifiedHuberLoss()`, `L2MarginLoss()`, `ExpLoss()`, `SigmoidLoss()`, `DWDMarginLoss(q)`.
-        :type loss: str
-        :param populations: Number of populations running.
-        :type populations: int
         :param niterations: Number of iterations of the algorithm to run. The best equations are printed, and migrate between populations, at the end of each.
         :type niterations: int
+        :param populations: Number of populations running.
+        :type populations: int
+        :param loss: String of Julia code specifying the loss function.  Can either be a loss from LossFunctions.jl, or your own loss written as a function. Examples of custom written losses include: `myloss(x, y) = abs(x-y)` for non-weighted, or `myloss(x, y, w) = w*abs(x-y)` for weighted.  Among the included losses, these are as follows. Regression: `LPDistLoss{P}()`, `L1DistLoss()`, `L2DistLoss()` (mean square), `LogitDistLoss()`, `HuberLoss(d)`, `L1EpsilonInsLoss(ϵ)`, `L2EpsilonInsLoss(ϵ)`, `PeriodicLoss(c)`, `QuantileLoss(τ)`.  Classification: `ZeroOneLoss()`, `PerceptronLoss()`, `L1HingeLoss()`, `SmoothedL1HingeLoss(γ)`, `ModifiedHuberLoss()`, `L2MarginLoss()`, `ExpLoss()`, `SigmoidLoss()`, `DWDMarginLoss(q)`.
+        :type loss: str
+        :param denoise: Whether to use a Gaussian Process to denoise the data before inputting to PySR. Can help PySR fit noisy data.
+        :type denoise: bool
+        :param select_k_features: whether to run feature selection in Python using random forests, before passing to the symbolic regression code. None means no feature selection; an int means select that many features.
+        :type select_k_features: None/int
+        :param procs: Number of processes (=number of populations running).
+        :type procs: int
+        :param multithreading: Use multithreading instead of distributed backend. Default is yes. Using procs=0 will turn off both.
+        :type multithreading: bool
+        :param batching: whether to compare population members on small batches during evolution. Still uses full dataset for comparing against hall of fame.
+        :type batching: bool
+        :param batchSize: the amount of data to use if doing batching.
+        :type batchSize: int
+        :param maxsize: Max size of an equation.
+        :type maxsize: int
         :param ncyclesperiteration: Number of total mutations to run, per 10 samples of the population, per iteration.
         :type ncyclesperiteration: int
         :param alpha: Initial temperature.
@@ -459,20 +474,12 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         :type verbosity: int
         :param progress: Whether to use a progress bar instead of printing to stdout.
         :type progress: bool
-        :param maxsize: Max size of an equation.
-        :type maxsize: int
         :param maxdepth: Max depth of an equation. You can use both maxsize and maxdepth.  maxdepth is by default set to = maxsize, which means that it is redundant.
         :type maxdepth: int
         :param fast_cycle: (experimental) - batch over population subsamples. This is a slightly different algorithm than regularized evolution, but does cycles 15% faster. May be algorithmically less efficient.
         :type fast_cycle: bool
         :param variable_names: a list of names for the variables, other than "x0", "x1", etc.
         :type variable_names: list
-        :param batching: whether to compare population members on small batches during evolution. Still uses full dataset for comparing against hall of fame.
-        :type batching: bool
-        :param batchSize: the amount of data to use if doing batching.
-        :type batchSize: int
-        :param select_k_features: whether to run feature selection in Python using random forests, before passing to the symbolic regression code. None means no feature selection; an int means select that many features.
-        :type select_k_features: None/int
         :param warmupMaxsizeBy: whether to slowly increase max size from a small number up to the maxsize (if greater than 0).  If greater than 0, says the fraction of training time at which the current maxsize will reach the user-passed maxsize.
         :type warmupMaxsizeBy: float
         :param constraints: dictionary of int (unary) or 2-tuples (binary), this enforces maxsize constraints on the individual arguments of operators. E.g., `'pow': (-1, 1)` says that power laws can have any complexity left argument, but only 1 complexity exponent. Use this to force more interpretable solutions.
@@ -497,12 +504,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         :type tournament_selection_n: int
         :param tournament_selection_p: Probability of selecting the best expression in each tournament. The probability will decay as p*(1-p)^n for other expressions, sorted by loss.
         :type tournament_selection_p: float
-        :param denoise: Whether to use a Gaussian Process to denoise the data before inputting to PySR. Can help PySR fit noisy data.
-        :type denoise: bool
         :param precision: What precision to use for the data. By default this is 32 (float32), but you can select 64 or 16 as well.
         :type precision: int
-        :param multithreading: Use multithreading instead of distributed backend. Default is yes. Using procs=0 will turn off both.
-        :type multithreading: bool
         :param **kwargs: Other options passed to SymbolicRegression.Options, for example, if you modify SymbolicRegression.jl to include additional arguments.
         :type **kwargs: dict
         :returns: Results dataframe, giving complexity, MSE, and equations (as strings), as well as functional forms. If list, each element corresponds to a dataframe of equations for each output.
@@ -666,6 +669,11 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         ]
 
     def __repr__(self):
+        """Prints all current equations fitted by the model.
+        
+        The string `>>>>` denotes which equation is selected by the
+        `model_selection`.
+        """
         if self.equations is None:
             return "PySRRegressor.equations = None"
 
@@ -712,7 +720,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         return output
 
     def set_params(self, **params):
-        """Set parameters for pysr.pysr call or model_selection strategy."""
+        """Set parameters for equation search."""
         for key, value in params.items():
             if key in self.surface_parameters:
                 self.__setattr__(key, value)
@@ -723,6 +731,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         return self
 
     def get_params(self, deep=True):
+        """Get parameters for equation search."""
         del deep
         return {
             **self.params,
@@ -730,6 +739,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         }
 
     def get_best(self):
+        """Get best equation using `model_selection`."""
         if self.equations is None:
             raise ValueError("No equations have been generated yet.")
         if self.model_selection == "accuracy":
@@ -746,7 +756,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             )
 
     def fit(self, X, y, weights=None, variable_names=None):
-        """Search for equations to fit the dataset.
+        """Search for equations to fit the dataset and store them in `self.equations`.
 
         :param X: 2D array. Rows are examples, columns are features. If pandas DataFrame, the columns are used for variable names (so make sure they don't contain spaces).
         :type X: np.ndarray/pandas.DataFrame
@@ -755,6 +765,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         :param weights: Optional. Same shape as y. Each element is how to weight the mean-square-error loss for that particular element of y.
         :type weights: np.ndarray
         :param variable_names: a list of names for the variables, other than "x0", "x1", etc.
+            You can also pass a pandas DataFrame for X.
         :type variable_names: list
         """
         if variable_names is None:
@@ -775,6 +786,15 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         self.equations = self.get_hof()
 
     def predict(self, X):
+        """Predict y from input X using the equation chosen by `model_selection`.
+
+        You may see what equation is used by printing this object. X should have the same
+        columns as the training data.
+
+        :param X: 2D array. Rows are examples, columns are features. If pandas DataFrame, the columns are used for variable names (so make sure they don't contain spaces).
+        :type X: np.ndarray/pandas.DataFrame
+        :return: 1D array (rows are examples) or 2D array (rows are examples, columns are outputs).
+        """
         self.refresh()
         best = self.get_best()
         if self.multioutput:
@@ -782,6 +802,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         return best["lambda_format"](X)
 
     def sympy(self):
+        """Return sympy representation of the equation(s) chosen by `model_selection`."""
         self.refresh()
         best = self.get_best()
         if self.multioutput:
@@ -789,6 +810,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         return best["sympy_format"]
 
     def latex(self):
+        """Return latex representation of the equation(s) chosen by `model_selection`."""
         self.refresh()
         sympy_representation = self.sympy()
         if self.multioutput:
@@ -796,6 +818,12 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         return sympy.latex(sympy_representation)
 
     def jax(self):
+        """Return jax representation of the equation(s) chosen by `model_selection`.
+        
+        Each equation (multiple given if there are multiple outputs) is a dictionary
+        containing {"callable": func, "parameters": params}. To call `func`, pass
+        func(X, params). This function is differentiable using `jax.grad`.
+        """
         if self.using_pandas:
             warnings.warn(
                 "PySR's JAX modules are not set up to work with a "
@@ -810,6 +838,13 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         return best["jax_format"]
 
     def pytorch(self):
+        """Return pytorch representation of the equation(s) chosen by `model_selection`.
+        
+        Each equation (multiple given if there are multiple outputs) is a PyTorch module
+        containing the parameters as trainable attributes. You can use the module like
+        any other PyTorch module: `module(X)`, where `X` is a tensor with the same
+        column ordering as trained with.
+        """
         if self.using_pandas:
             warnings.warn(
                 "PySR's PyTorch modules are not set up to work with a "
