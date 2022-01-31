@@ -12,7 +12,8 @@ Uses regularized evolution, simulated annealing, and gradient-free optimization.
 
 (pronounced like *py* as in python, and then *sur* as in surface)
 
-[Cite this software](https://github.com/MilesCranmer/PySR/blob/master/CITATION.md)
+If you find PySR useful, please cite it using the citation information given in [CITATION.md](https://github.com/MilesCranmer/PySR/blob/master/CITATION.md).
+If you've finished a project with PySR, please let me know and I may showcase your work here!
 
 
 ### Test status:
