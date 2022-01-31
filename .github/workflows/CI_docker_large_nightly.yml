@@ -24,6 +24,10 @@ jobs:
     
     steps:
       - uses: actions/checkout@v1.0.0
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@master
+        with:
+          platforms: all
       - name: Build docker
         run: docker build -t pysr --build-arg ARCH=${{ matrix.arch }} --build-arg VERSION=${{ matrix.julia-version }} --build-arg PYVERSION=${{ matrix.python-version }} .
       - name: Test docker
