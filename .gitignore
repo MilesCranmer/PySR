@@ -1,6 +1,7 @@
 .dataset*.jl
 .hyperparams*.jl
 *.csv
+*.csv.out*
 *.bkup
 performance*txt
 *.out
@@ -14,4 +15,4 @@ dist
 pysr/.vs/
 pysr.egg-info
 Manifest.toml
-workflow
+docs/

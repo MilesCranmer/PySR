@@ -49,7 +49,7 @@ Instead of passing a predefined operator as a string,
 you can define with by passing it to the `pysr` function, with, e.g.,
 
 ```python
-    pysr(
+    PySRRegressor(
         ...,
         unary_operators=["myfunction(x) = x^2"],
         binary_operators=["myotherfunction(x, y) = x^2*y"]
@@ -57,9 +57,7 @@ you can define with by passing it to the `pysr` function, with, e.g.,
 ```
 
 
-You can also define your own in `julia/operators.jl`,
-and pass the function name as a string. This is suitable
-for more complex functions. Make sure that it works with
+Make sure that it works with
 `Float32` as a datatype. That means you need to write `1.5f3`
 instead of `1.5e3`, if you write any constant numbers.
 

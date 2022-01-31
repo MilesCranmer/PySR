@@ -1,6 +1,4 @@
-# Getting Started
-
-## Installation
+# Installation
 PySR uses both Julia and Python, so you need to have both installed.
 
 Install Julia - see [downloads](https://julialang.org/downloads/), and
@@ -16,47 +14,100 @@ python3 -c 'import pysr; pysr.install()'
 The second line will install and update the required Julia packages, including
 `PyCall.jl`.
 
-## Quickstart
 
+Most common issues at this stage are solved
+by [tweaking the Julia package server](https://github.com/MilesCranmer/PySR/issues/27).
+to use up-to-date packages.
+
+# Quickstart
+
+Let's create a PySR example. First, let's import
+numpy to generate some test data:
 ```python
 import numpy as np
-from pysr import pysr, best, get_hof
 
-# Dataset
-X = 2*np.random.randn(100, 5)
-y = 2*np.cos(X[:, 3]) + X[:, 0]**2 - 2
-
-# Learn equations
-equations = pysr(X, y, niterations=5,
-        binary_operators=["plus", "mult"],
-        unary_operators=["cos", "exp", "sin"])
-
-...# (you can use ctl-c to exit early)
-
-print(best())
+X = 2 * np.random.randn(100, 5)
+y = 2.5382 * np.cos(X[:, 3]) + X[:, 0] ** 2 - 0.5
 ```
+We have created a dataset with 100 datapoints, with 5 features each.
+The relation we wish to model is $2.5382 \cos(x_3) + x_0^2 - 0.5$.
 
-which gives:
-
+Now, let's create a PySR model and train it.
+PySR's main interface is in the style of scikit-learn:
 ```python
-x0**2 + 2.000016*cos(x3) - 1.9999845
+from pysr import PySRRegressor
+model = PySRRegressor(
+    niterations=5,
+    populations=8,
+    binary_operators=["+", "*"],
+    unary_operators=[
+        "cos",
+        "exp",
+        "sin",
+        "inv(x)=1/x",  # Custom operator (julia syntax)
+    ],
+    model_selection="best",
+    loss="loss(x, y) = (x - y)^2",  # Custom loss function (julia syntax)
+)
 ```
+This will set up the model for 5 iterations of the search code, which contains hundreds of thousands of mutations and equation evaluations.
 
-The second and additional calls of `pysr` will be significantly
-faster in startup time, since the first call to Julia will compile
-and cache functions from the symbolic regression backend.
-
-One can also use `best_tex` to get the LaTeX form,
-or `best_callable` to get a function you can call.
-This uses a score which balances complexity and error;
-however, one can see the full list of equations with:
+Let's train this model on our dataset:
 ```python
-print(get_hof())
+model.fit(X, y)
 ```
-This is a pandas table, with additional columns:
+Internally, this launches a Julia process which will do a multithreaded search for equations to fit the dataset.
 
-- `MSE` - the mean square error of the formula
-- `score` - a metric akin to Occam's razor; you should use this to help select the "true" equation.
-- `sympy_format` - sympy equation.
-- `lambda_format` - a lambda function for that equation, that you can pass values through.
+Equations will be printed during training, and once you are satisfied, you may 
+quit early by hitting 'q' and then \<enter\>.
 
+After the model has been fit, you can run `model.predict(X)`
+to see the predictions on a given dataset.
+
+You may run:
+```python
+print(model)
+```
+to print the learned equations:
+```python
+PySRRegressor.equations = [
+           pick      score                                           equation          loss  complexity
+        0         0.000000                                          3.0282464  2.816982e+01           1
+        1         1.008026                                          (x0 * x0)  3.751666e+00           3
+        2         0.015337                          (-0.33649465 + (x0 * x0))  3.638336e+00           5
+        3         0.888050                              ((x0 * x0) + cos(x3))  1.497019e+00           6
+        4         0.898539                ((x0 * x0) + (2.4816332 * cos(x3)))  2.481797e-01           8
+        5  >>>>  10.604434  ((-0.49998775 + (x0 * x0)) + (2.5382009 * cos(...  1.527115e-10          10
+]
+```
+This arrow in the `pick` column indicates which equation is currently selected by your
+`model_selection` strategy for prediction.
+(You may change `model_selection` after `.fit(X, y)` as well.)
+
+`model.equations` is a pandas DataFrame containing all equations, including callable format 
+(`lambda_format`),
+SymPy format (`sympy_format`), and even JAX and PyTorch format 
+(both of which are differentiable).
+
+There are several other useful features such as denoising (e.g., `denoising=True`),
+feature selection (e.g., `select_k_features=3`), and many others.
+For a summary of features and options, see [this docs page](https://pysr.readthedocs.io/en/latest/docs/options/).
+You can see the full API at [this page](https://pysr.readthedocs.io/en/latest/docs/api-documentation/).
+
+
+# Docker
+
+You can also test out PySR in Docker, without
+installing it locally, by running the following command in
+the root directory of this repo:
+```bash
+docker build --pull --rm -f "Dockerfile" -t pysr "."
+```
+This builds an image called `pysr`. If you have issues building (for example, on Apple Silicon),
+you can emulate an architecture that works by including: `--platform linux/amd64`.
+You can then run this with:
+```bash
+docker run -it --rm -v "$PWD:/data" pysr ipython
+```
+which will link the current directory to the container's `/data` directory
+and then launch ipython.

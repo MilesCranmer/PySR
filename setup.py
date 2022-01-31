@@ -1,7 +1,10 @@
 import setuptools
 
-with open("README.md", "r") as fh:
-    long_description = fh.read()
+try:
+    with open("README.md", "r") as fh:
+        long_description = fh.read()
+except FileNotFoundError:
+    long_description = ""
 
 setuptools.setup(
     name="pysr",
@@ -12,7 +15,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/MilesCranmer/pysr",
-    install_requires=["julia", "numpy", "pandas", "sympy"],
+    install_requires=["julia", "numpy", "pandas", "sympy", "scikit-learn"],
     packages=setuptools.find_packages(),
     package_data={"pysr": ["../Project.toml", "../datasets/*"]},
     include_package_data=False,

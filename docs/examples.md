@@ -23,8 +23,9 @@ find the expression `2 cos(x3) + x0^2 - 2`.
 ```python
 X = 2 * np.random.randn(100, 5)
 y = 2 * np.cos(X[:, 3]) + X[:, 0] ** 2 - 2
-expressions = pysr(X, y, binary_operators=["+", "-", "*", "/"], **kwargs)
-print(best(expressions))
+model = PySRRegressor(binary_operators=["+", "-", "*", "/"], **kwargs)
+model.fit(X, y)
+print(model)
 ```
 
 ## 2. Custom operator
@@ -34,14 +35,13 @@ Here, we define a custom operator and use it to find an expression:
 ```python
 X = 2 * np.random.randn(100, 5)
 y = 1 / X[:, 0]
-expressions = pysr(
-    X,
-    y,
+model = PySRRegressor(
     binary_operators=["plus", "mult"],
     unary_operators=["inv(x) = 1/x"],
     **kwargs
 )
-print(best(expressions))
+model.fit(X, y)
+print(model)
 ```
 
 ## 3. Multiple outputs
@@ -51,23 +51,23 @@ each requiring a different feature.
 ```python
 X = 2 * np.random.randn(100, 5)
 y = 1 / X[:, [0, 1, 2]]
-expressions = pysr(
-    X,
-    y,
+model = PySRRegressor(
     binary_operators=["plus", "mult"],
     unary_operators=["inv(x) = 1/x"],
     **kwargs
 )
+model.fit(X, y)
 ```
 
 ## 4. Plotting an expression
 
 Here, let's use the same equations, but get a format we can actually
-use and test. We can add this option after a search via the `get_hof`
+use and test. We can add this option after a search via the `set_params`
 function:
 
 ```python
-expressions = get_hof(extra_sympy_mappings={"inv": lambda x: 1/x})
+model.set_params(extra_sympy_mappings={"inv": lambda x: 1/x})
+model.sympy()
 ```
 If you look at the lists of expressions before and after, you will
 see that the sympy format now has replaced `inv` with `1/`.

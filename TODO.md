@@ -65,6 +65,9 @@
 
 - [ ] Automatically convert log, log10, log2, pow to the correct operators.
 - [ ] I think the simplification isn't working correctly (post-merging SymbolicUtils.)
+- [ ] Show demo of PySRRegressor. Fit equations, then show how to view equations.
+- [ ] Add "selected" column string to regular equations dict.
+- [ ] List "Loss" instead of "MSE"
 
 ## Feature ideas
 
