@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import pandas as pd
-from pysr import sympy2torch, get_hof
+from pysr import sympy2torch, PySRRegressor
 import torch
 import sympy
 
@@ -24,7 +24,7 @@ class TestTorch(unittest.TestCase):
         X = np.random.randn(100, 10)
         equations = pd.DataFrame(
             {
-                "Equation": ["1.0", "cos(x0)", "square(cos(x0))"],
+                "Equation": ["1.0", "cos(x1)", "square(cos(x1))"],
                 "MSE": [1.0, 0.1, 1e-5],
                 "Complexity": [1, 2, 3],
             }
@@ -34,9 +34,9 @@ class TestTorch(unittest.TestCase):
             "equation_file.csv.bkup", sep="|"
         )
 
-        equations = get_hof(
-            "equation_file.csv",
-            n_features=2,  # TODO: Why is this 2 and not 3?
+        model = PySRRegressor(
+            model_selection="accuracy",
+            equation_file="equation_file.csv",
             variables_names="x1 x2 x3".split(" "),
             extra_sympy_mappings={},
             output_torch_format=True,
@@ -44,8 +44,12 @@ class TestTorch(unittest.TestCase):
             nout=1,
             selection=[1, 2, 3],
         )
+        model.n_features = 2  # TODO: Why is this 2 and not 3?
+        model.using_pandas = False
+        model.refresh()
 
-        tformat = equations.iloc[-1].torch_format
+        tformat = model.pytorch()
+        self.assertEqual(str(tformat), "_SingleSymPyModule(expression=cos(x1)**2)")
         np.testing.assert_almost_equal(
             tformat(torch.tensor(X)).detach().numpy(),
             np.square(np.cos(X[:, 1])),  # Selection 1st feature
@@ -84,9 +88,9 @@ class TestTorch(unittest.TestCase):
             "equation_file_custom_operator.csv.bkup", sep="|"
         )
 
-        equations = get_hof(
-            "equation_file_custom_operator.csv",
-            n_features=3,
+        model = PySRRegressor(
+            model_selection="accuracy",
+            equation_file="equation_file_custom_operator.csv",
             variables_names="x1 x2 x3".split(" "),
             extra_sympy_mappings={"mycustomoperator": sympy.sin},
             extra_torch_mappings={"mycustomoperator": torch.sin},
@@ -95,8 +99,13 @@ class TestTorch(unittest.TestCase):
             nout=1,
             selection=[0, 1, 2],
         )
+        model.n_features = 3
+        model.using_pandas = False
+        model.refresh()
+        # Will automatically use the set global state from get_hof.
+        tformat = model.pytorch()
+        self.assertEqual(str(tformat), "_SingleSymPyModule(expression=sin(x0))")
 
-        tformat = equations.iloc[-1].torch_format
         np.testing.assert_almost_equal(
             tformat(torch.tensor(X)).detach().numpy(),
             np.sin(X[:, 0]),  # Selection 1st feature

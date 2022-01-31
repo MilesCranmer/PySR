@@ -1,6 +1,6 @@
 from .sr import (
     pysr,
-    get_hof,
+    PySRRegressor,
     best,
     best_tex,
     best_callable,

@@ -1,25 +1,24 @@
 import numpy as np
-from pysr import pysr, best
 
-# Dataset
 X = 2 * np.random.randn(100, 5)
-y = 2 * np.cos(X[:, 3]) + X[:, 0] ** 2 - 2
+y = 2.5382 * np.cos(X[:, 3]) + X[:, 0] ** 2 - 0.5
 
-# Learn equations
-equations = pysr(
-    X,
-    y,
+from pysr import PySRRegressor
+
+model = PySRRegressor(
     niterations=5,
-    binary_operators=["plus", "mult"],
+    populations=8,
+    binary_operators=["+", "*"],
     unary_operators=[
         "cos",
         "exp",
-        "sin",  # Pre-defined library of operators (see https://pysr.readthedocs.io/en/latest/docs/operators/)
-        "inv(x) = 1/x",
+        "sin",
+        "inv(x) = 1/x",  # Custom operator (julia syntax)
     ],
-    loss="loss(x, y) = abs(x - y)",  # Custom loss function
-)  # Define your own operator! (Julia syntax)
+    model_selection="best",
+    loss="loss(x, y) = (x - y)^2",  # Custom loss function (julia syntax)
+)
 
-...  # (you can use ctl-c to exit early)
+model.fit(X, y)
 
-print(best(equations))
+print(model)

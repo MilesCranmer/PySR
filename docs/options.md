@@ -1,10 +1,8 @@
 # Features and Options
 
-You likely don't need to tune the hyperparameters yourself,
-but if you would like, you can use `hyperparamopt.py` as an example.
-
 Some configurable features and options in `PySR` which you
 may find useful include:
+- `model_selection`
 - `binary_operators`, `unary_operators`
 - `niterations`
 - `ncyclesperiteration`
@@ -21,18 +19,31 @@ may find useful include:
 
 These are described below
 
-The program will output a pandas DataFrame containing the equations,
-mean square error, and complexity. It will also dump to a csv
+The program will output a pandas DataFrame containing the equations
+to `PySRRegressor.equations` containing the loss value
+and complexity.
+
+It will also dump to a csv
 at the end of every iteration,
-which is `hall_of_fame_{date_time}.csv` by default. It also prints the
-equations to stdout.
+which is `hall_of_fame_{date_time}.csv` by default.
+It also prints the equations to stdout.
+
+## Model selection
+
+By default, `PySRRegressor` uses `model_selection='best'`
+which selects an equation from `PySRRegressor.equations` using
+a combination of accuracy and complexity.
+You can also select `model_selection='accuracy'`.
+
+By printing a model (i.e., `print(model)`), you can see
+the equation selection with the arrow shown in the `pick` column.
 
 ## Operators
 
 A list of operators can be found on the operators page.
 One can define custom operators in Julia by passing a string:
 ```python
-equations = pysr.pysr(X, y, niterations=100,
+PySRRegressor(niterations=100,
     binary_operators=["mult", "plus", "special(x, y) = x^2 + y"],
     extra_sympy_mappings={'special': lambda x, y: x**2 + y},
     unary_operators=["cos"])
@@ -50,8 +61,6 @@ One should also define `extra_sympy_mappings`,
 so that the SymPy code can understand the output equation from Julia,
 when constructing a useable function. This step is optional, but
 is necessary for the `lambda_format` to work.
-
-One can also edit `operators.jl`.
 
 ## Iterations
 
@@ -78,15 +87,15 @@ each population stay closer to the best current equations.
 
 One can adjust the number of workers used by Julia with the
 `procs` option. You should set this equal to the number of cores
-you want `pysr` to use. This will also run `procs` number of
-populations simultaneously by default.
+you want `pysr` to use.
 
 ## Populations
 
-By default, `populations=procs`, but you can set a different
-number of populations with this option. More populations may increase
+By default, `populations=20`, but you can set a different
+number of populations with this option.
+More populations may increase
 the diversity of equations discovered, though will take longer to train.
-However, it may be more efficient to have `populations>procs`,
+However, it is usually more efficient to have `populations>procs`,
 as there are multiple populations running
 on each core.
 
@@ -100,7 +109,8 @@ instead of the usual 4, which creates more populations
 sigma = ...
 weights = 1/sigma**2
 
-equations = pysr.pysr(X, y, weights=weights, procs=10)
+model = PySRRegressor(procs=10)
+model.fit(X, y, weights=weights)
 ```
 
 ## Max size
@@ -147,54 +157,62 @@ expressions of complexity 5 (e.g., 5.0 + x2 exp(x3)).
 
 ## LaTeX, SymPy
 
-The `pysr` command will return a pandas dataframe. The `sympy_format`
-column gives sympy equations, and the `lambda_format` gives callable
-functions. These use the variable names you have provided.
+After running `model.fit(...)`, you can look at
+`model.equations` which is a pandas dataframe.
+The `sympy_format` column gives sympy equations,
+and the `lambda_format` gives callable functions.
+You can optionally pass a pandas dataframe to the callable function,
+if you called `.fit` on a pandas dataframe as well.
 
 There are also some helper functions for doing this quickly.
-You can call `get_hof()` (or pass an equation file explicitly to this)
-to get this pandas dataframe.
-
-You can call the functions `best()` to get the sympy format
-for the best equation, using the `score` column to sort equations.
-`best_latex()` returns the LaTeX form of this, and `best_callable()`
-returns a callable function.
+- `model.latex()` will generate a TeX formatted output of your equation.
+- `model.sympy()` will return the SymPy representation.
+- `model.jax()` will return a callable JAX function combined with parameters (see below)
+- `model.pytorch()` will return a PyTorch model (see below).
 
 
 ## Callable exports: numpy, pytorch, jax
 
 By default, the dataframe of equations will contain columns
-with the identifier `lambda_format`. These are simple functions
-which correspond to the equation, but executed
-with numpy functions. You can pass your `X` matrix to these functions
-just as you did to the `pysr` call. Thus, this allows
+with the identifier `lambda_format`.
+These are simple functions which correspond to the equation, but executed
+with numpy functions.
+You can pass your `X` matrix to these functions
+just as you did to the `model.fit` call. Thus, this allows
 you to numerically evaluate the equations over different output.
 
+Calling `model.predict` will execute the `lambda_format` of
+the best equation, and return the result. If you selected
+`model_selection="best"`, this will use an equation that combines
+accuracy with simplicity. For `model_selection="accuracy"`, this will just
+look at accuracy.
 
 One can do the same thing for PyTorch, which uses code
 from [sympytorch](https://github.com/patrick-kidger/sympytorch),
 and for JAX, which uses code from
 [sympy2jax](https://github.com/MilesCranmer/sympy2jax).
 
-For torch, set the argument `output_torch_format=True`, which
-will generate a column `torch_format`. Each element of this column
-is a PyTorch module which runs the equation, using PyTorch functions,
+Calling `model.pytorch()` will return
+a PyTorch module which runs the equation, using PyTorch functions,
 over `X` (as a PyTorch tensor). This is differentiable, and the
 parameters of this PyTorch module correspond to the learned parameters
 in the equation, and are trainable.
+```python
+torch_model = model.pytorch()
+torch_model(X)
+```
+**Warning: If you are using custom operators, you must define `extra_torch_mappings` or `extra_jax_mappings` (both are `dict` of callables) to provide an equivalent definition of the functions.** (At any time you can set these parameters or any others with `model.set_params`.)
 
-For jax, set the argument `output_jax_format=True`, which
-will generate a column `jax_format`. Each element of this column
-is a dictionary containing a `'callable'` (a JAX function),
+For JAX, you can equivalently call `model.jax()`
+This will return a dictionary containing a `'callable'` (a JAX function),
 and `'parameters'` (a list of parameters in the equation).
-One can execute this function with: `element['callable'](X, element['parameters'])`.
+You can execute this function with:
+```python
+jax_model = model.jax()
+jax_model['callable'](X, jax_model['parameters'])
+```
 Since the parameter list is a jax array, this therefore lets you also 
 train the parameters within JAX (and is differentiable).
-
-If you forget to turn these on when calling the function initially,
-you can re-run `get_hof(output_jax_format=True)`, and it will re-use
-the equations and other state properties, assuming you haven't
-re-run `pysr` in the meantime!
 
 ## `loss`
 
@@ -209,26 +227,29 @@ Here are some additional examples:
 
 abs(x-y) loss
 ```python
-pysr(..., loss="f(x, y) = abs(x - y)^1.5")
+PySRRegressor(..., loss="f(x, y) = abs(x - y)^1.5")
 ```
 Note that the function name doesn't matter:
 ```python
-pysr(..., loss="loss(x, y) = abs(x * y)")
+PySRRegressor(..., loss="loss(x, y) = abs(x * y)")
 ```
 With weights:
 ```python
-pysr(..., weights=weights, loss="myloss(x, y, w) = w * abs(x - y)") 
+model = PySRRegressor(..., loss="myloss(x, y, w) = w * abs(x - y)") 
+model.fit(..., weights=weights)
 ```
 Weights can be used in arbitrary ways:
 ```python
-pysr(..., weights=weights, loss="myloss(x, y, w) = abs(x - y)^2/w^2")
+model = PySRRegressor(..., weights=weights, loss="myloss(x, y, w) = abs(x - y)^2/w^2")
+model.fit(..., weights=weights)
 ```
 Built-in loss (faster) (see [losses](https://astroautomata.com/SymbolicRegression.jl/dev/losses/)).
 This one computes the L3 norm:
 ```python
-pysr(..., loss="LPDistLoss{3}()")
+PySRRegressor(..., loss="LPDistLoss{3}()")
 ```
 Can also uses these losses for weighted (weighted-average):
 ```python
-pysr(..., weights=weights, loss="LPDistLoss{3}()")
+model = PySRRegressor(..., weights=weights, loss="LPDistLoss{3}()")
+model.fit(..., weights=weights)
 ```
