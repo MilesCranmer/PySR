@@ -1,0 +1,29 @@
+name: Docker_Large_Nightly
+
+on:
+  schedule:
+    # Run at the 0th minute of the 10th hour (UTC).
+    # This means the job will run at 5am EST.
+    - cron: "0 10 * * *"
+    # This will automatically run on master branch only.
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      matrix:
+        julia-version: ['1.7.1']
+        python-version: ['3.9']
+        os: [ubuntu-latest]
+        arch: ['linux/x86_64', 'linux/amd64', 'linux/arm64', 'linux/aarch64']
+    
+    steps:
+      - uses: actions/checkout@v1.0.0
+      - name: Build docker
+        run: docker build --platform=${{ matrix.arch }} -t pysr .
+      - name: Test docker
+        run: docker run --platform=${{ matrix.arch }} --rm pysr /bin/bash -c 'python3 -m unittest test.test'
