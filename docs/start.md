@@ -44,7 +44,7 @@ model = PySRRegressor(
         "cos",
         "exp",
         "sin",
-        "inv(x)=1/x",  # Custom operator (julia syntax)
+        "inv(x) = 1/x",  # Custom operator (julia syntax)
     ],
     model_selection="best",
     loss="loss(x, y) = (x - y)^2",  # Custom loss function (julia syntax)
@@ -71,13 +71,13 @@ print(model)
 to print the learned equations:
 ```python
 PySRRegressor.equations = [
-           pick      score                                           equation          loss  complexity
-        0         0.000000                                          3.0282464  2.816982e+01           1
-        1         1.008026                                          (x0 * x0)  3.751666e+00           3
-        2         0.015337                          (-0.33649465 + (x0 * x0))  3.638336e+00           5
-        3         0.888050                              ((x0 * x0) + cos(x3))  1.497019e+00           6
-        4         0.898539                ((x0 * x0) + (2.4816332 * cos(x3)))  2.481797e-01           8
-        5  >>>>  10.604434  ((-0.49998775 + (x0 * x0)) + (2.5382009 * cos(...  1.527115e-10          10
+   pick      score                                           Equation           MSE  Complexity
+0         0.000000                                          3.5082064  2.710828e+01           1
+1         0.964260                                          (x0 * x0)  3.940544e+00           3
+2         0.030096                          (-0.47978288 + (x0 * x0))  3.710349e+00           5
+3         0.840770                              ((x0 * x0) + cos(x3))  1.600564e+00           6
+4         0.928380                ((x0 * x0) + (2.5313091 * cos(x3)))  2.499724e-01           8
+5  >>>>  13.956461  ((-0.49999997 + (x0 * x0)) + (2.5382001 * cos(...  1.885665e-13          10
 ]
 ```
 This arrow in the `pick` column indicates which equation is currently selected by your
@@ -90,7 +90,7 @@ SymPy format (`sympy_format`), and even JAX and PyTorch format
 (both of which are differentiable).
 
 There are several other useful features such as denoising (e.g., `denoising=True`),
-feature selection (e.g., `select_k_features=3`), and many others.
+feature selection (e.g., `select_k_features=3`).
 For a summary of features and options, see [this docs page](https://pysr.readthedocs.io/en/latest/docs/options/).
 You can see the full API at [this page](https://pysr.readthedocs.io/en/latest/docs/api-documentation/).
 
