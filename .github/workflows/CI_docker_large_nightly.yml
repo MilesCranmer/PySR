@@ -15,6 +15,7 @@ jobs:
       run:
         shell: bash
     strategy:
+      fail-fast: false
       matrix:
         julia-version: ['1.7.1']
         python-version: ['3.9']
