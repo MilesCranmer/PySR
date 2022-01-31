@@ -101,7 +101,6 @@ class TestPipeline(unittest.TestCase):
         self.assertLessEqual(regressor.equations.iloc[-1]["loss"], 1e-4)
         np.testing.assert_almost_equal(regressor.predict(X), y, decimal=1)
 
-
         # Tweak model selection:
         regressor.set_params(model_selection="best")
         self.assertEqual(regressor.get_params()["model_selection"], "best")
