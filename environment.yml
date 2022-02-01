@@ -8,6 +8,5 @@ dependencies:
   - numpy
   - scikit-learn
   - setuptools
-  - pip
-  - pip:
-    - julia
+  - pyjulia
+  - openlibm<0.8.0
