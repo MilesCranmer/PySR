@@ -9,6 +9,7 @@ on:
       - '.github/workflows/docs.yml'
       - 'docs/**'
       - 'setup.py'
+  workflow_dispatch:
 
 jobs:
   test:
