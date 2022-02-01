@@ -1,0 +1,43 @@
+name: docs
+
+on:
+  push:
+    branches:
+      - 'master'
+    paths:
+      - 'pysr/**'
+      - '.github/workflows/docs.yml'
+      - 'docs/**'
+      - 'setup.py'
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    
+    steps:
+      - uses: actions/checkout@v2
+      - name: "Set up Python"
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.9.10
+      - name: "Install pydoc-markdown"
+        run: pip install pydoc-markdown
+      - name: "Set up npm"
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+      - name: "Install docsify"
+        run: npm install -g docsify
+      - name: "Build API docs"
+        run: |
+          pydoc-markdown --build --site-dir build -vv
+          cp docs/build/content/docs/api*.md docs/
+          for f in docs/api*.md; do mv "$f" "$f.bkup" && cat "$f.bkup" | sed '1,4d' > "$f" && rm "$f.bkup"; done
+      - name: "Deploy documentation"
+        uses: JamesIves/github-pages-deploy-action@v4.2.3
+        with:
+          branch: gh-pages
+          folder: docs
