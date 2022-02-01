@@ -1,6 +1,6 @@
 [//]: # (Logo:)
 
-<img src="https://raw.githubusercontent.com/MilesCranmer/PySR/master/pysr_logo.svg" width="400" />
+<img src="https://raw.githubusercontent.com/MilesCranmer/PySR/master/docs/images/pysr_logo.svg" width="400" />
 
 **PySR: parallel symbolic regression built on Julia, and interfaced by Python.**
 
