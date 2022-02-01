@@ -82,10 +82,6 @@ We can see the LaTeX version of this with:
 model.latex()[0]
 ```
 or output 1 with `model.latex()[1]`.
-and the sympy version with:
-```python
-model.sympy()[0]
-```
 
 
 Let's plot the prediction against the truth:
@@ -99,3 +95,8 @@ plt.show()
 Which gives us:
 
 ![](https://github.com/MilesCranmer/PySR/raw/master/docs/images/example_plot.png)
+
+## 5. Additional features
+
+For the many other features available in PySR, please
+read the [Options section](options.md). 
