@@ -8,7 +8,8 @@ Uses regularized evolution, simulated annealing, and gradient-free optimization.
 
 | **Docs** | **pip** |
 |---|---|
-|[![Documentation Status](https://readthedocs.org/projects/pysr/badge/?version=latest)](https://pysr.readthedocs.io/en/latest/?badge=latest)|[![PyPI version](https://badge.fury.io/py/pysr.svg)](https://badge.fury.io/py/pysr)|
+|[![Documentation](https://github.com/MilesCranmer/PySR/actions/workflows/docs.yml/badge.svg)](https://astroautomata.com/PySR/)|[![PyPI version](https://badge.fury.io/py/pysr.svg)](https://badge.fury.io/py/pysr)|
+
 
 (pronounced like *py* as in python, and then *sur* as in surface)
 
