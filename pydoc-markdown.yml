@@ -54,19 +54,20 @@ renderer:
       preamble: {weight: 4}
     - title: API Documentation
       contents:
-        - pysr.sr.PySRRegressor.__init__
-        - pysr.sr.PySRRegressor.fit
-        - pysr.sr.PySRRegressor.predict
-        - pysr.sr.PySRRegressor.__repr__
-        - pysr.sr.PySRRegressor.set_params
-        - pysr.sr.PySRRegressor.get_params
-        - pysr.sr.PySRRegressor.get_best
-        - pysr.sr.PySRRegressor.sympy
-        - pysr.sr.PySRRegressor.latex
-        - pysr.sr.PySRRegressor.jax
-        - pysr.sr.PySRRegressor.pytorch
-        - pysr.sr.PySRRegressor.refresh
-        - pysr.sr.__repr__
-        - pysr.sr.install
-        - pysr.sr.silence_julia_warning
+        - pysr.*
+        # - pysr.sr.PySRRegressor
+        # - pysr.sr.PySRRegressor.__init__
+        # - pysr.sr.PySRRegressor.fit
+        # - pysr.sr.PySRRegressor.predict
+        # - pysr.sr.PySRRegressor.__repr__
+        # - pysr.sr.PySRRegressor.set_params
+        # - pysr.sr.PySRRegressor.get_params
+        # - pysr.sr.PySRRegressor.get_best
+        # - pysr.sr.PySRRegressor.sympy
+        # - pysr.sr.PySRRegressor.latex
+        # - pysr.sr.PySRRegressor.jax
+        # - pysr.sr.PySRRegressor.pytorch
+        # - pysr.sr.PySRRegressor.refresh
+        # - pysr.sr.install
+        # - pysr.sr.silence_julia_warning
       preamble: {weight: 5}
