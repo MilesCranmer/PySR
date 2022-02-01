@@ -1,3 +1,58 @@
+[//]: # (Logo:)
+
+<img src="https://raw.githubusercontent.com/MilesCranmer/PySR/master/pysr_logo.svg" width="400" />
+
+**PySR: parallel symbolic regression built on Julia, and interfaced by Python.**
+
+Uses regularized evolution, simulated annealing, and gradient-free optimization.
+
+| **Docs** | **pip** |
+|---|---|
+|[![Documentation Status](https://readthedocs.org/projects/pysr/badge/?version=latest)](https://pysr.readthedocs.io/en/latest/?badge=latest)|[![PyPI version](https://badge.fury.io/py/pysr.svg)](https://badge.fury.io/py/pysr)|
+
+(pronounced like *py* as in python, and then *sur* as in surface)
+
+If you find PySR useful, please cite it using the citation information given in [CITATION.md](https://github.com/MilesCranmer/PySR/blob/master/CITATION.md).
+If you've finished a project with PySR, please let me know and I may showcase your work here!
+
+
+### Test status:
+| **Linux** | **Windows** | **macOS (intel)** | **Docker** | **Coverage** | 
+|---|---|---|---|---|
+|[![Linux](https://github.com/MilesCranmer/PySR/actions/workflows/CI.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI.yml)|[![Windows](https://github.com/MilesCranmer/PySR/actions/workflows/CI_Windows.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_Windows.yml)|[![macOS](https://github.com/MilesCranmer/PySR/actions/workflows/CI_mac.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_mac.yml)|[![Docker](https://github.com/MilesCranmer/PySR/actions/workflows/CI_docker.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_docker.yml)|[![Coverage Status](https://coveralls.io/repos/github/MilesCranmer/PySR/badge.svg?branch=master&service=github)](https://coveralls.io/github/MilesCranmer/PySR)|
+
+
+Check out [SymbolicRegression.jl](https://github.com/MilesCranmer/SymbolicRegression.jl) for
+the pure-Julia backend of this package.
+
+Symbolic regression is a very interpretable machine learning algorithm
+for low-dimensional problems: these tools search equation space
+to find algebraic relations that approximate a dataset.
+
+One can also
+extend these approaches to higher-dimensional
+spaces by using a neural network as proxy, as explained in 
+[2006.11287](https://arxiv.org/abs/2006.11287), where we apply
+it to N-body problems. Here, one essentially uses
+symbolic regression to convert a neural net
+to an analytic equation. Thus, these tools simultaneously present
+an explicit and powerful way to interpret deep models.
+
+
+*Backstory:*
+
+Previously, we have used
+[eureqa](https://www.creativemachineslab.com/eureqa.html),
+which is a very efficient and user-friendly tool. However,
+eureqa is GUI-only, doesn't allow for user-defined
+operators, has no distributed capabilities,
+and has become proprietary (and recently been merged into an online
+service). Thus, the goal
+of this package is to have an open-source symbolic regression tool
+as efficient as eureqa, while also exposing a configurable
+python interface.
+
+
 # Installation
 PySR uses both Julia and Python, so you need to have both installed.
 
