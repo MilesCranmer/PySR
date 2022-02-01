@@ -160,7 +160,7 @@ class TestPipeline(unittest.TestCase):
         self.assertNotIn("unused_feature", model.latex())
         self.assertIn("T", model.latex())
         self.assertIn("x", model.latex())
-        self.assertLessEqual(model.get_best()["loss"], 1e-2)
+        self.assertLessEqual(model.get_best()["loss"], 1e-1)
         fn = model.get_best()["lambda_format"]
         self.assertListEqual(list(sorted(fn._selection)), [0, 1])
         X2 = pd.DataFrame(
@@ -170,8 +170,8 @@ class TestPipeline(unittest.TestCase):
                 "x": np.random.randn(100),
             }
         )
-        self.assertLess(np.average((fn(X2) - true_fn(X2)) ** 2), 1e-2)
-        self.assertLess(np.average((model.predict(X2) - true_fn(X2)) ** 2), 1e-2)
+        self.assertLess(np.average((fn(X2) - true_fn(X2)) ** 2), 1e-1)
+        self.assertLess(np.average((model.predict(X2) - true_fn(X2)) ** 2), 1e-1)
 
 
 class TestBest(unittest.TestCase):
