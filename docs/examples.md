@@ -71,36 +71,27 @@ model.sympy()
 ```
 If you look at the lists of expressions before and after, you will
 see that the sympy format now has replaced `inv` with `1/`.
+We can again look at the equation chosen:
+```python
+print(model)
+```
 
-For now, let's consider the expressions for output 0:
-```python
-expressions = expressions[0]
-```
-This is a pandas table, which we can filter:
-```python
-best_expression = expressions.iloc[expressions.MSE.argmin()]
-```
+For now, let's consider the expressions for output 0.
 We can see the LaTeX version of this with:
 ```python
-import sympy
-sympy.latex(best_expression.sympy_format)
+model.latex()[0]
 ```
-
-We can access the numpy version with:
+or output 1 with `model.latex()[1]`.
+and the sympy version with:
 ```python
-f = best_expression.lambda_format
-print(f)
+model.sympy()[0]
 ```
 
-Which shows a PySR object on numpy code:
-```
->> PySRFunction(X=>1/x0)
-```
 
-Let's plot this against the truth:
+Let's plot the prediction against the truth:
 ```python
 from matplotlib import pyplot as plt
-plt.scatter(y[:, 0], f(X))
+plt.scatter(y[:, 0], model(X)[:, 0])
 plt.xlabel('Truth')
 plt.ylabel('Prediction')
 plt.show()
