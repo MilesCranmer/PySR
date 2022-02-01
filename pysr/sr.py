@@ -322,7 +322,7 @@ def _write_project_file(tmp_dir):
 SymbolicRegression = "8254be44-1295-4e6a-a16d-46603ac705cb"
 
 [compat]
-SymbolicRegression = "0.7.2"
+SymbolicRegression = "0.7.3"
 julia = "1.5"
     """
 
@@ -729,7 +729,6 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             else:
                 self.params[key] = value
 
-        self.refresh()
         return self
 
     def get_params(self, deep=True):
