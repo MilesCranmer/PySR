@@ -37,10 +37,9 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
     else:
         io = "stderr"
 
-
     # Can't pass IO to Julia call as it evaluates to PyObject, so just directly
     # use Main.eval:
-    Main.eval(f"Pkg.activate(\"{_escape_filename(julia_project)}\", io={io})")
+    Main.eval(f'Pkg.activate("{_escape_filename(julia_project)}", io={io})')
     try:
         Pkg.update()
     except RuntimeError as e:
