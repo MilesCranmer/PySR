@@ -95,7 +95,7 @@ class TestPipeline(unittest.TestCase):
         np.testing.assert_almost_equal(regressor.predict(X), y, decimal=1)
 
         # Test if repeated fit works:
-        regressor.set_params(ncyclesperiteration=50)
+        regressor.set_params(niterations=0)
         regressor.fit(X, y)
 
         self.assertLessEqual(regressor.equations.iloc[-1]["loss"], 1e-4)
