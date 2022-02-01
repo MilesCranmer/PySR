@@ -18,20 +18,29 @@ from hashlib import sha256
 is_julia_warning_silenced = False
 
 
-def install(julia_project=None):  # pragma: no cover
+def install(julia_project=None, quiet=False):  # pragma: no cover
     """Install PyCall.jl and all required dependencies for SymbolicRegression.jl.
 
     Also updates the local Julia registry."""
     import julia
 
-    julia.install()
+    julia.install(quiet=quiet)
 
     julia_project = _get_julia_project(julia_project)
 
-    init_julia()
+    Main = init_julia()
     from julia import Pkg
 
-    Pkg.activate(f"{_escape_filename(julia_project)}")
+    if quiet:
+        # Point IO to /dev/null
+        io = "devnull"
+    else:
+        io = "stderr"
+
+
+    # Can't pass IO to Julia call as it evaluates to PyObject, so just directly
+    # use Main.eval:
+    Main.eval(f"Pkg.activate(\"{_escape_filename(julia_project)}\", io={io})")
     try:
         Pkg.update()
     except RuntimeError as e:
