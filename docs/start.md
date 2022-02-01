@@ -19,7 +19,7 @@ Most common issues at this stage are solved
 by [tweaking the Julia package server](https://github.com/MilesCranmer/PySR/issues/27).
 to use up-to-date packages.
 
-# Quickstart
+# Introduction
 
 Let's create a PySR example. First, let's import
 numpy to generate some test data:
@@ -88,6 +88,8 @@ This arrow in the `pick` column indicates which equation is currently selected b
 (`lambda_format`),
 SymPy format (`sympy_format`), and even JAX and PyTorch format 
 (both of which are differentiable).
+
+Note that `PySRRegressor` stores the state of the last search, and will restart from where you left off the next time you call `.fit()`. This will cause problems if significant changes are made to the search parameters (like changing the operators). You can run `model.reset()` to reset the state.
 
 There are several other useful features such as denoising (e.g., `denoising=True`),
 feature selection (e.g., `select_k_features=3`).
