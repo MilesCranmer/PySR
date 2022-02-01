@@ -7,9 +7,8 @@ on:
     paths:
       - 'test/**'
       - 'pysr/**'
-      - '.github/workflows/**'
+      - '.github/workflows/CI_docker.yml'
       - 'setup.py'
-      - 'Project.toml'
       - 'Dockerfile'
   pull_request:
     branches:
@@ -17,9 +16,8 @@ on:
     paths:
       - 'test/**'
       - 'pysr/**'
-      - '.github/workflows/**'
+      - '.github/workflows/CI_docker.yml'
       - 'setup.py'
-      - 'Project.toml'
       - 'Dockerfile'
 
 jobs:

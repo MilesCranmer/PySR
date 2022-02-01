@@ -7,18 +7,16 @@ on:
     paths:
       - 'test/**'
       - 'pysr/**'
-      - '.github/workflows/**'
+      - '.github/workflows/CI.yml'
       - 'setup.py'
-      - 'Project.toml'
   pull_request:
     branches:
       - '*'
     paths:
       - 'test/**'
       - 'pysr/**'
-      - '.github/workflows/**'
+      - '.github/workflows/CI.yml'
       - 'setup.py'
-      - 'Project.toml'
 
 jobs:
   test:
