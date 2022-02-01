@@ -15,7 +15,6 @@ class TestPipeline(unittest.TestCase):
             populations=4,
             annealing=True,
             useFrequency=False,
-            parsimony=0.0,
         )
         np.random.seed(0)
         self.X = np.random.randn(100, 5)
@@ -196,7 +195,6 @@ class TestBest(unittest.TestCase):
             output_jax_format=False,
             multioutput=False,
             nout=1,
-            parsimony=0.0,
         )
         self.model.n_features = 2
         self.model.refresh()
