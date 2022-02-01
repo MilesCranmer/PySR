@@ -41,6 +41,20 @@ def install(julia_project=None):  # pragma: no cover
     )
 
 
+def import_error_string(julia_project=None):
+    s = f"""
+    Required dependencies are not installed or built.  Run the following code in the Python REPL:
+
+        >>> import pysr
+        >>> pysr.install()
+    """
+
+    if julia_project is not None:
+        s += f"""
+        Tried to activate project {julia_project} but failed."""
+
+    return s
+
 Main = None
 
 already_ran = False
@@ -275,13 +289,7 @@ def init_julia():
 
     info = JuliaInfo.load(julia="julia")
     if not info.is_pycall_built():
-        raise ImportError(
-            """
-    Required dependencies are not installed or built.  Run the following code in the Python REPL:
-
-    >>> import pysr
-    >>> pysr.install()"""
-        )
+        raise ImportError(import_error_string())
 
     Main = None
     try:
@@ -322,7 +330,7 @@ def _write_project_file(tmp_dir):
 SymbolicRegression = "8254be44-1295-4e6a-a16d-46603ac705cb"
 
 [compat]
-SymbolicRegression = "0.7.3"
+SymbolicRegression = "0.7.4"
 julia = "1.5"
     """
 
@@ -1023,15 +1031,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 else:
                     Pkg.instantiate()
             except RuntimeError as e:
-                raise ImportError(
-                    f"""
-    Required dependencies are not installed or built.  Run the following code in the Python REPL:
-
-        >>> import pysr
-        >>> pysr.install()
-        
-    Tried to activate project {self.julia_project} but failed."""
-                ) from e
+                raise ImportError(import_error_string(self.julia_project)) from e
             Main.eval("using SymbolicRegression")
 
             Main.plus = Main.eval("(+)")
