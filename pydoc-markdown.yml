@@ -1,0 +1,69 @@
+#@ def base_url():
+#@    if env.READTHEDOCS:
+#@      return "https://pysr.readthedocs.io/en/" + env.READTHEDOCS_VERSION + "/"
+#@    else:
+#@      return None
+#@ end
+
+
+loaders:
+  - type: python
+
+processors:
+  - type: filter
+  - type: smart
+  - type: crossref
+renderer:
+  type: hugo
+
+  markdown:
+    source_linker:
+      type: github
+      repo: MilesCranmer/PySR
+
+  config:
+    baseURL: #@ base_url()
+    title: PySR
+    theme: {clone_url: "https://github.com/alex-shpak/hugo-book.git"}
+  # The "book" theme only renders pages in "content/docs" into the nav.
+
+  build_directory: docs/build
+  content_directory: content/docs
+
+  default_preamble: {menu: main}
+  pages:
+    - title: Home
+      name: index
+      source: README.md
+      directory: '..'
+    - title: Getting started
+      name: getting-started
+      source: docs/start.md
+      preamble: {weight: 1}
+    - title: Features and Options
+      name: options
+      source: docs/options.md
+      preamble: {weight: 2}
+    - title: Operators
+      name: operators
+      source: docs/operators.md
+      preamble: {weight: 3}
+    - title: Examples
+      name: examples
+      source: docs/examples.md
+      preamble: {weight: 4}
+    - title: API
+      contents:
+        - pysr.sr.install
+        - pysr.sr.PySRRegressor.__init__
+        - pysr.sr.PySRRegressor.fit
+        - pysr.sr.PySRRegressor.predict
+        - pysr.sr.PySRRegressor.__repr__
+        - pysr.sr.PySRRegressor.set_params
+        - pysr.sr.PySRRegressor.get_params
+        - pysr.sr.PySRRegressor.get_best
+        - pysr.sr.PySRRegressor.sympy
+        - pysr.sr.PySRRegressor.latex
+        - pysr.sr.PySRRegressor.jax
+        - pysr.sr.PySRRegressor.pytorch
+        - pysr.sr.PySRRegressor.refresh
