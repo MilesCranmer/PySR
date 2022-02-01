@@ -32,7 +32,15 @@ def install(julia_project=None):  # pragma: no cover
     from julia import Pkg
 
     Pkg.activate(f"{_escape_filename(julia_project)}")
-    Pkg.update()
+    try:
+        Pkg.update()
+    except RuntimeError as e:
+        raise ModuleNotFoundError(
+            "Could not update Julia project. "
+            "It is possible that your Julia registry is out-of-date. "
+            "To switch to an always-updated registry, "
+            "see the solution in https://github.com/MilesCranmer/PySR/issues/27."
+        ) from e
     Pkg.instantiate()
     Pkg.precompile()
     warnings.warn(
@@ -54,6 +62,7 @@ def import_error_string(julia_project=None):
         Tried to activate project {julia_project} but failed."""
 
     return s
+
 
 Main = None
 
