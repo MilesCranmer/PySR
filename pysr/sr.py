@@ -231,7 +231,7 @@ def best(*args, **kwargs):
 
 def best_row(*args, **kwargs):
     raise NotImplementedError(
-        "`best_row` has been deprecated. Please use the `PySRRegressor` interface. After fitting, you can run `print(model)` to view the best equation."
+        "`best_row` has been deprecated. Please use the `PySRRegressor` interface. After fitting, you can run `print(model)` to view the best equation, or `model.get_best()` to return the best equation's row in `model.equations`."
     )
 
 
