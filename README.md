@@ -149,8 +149,9 @@ Note that `PySRRegressor` stores the state of the last search, and will restart 
 
 There are several other useful features such as denoising (e.g., `denoising=True`),
 feature selection (e.g., `select_k_features=3`).
-For a summary of features and options, see [this docs page](https://pysr.readthedocs.io/en/latest/docs/options/).
-You can see the full API at [this page](https://pysr.readthedocs.io/en/latest/docs/api-documentation/).
+For examples of these and other features, see the [examples page](https://astroautomata.com/PySR/#/examples).
+For a detailed look at more options, see the [options page](https://astroautomata.com/PySR/#/options).
+You can also see the full API at [this page](https://astroautomata.com/PySR/#/api).
 
 
 # Docker
