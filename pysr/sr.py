@@ -536,8 +536,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         :type precision: int
         :param **kwargs: Other options passed to SymbolicRegression.Options, for example, if you modify SymbolicRegression.jl to include additional arguments.
         :type **kwargs: dict
-        :returns: Results dataframe, giving complexity, MSE, and equations (as strings), as well as functional forms. If list, each element corresponds to a dataframe of equations for each output.
-        :type: pd.DataFrame/list
+        :returns: Initialized model. Call `.fit(X, y)` to fit your data!
+        :type: PySRRegressor
         """
         super().__init__()
         self.model_selection = model_selection
