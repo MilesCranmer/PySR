@@ -34,12 +34,13 @@ class TestPipeline(unittest.TestCase):
         print(model.equations)
         self.assertLessEqual(model.equations.iloc[-1]["loss"], 1e-4)
 
-    def test_multioutput_custom_operator(self):
+    def test_multioutput_custom_operator_quiet(self):
         y = self.X[:, [0, 1]] ** 2
         model = PySRRegressor(
             unary_operators=["sq(x) = x^2"],
             extra_sympy_mappings={"sq": lambda x: x ** 2},
             binary_operators=["plus"],
+            verbosity=0,
             **self.default_test_kwargs,
             procs=0,
         )

@@ -1039,15 +1039,18 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             _, term_width = subprocess.check_output(["stty", "size"]).split()
 
         if not already_ran:
-            from julia import Pkg
+            Main.eval("using Pkg")
+            io = "devnull" if self.params["verbosity"] == 0 else "stderr"
 
-            Pkg.activate(f"{_escape_filename(self.julia_project)}")
+            Main.eval(
+                f'Pkg.activate("{_escape_filename(self.julia_project)}", io={io})'
+            )
             try:
                 if update:
-                    Pkg.resolve()
-                    Pkg.instantiate()
+                    Main.eval(f"Pkg.resolve(io={io})")
+                    Main.eval(f"Pkg.instantiate(io={io})")
                 else:
-                    Pkg.instantiate()
+                    Main.eval(f"Pkg.instantiate(io={io})")
             except RuntimeError as e:
                 raise ImportError(import_error_string(self.julia_project)) from e
             Main.eval("using SymbolicRegression")
