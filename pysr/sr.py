@@ -348,7 +348,7 @@ def _write_project_file(tmp_dir):
 SymbolicRegression = "8254be44-1295-4e6a-a16d-46603ac705cb"
 
 [compat]
-SymbolicRegression = "0.7.6"
+SymbolicRegression = "0.7.7"
 julia = "1.5"
     """
 
@@ -420,6 +420,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         Xresampled=None,
         precision=32,
         multithreading=None,
+        use_symbolic_utils=False,
         **kwargs,
     ):
         """Initialize settings for an equation search in PySR.
@@ -534,12 +535,15 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         :type tournament_selection_p: float
         :param precision: What precision to use for the data. By default this is 32 (float32), but you can select 64 or 16 as well.
         :type precision: int
+        :param use_symbolic_utils: Whether to use SymbolicUtils during simplification.
+        :type use_symbolic_utils: bool
         :param **kwargs: Other options passed to SymbolicRegression.Options, for example, if you modify SymbolicRegression.jl to include additional arguments.
         :type **kwargs: dict
         :returns: Initialized model. Call `.fit(X, y)` to fit your data!
         :type: PySRRegressor
         """
         super().__init__()
+        # TODO: Order args in docstring by order of declaration.
         self.model_selection = model_selection
 
         if binary_operators is None:
@@ -658,6 +662,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 Xresampled=Xresampled,
                 precision=precision,
                 multithreading=multithreading,
+                use_symbolic_utils=use_symbolic_utils,
             ),
             **kwargs,
         }
@@ -1146,6 +1151,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             perturbationFactor=self.params["perturbationFactor"],
             annealing=self.params["annealing"],
             stateReturn=True,  # Required for state saving.
+            use_symbolic_utils=self.params["use_symbolic_utils"],
         )
 
         np_dtype = {16: np.float16, 32: np.float32, 64: np.float64}[
