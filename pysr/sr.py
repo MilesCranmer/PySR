@@ -29,7 +29,7 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
     julia_project = _get_julia_project(julia_project)
 
     Main = init_julia()
-    from julia import Pkg
+    Main.eval("using Pkg")
 
     if quiet:
         # Point IO to /dev/null
@@ -41,7 +41,7 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
     # use Main.eval:
     Main.eval(f'Pkg.activate("{_escape_filename(julia_project)}", io={io})')
     try:
-        Pkg.update()
+        Main.eval(f"Pkg.update(io={io})")
     except RuntimeError as e:
         raise ModuleNotFoundError(
             "Could not update Julia project. "
@@ -49,12 +49,13 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
             "To switch to an always-updated registry, "
             "see the solution in https://github.com/MilesCranmer/PySR/issues/27."
         ) from e
-    Pkg.instantiate()
-    Pkg.precompile()
-    warnings.warn(
-        "It is recommended to restart Python after installing PySR's dependencies,"
-        " so that the Julia environment is properly initialized."
-    )
+    Main.eval(f"Pkg.instantiate(io={io})")
+    Main.eval(f"Pkg.precompile(io={io})")
+    if not quiet:
+        warnings.warn(
+            "It is recommended to restart Python after installing PySR's dependencies,"
+            " so that the Julia environment is properly initialized."
+        )
 
 
 def import_error_string(julia_project=None):
