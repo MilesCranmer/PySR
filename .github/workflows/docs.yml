@@ -9,6 +9,7 @@ on:
       - '.github/workflows/docs.yml'
       - 'docs/**'
       - 'setup.py'
+      - 'README.md'
   workflow_dispatch:
 
 jobs:
