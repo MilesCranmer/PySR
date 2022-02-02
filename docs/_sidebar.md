@@ -1,9 +1,9 @@
 - Using PySR
 
   - [Getting Started](/)
-  - [Options](options.md)
-  - [Operators](operators.md)
   - [Examples](examples.md)
+  - [More Options](options.md)
+  - [Operators](operators.md)
 
 - API Reference
 

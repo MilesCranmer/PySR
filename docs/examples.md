@@ -96,7 +96,92 @@ Which gives us:
 
 ![](https://github.com/MilesCranmer/PySR/raw/master/docs/images/example_plot.png)
 
-## 5. Additional features
+## 5. Feature selection
+
+PySR and evolution-based symbolic regression in general performs
+very poorly when the number of features is large.
+Even, say, 10 features might be too much for a typical equation search.
+
+If you are dealing with high-dimensional data with a particular type of structure,
+you might consider using deep learning to break the problem into
+smaller "chunks" which can then be solved by PySR, as explained in the paper
+[2006.11287](https://arxiv.org/abs/2006.11287).
+
+For tabular datasets, this is a bit trickier. Luckily, PySR has a built-in feature
+selection mechanism. Simply declare the parameter `select_k_features=5`, for selecting
+the most important 5 features.
+
+Here is an example. Let's say we have 30 input features and 300 data points, but only 2
+of those features are actually used:
+```python
+X = np.random.randn(300, 30)
+y = X[:, 3]**2 - X[:, 19]**2 + 1.5
+```
+
+Let's create a model with the feature selection argument set up:
+```python
+model = PySRRegressor(
+    binary_operators=["+", "-", "*", "/"],
+    unary_operators=["exp"],
+    select_k_features=5,
+    **kwargs
+)
+```
+Now let's fit this:
+```python
+model.fit(X, y)
+```
+
+Before the Julia backend is launched, you can see the string:
+```
+Using features ['x3', 'x5', 'x7', 'x19', 'x21']
+```
+which indicates that the feature selection (powered by a gradient-boosting tree)
+has successfully selected the relevant two features.
+
+This fit should find the solution quickly, whereas with the huge number of features,
+it would have struggled.
+
+This simple preprocessing step is enough to simplify our tabular dataset,
+but again, for more structured datasets, you should try the deep learning
+approach mentioned above.
+
+## 5. Denoising
+
+Many datasets, especially in the observational sciences,
+contain intrinsic noise. PySR is noise robust itself, as it is simply optimizing a loss function,
+but there are still some additional steps you can take to reduce the effect of noise.
+
+One thing you could do, which we won't detail here, is to create a custom log-likelihood
+given some assumed noise model. By passing weights to the fit function, and
+defining a custom loss function such as `loss="myloss(x, y, w) = w * (x - y)^2"`,
+you can define any sort of log-likelihood you wish. (However, note that it must be bounded at zero)
+
+However, the simplest thing to do is preprocessing, just like for feature selection. To do this,
+set the parameter `denoise=True`. This will fit a Gaussian process (containing a white noise kernel)
+to the input dataset, and predict new targets (which are assumed to be denoised) from that Gaussian process.
+
+For example:
+```python
+X = np.random.randn(100, 5)
+noise = np.random.randn(100) * 0.1
+y = np.exp(X[:, 0]) + X[:, 1] + X[:, 2] + noise
+```
+
+Let's create and fit a model with the denoising argument set up:
+```python
+model = PySRRegressor(
+    binary_operators=["+", "-", "*", "/"],
+    unary_operators=["exp"],
+    denoise=True,
+    **kwargs
+)
+model.fit(X, y)
+print(model)
+```
+If all goes well, you should find that it predicts the correct input equation, without the noise term!
+
+## 6. Additional features
 
 For the many other features available in PySR, please
 read the [Options section](options.md). 
