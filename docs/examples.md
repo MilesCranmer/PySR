@@ -7,13 +7,6 @@ import numpy as np
 from pysr import *
 ```
 
-We'll also set up some default options that will
-make these simple searches go faster (but are less optimal
-for more complex searches).
-
-```python
-kwargs = dict(populations=5, niterations=5, annealing=True)
-```
 
 ## 1. Simple search
 
@@ -23,7 +16,7 @@ find the expression `2 cos(x3) + x0^2 - 2`.
 ```python
 X = 2 * np.random.randn(100, 5)
 y = 2 * np.cos(X[:, 3]) + X[:, 0] ** 2 - 2
-model = PySRRegressor(binary_operators=["+", "-", "*", "/"], **kwargs)
+model = PySRRegressor(binary_operators=["+", "-", "*", "/"])
 model.fit(X, y)
 print(model)
 ```
@@ -38,7 +31,6 @@ y = 1 / X[:, 0]
 model = PySRRegressor(
     binary_operators=["plus", "mult"],
     unary_operators=["inv(x) = 1/x"],
-    **kwargs
 )
 model.fit(X, y)
 print(model)
@@ -54,7 +46,6 @@ y = 1 / X[:, [0, 1, 2]]
 model = PySRRegressor(
     binary_operators=["plus", "mult"],
     unary_operators=["inv(x) = 1/x"],
-    **kwargs
 )
 model.fit(X, y)
 ```
@@ -124,7 +115,6 @@ model = PySRRegressor(
     binary_operators=["+", "-", "*", "/"],
     unary_operators=["exp"],
     select_k_features=5,
-    **kwargs
 )
 ```
 Now let's fit this:
@@ -174,7 +164,6 @@ model = PySRRegressor(
     binary_operators=["+", "-", "*", "/"],
     unary_operators=["exp"],
     denoise=True,
-    **kwargs
 )
 model.fit(X, y)
 print(model)

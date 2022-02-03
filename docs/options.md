@@ -25,7 +25,7 @@ and complexity.
 
 It will also dump to a csv
 at the end of every iteration,
-which is `hall_of_fame_{date_time}.csv` by default.
+which is `.hall_of_fame_{date_time}.csv` by default.
 It also prints the equations to stdout.
 
 ## Model selection
@@ -91,7 +91,7 @@ you want `pysr` to use.
 
 ## Populations
 
-By default, `populations=20`, but you can set a different
+By default, `populations=100`, but you can set a different
 number of populations with this option.
 More populations may increase
 the diversity of equations discovered, though will take longer to train.

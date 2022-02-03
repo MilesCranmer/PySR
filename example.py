@@ -7,7 +7,6 @@ from pysr import PySRRegressor
 
 model = PySRRegressor(
     niterations=5,
-    populations=8,
     binary_operators=["+", "*"],
     unary_operators=[
         "cos",
