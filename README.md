@@ -126,13 +126,13 @@ print(model)
 to print the learned equations:
 ```python
 PySRRegressor.equations = [
-   pick      score                                           Equation           MSE  Complexity
-0         0.000000                                          3.5082064  2.710828e+01           1
-1         0.964260                                          (x0 * x0)  3.940544e+00           3
-2         0.030096                          (-0.47978288 + (x0 * x0))  3.710349e+00           5
-3         0.840770                              ((x0 * x0) + cos(x3))  1.600564e+00           6
-4         0.928380                ((x0 * x0) + (2.5313091 * cos(x3)))  2.499724e-01           8
-5  >>>>  13.956461  ((-0.49999997 + (x0 * x0)) + (2.5382001 * cos(...  1.885665e-13          10
+	   pick     score                                           equation       loss  complexity
+	0        0.000000                                          4.4324794  42.354317           1
+	1        1.255691                                          (x0 * x0)   3.437307           3
+	2        0.011629                          ((x0 * x0) + -0.28087974)   3.358285           5
+	3        0.897855                              ((x0 * x0) + cos(x3))   1.368308           6
+	4        0.857018                ((x0 * x0) + (cos(x3) * 2.4566472))   0.246483           8
+	5  >>>>       inf  (((cos(x3) + -0.19699033) * 2.5382123) + (x0 *...   0.000000          10
 ]
 ```
 This arrow in the `pick` column indicates which equation is currently selected by your
