@@ -136,7 +136,7 @@ This simple preprocessing step is enough to simplify our tabular dataset,
 but again, for more structured datasets, you should try the deep learning
 approach mentioned above.
 
-## 5. Denoising
+## 6. Denoising
 
 Many datasets, especially in the observational sciences,
 contain intrinsic noise. PySR is noise robust itself, as it is simply optimizing a loss function,
@@ -170,7 +170,7 @@ print(model)
 ```
 If all goes well, you should find that it predicts the correct input equation, without the noise term!
 
-## 6. Additional features
+## 7. Additional features
 
 For the many other features available in PySR, please
 read the [Options section](options.md). 
