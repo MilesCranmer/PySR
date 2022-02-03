@@ -1051,6 +1051,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 f'Pkg.activate("{_escape_filename(self.julia_project)}", io={io})'
             )
             from julia.api import JuliaError
+
             try:
                 if update:
                     Main.eval(f"Pkg.resolve(io={io})")
