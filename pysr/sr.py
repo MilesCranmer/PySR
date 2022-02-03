@@ -32,7 +32,7 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
     Main.eval("using Pkg")
 
     io = "devnull" if quiet else "stderr"
-    io_arg = f"io={io}" if is_julia_version_greater(Main, "1.5") else ""
+    io_arg = f"io={io}" if is_julia_version_greater_eq(Main, "1.6") else ""
 
     # Can't pass IO to Julia call as it evaluates to PyObject, so just directly
     # use Main.eval:
@@ -297,7 +297,7 @@ def silence_julia_warning():
     is_julia_warning_silenced = True
 
 
-def is_julia_version_greater(Main, version="1.5"):
+def is_julia_version_greater_eq(Main, version="1.6"):
     """Check if Julia version is greater than specified version."""
     return Main.eval(f'VERSION >= v"{version}"')
 
@@ -1048,7 +1048,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         if not already_ran:
             Main.eval("using Pkg")
             io = "devnull" if self.params["verbosity"] == 0 else "stderr"
-            io_arg = f"io={io}" if is_julia_version_greater(Main, "1.5") else ""
+            io_arg = f"io={io}" if is_julia_version_greater_eq(Main, "1.6") else ""
 
             Main.eval(
                 f'Pkg.activate("{_escape_filename(self.julia_project)}", {io_arg})'
