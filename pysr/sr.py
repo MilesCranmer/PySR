@@ -1050,13 +1050,14 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             Main.eval(
                 f'Pkg.activate("{_escape_filename(self.julia_project)}", io={io})'
             )
+            from julia.api import JuliaError
             try:
                 if update:
                     Main.eval(f"Pkg.resolve(io={io})")
                     Main.eval(f"Pkg.instantiate(io={io})")
                 else:
                     Main.eval(f"Pkg.instantiate(io={io})")
-            except RuntimeError as e:
+            except (JuliaError, RuntimeError) as e:
                 raise ImportError(import_error_string(self.julia_project)) from e
             Main.eval("using SymbolicRegression")
 
