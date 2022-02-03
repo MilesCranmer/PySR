@@ -31,17 +31,14 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
     Main = init_julia()
     Main.eval("using Pkg")
 
-    if quiet:
-        # Point IO to /dev/null
-        io = "devnull"
-    else:
-        io = "stderr"
+    io = "devnull" if quiet else "stderr"
+    io_arg = f"io={io}" if is_julia_version_greater(Main, "1.5") else ""
 
     # Can't pass IO to Julia call as it evaluates to PyObject, so just directly
     # use Main.eval:
-    Main.eval(f'Pkg.activate("{_escape_filename(julia_project)}", io={io})')
+    Main.eval(f'Pkg.activate("{_escape_filename(julia_project)}", {io_arg})')
     try:
-        Main.eval(f"Pkg.update(io={io})")
+        Main.eval(f"Pkg.update({io_arg})")
     except RuntimeError as e:
         raise ModuleNotFoundError(
             "Could not update Julia project. "
@@ -49,8 +46,8 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
             "To switch to an always-updated registry, "
             "see the solution in https://github.com/MilesCranmer/PySR/issues/27."
         ) from e
-    Main.eval(f"Pkg.instantiate(io={io})")
-    Main.eval(f"Pkg.precompile(io={io})")
+    Main.eval(f"Pkg.instantiate({io_arg})")
+    Main.eval(f"Pkg.precompile({io_arg})")
     if not quiet:
         warnings.warn(
             "It is recommended to restart Python after installing PySR's dependencies,"
@@ -298,6 +295,11 @@ def _get_julia_project(julia_project):
 def silence_julia_warning():
     global is_julia_warning_silenced
     is_julia_warning_silenced = True
+
+
+def is_julia_version_greater(Main, version="1.5"):
+    """Check if Julia version is greater than specified version."""
+    return Main.eval(f'VERSION >= v"{version}"')
 
 
 def init_julia():
@@ -1046,18 +1048,19 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         if not already_ran:
             Main.eval("using Pkg")
             io = "devnull" if self.params["verbosity"] == 0 else "stderr"
+            io_arg = f"io={io}" if is_julia_version_greater(Main, "1.5") else ""
 
             Main.eval(
-                f'Pkg.activate("{_escape_filename(self.julia_project)}", io={io})'
+                f'Pkg.activate("{_escape_filename(self.julia_project)}", {io_arg})'
             )
             from julia.api import JuliaError
 
             try:
                 if update:
-                    Main.eval(f"Pkg.resolve(io={io})")
-                    Main.eval(f"Pkg.instantiate(io={io})")
+                    Main.eval(f"Pkg.resolve({io_arg})")
+                    Main.eval(f"Pkg.instantiate({io_arg})")
                 else:
-                    Main.eval(f"Pkg.instantiate(io={io})")
+                    Main.eval(f"Pkg.instantiate({io_arg})")
             except (JuliaError, RuntimeError) as e:
                 raise ImportError(import_error_string(self.julia_project)) from e
             Main.eval("using SymbolicRegression")
