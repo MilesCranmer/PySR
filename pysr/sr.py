@@ -321,7 +321,7 @@ def init_julia():
 Your Python version is statically linked to libpython. For example, this could be the python included with conda, or maybe your system's built-in python.
 This will still work, but the precompilation cache for Julia will be turned off, which may result in slower startup times on the initial pysr() call.
 
-To install a Python version that is dynamically linked to libpython, pyenv is recommended (https://github.com/pyenv/pyenv).
+To install a Python version that is dynamically linked to libpython, pyenv is recommended (https://github.com/pyenv/pyenv). With pyenv, you can run: `PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install 3.9.10` to install Python 3.9.10 with dynamic linking.
 
 To silence this warning, you can run pysr.silence_julia_warning() after importing pysr."""
             )
