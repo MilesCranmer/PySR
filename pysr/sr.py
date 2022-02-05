@@ -1163,6 +1163,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             annealing=self.params["annealing"],
             stateReturn=True,  # Required for state saving.
             use_symbolic_utils=self.params["use_symbolic_utils"],
+            progress=self.params["progress"],
         )
 
         np_dtype = {16: np.float16, 32: np.float32, 64: np.float64}[
