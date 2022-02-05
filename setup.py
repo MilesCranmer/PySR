@@ -8,7 +8,7 @@ except FileNotFoundError:
 
 setuptools.setup(
     name="pysr",
-    version="0.7.0-6",
+    version="0.7.1",
     author="Miles Cranmer",
     author_email="miles.cranmer@gmail.com",
     description="Simple and efficient symbolic regression",

@@ -394,6 +394,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         extra_jax_mappings=None,
         equation_file=None,
         verbosity=1e9,
+        update_verbosity=None,
         progress=None,
         maxsize=20,
         fast_cycle=False,
@@ -503,6 +504,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         :type equation_file: str
         :param verbosity: What verbosity level to use. 0 means minimal print statements.
         :type verbosity: int
+        :param update_verbosity: What verbosity level to use for package updates. Will take value of `verbosity` if not given.
+        :type update_verbosity: int
         :param progress: Whether to use a progress bar instead of printing to stdout.
         :type progress: bool
         :param maxdepth: Max depth of an equation. You can use both maxsize and maxdepth.  maxdepth is by default set to = maxsize, which means that it is redundant.
@@ -562,6 +565,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             # Default is multithreading=True, unless explicitly set,
             # or procs is set to 0 (serial mode).
             multithreading = procs != 0
+        if update_verbosity is None:
+            update_verbosity = verbosity
 
         buffer_available = "buffer" in sys.stdout.__dir__()
 
@@ -640,6 +645,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 weightSimplify=weightSimplify,
                 perturbationFactor=perturbationFactor,
                 verbosity=verbosity,
+                update_verbosity=update_verbosity,
                 progress=progress,
                 maxsize=maxsize,
                 fast_cycle=fast_cycle,
@@ -1047,7 +1053,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
 
         if not already_ran:
             Main.eval("using Pkg")
-            io = "devnull" if self.params["verbosity"] == 0 else "stderr"
+            io = "devnull" if self.params["update_verbosity"] == 0 else "stderr"
             io_arg = f"io={io}" if is_julia_version_greater_eq(Main, "1.6") else ""
 
             Main.eval(
