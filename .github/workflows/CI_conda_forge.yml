@@ -1,0 +1,40 @@
+name: conda-forge
+
+# This CI tries the conda-forge version of PYSR
+
+on:
+  schedule:
+    # Run at the 0th minute of the 10th hour (UTC).
+    # This means the job will run at 5am EST.
+    - cron: "0 10 * * *"
+    # This will automatically run on master branch only.
+  workflow_dispatch:
+
+jobs:
+  conda_test:
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash -l {0}
+    strategy:
+      matrix:
+        julia-version: ['1.7.1']
+        python-version: ['3.9']
+        os: ['ubuntu-latest']
+    
+    steps:
+      - uses: actions/checkout@v2
+      - name: "Set up Conda"
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniforge-variant: Mambaforge
+          miniforge-version: latest
+          auto-activate-base: true
+          python-version: ${{ matrix.python-version }}
+          activate-environment: test
+      - name: "Install pysr-forge"
+        run: conda activate test && mamba install pysr
+      - name: "Ensure that static libpython warning appears"
+        run: conda activate test && python3 -m unittest test.test_static_libpython_warning
+      - name: "Run tests"
+        run: conda activate test && python3 -m unittest test.test
