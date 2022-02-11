@@ -903,6 +903,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         self.equations = None
         self.params_hash = None
         self.raw_julia_state = None
+        self.variable_names = None
+        self.selection = None
 
     def _run(self, X, y, weights, variable_names):
         global already_ran
