@@ -58,7 +58,7 @@ class TestTorch(unittest.TestCase):
 
     def test_mod_mapping(self):
         x, y, z = sympy.symbols("x y z")
-        expression = x ** 2 + sympy.atanh(sympy.Mod(y + 1, 2) - 1) * 3.2 * z
+        expression = x**2 + sympy.atanh(sympy.Mod(y + 1, 2) - 1) * 3.2 * z
 
         module = sympy2torch(expression, [x, y, z])
 

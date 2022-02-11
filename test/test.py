@@ -40,7 +40,7 @@ class TestPipeline(unittest.TestCase):
         y = self.X[:, [0, 1]] ** 2
         model = PySRRegressor(
             unary_operators=["sq(x) = x^2"],
-            extra_sympy_mappings={"sq": lambda x: x ** 2},
+            extra_sympy_mappings={"sq": lambda x: x**2},
             binary_operators=["plus"],
             verbosity=0,
             **self.default_test_kwargs,
@@ -65,7 +65,7 @@ class TestPipeline(unittest.TestCase):
         model = PySRRegressor(
             unary_operators=["sq(x) = x^2"],
             binary_operators=["plus"],
-            extra_sympy_mappings={"sq": lambda x: x ** 2},
+            extra_sympy_mappings={"sq": lambda x: x**2},
             **self.default_test_kwargs,
             procs=0,
             temp_equation_file=True,
@@ -121,7 +121,7 @@ class TestPipeline(unittest.TestCase):
             # Test that passing a single operator works:
             unary_operators="sq(x) = x^2",
             binary_operators="plus",
-            extra_sympy_mappings={"sq": lambda x: x ** 2},
+            extra_sympy_mappings={"sq": lambda x: x**2},
             **self.default_test_kwargs,
             procs=0,
             denoise=True,
