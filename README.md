@@ -6,9 +6,9 @@
 
 PySR is built on an extremely optimized pure-Julia backend, and uses regularized evolution, simulated annealing, and gradient-free optimization to search for equations that fit your data.
 
-| **Docs** | **pip** | **conda** | **stats** |
+| **Docs** | **pip** | **conda** | **Stats** |
 |---|---|---|---|
-|[![Documentation](https://github.com/MilesCranmer/PySR/actions/workflows/docs.yml/badge.svg)](https://astroautomata.com/PySR/)|[![PyPI version](https://badge.fury.io/py/pysr.svg)](https://badge.fury.io/py/pysr)|[![Conda Version](https://img.shields.io/conda/vn/conda-forge/pysr.svg)](https://anaconda.org/conda-forge/pysr)|[![Downloads](https://pepy.tech/badge/pysr)](https://pepy.tech/badge/pysr)|
+|[![Documentation](https://github.com/MilesCranmer/PySR/actions/workflows/docs.yml/badge.svg)](https://astroautomata.com/PySR/)|[![PyPI version](https://badge.fury.io/py/pysr.svg)](https://badge.fury.io/py/pysr)|[![Conda Version](https://img.shields.io/conda/vn/conda-forge/pysr.svg)](https://anaconda.org/conda-forge/pysr)|[![Downloads](https://pepy.tech/badge/pysr)](https://badge.fury.io/py/pysr)|
 
 
 (pronounced like *py* as in python, and then *sur* as in surface)
