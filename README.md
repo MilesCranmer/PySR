@@ -6,9 +6,9 @@
 
 PySR is built on an extremely optimized pure-Julia backend, and uses regularized evolution, simulated annealing, and gradient-free optimization to search for equations that fit your data.
 
-| **Docs** | **pip** | **stats** |
-|---|---|---|
-|[![Documentation](https://github.com/MilesCranmer/PySR/actions/workflows/docs.yml/badge.svg)](https://astroautomata.com/PySR/)|[![PyPI version](https://badge.fury.io/py/pysr.svg)](https://badge.fury.io/py/pysr)|[![Downloads](https://pepy.tech/badge/pysr)](https://pepy.tech/badge/pysr)|
+| **Docs** | **pip** | **conda** | **stats** |
+|---|---|---|---|
+|[![Documentation](https://github.com/MilesCranmer/PySR/actions/workflows/docs.yml/badge.svg)](https://astroautomata.com/PySR/)|[![PyPI version](https://badge.fury.io/py/pysr.svg)](https://badge.fury.io/py/pysr)|[![Conda Version](https://img.shields.io/conda/vn/conda-forge/pysr.svg)](https://anaconda.org/conda-forge/pysr)|[![Downloads](https://pepy.tech/badge/pysr)](https://pepy.tech/badge/pysr)|
 
 
 (pronounced like *py* as in python, and then *sur* as in surface)
@@ -55,24 +55,28 @@ python interface.
 
 
 # Installation
-PySR uses both Julia and Python, so you need to have both installed.
+PySR uses both Julia and Python, so you need to have both installed
+(or use the conda-forge one, which does this for you).
+To install Julia - see the [Julia website](https://julialang.org/downloads/).
 
-Install Julia - see [downloads](https://julialang.org/downloads/), and
-then instructions for [mac](https://julialang.org/downloads/platform/#macos)
-and [linux](https://julialang.org/downloads/platform/#linux_and_freebsd).
-(Don't use the `conda-forge` version; it doesn't seem to work properly.)
-
-You can install PySR with:
+You can install PySR with pip:
 ```bash
 pip3 install pysr
+```
+or conda (which also installs julia for you):
+```bash
+conda install -c conda-forge pysr
+```
+Both of these should be followed by the following setup command:
+```bash
 python3 -c 'import pysr; pysr.install()'
 ```
-The second line will install and update the required Julia packages, including
+This will install and update the required Julia packages, including
 `PyCall.jl`.
 
 
 Most common issues at this stage are solved
-by [tweaking the Julia package server](https://github.com/MilesCranmer/PySR/issues/27).
+by [tweaking the Julia package server](https://github.com/MilesCranmer/PySR/issues/27)
 to use up-to-date packages.
 
 # Introduction
