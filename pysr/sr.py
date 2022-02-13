@@ -73,8 +73,8 @@ sympy_mappings = {
     "div": lambda x, y: x / y,
     "mult": lambda x, y: x * y,
     "sqrt_abs": lambda x: sympy.sqrt(abs(x)),
-    "square": lambda x: x ** 2,
-    "cube": lambda x: x ** 3,
+    "square": lambda x: x**2,
+    "cube": lambda x: x**3,
     "plus": lambda x, y: x + y,
     "sub": lambda x, y: x - y,
     "neg": lambda x: -x,
@@ -341,6 +341,8 @@ def _add_sr_to_julia_project(Main, io_arg):
         rev="v0.7.8",
     )
     Main.eval(f"Pkg.add(spec, {io_arg})")
+
+
 class PySRRegressor(BaseEstimator, RegressorMixin):
     def __init__(
         self,
