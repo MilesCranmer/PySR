@@ -943,7 +943,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
 
         assert not isinstance(y, pd.DataFrame)
 
-        if len(variable_names) == 0:
+        if variable_names is None or len(variable_names) == 0:
             variable_names = [f"x{i}" for i in range(X.shape[1])]
 
         use_custom_variable_names = len(variable_names) != 0
