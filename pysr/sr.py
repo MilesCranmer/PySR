@@ -15,6 +15,8 @@ from sklearn.base import BaseEstimator, RegressorMixin
 from collections import OrderedDict
 from hashlib import sha256
 
+from .version import __version__
+
 is_julia_warning_silenced = False
 
 
@@ -26,7 +28,7 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
 
     julia.install(quiet=quiet)
 
-    julia_project, is_fresh_env = _get_julia_project(julia_project)
+    julia_project, is_shared = _get_julia_project(julia_project)
 
     Main = init_julia()
     Main.eval("using Pkg")
@@ -36,8 +38,10 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
 
     # Can't pass IO to Julia call as it evaluates to PyObject, so just directly
     # use Main.eval:
-    Main.eval(f'Pkg.activate("{_escape_filename(julia_project)}", {io_arg})')
-    if is_fresh_env:
+    Main.eval(
+        f'Pkg.activate("{_escape_filename(julia_project)}", shared = Bool({int(is_shared)}), {io_arg})'
+    )
+    if is_shared:
         # Install SymbolicRegression.jl:
         _add_sr_to_julia_project(Main, io_arg)
 
@@ -73,8 +77,8 @@ sympy_mappings = {
     "div": lambda x, y: x / y,
     "mult": lambda x, y: x * y,
     "sqrt_abs": lambda x: sympy.sqrt(abs(x)),
-    "square": lambda x: x**2,
-    "cube": lambda x: x**3,
+    "square": lambda x: x ** 2,
+    "cube": lambda x: x ** 3,
     "plus": lambda x, y: x + y,
     "sub": lambda x, y: x - y,
     "neg": lambda x: -x,
@@ -277,16 +281,12 @@ class CallableEquation:
 
 def _get_julia_project(julia_project):
     if julia_project is None:
-        is_fresh_env = True
-        # Create temp directory:
-        tmp_dir = tempfile.mkdtemp()
-        tmp_dir = Path(tmp_dir)
-        # Will create Project.toml in temp dir:
-        julia_project = tmp_dir
+        is_shared = True
+        julia_project = f"pysr-{__version__}"
     else:
-        is_fresh_env = False
+        is_shared = False
         julia_project = Path(julia_project)
-    return julia_project, is_fresh_env
+    return julia_project, is_shared
 
 
 def silence_julia_warning():
@@ -1010,7 +1010,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             else:
                 X, y = _denoise(X, y, Xresampled=Xresampled)
 
-        self.julia_project, is_fresh_env = _get_julia_project(self.julia_project)
+        self.julia_project, is_shared = _get_julia_project(self.julia_project)
 
         tmpdir = Path(tempfile.mkdtemp(dir=self.params["tempdir"]))
 
@@ -1044,11 +1044,11 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             io_arg = f"io={io}" if is_julia_version_greater_eq(Main, "1.6") else ""
 
             Main.eval(
-                f'Pkg.activate("{_escape_filename(self.julia_project)}", {io_arg})'
+                f'Pkg.activate("{_escape_filename(self.julia_project)}", shared = Bool({int(is_shared)}), {io_arg})'
             )
             from julia.api import JuliaError
 
-            if is_fresh_env:
+            if is_shared:
                 # Install SymbolicRegression.jl:
                 _add_sr_to_julia_project(Main, io_arg)
 
