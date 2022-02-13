@@ -6,9 +6,11 @@ try:
 except FileNotFoundError:
     long_description = ""
 
+exec(open("pysr/version.py").read())
+
 setuptools.setup(
     name="pysr",
-    version="0.7.3",
+    version=__version__,
     author="Miles Cranmer",
     author_email="miles.cranmer@gmail.com",
     description="Simple and efficient symbolic regression",
