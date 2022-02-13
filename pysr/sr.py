@@ -1041,10 +1041,6 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             io = "devnull" if self.params["update_verbosity"] == 0 else "stderr"
             io_arg = f"io={io}" if is_julia_version_greater_eq(Main, "1.6") else ""
 
-            # [deps]
-            # SymbolicRegression = "8254be44-1295-4e6a-a16d-46603ac705cb"
-            # "0.7.8"
-
             Main.eval(
                 f'Pkg.activate("{_escape_filename(self.julia_project)}", {io_arg})'
             )
