@@ -15,6 +15,8 @@ from sklearn.base import BaseEstimator, RegressorMixin
 from collections import OrderedDict
 from hashlib import sha256
 
+from .version import __version__, __symbolic_regression_jl_version__
+
 is_julia_warning_silenced = False
 
 
@@ -26,7 +28,7 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
 
     julia.install(quiet=quiet)
 
-    julia_project = _get_julia_project(julia_project)
+    julia_project, is_shared = _get_julia_project(julia_project)
 
     Main = init_julia()
     Main.eval("using Pkg")
@@ -36,16 +38,13 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
 
     # Can't pass IO to Julia call as it evaluates to PyObject, so just directly
     # use Main.eval:
-    Main.eval(f'Pkg.activate("{_escape_filename(julia_project)}", {io_arg})')
-    try:
-        Main.eval(f"Pkg.update({io_arg})")
-    except RuntimeError as e:
-        raise ModuleNotFoundError(
-            "Could not update Julia project. "
-            "It is possible that your Julia registry is out-of-date. "
-            "To switch to an always-updated registry, "
-            "see the solution in https://github.com/MilesCranmer/PySR/issues/27."
-        ) from e
+    Main.eval(
+        f'Pkg.activate("{_escape_filename(julia_project)}", shared = Bool({int(is_shared)}), {io_arg})'
+    )
+    if is_shared:
+        # Install SymbolicRegression.jl:
+        _add_sr_to_julia_project(Main, io_arg)
+
     Main.eval(f"Pkg.instantiate({io_arg})")
     Main.eval(f"Pkg.precompile({io_arg})")
     if not quiet:
@@ -282,14 +281,12 @@ class CallableEquation:
 
 def _get_julia_project(julia_project):
     if julia_project is None:
-        # Create temp directory:
-        tmp_dir = tempfile.mkdtemp()
-        tmp_dir = Path(tmp_dir)
-        # Create Project.toml in temp dir:
-        _write_project_file(tmp_dir)
-        return tmp_dir
+        is_shared = True
+        julia_project = f"pysr-{__version__}"
     else:
-        return Path(julia_project)
+        is_shared = False
+        julia_project = Path(julia_project)
+    return julia_project, is_shared
 
 
 def silence_julia_warning():
@@ -337,25 +334,13 @@ To silence this warning, you can run pysr.silence_julia_warning() after importin
     return Main
 
 
-def _write_project_file(tmp_dir):
-    """This writes a Julia Project.toml to a temporary directory
-
-    The reason we need this is because sometimes Python will compile a project to binary,
-    and then Julia can't read the Project.toml file. It is more reliable to have Python
-    simply create the Project.toml from scratch.
-    """
-
-    project_toml = """
-[deps]
-SymbolicRegression = "8254be44-1295-4e6a-a16d-46603ac705cb"
-
-[compat]
-SymbolicRegression = "0.7.7, 0.7.8"
-julia = "1.5"
-    """
-
-    project_toml_path = tmp_dir / "Project.toml"
-    project_toml_path.write_text(project_toml)
+def _add_sr_to_julia_project(Main, io_arg):
+    Main.spec = Main.PackageSpec(
+        name="SymbolicRegression",
+        url="https://github.com/MilesCranmer/SymbolicRegression.jl",
+        rev="v" + __symbolic_regression_jl_version__,
+    )
+    Main.eval(f"Pkg.add(spec, {io_arg})")
 
 
 class PySRRegressor(BaseEstimator, RegressorMixin):
@@ -1025,7 +1010,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             else:
                 X, y = _denoise(X, y, Xresampled=Xresampled)
 
-        self.julia_project = _get_julia_project(self.julia_project)
+        self.julia_project, is_shared = _get_julia_project(self.julia_project)
 
         tmpdir = Path(tempfile.mkdtemp(dir=self.params["tempdir"]))
 
@@ -1059,9 +1044,13 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             io_arg = f"io={io}" if is_julia_version_greater_eq(Main, "1.6") else ""
 
             Main.eval(
-                f'Pkg.activate("{_escape_filename(self.julia_project)}", {io_arg})'
+                f'Pkg.activate("{_escape_filename(self.julia_project)}", shared = Bool({int(is_shared)}), {io_arg})'
             )
             from julia.api import JuliaError
+
+            if is_shared:
+                # Install SymbolicRegression.jl:
+                _add_sr_to_julia_project(Main, io_arg)
 
             try:
                 if update:
