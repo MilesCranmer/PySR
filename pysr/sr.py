@@ -15,7 +15,7 @@ from sklearn.base import BaseEstimator, RegressorMixin
 from collections import OrderedDict
 from hashlib import sha256
 
-from .version import __version__
+from .version import __version__, __symbolic_regression_jl_version__
 
 is_julia_warning_silenced = False
 
@@ -338,7 +338,7 @@ def _add_sr_to_julia_project(Main, io_arg):
     Main.spec = Main.PackageSpec(
         name="SymbolicRegression",
         url="https://github.com/MilesCranmer/SymbolicRegression.jl",
-        rev="v0.7.8",
+        rev="v" + __symbolic_regression_jl_version__,
     )
     Main.eval(f"Pkg.add(spec, {io_arg})")
 
