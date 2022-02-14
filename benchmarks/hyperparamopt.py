@@ -2,28 +2,27 @@
 import sys
 import numpy as np
 import pickle as pkl
+from pysr import PySRRegressor
 import hyperopt
 from hyperopt import hp, fmin, tpe, Trials
-import pysr
-import time
-
-import contextlib
-
-
-@contextlib.contextmanager
-def temp_seed(seed):
-    state = np.random.get_state()
-    np.random.seed(seed)
-    try:
-        yield
-    finally:
-        np.random.set_state(state)
-
 
 # Change the following code to your file
 ################################################################################
 TRIALS_FOLDER = "trials"
 NUMBER_TRIALS_PER_RUN = 1
+timeout_in_seconds = 5 * 60
+
+# Test run to compile everything:
+binary_operators = ["*", "/", "+", "-"]
+unary_operators = ["sin", "cos", "exp", "log"]
+julia_project = None
+model = PySRRegressor(
+    binary_operators=binary_operators,
+    unary_operators=unary_operators,
+    timeout_in_seconds=30,
+    julia_project=julia_project,
+)
+model.fit(np.random.randn(100, 3), np.random.randn(100))
 
 
 def run_trial(args):
@@ -33,81 +32,136 @@ def run_trial(args):
     :returns: Dict with status and loss from cross-validation
 
     """
-
-    print("Running on", args)
-    args["niterations"] = 100
-    args["npop"] = 100
-    args["ncyclesperiteration"] = 1000
-    args["topn"] = 10
-    args["parsimony"] = 0.0
-    args["useFrequency"] = True
-    args["annealing"] = True
-
-    if args["npop"] < 20 or args["ncyclesperiteration"] < 3:
-        print("Bad parameters")
-        return {"status": "ok", "loss": np.inf}
-
-    args["weightDoNothing"] = 1.0
-    ntrials = 3
-
-    with temp_seed(0):
-        X = np.random.randn(100, 10) * 3
-
-    eval_str = [
-        "np.sign(X[:, 2])*np.abs(X[:, 2])**2.5 + 5*np.cos(X[:, 3]) - 5",
-        "np.exp(X[:, 0]/2) + 12.0 + np.log(np.abs(X[:, 0])*10 + 1)",
-        "(np.exp(X[:, 3]) + 3)/(np.abs(X[:, 1]) + np.cos(X[:, 0]) + 1.1)",
-        "X[:, 0] * np.sin(2*np.pi * (X[:, 1] * X[:, 2] - X[:, 3] / X[:, 4])) + 3.0",
+    # The arguments which are integers:
+    integer_args = [
+        "populations",
+        "niterations",
+        "ncyclesperiteration",
+        "npop",
+        "topn",
+        "maxsize",
+        "optimizer_nrestarts",
+        "optimizer_iterations",
     ]
+    # Set these to int types:
+    for k, v in args.items():
+        if k in integer_args:
+            args[k] = int(v)
 
-    print("Starting", str(args))
-    try:
-        local_trials = []
-        for i in range(len(eval_str)):
-            print(f"Starting test {i}")
-            for j in range(ntrials):
-                print(f"Starting trial {j}")
-                y = eval(eval_str[i])
-                trial = pysr.pysr(
-                    X,
-                    y,
-                    procs=4,
-                    populations=20,
-                    binary_operators=["plus", "mult", "pow", "div"],
-                    unary_operators=["cos", "exp", "sin", "logm", "abs"],
-                    maxsize=25,
-                    constraints={"pow": (-1, 1)},
-                    **args,
-                )
-                if len(trial) == 0:
-                    raise ValueError
-                local_trials.append(
-                    np.min(trial["MSE"]) ** 0.5 / np.std(eval(eval_str[i - 1]))
-                )
-                print(f"Test {i} trial {j} with", str(args), f"got {local_trials[-1]}")
+    # Duplicate this argument:
+    args["tournament_selection_n"] = args["topn"]
 
-    except ValueError:
-        print("Broken", str(args))
-        return {"status": "ok", "loss": np.inf}  # or 'fail' if nan loss
-    loss = np.average(local_trials)
+    # Invalid hyperparams:
+    invalid = args["npop"] < args["topn"]
+    if invalid:
+        return dict(status="fail", loss=float("inf"))
+
+    args["timeout_in_seconds"] = timeout_in_seconds
+    args["julia_project"] = julia_project
+    args["procs"] = 4
+
+    # Create the dataset:
+    rstate = np.random.RandomState(0)
+    X = 3 * rstate.randn(200, 5)
+    y = np.cos(2.3 * X[:, 0]) * np.sin(2.3 * X[:, 0] * X[:, 1] * X[:, 2])
+
+    # Old datasets:
+    # eval_str = [
+    #     "np.sign(X[:, 2])*np.abs(X[:, 2])**2.5 + 5*np.cos(X[:, 3]) - 5",
+    #     "np.exp(X[:, 0]/2) + 12.0 + np.log(np.abs(X[:, 0])*10 + 1)",
+    #     "(np.exp(X[:, 3]) + 3)/(np.abs(X[:, 1]) + np.cos(X[:, 0]) + 1.1)",
+    #     "X[:, 0] * np.sin(2*np.pi * (X[:, 1] * X[:, 2] - X[:, 3] / X[:, 4])) + 3.0",
+    # ]
+
+    ntrials = 3
+    losses = []
+    for i in range(ntrials):
+        # Create the model:
+        model = PySRRegressor(**args)
+
+        # Run the model:
+        model.fit(X, y)
+
+        # Compute loss:
+        cur_loss = float(model.get_best()["loss"])
+        losses.append(cur_loss)
+
+    loss = np.median(losses)
     print(f"Finished with {loss}", str(args))
 
     return {"status": "ok", "loss": loss}  # or 'fail' if nan loss
 
 
-space = {
-    "alpha": hp.lognormal("alpha", np.log(10.0), 1.0),
-    "fractionReplacedHof": hp.lognormal("fractionReplacedHof", np.log(0.1), 1.0),
-    "fractionReplaced": hp.lognormal("fractionReplaced", np.log(0.1), 1.0),
-    "perturbationFactor": hp.lognormal("perturbationFactor", np.log(1.0), 1.0),
-    "weightMutateConstant": hp.lognormal("weightMutateConstant", np.log(4.0), 1.0),
-    "weightMutateOperator": hp.lognormal("weightMutateOperator", np.log(0.5), 1.0),
-    "weightAddNode": hp.lognormal("weightAddNode", np.log(0.5), 1.0),
-    "weightInsertNode": hp.lognormal("weightInsertNode", np.log(0.5), 1.0),
-    "weightDeleteNode": hp.lognormal("weightDeleteNode", np.log(0.5), 1.0),
-    "weightSimplify": hp.lognormal("weightSimplify", np.log(0.05), 1.0),
-    "weightRandomize": hp.lognormal("weightRandomize", np.log(0.25), 1.0),
-}
+space = dict(
+    #     model_selection="best",
+    model_selection=hp.choice("model_selection", ["accuracy"]),
+    #     binary_operators=None,
+    binary_operators=hp.choice("binary_operators", [binary_operators]),
+    #     unary_operators=None,
+    unary_operators=hp.choice("unary_operators", [unary_operators]),
+    #     populations=100,
+    populations=hp.qloguniform("populations", np.log(10), np.log(1000), 1),
+    #     niterations=4,
+    niterations=hp.choice(
+        "niterations", [10000]
+    ),  # We will quit automatically based on a clock.
+    #     ncyclesperiteration=100,
+    ncyclesperiteration=hp.qloguniform(
+        "ncyclesperiteration", np.log(10), np.log(5000), 1
+    ),
+    #     alpha=0.1,
+    alpha=hp.loguniform("alpha", np.log(0.0001), np.log(1000)),
+    #     annealing=False,
+    annealing=hp.choice("annealing", [False, True]),
+    #     fractionReplaced=0.01,
+    fractionReplaced=hp.loguniform("fractionReplaced", np.log(0.0001), np.log(0.5)),
+    #     fractionReplacedHof=0.005,
+    fractionReplacedHof=hp.loguniform(
+        "fractionReplacedHof", np.log(0.0001), np.log(0.5)
+    ),
+    #     npop=100,
+    npop=hp.qloguniform("npop", np.log(20), np.log(1000), 1),
+    #     parsimony=1e-4,
+    parsimony=hp.loguniform("parsimony", np.log(0.0001), np.log(0.5)),
+    #     topn=10,
+    topn=hp.qloguniform("topn", np.log(2), np.log(50), 1),
+    #     weightAddNode=1,
+    weightAddNode=hp.loguniform("weightAddNode", np.log(0.0001), np.log(100)),
+    #     weightInsertNode=3,
+    weightInsertNode=hp.loguniform("weightInsertNode", np.log(0.0001), np.log(100)),
+    #     weightDeleteNode=3,
+    weightDeleteNode=hp.loguniform("weightDeleteNode", np.log(0.0001), np.log(100)),
+    #     weightDoNothing=1,
+    weightDoNothing=hp.loguniform("weightDoNothing", np.log(0.0001), np.log(100)),
+    #     weightMutateConstant=10,
+    weightMutateConstant=hp.loguniform(
+        "weightMutateConstant", np.log(0.0001), np.log(100)
+    ),
+    #     weightMutateOperator=1,
+    weightMutateOperator=hp.loguniform(
+        "weightMutateOperator", np.log(0.0001), np.log(100)
+    ),
+    #     weightRandomize=1,
+    weightRandomize=hp.loguniform("weightRandomize", np.log(0.0001), np.log(100)),
+    #     weightSimplify=0.002,
+    weightSimplify=hp.choice("weightSimplify", [0.002]),  # One of these is fixed.
+    #     perturbationFactor=1.0,
+    perturbationFactor=hp.loguniform("perturbationFactor", np.log(0.0001), np.log(100)),
+    #     maxsize=20,
+    maxsize=hp.choice("maxsize", [20]),
+    #     warmupMaxsizeBy=0.0,
+    warmupMaxsizeBy=hp.uniform("warmupMaxsizeBy", 0.0, 0.5),
+    #     useFrequency=True,
+    useFrequency=hp.choice("useFrequency", [True, False]),
+    #     optimizer_nrestarts=3,
+    optimizer_nrestarts=hp.quniform("optimizer_nrestarts", 1, 10, 1),
+    #     optimize_probability=1.0,
+    optimize_probability=hp.uniform("optimize_probability", 0.0, 1.0),
+    #     optimizer_iterations=10,
+    optimizer_iterations=hp.quniform("optimizer_iterations", 1, 10, 1),
+    #     tournament_selection_p=1.0,
+    tournament_selection_p=hp.uniform("tournament_selection_p", 0.0, 1.0),
+)
 
 ################################################################################
 
@@ -178,7 +232,7 @@ while True:
             max_evals=n + len(trials.trials),
             trials=trials,
             verbose=1,
-            rstate=np.random.RandomState(np.random.randint(1, 10**6)),
+            rstate=np.random.default_rng(np.random.randint(1, 10 ** 6)),
         )
     except hyperopt.exceptions.AllTrialsFailed:
         continue
@@ -188,12 +242,6 @@ while True:
 
     # Merge with empty trials dataset:
     save_trials = merge_trials(hyperopt_trial, trials.trials[-n:])
-    new_fname = (
-        TRIALS_FOLDER
-        + "/"
-        + str(np.random.randint(0, sys.maxsize))
-        + str(time.time())
-        + ".pkl"
-    )
+    new_fname = TRIALS_FOLDER + "/" + str(np.random.randint(0, sys.maxsize)) + ".pkl"
     pkl.dump({"trials": save_trials, "n": n}, open(new_fname, "wb"))
     loaded_fnames.append(new_fname)
