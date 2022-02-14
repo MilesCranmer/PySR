@@ -347,6 +347,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
     def __init__(
         self,
         model_selection="best",
+        *,
         weights=None,
         binary_operators=None,
         unary_operators=None,
@@ -410,7 +411,6 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         precision=32,
         multithreading=None,
         use_symbolic_utils=False,
-        **kwargs,
     ):
         """Initialize settings for an equation search in PySR.
 
@@ -530,8 +530,6 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         :type precision: int
         :param use_symbolic_utils: Whether to use SymbolicUtils during simplification.
         :type use_symbolic_utils: bool
-        :param **kwargs: Other options passed to SymbolicRegression.Options, for example, if you modify SymbolicRegression.jl to include additional arguments.
-        :type **kwargs: dict
         :returns: Initialized model. Call `.fit(X, y)` to fit your data!
         :type: PySRRegressor
         """
@@ -661,7 +659,6 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 multithreading=multithreading,
                 use_symbolic_utils=use_symbolic_utils,
             ),
-            **kwargs,
         }
 
         # Stored equations:
