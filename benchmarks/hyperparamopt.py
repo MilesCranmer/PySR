@@ -5,22 +5,25 @@ import pickle as pkl
 from pysr import PySRRegressor
 import hyperopt
 from hyperopt import hp, fmin, tpe, Trials
+from hyperopt.fmin import generate_trials_to_calculate
 
 # Change the following code to your file
 ################################################################################
 TRIALS_FOLDER = "trials"
 NUMBER_TRIALS_PER_RUN = 1
-timeout_in_seconds = 5 * 60
+timeout_in_minutes = 5
 
 # Test run to compile everything:
 binary_operators = ["*", "/", "+", "-"]
 unary_operators = ["sin", "cos", "exp", "log"]
 julia_project = None
+procs = 4
 model = PySRRegressor(
     binary_operators=binary_operators,
     unary_operators=unary_operators,
     timeout_in_seconds=30,
     julia_project=julia_project,
+    procs=procs,
 )
 model.fit(np.random.randn(100, 3), np.random.randn(100))
 
@@ -56,40 +59,54 @@ def run_trial(args):
     if invalid:
         return dict(status="fail", loss=float("inf"))
 
-    args["timeout_in_seconds"] = timeout_in_seconds
+    args["timeout_in_seconds"] = timeout_in_minutes * 60
     args["julia_project"] = julia_project
-    args["procs"] = 4
+    args["procs"] = procs
+
+    print(f"Running trial with args: {args}")
 
     # Create the dataset:
-    rstate = np.random.RandomState(0)
-    X = 3 * rstate.randn(200, 5)
-    y = np.cos(2.3 * X[:, 0]) * np.sin(2.3 * X[:, 0] * X[:, 1] * X[:, 2])
-
-    # Old datasets:
-    # eval_str = [
-    #     "np.sign(X[:, 2])*np.abs(X[:, 2])**2.5 + 5*np.cos(X[:, 3]) - 5",
-    #     "np.exp(X[:, 0]/2) + 12.0 + np.log(np.abs(X[:, 0])*10 + 1)",
-    #     "(np.exp(X[:, 3]) + 3)/(np.abs(X[:, 1]) + np.cos(X[:, 0]) + 1.1)",
-    #     "X[:, 0] * np.sin(2*np.pi * (X[:, 1] * X[:, 2] - X[:, 3] / X[:, 4])) + 3.0",
-    # ]
-
     ntrials = 3
     losses = []
-    for i in range(ntrials):
-        # Create the model:
-        model = PySRRegressor(**args)
 
-        # Run the model:
-        model.fit(X, y)
+    # Old datasets:
+    eval_str = [
+        "np.cos(2.3 * X[:, 0]) * np.sin(2.3 * X[:, 0] * X[:, 1] * X[:, 2]) - 10.0",
+        "(np.exp(X[:, 3]*0.3) + 3)/(np.exp(X[:, 1]*0.2) + np.cos(X[:, 0]) + 1.1)",
+        # "np.sign(X[:, 2])*np.abs(X[:, 2])**2.5 + 5*np.cos(X[:, 3]) - 5",
+        # "np.exp(X[:, 0]/2) + 12.0 + np.log(np.abs(X[:, 0])*10 + 1)",
+        # "X[:, 0] * np.sin(2*np.pi * (X[:, 1] * X[:, 2] - X[:, 3] / X[:, 4])) + 3.0",
+    ]
 
-        # Compute loss:
-        cur_loss = float(model.get_best()["loss"])
-        losses.append(cur_loss)
+    for expression in eval_str:
+        expression_losses = []
+        for i in range(ntrials):
+            rstate = np.random.RandomState(i)
+            X = 3 * rstate.randn(200, 5)
+            y = eval(expression)
 
-    loss = np.median(losses)
+            # Normalize y so that losses are fair:
+            y = (y - np.average(y)) / np.std(y)
+
+            # Create the model:
+            model = PySRRegressor(**args)
+
+            # Run the model:
+            try:
+                model.fit(X, y)
+            except RuntimeError:
+                return dict(status="fail", loss=float("inf"))
+
+            # Compute loss:
+            cur_loss = float(model.get_best()["loss"])
+            expression_losses.append(cur_loss)
+
+        losses.append(np.median(expression_losses))
+
+    loss = np.average(losses)
     print(f"Finished with {loss}", str(args))
 
-    return {"status": "ok", "loss": loss}  # or 'fail' if nan loss
+    return dict(status="ok", loss=loss)
 
 
 space = dict(
@@ -163,6 +180,61 @@ space = dict(
     tournament_selection_p=hp.uniform("tournament_selection_p", 0.0, 1.0),
 )
 
+init_vals = [
+    dict(
+        model_selection=0,  # 0 means first choice
+        binary_operators=0,
+        unary_operators=0,
+        populations=100.0,
+        niterations=0,
+        ncyclesperiteration=100.0,
+        alpha=0.1,
+        annealing=0,
+        #     fractionReplaced=0.01,
+        fractionReplaced=0.01,
+        #     fractionReplacedHof=0.005,
+        fractionReplacedHof=0.005,
+        #     npop=100,
+        npop=100.0,
+        #     parsimony=1e-4,
+        parsimony=1e-4,
+        #     topn=10,
+        topn=10.0,
+        #     weightAddNode=1,
+        weightAddNode=1.0,
+        #     weightInsertNode=3,
+        weightInsertNode=3.0,
+        #     weightDeleteNode=3,
+        weightDeleteNode=3.0,
+        #     weightDoNothing=1,
+        weightDoNothing=1.0,
+        #     weightMutateConstant=10,
+        weightMutateConstant=10.0,
+        #     weightMutateOperator=1,
+        weightMutateOperator=1.0,
+        #     weightRandomize=1,
+        weightRandomize=1.0,
+        #     weightSimplify=0.002,
+        weightSimplify=0,  # One of these is fixed.
+        #     perturbationFactor=1.0,
+        perturbationFactor=1.0,
+        #     maxsize=20,
+        maxsize=0,
+        #     warmupMaxsizeBy=0.0,
+        warmupMaxsizeBy=0.0,
+        #     useFrequency=True,
+        useFrequency=1,
+        #     optimizer_nrestarts=3,
+        optimizer_nrestarts=3.0,
+        #     optimize_probability=1.0,
+        optimize_probability=1.0,
+        #     optimizer_iterations=10,
+        optimizer_iterations=10.0,
+        #     tournament_selection_p=1.0,
+        tournament_selection_p=0.999,
+    )
+]
+
 ################################################################################
 
 
@@ -195,7 +267,10 @@ def merge_trials(trials1, trials2_slice):
 
 
 loaded_fnames = []
-trials = None
+trials = generate_trials_to_calculate(init_vals)
+i = 0
+n = NUMBER_TRIALS_PER_RUN
+
 # Run new hyperparameter trials until killed
 while True:
     np.random.seed()
@@ -203,39 +278,48 @@ while True:
     # Load up all runs:
     import glob
 
-    path = TRIALS_FOLDER + "/*.pkl"
-    for fname in glob.glob(path):
-        if fname in loaded_fnames:
-            continue
+    if i > 0:
+        path = TRIALS_FOLDER + "/*.pkl"
+        for fname in glob.glob(path):
+            if fname in loaded_fnames:
+                continue
 
-        trials_obj = pkl.load(open(fname, "rb"))
-        n_trials = trials_obj["n"]
-        trials_obj = trials_obj["trials"]
+            trials_obj = pkl.load(open(fname, "rb"))
+            n_trials = trials_obj["n"]
+            trials_obj = trials_obj["trials"]
+            if len(loaded_fnames) == 0:
+                trials = trials_obj
+            else:
+                print("Merging trials")
+                trials = merge_trials(trials, trials_obj.trials[-n_trials:])
+
+            loaded_fnames.append(fname)
+
+        print("Loaded trials", len(loaded_fnames))
         if len(loaded_fnames) == 0:
-            trials = trials_obj
-        else:
-            print("Merging trials")
-            trials = merge_trials(trials, trials_obj.trials[-n_trials:])
+            trials = Trials()
 
-        loaded_fnames.append(fname)
-
-    print("Loaded trials", len(loaded_fnames))
-    if len(loaded_fnames) == 0:
-        trials = Trials()
-
-    n = NUMBER_TRIALS_PER_RUN
-    try:
+        try:
+            best = fmin(
+                run_trial,
+                space=space,
+                algo=tpe.suggest,
+                max_evals=n + len(trials.trials),
+                trials=trials,
+                verbose=1,
+                rstate=np.random.default_rng(np.random.randint(1, 10**6)),
+            )
+        except hyperopt.exceptions.AllTrialsFailed:
+            continue
+    else:
         best = fmin(
             run_trial,
             space=space,
             algo=tpe.suggest,
-            max_evals=n + len(trials.trials),
+            max_evals=2,
             trials=trials,
-            verbose=1,
-            rstate=np.random.default_rng(np.random.randint(1, 10**6)),
+            points_to_evaluate=init_vals,
         )
-    except hyperopt.exceptions.AllTrialsFailed:
-        continue
 
     print("current best", best)
     hyperopt_trial = Trials()
@@ -245,3 +329,5 @@ while True:
     new_fname = TRIALS_FOLDER + "/" + str(np.random.randint(0, sys.maxsize)) + ".pkl"
     pkl.dump({"trials": save_trials, "n": n}, open(new_fname, "wb"))
     loaded_fnames.append(new_fname)
+
+    i += 1
