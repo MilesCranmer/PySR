@@ -37,13 +37,11 @@ class TestTorch(unittest.TestCase):
         model = PySRRegressor(
             model_selection="accuracy",
             equation_file="equation_file.csv",
-            variables_names="x1 x2 x3".split(" "),
+            variable_names="x1 x2 x3".split(" "),
             extra_sympy_mappings={},
             output_torch_format=True,
-            multioutput=False,
-            nout=1,
-            selection=[1, 2, 3],
         )
+        model.selection = [1, 2, 3]
         model.n_features = 2  # TODO: Why is this 2 and not 3?
         model.using_pandas = False
         model.refresh()
@@ -91,14 +89,12 @@ class TestTorch(unittest.TestCase):
         model = PySRRegressor(
             model_selection="accuracy",
             equation_file="equation_file_custom_operator.csv",
-            variables_names="x1 x2 x3".split(" "),
+            variable_names="x1 x2 x3".split(" "),
             extra_sympy_mappings={"mycustomoperator": sympy.sin},
             extra_torch_mappings={"mycustomoperator": torch.sin},
             output_torch_format=True,
-            multioutput=False,
-            nout=1,
-            selection=[0, 1, 2],
         )
+        model.selection = [0, 1, 2]
         model.n_features = 3
         model.using_pandas = False
         model.refresh()

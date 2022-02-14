@@ -38,9 +38,7 @@ class TestJAX(unittest.TestCase):
         model = PySRRegressor(
             equation_file="equation_file.csv",
             output_jax_format=True,
-            variables_names="x1 x2 x3".split(" "),
-            multioutput=False,
-            nout=1,
+            variable_names="x1 x2 x3".split(" "),
             selection=[1, 2, 3],
         )
 
