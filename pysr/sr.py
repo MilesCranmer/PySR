@@ -355,6 +355,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         populations=100,
         niterations=4,
         ncyclesperiteration=100,
+        timeout_in_seconds=None,
         alpha=0.1,
         annealing=False,
         fractionReplaced=0.01,
@@ -447,6 +448,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         :type maxsize: int
         :param ncyclesperiteration: Number of total mutations to run, per 10 samples of the population, per iteration.
         :type ncyclesperiteration: int
+        :param timeout_in_seconds: Make the search return early once this many seconds have passed.
+        :type timeout_in_seconds: float/int
         :param alpha: Initial temperature.
         :type alpha: float
         :param annealing: Whether to use annealing. You should (and it is default).
@@ -610,6 +613,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 populations=populations,
                 niterations=niterations,
                 ncyclesperiteration=ncyclesperiteration,
+                timeout_in_seconds=timeout_in_seconds,
                 alpha=alpha,
                 annealing=annealing,
                 fractionReplaced=fractionReplaced,
@@ -1155,6 +1159,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             stateReturn=True,  # Required for state saving.
             use_symbolic_utils=self.params["use_symbolic_utils"],
             progress=self.params["progress"],
+            timeout_in_seconds=self.params["timeout_in_seconds"],
         )
 
         np_dtype = {16: np.float16, 32: np.float32, 64: np.float64}[
