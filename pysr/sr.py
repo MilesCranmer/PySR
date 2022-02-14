@@ -375,6 +375,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         weightMutateOperator=1,
         weightRandomize=1,
         weightSimplify=0.002,
+        crossoverProbability=0.01,
         perturbationFactor=1.0,
         extra_sympy_mappings=None,
         extra_torch_mappings=None,
@@ -488,6 +489,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         :type weightRandomize: float
         :param weightSimplify: Relative likelihood for mutation to simplify constant parts by evaluation
         :type weightSimplify: float
+        :param crossoverProbability: Absolute probability of crossover-type genetic operation, instead of a mutation.
+        :type crossoverProbability: float
         :param equation_file: Where to save the files (.csv separated by |)
         :type equation_file: str
         :param verbosity: What verbosity level to use. 0 means minimal print statements.
@@ -630,6 +633,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 weightMutateOperator=weightMutateOperator,
                 weightRandomize=weightRandomize,
                 weightSimplify=weightSimplify,
+                crossoverProbability=crossoverProbability,
                 perturbationFactor=perturbationFactor,
                 verbosity=verbosity,
                 update_verbosity=update_verbosity,
@@ -1157,6 +1161,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             use_symbolic_utils=self.params["use_symbolic_utils"],
             progress=self.params["progress"],
             timeout_in_seconds=self.params["timeout_in_seconds"],
+            crossoverProbability=self.params["crossoverProbability"],
         )
 
         np_dtype = {16: np.float16, 32: np.float32, 64: np.float64}[
