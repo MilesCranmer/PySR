@@ -193,11 +193,9 @@ class TestBest(unittest.TestCase):
 
         self.model = PySRRegressor(
             equation_file="equation_file.csv",
-            variables_names="x0 x1".split(" "),
+            variable_names="x0 x1".split(" "),
             extra_sympy_mappings={},
             output_jax_format=False,
-            multioutput=False,
-            nout=1,
         )
         self.model.n_features = 2
         self.model.refresh()
