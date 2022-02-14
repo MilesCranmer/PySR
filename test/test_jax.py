@@ -39,10 +39,10 @@ class TestJAX(unittest.TestCase):
             equation_file="equation_file.csv",
             output_jax_format=True,
             variable_names="x1 x2 x3".split(" "),
-            selection=[1, 2, 3],
         )
 
-        model.n_features = 2
+        model.selection = [1, 2, 3]
+        model.n_features = 3
         model.using_pandas = False
         model.refresh()
         jformat = model.jax()
