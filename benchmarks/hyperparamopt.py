@@ -232,7 +232,7 @@ while True:
             max_evals=n + len(trials.trials),
             trials=trials,
             verbose=1,
-            rstate=np.random.default_rng(np.random.randint(1, 10 ** 6)),
+            rstate=np.random.default_rng(np.random.randint(1, 10**6)),
         )
     except hyperopt.exceptions.AllTrialsFailed:
         continue
