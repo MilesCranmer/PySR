@@ -76,7 +76,7 @@ class TestTorch(unittest.TestCase):
 
         equations = pd.DataFrame(
             {
-                "Equation": ["1.0", "mycustomoperator(x0)"],
+                "Equation": ["1.0", "mycustomoperator(x1)"],
                 "MSE": [1.0, 0.1],
                 "Complexity": [1, 2],
             }
@@ -98,10 +98,11 @@ class TestTorch(unittest.TestCase):
         model.n_features = 3
         model.using_pandas = False
         model.refresh()
+        self.assertEqual(str(model.sympy()), "sin(x1)")
         # Will automatically use the set global state from get_hof.
-        tformat = model.pytorch()
-        self.assertEqual(str(tformat), "_SingleSymPyModule(expression=sin(x0))")
 
+        tformat = model.pytorch()
+        self.assertEqual(str(tformat), "_SingleSymPyModule(expression=sin(x1))")
         np.testing.assert_almost_equal(
             tformat(torch.tensor(X)).detach().numpy(),
             np.sin(X[:, 0]),  # Selection 1st feature
