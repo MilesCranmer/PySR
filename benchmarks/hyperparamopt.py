@@ -9,7 +9,7 @@ from hyperopt.fmin import generate_trials_to_calculate
 
 # Change the following code to your file
 ################################################################################
-TRIALS_FOLDER = "trials"
+TRIALS_FOLDER = "trials2"
 NUMBER_TRIALS_PER_RUN = 1
 timeout_in_minutes = 5
 
@@ -252,7 +252,7 @@ def merge_trials(trials1, trials2_slice):
         max_tid = max([trial["tid"] for trial in trials1.trials])
 
     for trial in trials2_slice:
-        tid = trial["tid"] + max_tid + 1
+        tid = trial["tid"] + max_tid + 2
         local_hyperopt_trial = Trials().new_trial_docs(
             tids=[None], specs=[None], results=[None], miscs=[None]
         )
@@ -266,20 +266,25 @@ def merge_trials(trials1, trials2_slice):
     return trials1
 
 
+import glob
+path = TRIALS_FOLDER + "/*.pkl"
+n_prior_trials = len(list(glob.glob(path)))
+
 loaded_fnames = []
 trials = generate_trials_to_calculate(init_vals)
-i = 0
+i = n_prior_trials
 n = NUMBER_TRIALS_PER_RUN
+
+if i > 0:
+    trials = None
 
 # Run new hyperparameter trials until killed
 while True:
     np.random.seed()
 
     # Load up all runs:
-    import glob
 
     if i > 0:
-        path = TRIALS_FOLDER + "/*.pkl"
         for fname in glob.glob(path):
             if fname in loaded_fnames:
                 continue
@@ -316,7 +321,7 @@ while True:
             run_trial,
             space=space,
             algo=tpe.suggest,
-            max_evals=2,
+            max_evals=1,
             trials=trials,
             points_to_evaluate=init_vals,
         )
