@@ -11,7 +11,7 @@ from hyperopt.fmin import generate_trials_to_calculate
 ################################################################################
 TRIALS_FOLDER = "trials2"
 NUMBER_TRIALS_PER_RUN = 1
-timeout_in_minutes = 5
+timeout_in_minutes = 10
 
 # Test run to compile everything:
 binary_operators = ["*", "/", "+", "-"]
@@ -162,10 +162,12 @@ space = dict(
     weightRandomize=hp.loguniform("weightRandomize", np.log(0.0001), np.log(100)),
     #     weightSimplify=0.002,
     weightSimplify=hp.choice("weightSimplify", [0.002]),  # One of these is fixed.
+    #     crossoverProbability=0.01,
+    crossoverProbability=hp.loguniform("crossoverProbability", np.log(0.00001), np.log(0.2)),
     #     perturbationFactor=1.0,
     perturbationFactor=hp.loguniform("perturbationFactor", np.log(0.0001), np.log(100)),
     #     maxsize=20,
-    maxsize=hp.choice("maxsize", [20]),
+    maxsize=hp.choice("maxsize", [30]),
     #     warmupMaxsizeBy=0.0,
     warmupMaxsizeBy=hp.uniform("warmupMaxsizeBy", 0.0, 0.5),
     #     useFrequency=True,
@@ -180,6 +182,8 @@ space = dict(
     tournament_selection_p=hp.uniform("tournament_selection_p", 0.0, 1.0),
 )
 
+rand_between = lambda lo, hi: (np.random.rand()*(hi - lo) + lo)
+
 init_vals = [
     dict(
         model_selection=0,  # 0 means first choice
@@ -187,15 +191,15 @@ init_vals = [
         unary_operators=0,
         populations=100.0,
         niterations=0,
-        ncyclesperiteration=100.0,
-        alpha=0.1,
+        ncyclesperiteration=rand_between(50, 150),
+        alpha=rand_between(0.05, 0.2),
         annealing=0,
         #     fractionReplaced=0.01,
         fractionReplaced=0.01,
         #     fractionReplacedHof=0.005,
         fractionReplacedHof=0.005,
         #     npop=100,
-        npop=100.0,
+        npop=rand_between(50, 200),
         #     parsimony=1e-4,
         parsimony=1e-4,
         #     topn=10,
@@ -216,6 +220,8 @@ init_vals = [
         weightRandomize=1.0,
         #     weightSimplify=0.002,
         weightSimplify=0,  # One of these is fixed.
+        # crossoverProbability=0.01
+        crossoverProbability=0.01,
         #     perturbationFactor=1.0,
         perturbationFactor=1.0,
         #     maxsize=20,
@@ -231,7 +237,7 @@ init_vals = [
         #     optimizer_iterations=10,
         optimizer_iterations=10.0,
         #     tournament_selection_p=1.0,
-        tournament_selection_p=0.999,
+        tournament_selection_p=rand_between(0.9, 0.999),
     )
 ]
 
@@ -273,11 +279,8 @@ n_prior_trials = len(list(glob.glob(path)))
 
 loaded_fnames = []
 trials = generate_trials_to_calculate(init_vals)
-i = n_prior_trials
+i = 0
 n = NUMBER_TRIALS_PER_RUN
-
-if i > 0:
-    trials = None
 
 # Run new hyperparameter trials until killed
 while True:
@@ -331,7 +334,11 @@ while True:
     hyperopt_trial = Trials()
 
     # Merge with empty trials dataset:
-    save_trials = merge_trials(hyperopt_trial, trials.trials[-n:])
+    if i == 0:
+        save_trials = merge_trials(hyperopt_trial, trials.trials)
+    else:
+        save_trials = merge_trials(hyperopt_trial, trials.trials[-n:])
+
     new_fname = TRIALS_FOLDER + "/" + str(np.random.randint(0, sys.maxsize)) + ".pkl"
     pkl.dump({"trials": save_trials, "n": n}, open(new_fname, "wb"))
     loaded_fnames.append(new_fname)
