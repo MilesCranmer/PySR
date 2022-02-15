@@ -163,7 +163,9 @@ space = dict(
     #     weightSimplify=0.002,
     weightSimplify=hp.choice("weightSimplify", [0.002]),  # One of these is fixed.
     #     crossoverProbability=0.01,
-    crossoverProbability=hp.loguniform("crossoverProbability", np.log(0.00001), np.log(0.2)),
+    crossoverProbability=hp.loguniform(
+        "crossoverProbability", np.log(0.00001), np.log(0.2)
+    ),
     #     perturbationFactor=1.0,
     perturbationFactor=hp.loguniform("perturbationFactor", np.log(0.0001), np.log(100)),
     #     maxsize=20,
@@ -182,7 +184,7 @@ space = dict(
     tournament_selection_p=hp.uniform("tournament_selection_p", 0.0, 1.0),
 )
 
-rand_between = lambda lo, hi: (np.random.rand()*(hi - lo) + lo)
+rand_between = lambda lo, hi: (np.random.rand() * (hi - lo) + lo)
 
 init_vals = [
     dict(
