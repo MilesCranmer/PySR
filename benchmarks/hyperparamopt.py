@@ -267,6 +267,7 @@ def merge_trials(trials1, trials2_slice):
 
 
 import glob
+
 path = TRIALS_FOLDER + "/*.pkl"
 n_prior_trials = len(list(glob.glob(path)))
 
