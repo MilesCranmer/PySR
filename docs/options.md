@@ -102,9 +102,8 @@ on each core.
 ## Weighted data
 
 Here, we assign weights to each row of data
-using inverse uncertainty squared. We also use 10 processes
-instead of the usual 4, which creates more populations
-(one population per thread).
+using inverse uncertainty squared. We also use 10 processes for the search
+instead of the default.
 ```python
 sigma = ...
 weights = 1/sigma**2
