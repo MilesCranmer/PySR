@@ -4,6 +4,7 @@ import numpy as np
 import pickle as pkl
 import hyperopt
 from hyperopt import hp, fmin, tpe, Trials
+from space import space
 
 
 # Change the following code to your file
@@ -87,4 +88,18 @@ for trial in trials:
 clean_trials = sorted(clean_trials, key=lambda x: x[0])
 
 for trial in clean_trials:
-    print(trial)
+    loss, params = trial
+    for k, value in params.items():
+        value = value[0]
+        if isinstance(value, int):
+            possible_args = space[k].pos_args[1:]
+            try:
+                value = possible_args[value].obj
+            except AttributeError:
+                value = [arg.obj for arg in possible_args[value].pos_args]
+
+
+        params[k] = value
+
+    print(loss, params)
+
