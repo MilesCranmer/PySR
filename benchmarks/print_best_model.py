@@ -101,8 +101,6 @@ for trial in clean_trials:
             except AttributeError:
                 value = [arg.obj for arg in possible_args[value].pos_args]
 
-
         params[k] = value
 
     pp.pprint({"loss": loss, "params": params})
-
