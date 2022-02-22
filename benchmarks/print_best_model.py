@@ -5,6 +5,7 @@ import pickle as pkl
 import hyperopt
 from hyperopt import hp, fmin, tpe, Trials
 from space import space
+from pprint import PrettyPrinter
 
 
 # Change the following code to your file
@@ -87,6 +88,8 @@ for trial in trials:
 
 clean_trials = sorted(clean_trials, key=lambda x: x[0])
 
+pp = PrettyPrinter(indent=4)
+
 for trial in clean_trials:
     loss, params = trial
     for k, value in params.items():
@@ -101,5 +104,5 @@ for trial in clean_trials:
 
         params[k] = value
 
-    print(loss, params)
+    pp.pprint({"loss": loss, "params": params})
 

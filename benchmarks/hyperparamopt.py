@@ -13,10 +13,9 @@ from space import *
 TRIALS_FOLDER = "trials2"
 NUMBER_TRIALS_PER_RUN = 1
 timeout_in_minutes = 10
+start_from_init_vals = False
 
 # Test run to compile everything:
-binary_operators = ["*", "/", "+", "-"]
-unary_operators = ["sin", "cos", "exp", "log"]
 julia_project = None
 procs = 4
 model = PySRRegressor(
@@ -210,8 +209,13 @@ path = TRIALS_FOLDER + "/*.pkl"
 n_prior_trials = len(list(glob.glob(path)))
 
 loaded_fnames = []
-trials = generate_trials_to_calculate(init_vals)
-i = 0
+if start_from_init_vals:
+    trials = generate_trials_to_calculate(init_vals)
+    i = 0
+else:
+    trials = Trials()
+    i = 1
+
 n = NUMBER_TRIALS_PER_RUN
 
 # Run new hyperparameter trials until killed
