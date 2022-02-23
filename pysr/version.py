@@ -1,2 +1,2 @@
-__version__ = "0.7.8"
-__symbolic_regression_jl_version__ = "0.7.12"
+__version__ = "0.7.9"
+__symbolic_regression_jl_version__ = "0.7.14"
