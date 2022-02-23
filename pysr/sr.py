@@ -412,6 +412,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         precision=32,
         multithreading=None,
         use_symbolic_utils=False,
+        skip_mutation_failures=True,
     ):
         """Initialize settings for an equation search in PySR.
 
@@ -533,6 +534,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         :type precision: int
         :param use_symbolic_utils: Whether to use SymbolicUtils during simplification.
         :type use_symbolic_utils: bool
+        :param skip_mutation_failures: Whether to skip mutation and crossover failures, rather than simply re-sampling the current member.
+        :type skip_mutation_failures: bool
         :returns: Initialized model. Call `.fit(X, y)` to fit your data!
         :type: PySRRegressor
         """
@@ -662,6 +665,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 precision=precision,
                 multithreading=multithreading,
                 use_symbolic_utils=use_symbolic_utils,
+                skip_mutation_failures=skip_mutation_failures,
             ),
         }
 
@@ -1162,6 +1166,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             progress=self.params["progress"],
             timeout_in_seconds=self.params["timeout_in_seconds"],
             crossoverProbability=self.params["crossoverProbability"],
+            skip_mutation_failures=self.params["skip_mutation_failures"],
         )
 
         np_dtype = {16: np.float16, 32: np.float32, 64: np.float64}[
