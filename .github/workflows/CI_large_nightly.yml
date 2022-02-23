@@ -30,11 +30,6 @@ jobs:
         uses: julia-actions/setup-julia@v1.6.0
         with:
           version: ${{ matrix.julia-version }}
-      - name: "Change package server"
-        env:
-            JULIA_PKG_SERVER: ""
-        run: |
-            julia -e 'using Pkg; Pkg.Registry.add("General")'
       - name: "Set up Python"
         uses: actions/setup-python@v1
         with:
