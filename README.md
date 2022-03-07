@@ -57,29 +57,17 @@ python interface.
 
 
 # Installation
-PySR uses both Julia and Python, so you need to have both installed
-(or use the conda-forge one, which does this for you).
-To install Julia - see the [Julia website](https://julialang.org/downloads/).
 
-You can install PySR with pip:
-```bash
-pip3 install pysr
-```
-or conda (which also installs julia for you):
-```bash
-conda install -c conda-forge pysr
-```
-Both of these should be followed by the following setup command:
-```bash
-python3 -c 'import pysr; pysr.install()'
-```
-This will install and update the required Julia packages, including
+| pip | conda |
+|---|---|
+| 1. Install Julia (see [downloads](https://julialang.org/downloads/))<br>2. `pip install pysr`<br>3. `python -c 'import pysr; pysr.install()'` | 1. `conda install -c conda-forge pysr`<br>2. `python -c 'import pysr; pysr.install()'`|
+
+This last step will install and update the required Julia packages, including
 `PyCall.jl`.
 
-
-Most common issues at this stage are solved
-by [tweaking the Julia package server](https://github.com/MilesCranmer/PySR/issues/27)
-to use up-to-date packages.
+Common issues tend to be related to Python not finding Julia.
+To debug this, try running `python -c 'import os; print(os.environ["PATH"])'`.
+If none of these folders contain your Julia binary, then you need to add Julia's `bin` folder to your `PATH` environment variable.
 
 # Introduction
 
