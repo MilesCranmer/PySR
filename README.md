@@ -60,7 +60,7 @@ python interface.
 
 | pip | conda |
 |---|---|
-| 1. Install Julia (see [downloads](https://julialang.org/downloads/))<br>2. `pip install pysr`<br>3. `python -c 'import pysr; pysr.install()'` | 1. `conda install -c conda-forge pysr`<br>2. `python -c 'import pysr; pysr.install()'`|
+| 1. Install Julia manually (see [downloads](https://julialang.org/downloads/))<br>2. `pip install pysr`<br>3. `python -c 'import pysr; pysr.install()'` | 1. `conda install -c conda-forge pysr`<br>2. `python -c 'import pysr; pysr.install()'`|
 
 This last step will install and update the required Julia packages, including
 `PyCall.jl`.
