@@ -304,7 +304,14 @@ def init_julia():
     global is_julia_warning_silenced
     from julia.core import JuliaInfo, UnsupportedPythonError
 
-    info = JuliaInfo.load(julia="julia")
+    try:
+        info = JuliaInfo.load(julia="julia")
+    except FileNotFoundError:
+        env_path = os.environ["PATH"]
+        raise FileNotFoundError(
+            f"Julia is not installed in your PATH. Please install Julia and add it to your PATH.\n\nCurrent PATH: {env_path}",
+        )
+
     if not info.is_pycall_built():
         raise ImportError(import_error_string())
 
