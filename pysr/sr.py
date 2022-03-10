@@ -350,30 +350,30 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         unary_operators=None,
         procs=cpu_count(),
         loss="L2DistLoss()",
-        populations=100,
+        populations=15,
         niterations=4,
-        ncyclesperiteration=100,
+        ncyclesperiteration=550,
         timeout_in_seconds=None,
         alpha=0.1,
         annealing=False,
-        fractionReplaced=0.01,
-        fractionReplacedHof=0.005,
-        npop=100,
-        parsimony=1e-4,
+        fractionReplaced=0.000364,
+        fractionReplacedHof=0.035,
+        npop=33,
+        parsimony=0.0032,
         migration=True,
         hofMigration=True,
         shouldOptimizeConstants=True,
-        topn=10,
-        weightAddNode=1,
-        weightInsertNode=3,
-        weightDeleteNode=3,
-        weightDoNothing=1,
-        weightMutateConstant=10,
-        weightMutateOperator=1,
-        weightRandomize=1,
-        weightSimplify=0.002,
-        crossoverProbability=0.01,
-        perturbationFactor=1.0,
+        topn=12,
+        weightAddNode=0.79,
+        weightDeleteNode=1.7,
+        weightDoNothing=0.21,
+        weightInsertNode=5.1,
+        weightMutateConstant=0.048,
+        weightMutateOperator=0.47,
+        weightRandomize=0.00023,
+        weightSimplify=0.0020,
+        crossoverProbability=0.066,
+        perturbationFactor=0.076,
         extra_sympy_mappings=None,
         extra_torch_mappings=None,
         extra_jax_mappings=None,
@@ -391,6 +391,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         warmupMaxsizeBy=0.0,
         constraints=None,
         useFrequency=True,
+        useFrequencyInTournament=True,
         tempdir=None,
         delete_tempfiles=True,
         julia_project=None,
@@ -399,11 +400,11 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         output_jax_format=False,
         output_torch_format=False,
         optimizer_algorithm="BFGS",
-        optimizer_nrestarts=3,
-        optimize_probability=1.0,
-        optimizer_iterations=10,
+        optimizer_nrestarts=2,
+        optimize_probability=0.14,
+        optimizer_iterations=8,
         tournament_selection_n=10,
-        tournament_selection_p=1.0,
+        tournament_selection_p=0.86,
         denoise=False,
         Xresampled=None,
         precision=32,
@@ -509,6 +510,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         :type constraints: dict
         :param useFrequency: whether to measure the frequency of complexities, and use that instead of parsimony to explore equation space. Will naturally find equations of all complexities.
         :type useFrequency: bool
+        :param useFrequencyInTournament: whether to use the frequency mentioned above in the tournament, rather than just the simulated annealing.
+        :type useFrequencyInTournament: bool
         :param tempdir: directory for the temporary files
         :type tempdir: str/None
         :param delete_tempfiles: whether to delete the temporary files after finishing
@@ -647,6 +650,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 warmupMaxsizeBy=warmupMaxsizeBy,
                 constraints=constraints,
                 useFrequency=useFrequency,
+                useFrequencyInTournament=useFrequencyInTournament,
                 tempdir=tempdir,
                 delete_tempfiles=delete_tempfiles,
                 update=update,
@@ -756,8 +760,10 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         for key, value in params.items():
             if key in self.surface_parameters:
                 self.__setattr__(key, value)
-            else:
+            elif key in self.params:
                 self.params[key] = value
+            else:
+                raise ValueError(f"Parameter {key} is not in the list of parameters.")
 
         return self
 
@@ -1192,6 +1198,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             shouldOptimizeConstants=self.params["shouldOptimizeConstants"],
             warmupMaxsizeBy=self.params["warmupMaxsizeBy"],
             useFrequency=self.params["useFrequency"],
+            useFrequencyInTournament=self.params["useFrequencyInTournament"],
             npop=self.params["npop"],
             ncyclesperiteration=self.params["ncyclesperiteration"],
             fractionReplaced=self.params["fractionReplaced"],
