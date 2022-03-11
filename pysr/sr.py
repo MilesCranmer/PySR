@@ -351,7 +351,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         procs=cpu_count(),
         loss="L2DistLoss()",
         populations=15,
-        niterations=4,
+        niterations=40,
         ncyclesperiteration=550,
         timeout_in_seconds=None,
         alpha=0.1,
