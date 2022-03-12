@@ -10,14 +10,7 @@ import pandas as pd
 
 class TestPipeline(unittest.TestCase):
     def setUp(self):
-        self.default_test_kwargs = dict(
-            niterations=10,
-            populations=100,
-            ncyclesperiteration=100,
-            npop=100,
-            annealing=True,
-            useFrequency=False,
-        )
+        self.default_test_kwargs = dict()
         np.random.seed(0)
         self.X = np.random.randn(100, 5)
 
