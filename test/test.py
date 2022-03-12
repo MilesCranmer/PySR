@@ -16,9 +16,13 @@ class TestPipeline(unittest.TestCase):
         default_niterations = (
             inspect.signature(PySRRegressor.__init__).parameters["niterations"].default
         )
+        default_populations = (
+            inspect.signature(PySRRegressor.__init__).parameters["populations"].default
+        )
         self.default_test_kwargs = dict(
             niterations=default_niterations * 2,
             model_selection="accuracy",
+            populations=default_populations * 2,
         )
         np.random.seed(0)
         self.X = np.random.randn(100, 5)
