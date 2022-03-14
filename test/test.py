@@ -21,7 +21,6 @@ class TestPipeline(unittest.TestCase):
         )
         self.default_test_kwargs = dict(
             niterations=default_niterations * 2,
-            model_selection="accuracy",
             populations=default_populations * 2,
         )
         np.random.seed(0)
@@ -31,6 +30,7 @@ class TestPipeline(unittest.TestCase):
         y = self.X[:, 0]
         model = PySRRegressor(**self.default_test_kwargs)
         model.fit(self.X, y)
+        model.set_params(model_selection="accuracy")
         print(model.equations)
         self.assertLessEqual(model.get_best()["loss"], 1e-4)
 
@@ -103,6 +103,7 @@ class TestPipeline(unittest.TestCase):
         X = np.random.randn(100, 1)
         y = X[:, 0] + 3.0
         regressor = PySRRegressor(
+            model_selection="accuracy",
             unary_operators=[],
             binary_operators=["plus"],
             **self.default_test_kwargs,
