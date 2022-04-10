@@ -1048,12 +1048,6 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         una_constraints = [constraints[op] for op in unary_operators]
         bin_constraints = [constraints[op] for op in binary_operators]
 
-        try:
-            # TODO: is this needed since Julia now prints directly to stdout?
-            term_width = shutil.get_terminal_size().columns
-        except:
-            _, term_width = subprocess.check_output(["stty", "size"]).split()
-
         if not already_ran:
             Main.eval("using Pkg")
             io = "devnull" if self.params["update_verbosity"] == 0 else "stderr"
@@ -1143,7 +1137,6 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 min([self.params["batchSize"], len(X)]) if batching else len(X)
             ),
             mutationWeights=mutationWeights,
-            terminal_width=int(term_width),
             probPickFirst=self.params["tournament_selection_p"],
             ns=self.params["tournament_selection_n"],
             # These have the same name:
