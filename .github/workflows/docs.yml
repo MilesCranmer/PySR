@@ -24,7 +24,7 @@ jobs:
       - name: "Set up Python"
         uses: actions/setup-python@v1
         with:
-          python-version: 3.9.10
+          python-version: 3.9
       - name: "Install pydoc-markdown"
         run: pip install pydoc-markdown==4.5.0
       - name: "Set up npm"
