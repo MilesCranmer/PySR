@@ -135,8 +135,8 @@ This arrow in the `pick` column indicates which equation is currently selected b
 
 `model.equations` is a pandas DataFrame containing all equations, including callable format 
 (`lambda_format`),
-SymPy format (`sympy_format`), and even JAX and PyTorch format 
-(both of which are differentiable).
+SymPy format (`sympy_format` - which you can also get with `model.sympy()`), and even JAX and PyTorch format 
+(both of which are differentiable - which you can get with `model.jax()` and `model.pytorch()`).
 
 Note that `PySRRegressor` stores the state of the last search, and will restart from where you left off the next time you call `.fit()`. This will cause problems if significant changes are made to the search parameters (like changing the operators). You can run `model.reset()` to reset the state.
 
