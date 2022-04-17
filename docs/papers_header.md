@@ -3,12 +3,13 @@ Below is a showcase of papers which have used PySR to discover
 or rediscover a symbolic model.
 
 If you have used PySR in your research,
-please submit a pull request to add your paper to [this file](https://github.com/MilesCranmer/PySR/blob/master/docs/papers.md).
+please submit a pull request to add your paper to [this file](https://github.com/MilesCranmer/PySR/blob/master/docs/papers.yml).
 
 
 <style>
 .row {
   display: flex;
+  gap: 25px;
 }
 .row:after {
   content: "";
@@ -18,7 +19,6 @@ please submit a pull request to add your paper to [this file](https://github.com
 .image_column {
   flex: 50%;
   float: left;
-  padding: 10px;
   display: flex;
   justify-content: center;
   align-items: center;
