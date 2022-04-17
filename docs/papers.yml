@@ -1,8 +1,24 @@
 # This file stores papers which have used PySR, with
 # information to generate the "Research Showcase"
 
-# The order here is in terms of date. New papers should be added at the top.
 papers:
+  - title: Modeling assembly bias with machine learning and symbolic regression
+    authors:
+      - Digvijay Wadekar (1)
+      - Francisco Villaescusa-Navarro (2,3)
+      - Shirley Ho (2,3,4)
+      - Laurence Perreault-Levasseur (3,5,6)
+    affiliations:
+      1: New York University
+      2: Princeton University
+      3: Flatiron Institute
+      4: Carnegie Mellon University
+      5: Université de Montréal
+      6: Mila
+    link: https://arxiv.org/abs/2012.00111
+    abstract: "Upcoming 21cm surveys will map the spatial distribution of cosmic neutral hydrogen (HI) over unprecedented volumes. Mock catalogues are needed to fully exploit the potential of these surveys. Standard techniques employed to create these mock catalogs, like Halo Occupation Distribution (HOD), rely on assumptions such as the baryonic properties of dark matter halos only depend on their masses. In this work, we use the state-of-the-art magneto-hydrodynamic simulation IllustrisTNG to show that the HI content of halos exhibits a strong dependence on their local environment. We then use machine learning techniques to show that this effect can be 1) modeled by these algorithms and 2) parametrized in the form of novel analytic equations. We provide physical explanations for this environmental effect and show that ignoring it leads to underprediction of the real-space 21-cm power spectrum at k≳0.05 h/Mpc by ≳10%, which is larger than the expected precision from upcoming surveys on such large scales. Our methodology of combining numerical simulations with machine learning techniques is general, and opens a new direction at modeling and parametrizing the complex physics of assembly bias needed to generate accurate mocks for galaxy and line intensity mapping surveys."
+    image: hi_mass.png
+    date: 2020-11-30
   - title: Machine Learning the Gravity Equation for International Trade
     authors:
       - Sergiy Verstyuk (1)
@@ -38,25 +54,6 @@ papers:
     abstract: We present a simple phenomenological formula which approximates the hyperbolic volume of a knot using only a single evaluation of its Jones polynomial at a root of unity. The average error is just 2.86% on the first 1.7 million knots, which represents a large improvement over previous formulas of this kind. To find the approximation formula, we use layer-wise relevance propagation to reverse engineer a black box neural network which achieves a similar average error for the same approximation task when trained on 10% of the total dataset. The particular roots of unity which appear in our analysis cannot be written as e2πi/(k+2) with integer k; therefore, the relevant Jones polynomial evaluations are not given by unknot-normalized expectation values of Wilson loop operators in conventional SU(2) Chern-Simons theory with level k. Instead, they correspond to an analytic continuation of such expectation values to fractional level. We briefly review the continuation procedure and comment on the presence of certain Lefschetz thimbles, to which our approximation formula is sensitive, in the analytically continued Chern-Simons integration cycle.
     image: hyperbolic_volume.png
     date: 2021-06-07
-
-# Modeling the galaxy-halo connection with machine learning
-# Ana Maria Delgado, 1
-# Digvijay Wadekar, 2 3
-# Boryana Hadzhiyska,1
-# Sownak Bose,1 7
-# Lars Hernquist,1
-# Shirley Ho 2 4 5 6
-# 1Center for Astrophysics | Harvard & Smithsonian, 60 Garden Street, Cambridge, MA 02138, USA
-# 2Center for Cosmology and Particle Physics, Department of Physics, New York University, New York, NY 10003, USA
-# 3School of Natural Sciences, Institute for Advanced Study, Princeton, NJ 08540, USA
-# 4Center for Computational Astrophysics, Flatiron Institute, 162 5th Ave, New York, NY 10010, USA
-# 5Department of Astrophysical Sciences, Princeton University, Peyton Hall, Princeton NJ 08544-0010, USA
-# 6Department of Physics, Carnegie Mellon University, Pittsburgh, PA 15217, USA
-# 7Institute for Computational Cosmology, Department of Physics, Durham University, Durham DH1 3LE, UK
-# https://arxiv.org/abs/2111.02422v1
-# To extract information from the clustering of galaxies on non-linear scales, we need to model the connection between galaxies and halos accurately and in a flexible manner. Standard halo occupation distribution (HOD) models make the assumption that the galaxy occupation in a halo is a function of only its mass, however, in reality, the occupation can depend on various other parameters including halo concentration, assembly history, environment, spin, etc. Using the IllustrisTNG hydrodynamic simulation as our target, we show that machine learning tools can be used to capture this high-dimensional dependence and provide more accurate galaxy occupation models. Specifically, we use a random forest regressor to identify which secondary halo parameters best model the galaxy-halo connection and symbolic regression to augment the standard HOD model with simple equations capturing the dependence on those parameters, namely the local environmental overdensity and shear, at the location of a halo. This not only provides insights into the galaxy-formation relationship but, more importantly, improves the clustering statistics of the modeled galaxies significantly. Our approach demonstrates that machine learning tools can help us better understand and model the galaxy-halo connection, and are therefore useful for galaxy formation and cosmology studies from upcoming galaxy surveys.
-# hod_importances.png
-# 3 Nov 2021
   - title: Modeling the galaxy-halo connection with machine learning
     authors:
       - Ana Maria Delgado (1)
@@ -66,7 +63,7 @@ papers:
       - Lars Hernquist (1)
       - Shirley Ho (2,4,5,6)
     affiliations:
-      1: Center for Astrophysics | Harvard & Smithsonian
+      1: "Center for Astrophysics | Harvard & Smithsonian"
       2: New York University
       3: Institute for Advanced Study
       4: Flatiron Institute
@@ -77,12 +74,52 @@ papers:
     abstract: To extract information from the clustering of galaxies on non-linear scales, we need to model the connection between galaxies and halos accurately and in a flexible manner. Standard halo occupation distribution (HOD) models make the assumption that the galaxy occupation in a halo is a function of only its mass, however, in reality, the occupation can depend on various other parameters including halo concentration, assembly history, environment, spin, etc. Using the IllustrisTNG hydrodynamic simulation as our target, we show that machine learning tools can be used to capture this high-dimensional dependence and provide more accurate galaxy occupation models. Specifically, we use a random forest regressor to identify which secondary halo parameters best model the galaxy-halo connection and symbolic regression to augment the standard HOD model with simple equations capturing the dependence on those parameters, namely the local environmental overdensity and shear, at the location of a halo. This not only provides insights into the galaxy-formation relationship but, more importantly, improves the clustering statistics of the modeled galaxies significantly. Our approach demonstrates that machine learning tools can help us better understand and model the galaxy-halo connection, and are therefore useful for galaxy formation and cosmology studies from upcoming galaxy surveys.
     image: hod_importances.png
     date: 2021-11-03
-
-
-
-
-
-
-# To add:
-# https://arxiv.org/abs/2109.04484v1 - astrophysics paper, where they use PySR to discover a more accurate model for the properties of dark matter subhalos in an interpretable way.
-# https://arxiv.org/abs/2012.00111 - astrophysics paper, where they use PySR to model assembly bias, and recover a new interpretable model for doing so.
+  - title: Finding universal relations in subhalo properties with artificial intelligence
+    authors:
+      - Helen Shao (1)
+      - Francisco Villaescusa-Navarro (1,2)
+      - Shy Genel (2,3)
+      - David N. Spergel (2,1)
+      - Daniel Angles-Alcazar (4,2)
+      - Lars Hernquist (5)
+      - Romeel Dave (6,7,8)
+      - Desika Narayanan (9,10)
+      - Gabriella Contardo (2)
+      - Mark Vogelsberger (11)
+    affiliations:
+      1: Princeton University
+      2: Flatiron Institute
+      3: Columbia University
+      4: University of Connecticut
+      5: "Center for Astrophysics | Harvard & Smithsonian"
+      6: University of Edinburgh
+      7: University of the Western Cape
+      8: South African Astronomical Observatories
+      9: University of Florida
+      10: University of Florida Informatics Institute
+      11: MIT
+    link: https://arxiv.org/abs/2109.04484v1
+    abstract: "We use a generic formalism designed to search for relations in high-dimensional spaces to determine if the total mass of a subhalo can be predicted from other internal properties such as velocity dispersion, radius, or star-formation rate. We train neural networks using data from the Cosmology and Astrophysics with MachinE Learning Simulations (CAMELS) project and show that the model can predict the total mass of a subhalo with high accuracy: more than 99% of the subhalos have a predicted mass within 0.2 dex of their true value. The networks exhibit surprising extrapolation properties, being able to accurately predict the total mass of any type of subhalo containing any kind of galaxy at any redshift from simulations with different cosmologies, astrophysics models, subgrid physics, volumes, and resolutions, indicating that the network may have found a universal relation. We then use different methods to find equations that approximate the relation found by the networks and derive new analytic expressions that predict the total mass of a subhalo from its radius, velocity dispersion, and maximum circular velocity. We show that in some regimes, the analytic expressions are more accurate than the neural networks. We interpret the relation found by the neural network and approximated by the analytic equation as being connected to the virial theorem."
+    date: 2021-09-09
+    image: illustris_example.png
+  - title: Rediscovering orbital mechanics with machine learning
+    authors:
+      - Pablo Lemos (1,2)
+      - Niall Jeffrey (3,2)
+      - Miles Cranmer (4)
+      - Shirley Ho (4,5,6,7)
+      - Peter Battaglia (8)
+    affiliations:
+      1: University of Sussex
+      2: University College London
+      3: ENS
+      4: Princeton University
+      5: Flatiron Institute
+      6: Carnegie Mellon University
+      7: New York University
+      8: DeepMind
+    link: https://arxiv.org/abs/2202.02306
+    abstract: "We present an approach for using machine learning to automatically discover the governing equations and hidden properties of real physical systems from observations. We train a \"graph neural network\" to simulate the dynamics of our solar system's Sun, planets, and large moons from 30 years of trajectory data. We then use symbolic regression to discover an analytical expression for the force law implicitly learned by the neural network, which our results showed is equivalent to Newton's law of gravitation. The key assumptions that were required were translational and rotational equivariance, and Newton's second and third laws of motion. Our approach correctly discovered the form of the symbolic force law. Furthermore, our approach did not require any assumptions about the masses of planets and moons or physical constants. They, too, were accurately inferred through our methods. Though, of course, the classical law of gravitation has been known since Isaac Newton, our result serves as a validation that our method can discover unknown laws and hidden properties from observed data. More broadly this work represents a key step toward realizing the potential of machine learning for accelerating scientific discovery."
+    image: rediscovering_gravity.png
+    date: 2022-02-04
+    link: https://arxiv.org/abs/2202.02306
