@@ -76,7 +76,7 @@ with open(output_file, "w") as f:
 
         <!-- Image column: -->
         <div class="image_column">\n
-        ![](images/{image_file})\n\n
+        [![](images/{image_file})]({link})\n\n
         </div>
 
 
