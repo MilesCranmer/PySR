@@ -12,6 +12,7 @@ papers:
     link: https://papers.ssrn.com/abstract=4053795
     abstract: Machine learning (ML) is becoming more and more important throughout the mathematical and theoretical sciences. In this work we apply modern ML methods to gravity models of pairwise interactions in international economics. We explain the formulation of graphical neural networks (GNNs), models for graph-structured data that respect the properties of exchangeability and locality. GNNs are a natural and theoretically appealing class of models for international trade, which we demonstrate empirically by fitting them to a large panel of annual-frequency country-level data. We then use a symbolic regression algorithm to turn our fits into interpretable models with performance comparable to state of the art hand-crafted models motivated by economic theory. The resulting symbolic models contain objects resembling market access functions, which were developed in modern structural literature, but in our analysis arise ab initio without being explicitly postulated. Along the way, we also produce several model-consistent and model-agnostic ML-based measures of bilateral trade accessibility.
     image: economic_theory_gravity.png
+    date: 2022-03-15
 
 # Corresponding example papers.md:
 
@@ -32,7 +33,6 @@ Sergiy Verstyuk<sup>1</sup>, Michael R. Douglas.<sup>1</sup><br><sup>1</sup>Harv
 """
 
 import yaml
-# Import dedent:
 from textwrap import dedent
 
 data_file = "papers.yml"
@@ -49,6 +49,10 @@ with open(papers_header, "r") as stream:
 
 with open(output_file, "w") as f:
     f.write(header)
+
+    # First, we sort the papers by date.
+    # This is in the format of "2022-03-15"
+    papers = sorted(papers, key=lambda paper: paper["date"], reverse=True)
 
     for paper in papers:
         title = paper["title"]
