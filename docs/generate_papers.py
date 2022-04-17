@@ -66,22 +66,20 @@ with open(output_file, "w") as f:
         paper_snippet = f"""
         <div class="row">
 
-        <!-- Image column: -->
-        <div class="image_column">
-
-        ![](images/{image_file})\n\n
-
-        </div>
 
         <!-- Text column: -->
         <div class="text_column"><div class="center">
-
-        <a href="{link}">{title}</a><br>{authors}<br>{affiliations}<br>
-
-        **Abstract:** {abstract}
-
+        <a href="{link}">{title}</a><br>{authors}<br><small>{affiliations}</small><br>\n\n
+        **Abstract:** {abstract}\n\n
         </div></div>
         
+
+        <!-- Image column: -->
+        <div class="image_column">\n
+        ![](images/{image_file})\n\n
+        </div>
+
+
         </div>"""
         clean_paper_snippet = dedent(paper_snippet)
         f.write(clean_paper_snippet)
