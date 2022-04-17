@@ -25,14 +25,14 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: 3.9
-      - name: "Install pydoc-markdown"
-        run: pip install pydoc-markdown==4.5.0
       - name: "Set up npm"
         uses: actions/setup-node@v2
         with:
           node-version: '14'
-      - name: "Install docsify"
-        run: npm install -g docsify
+      - name: "Install packages for docs building"
+        run: |
+          npm install -g docsify
+          pip install pydoc-markdown==4.5.0 pyyaml
       - name: "Build API docs"
         run: |
           cat README.md | grep -v 'pysr_logo.svg' > docs/README.md
