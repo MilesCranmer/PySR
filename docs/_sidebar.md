@@ -5,6 +5,6 @@
   - [More Options](options.md)
   - [Operators](operators.md)
 
-- API Reference
+- [API Reference](api.md)
 
   - [PySRRegressor](api.md)
