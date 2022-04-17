@@ -1,0 +1,69 @@
+"""Read papers.yml and generate papers.md"""
+
+# Here is an example papers.yml:
+"""
+papers:
+  - title: Machine Learning the Gravity Equation for International Trade
+    authors:
+      - Sergiy Verstyuk (1)
+      - Michael R. Douglas (1)
+    affiliations:
+      1: Harvard University
+    link: https://papers.ssrn.com/abstract=4053795
+    abstract: Machine learning (ML) is becoming more and more important throughout the mathematical and theoretical sciences. In this work we apply modern ML methods to gravity models of pairwise interactions in international economics. We explain the formulation of graphical neural networks (GNNs), models for graph-structured data that respect the properties of exchangeability and locality. GNNs are a natural and theoretically appealing class of models for international trade, which we demonstrate empirically by fitting them to a large panel of annual-frequency country-level data. We then use a symbolic regression algorithm to turn our fits into interpretable models with performance comparable to state of the art hand-crafted models motivated by economic theory. The resulting symbolic models contain objects resembling market access functions, which were developed in modern structural literature, but in our analysis arise ab initio without being explicitly postulated. Along the way, we also produce several model-consistent and model-agnostic ML-based measures of bilateral trade accessibility.
+    image: economic_theory_gravity.png
+"""
+
+# Corresponding example papers.md:
+"""
+<div class="row"><div class="image_column">
+
+![](images/economic_theory_gravity.png)
+
+</div><div class="text_column"><div class="center">
+
+[Machine Learning the Gravity Equation for International Trade](https://papers.ssrn.com/abstract=4053795)<br>
+Sergiy Verstyuk<sup>1</sup>, Michael R. Douglas.<sup>1</sup><br><sup>1</sup>Harvard University
+
+</div>
+
+**Abstract:** Machine learning (ML) is becoming more and more important throughout the mathematical and theoretical sciences. In this work we apply modern ML methods to gravity models of pairwise interactions in international economics. We explain the formulation of graphical neural networks (GNNs), models for graph-structured data that respect the properties of exchangeability and locality. GNNs are a natural and theoretically appealing class of models for international trade, which we demonstrate empirically by fitting them to a large panel of annual-frequency country-level data. We then use a symbolic regression algorithm to turn our fits into interpretable models with performance comparable to state of the art hand-crafted models motivated by economic theory. The resulting symbolic models contain objects resembling market access functions, which were developed in modern structural literature, but in our analysis arise ab initio without being explicitly postulated. Along the way, we also produce several model-consistent and model-agnostic ML-based measures of bilateral trade accessibility.
+
+</div></div>
+"""
+
+import yaml
+
+data_file = "papers.yml"
+papers_header = "papers_header.md"
+output_file = "papers.md"
+
+# Load YAML file:
+with open(data_file, "r") as stream:
+    papers = yaml.load(stream, Loader=yaml.SafeLoader)["papers"]
+
+# Load header:
+with open(papers_header, "r") as stream:
+    header = stream.read()
+
+with open(output_file, "w") as f:
+    f.write(header)
+
+    for paper in papers:
+        title = paper["title"]
+        authors = (
+            ", ".join(paper["authors"]).replace("(", "<sup>").replace(")", "</sup>")
+        )
+        affiliations = ", ".join(
+            f"<sup>{num}</sup>{affil}" for num, affil in paper["affiliations"].items()
+        )
+        link = paper["link"]
+        abstract = paper["abstract"]
+        image_file = paper["image"]
+
+        f.write("""<div class="row"><div class="image_column">\n\n""")
+        f.write(f"""![](images/{image_file})\n\n""")
+        f.write("""</div><div class="text_column"><div class="center">\n\n""")
+        f.write(f"""<a href="{link}">{title}</a><br>{authors}<br>{affiliations}<br>\n\n""")
+        f.write(f"""**Abstract:** {abstract}\n\n""")
+        f.write("""</div></div></div>\n\n""")
