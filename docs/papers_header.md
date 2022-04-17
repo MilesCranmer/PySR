@@ -16,7 +16,7 @@ please submit a pull request to add your paper to [this file](https://github.com
   clear: both;
 }
 .image_column {
-  flex: 25%;
+  flex: 50%;
   float: left;
   padding: 10px;
   display: flex;
@@ -25,7 +25,7 @@ please submit a pull request to add your paper to [this file](https://github.com
   text-align: center;
 }
 .text_column {
-  flex: 65%;
+  flex: 50%;
   padding: 10px;
 }
 .center {

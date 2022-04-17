@@ -1,7 +1,7 @@
-"""Read papers.yml and generate papers.md"""
+"""Read papers.yml and generate papers.md
 
 # Here is an example papers.yml:
-"""
+
 papers:
   - title: Machine Learning the Gravity Equation for International Trade
     authors:
@@ -12,10 +12,9 @@ papers:
     link: https://papers.ssrn.com/abstract=4053795
     abstract: Machine learning (ML) is becoming more and more important throughout the mathematical and theoretical sciences. In this work we apply modern ML methods to gravity models of pairwise interactions in international economics. We explain the formulation of graphical neural networks (GNNs), models for graph-structured data that respect the properties of exchangeability and locality. GNNs are a natural and theoretically appealing class of models for international trade, which we demonstrate empirically by fitting them to a large panel of annual-frequency country-level data. We then use a symbolic regression algorithm to turn our fits into interpretable models with performance comparable to state of the art hand-crafted models motivated by economic theory. The resulting symbolic models contain objects resembling market access functions, which were developed in modern structural literature, but in our analysis arise ab initio without being explicitly postulated. Along the way, we also produce several model-consistent and model-agnostic ML-based measures of bilateral trade accessibility.
     image: economic_theory_gravity.png
-"""
 
 # Corresponding example papers.md:
-"""
+
 <div class="row"><div class="image_column">
 
 ![](images/economic_theory_gravity.png)
@@ -33,6 +32,8 @@ Sergiy Verstyuk<sup>1</sup>, Michael R. Douglas.<sup>1</sup><br><sup>1</sup>Harv
 """
 
 import yaml
+# Import dedent:
+from textwrap import dedent
 
 data_file = "papers.yml"
 papers_header = "papers_header.md"
@@ -61,9 +62,26 @@ with open(output_file, "w") as f:
         abstract = paper["abstract"]
         image_file = paper["image"]
 
-        f.write("""<div class="row"><div class="image_column">\n\n""")
-        f.write(f"""![](images/{image_file})\n\n""")
-        f.write("""</div><div class="text_column"><div class="center">\n\n""")
-        f.write(f"""<a href="{link}">{title}</a><br>{authors}<br>{affiliations}<br>\n\n""")
-        f.write(f"""**Abstract:** {abstract}\n\n""")
-        f.write("""</div></div></div>\n\n""")
+        # Begin:
+        paper_snippet = f"""
+        <div class="row">
+
+        <!-- Image column: -->
+        <div class="image_column">
+
+        ![](images/{image_file})\n\n
+
+        </div>
+
+        <!-- Text column: -->
+        <div class="text_column"><div class="center">
+
+        <a href="{link}">{title}</a><br>{authors}<br>{affiliations}<br>
+
+        **Abstract:** {abstract}
+
+        </div></div>
+        
+        </div>"""
+        clean_paper_snippet = dedent(paper_snippet)
+        f.write(clean_paper_snippet)
