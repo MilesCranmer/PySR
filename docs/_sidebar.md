@@ -7,4 +7,4 @@
 
 - [API Reference](api.md)
 
-  - [PySRRegressor](api.md)
+- [Research Showcase](papers.md)
