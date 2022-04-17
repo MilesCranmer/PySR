@@ -26,10 +26,63 @@ papers:
     abstract: While neural networks offer an attractive way to numerically encode functions, actual formulas remain the language of theoretical particle physics. We show how symbolic regression trained on matrix-element information provides, for instance, optimal LHC observables in an easily interpretable form. We introduce the method using the effect of a dimension-6 coefficient on associated ZH production. We then validate it for the known case of CP-violation in weak-boson-fusion Higgs production, including detector effects.
     image: back_to_formula.png
     date: 2021-09-21
+  - title: Disentangling a deep learned volume formula
+    authors:
+      - Jessica Craven (1)
+      - Vishnu Jejjala (1)
+      - Arjun Kar (2)
+    affiliations:
+      1: University of the Witwatersrand
+      2: University of British Columbia
+    link: https://link.springer.com/article/10.1007/JHEP06(2021)040
+    abstract: We present a simple phenomenological formula which approximates the hyperbolic volume of a knot using only a single evaluation of its Jones polynomial at a root of unity. The average error is just 2.86% on the first 1.7 million knots, which represents a large improvement over previous formulas of this kind. To find the approximation formula, we use layer-wise relevance propagation to reverse engineer a black box neural network which achieves a similar average error for the same approximation task when trained on 10% of the total dataset. The particular roots of unity which appear in our analysis cannot be written as e2πi/(k+2) with integer k; therefore, the relevant Jones polynomial evaluations are not given by unknot-normalized expectation values of Wilson loop operators in conventional SU(2) Chern-Simons theory with level k. Instead, they correspond to an analytic continuation of such expectation values to fractional level. We briefly review the continuation procedure and comment on the presence of certain Lefschetz thimbles, to which our approximation formula is sensitive, in the analytically continued Chern-Simons integration cycle.
+    image: hyperbolic_volume.png
+    date: 2021-06-07
+
+# Modeling the galaxy-halo connection with machine learning
+# Ana Maria Delgado, 1
+# Digvijay Wadekar, 2 3
+# Boryana Hadzhiyska,1
+# Sownak Bose,1 7
+# Lars Hernquist,1
+# Shirley Ho 2 4 5 6
+# 1Center for Astrophysics | Harvard & Smithsonian, 60 Garden Street, Cambridge, MA 02138, USA
+# 2Center for Cosmology and Particle Physics, Department of Physics, New York University, New York, NY 10003, USA
+# 3School of Natural Sciences, Institute for Advanced Study, Princeton, NJ 08540, USA
+# 4Center for Computational Astrophysics, Flatiron Institute, 162 5th Ave, New York, NY 10010, USA
+# 5Department of Astrophysical Sciences, Princeton University, Peyton Hall, Princeton NJ 08544-0010, USA
+# 6Department of Physics, Carnegie Mellon University, Pittsburgh, PA 15217, USA
+# 7Institute for Computational Cosmology, Department of Physics, Durham University, Durham DH1 3LE, UK
+# https://arxiv.org/abs/2111.02422v1
+# To extract information from the clustering of galaxies on non-linear scales, we need to model the connection between galaxies and halos accurately and in a flexible manner. Standard halo occupation distribution (HOD) models make the assumption that the galaxy occupation in a halo is a function of only its mass, however, in reality, the occupation can depend on various other parameters including halo concentration, assembly history, environment, spin, etc. Using the IllustrisTNG hydrodynamic simulation as our target, we show that machine learning tools can be used to capture this high-dimensional dependence and provide more accurate galaxy occupation models. Specifically, we use a random forest regressor to identify which secondary halo parameters best model the galaxy-halo connection and symbolic regression to augment the standard HOD model with simple equations capturing the dependence on those parameters, namely the local environmental overdensity and shear, at the location of a halo. This not only provides insights into the galaxy-formation relationship but, more importantly, improves the clustering statistics of the modeled galaxies significantly. Our approach demonstrates that machine learning tools can help us better understand and model the galaxy-halo connection, and are therefore useful for galaxy formation and cosmology studies from upcoming galaxy surveys.
+# hod_importances.png
+# 3 Nov 2021
+  - title: Modeling the galaxy-halo connection with machine learning
+    authors:
+      - Ana Maria Delgado (1)
+      - Digvijay Wadekar (2,3)
+      - Boryana Hadzhiyska (1)
+      - Sownak Bose (1,7)
+      - Lars Hernquist (1)
+      - Shirley Ho (2,4,5,6)
+    affiliations:
+      1: Center for Astrophysics | Harvard & Smithsonian
+      2: New York University
+      3: Institute for Advanced Study
+      4: Flatiron Institute
+      5: Princeton University
+      6: Carnegie Mellon University
+      7: Durham University
+    link: https://arxiv.org/abs/2111.02422v1
+    abstract: To extract information from the clustering of galaxies on non-linear scales, we need to model the connection between galaxies and halos accurately and in a flexible manner. Standard halo occupation distribution (HOD) models make the assumption that the galaxy occupation in a halo is a function of only its mass, however, in reality, the occupation can depend on various other parameters including halo concentration, assembly history, environment, spin, etc. Using the IllustrisTNG hydrodynamic simulation as our target, we show that machine learning tools can be used to capture this high-dimensional dependence and provide more accurate galaxy occupation models. Specifically, we use a random forest regressor to identify which secondary halo parameters best model the galaxy-halo connection and symbolic regression to augment the standard HOD model with simple equations capturing the dependence on those parameters, namely the local environmental overdensity and shear, at the location of a halo. This not only provides insights into the galaxy-formation relationship but, more importantly, improves the clustering statistics of the modeled galaxies significantly. Our approach demonstrates that machine learning tools can help us better understand and model the galaxy-halo connection, and are therefore useful for galaxy formation and cosmology studies from upcoming galaxy surveys.
+    image: hod_importances.png
+    date: 2021-11-03
+
+
+
+
+
 
 # To add:
-# https://arxiv.org/abs/2109.10414v2 - particle physics paper, where they use PySR to discover new analytic formulae from one of the inference pipelines built for analyzing LHC (Large Hadron Collider) data.
-# https://doi.org/10.1007/JHEP06(2021)040 - high-energy physics paper, where they discover a formula for the "hyperbolic volume" of a "knot". This is a really interesting paper, although I note I'm not versed in high-energy physics so am unable to explain the specific problem.
-# https://arxiv.org/abs/2111.02422v1 - astrophysics paper, where they discover a better way for predicting galaxy properties using properties of the surrounding dark matter halo using PySR.
 # https://arxiv.org/abs/2109.04484v1 - astrophysics paper, where they use PySR to discover a more accurate model for the properties of dark matter subhalos in an interpretable way.
 # https://arxiv.org/abs/2012.00111 - astrophysics paper, where they use PySR to model assembly bias, and recover a new interpretable model for doing so.
