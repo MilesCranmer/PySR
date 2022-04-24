@@ -20,6 +20,7 @@ class TestPipeline(unittest.TestCase):
             inspect.signature(PySRRegressor.__init__).parameters["populations"].default
         )
         self.default_test_kwargs = dict(
+            model_selection="accuracy",
             niterations=default_niterations * 2,
             populations=default_populations * 2,
         )
@@ -30,7 +31,6 @@ class TestPipeline(unittest.TestCase):
         y = self.X[:, 0]
         model = PySRRegressor(**self.default_test_kwargs)
         model.fit(self.X, y)
-        model.set_params(model_selection="accuracy")
         print(model.equations)
         self.assertLessEqual(model.get_best()["loss"], 1e-4)
 
@@ -103,7 +103,6 @@ class TestPipeline(unittest.TestCase):
         X = np.random.randn(100, 1)
         y = X[:, 0] + 3.0
         regressor = PySRRegressor(
-            model_selection="accuracy",
             unary_operators=[],
             binary_operators=["plus"],
             **self.default_test_kwargs,
@@ -128,9 +127,6 @@ class TestPipeline(unittest.TestCase):
         self.assertEqual(regressor.get_params()["model_selection"], "best")
         self.assertTrue("None" not in regressor.__repr__())
         self.assertTrue(">>>>" in regressor.__repr__())
-
-        # "best" model_selection should also give a decent loss:
-        np.testing.assert_almost_equal(regressor.predict(X), y, decimal=1)
 
     def test_noisy(self):
 
@@ -217,6 +213,7 @@ class TestBest(unittest.TestCase):
             variable_names="x0 x1".split(" "),
             extra_sympy_mappings={},
             output_jax_format=False,
+            model_selection="accuracy",
         )
         self.model.n_features = 2
         self.model.refresh()
