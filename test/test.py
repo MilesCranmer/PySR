@@ -143,6 +143,8 @@ class TestPipeline(unittest.TestCase):
         y = true_fn(X)
         noise = np.random.randn(500) * 0.01
         y = y + noise
+        # We also test y as a pandas array:
+        y = pd.Series(y)
         # Resampled array is a different order of features:
         Xresampled = pd.DataFrame(
             {
