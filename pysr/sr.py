@@ -781,7 +781,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
 
     def get_best(self, row=None):
         """Get best equation using `model_selection`.
-        
+
         :param row: Optional. If you wish to select a particular equation
             from `self.equations`, give the row number here. This overrides
             the `model_selection` parameter.
@@ -860,7 +860,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
 
     def sympy(self, row=None):
         """Return sympy representation of the equation(s) chosen by `model_selection`.
-        
+
         :param row: Optional. If you wish to select a particular equation
             from `self.equations`, give the row number here. This overrides
             the `model_selection` parameter.
@@ -875,7 +875,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
 
     def latex(self, row=None):
         """Return latex representation of the equation(s) chosen by `model_selection`.
-        
+
         :param row: Optional. If you wish to select a particular equation
             from `self.equations`, give the row number here. This overrides
             the `model_selection` parameter.
@@ -925,7 +925,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         any other PyTorch module: `module(X)`, where `X` is a tensor with the same
         column ordering as trained with.
 
-        
+
         :param row: Optional. If you wish to select a particular equation
             from `self.equations`, give the row number here. This overrides
             the `model_selection` parameter.
