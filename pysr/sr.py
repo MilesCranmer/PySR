@@ -434,7 +434,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         equations, but you should adjust `niterations`,
         `binary_operators`, `unary_operators` to your requirements.
         You can view more detailed explanations of the options on the
-        [options page](https://pysr.readthedocs.io/en/latest/docs/options/) of the documentation.
+        [options page](https://astroautomata.com/PySR/#/options) of the documentation.
 
         :param model_selection: How to select a model. Can be 'accuracy' or 'best'. The default, 'best', will optimize a combination of complexity and accuracy.
         :type model_selection: str
@@ -1038,7 +1038,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
 
         if len(X) > 10000 and not batching:
             warnings.warn(
-                "Note: you are running with more than 10,000 datapoints. You should consider turning on batching (https://pysr.readthedocs.io/en/latest/docs/options/#batching). You should also reconsider if you need that many datapoints. Unless you have a large amount of noise (in which case you should smooth your dataset first), generally < 10,000 datapoints is enough to find a functional form with symbolic regression. More datapoints will lower the search speed."
+                "Note: you are running with more than 10,000 datapoints. You should consider turning on batching (https://astroautomata.com/PySR/#/options?id=batching). You should also reconsider if you need that many datapoints. Unless you have a large amount of noise (in which case you should smooth your dataset first), generally < 10,000 datapoints is enough to find a functional form with symbolic regression. More datapoints will lower the search speed."
             )
 
         X, selection = _handle_feature_selection(
