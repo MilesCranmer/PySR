@@ -52,6 +52,15 @@ class TestPipeline(unittest.TestCase):
         self.assertLessEqual(equations[0].iloc[-1]["loss"], 1e-4)
         self.assertLessEqual(equations[1].iloc[-1]["loss"], 1e-4)
 
+        test_y1 = model.predict(self.X)
+        test_y2 = model.predict(self.X, index=[-1, -1])
+
+        mse1 = np.average((test_y1 - y) ** 2)
+        mse2 = np.average((test_y2 - y) ** 2)
+
+        self.assertLessEqual(mse1, 1e-4)
+        self.assertLessEqual(mse2, 1e-4)
+
     def test_multioutput_weighted_with_callable_temp_equation(self):
         y = self.X[:, [0, 1]] ** 2
         w = np.random.rand(*y.shape)
