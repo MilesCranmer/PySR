@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import sympy
 from sympy import sympify, lambdify
-import subprocess
+import re
 import tempfile
 import shutil
 from pathlib import Path
@@ -155,12 +155,16 @@ def _create_inline_operators(binary_operators, unary_operators):
             if is_user_defined_operator:
                 Main.eval(op)
                 # Cut off from the first non-alphanumeric char:
-                first_non_char = [
-                    j
-                    for j, char in enumerate(op)
-                    if not (char.isalpha() or char.isdigit())
-                ][0]
+                first_non_char = [j for j, char in enumerate(op) if char == "("][0]
                 function_name = op[:first_non_char]
+                # Assert that function_name only contains
+                # alphabetical characters, numbers,
+                # and underscores:
+                if not re.match(r"^[a-zA-Z0-9_]+$", function_name):
+                    raise ValueError(
+                        f"Invalid function name {function_name}. "
+                        "Only alphanumeric characters, numbers, and underscores are allowed."
+                    )
                 op_list[i] = function_name
 
 

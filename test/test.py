@@ -49,7 +49,7 @@ class TestPipeline(unittest.TestCase):
         model.fit(self.X, y)
         equations = model.equations
         print(equations)
-        self.assertIn("square_op", equations.sympy())
+        self.assertIn("square_op", model.equations[0].iloc[-1]["equation"])
         self.assertLessEqual(equations[0].iloc[-1]["loss"], 1e-4)
         self.assertLessEqual(equations[1].iloc[-1]["loss"], 1e-4)
 
