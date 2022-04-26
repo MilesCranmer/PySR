@@ -271,12 +271,13 @@ class CallableEquation:
         return f"PySRFunction(X=>{self._sympy})"
 
     def __call__(self, X):
+        expected_shape = (X.shape[0],)
         if isinstance(X, pd.DataFrame):
             # Lambda function takes as argument:
-            return self._lambda(**{k: X[k].values for k in X.columns})
+            return self._lambda(**{k: X[k].values for k in X.columns}) * np.ones(expected_shape)
         elif self._selection is not None:
-            return self._lambda(*X[:, self._selection].T)
-        return self._lambda(*X.T)
+            return self._lambda(*X[:, self._selection].T) * np.ones(expected_shape)
+        return self._lambda(*X.T) * np.ones(expected_shape)
 
 
 def _get_julia_project(julia_project):
