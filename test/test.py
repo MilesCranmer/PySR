@@ -212,7 +212,7 @@ class TestBest(unittest.TestCase):
 
     def test_best(self):
         self.assertEqual(self.model.sympy(), sympy.cos(sympy.Symbol("x0")) ** 2)
-    
+
     def test_index_selection(self):
         self.assertEqual(self.model.sympy(-1), sympy.cos(sympy.Symbol("x0")) ** 2)
         self.assertEqual(self.model.sympy(2), sympy.cos(sympy.Symbol("x0")) ** 2)
