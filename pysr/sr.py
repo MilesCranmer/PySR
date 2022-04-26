@@ -795,7 +795,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         if index is not None:
             if isinstance(self.equations, list):
                 assert isinstance(index, list)
-                return [self.equations.iloc[i] for i in index]
+                return [eq.iloc[i] for eq, i in zip(self.equations, index)]
             return self.equations.iloc[index]
 
         if self.model_selection == "accuracy":
