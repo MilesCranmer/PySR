@@ -793,6 +793,9 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             raise ValueError("No equations have been generated yet.")
 
         if index is not None:
+            if isinstance(self.equations, list):
+                assert isinstance(index, list)
+                return [self.equations.iloc[i] for i in index]
             return self.equations.iloc[index]
 
         if self.model_selection == "accuracy":
@@ -846,7 +849,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
 
         :param X: 2D array. Rows are examples, columns are features. If pandas DataFrame, the columns are used for variable names (so make sure they don't contain spaces).
         :type X: np.ndarray/pandas.DataFrame
-        :param index: Optional. If you want to predict an expression using a particular row of
+        :param index: Optional. If you want to compute the output of
+            an expression using a particular row of
             `self.equations`, you may specify the index here.
         :type index: int
         :returns: 1D array (rows are examples) or 2D array (rows are examples, columns are outputs).
