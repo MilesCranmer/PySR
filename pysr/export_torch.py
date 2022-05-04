@@ -77,6 +77,9 @@ def _initialize_torch():
             sympy.Max: torch.max,
             sympy.Min: torch.min,
             sympy.Mod: torch.remainder,
+            sympy.Heaviside: torch.heaviside,
+            sympy.core.numbers.Half: (lambda: 0.5),
+            sympy.core.numbers.One: (lambda: 1.0),
         }
 
         class _Node(torch.nn.Module):

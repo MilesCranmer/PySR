@@ -48,6 +48,9 @@ _jnp_func_lookup = {
     sympy.Max: "jnp.max",
     sympy.Min: "jnp.min",
     sympy.Mod: "jnp.mod",
+    sympy.Heaviside: "jnp.heaviside",
+    sympy.core.numbers.Half: "(lambda: 0.5)",
+    sympy.core.numbers.One: "(lambda: 1.0)",
 }
 
 
