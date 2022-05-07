@@ -595,7 +595,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
 
                 updated_name = deprecated_kwargs[k]
                 warnings.warn(
-                    f"{k} has been renamed to {updated_name} in PySRRegressor.",
+                    f"{k} has been renamed to {updated_name} in PySRRegressor."
                     f" Please use that instead.",
                 )
         self.model_selection = model_selection
