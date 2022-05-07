@@ -72,7 +72,8 @@ class TestPipeline(unittest.TestCase):
         self.assertGreater(bad_mse, 1e-4)
 
     def test_multioutput_weighted_with_callable_temp_equation(self):
-        y = self.X[:, [0, 1]] ** 2
+        X = self.X.copy()
+        y = X[:, [0, 1]] ** 2
         w = self.rstate.rand(*y.shape)
         w[w < 0.5] = 0.0
         w[w >= 0.5] = 1.0
@@ -90,13 +91,13 @@ class TestPipeline(unittest.TestCase):
             temp_equation_file=True,
             delete_tempfiles=False,
         )
-        model.fit(self.X, y, weights=w)
+        model.fit(X.copy(), y, weights=w)
 
         np.testing.assert_almost_equal(
-            model.predict(self.X)[:, 0], self.X[:, 0] ** 2, decimal=4
+            model.predict(X.copy())[:, 0], X[:, 0] ** 2, decimal=4
         )
         np.testing.assert_almost_equal(
-            model.predict(self.X)[:, 1], self.X[:, 1] ** 2, decimal=4
+            model.predict(X.copy())[:, 1], X[:, 1] ** 2, decimal=4
         )
 
     def test_empty_operators_single_input_multirun(self):
