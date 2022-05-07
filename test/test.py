@@ -24,8 +24,8 @@ class TestPipeline(unittest.TestCase):
             niterations=default_niterations * 2,
             populations=default_populations * 2,
         )
-        np.random.seed(0)
-        self.X = np.random.randn(100, 5)
+        self.rstate = np.random.RandomState(0)
+        self.X = self.rstate.randn(100, 5)
 
     def test_linear_relation(self):
         y = self.X[:, 0]
@@ -73,7 +73,7 @@ class TestPipeline(unittest.TestCase):
 
     def test_multioutput_weighted_with_callable_temp_equation(self):
         y = self.X[:, [0, 1]] ** 2
-        w = np.random.rand(*y.shape)
+        w = self.rstate.rand(*y.shape)
         w[w < 0.5] = 0.0
         w[w >= 0.5] = 1.0
 
@@ -100,7 +100,7 @@ class TestPipeline(unittest.TestCase):
         )
 
     def test_empty_operators_single_input_multirun(self):
-        X = np.random.randn(100, 1)
+        X = self.rstate.randn(100, 1)
         y = X[:, 0] + 3.0
         regressor = PySRRegressor(
             unary_operators=[],
@@ -130,8 +130,7 @@ class TestPipeline(unittest.TestCase):
 
     def test_noisy(self):
 
-        np.random.seed(1)
-        y = self.X[:, [0, 1]] ** 2 + np.random.randn(self.X.shape[0], 1) * 0.05
+        y = self.X[:, [0, 1]] ** 2 + self.rstate.randn(self.X.shape[0], 1) * 0.05
         model = PySRRegressor(
             # Test that passing a single operator works:
             unary_operators="sq(x) = x^2",
@@ -146,26 +145,25 @@ class TestPipeline(unittest.TestCase):
         self.assertLessEqual(model.get_best()[1]["loss"], 1e-2)
 
     def test_pandas_resample(self):
-        np.random.seed(1)
         X = pd.DataFrame(
             {
-                "T": np.random.randn(500),
-                "x": np.random.randn(500),
-                "unused_feature": np.random.randn(500),
+                "T": self.rstate.randn(500),
+                "x": self.rstate.randn(500),
+                "unused_feature": self.rstate.randn(500),
             }
         )
         true_fn = lambda x: np.array(x["T"] + x["x"] ** 2 + 1.323837)
         y = true_fn(X)
-        noise = np.random.randn(500) * 0.01
+        noise = self.rstate.randn(500) * 0.01
         y = y + noise
         # We also test y as a pandas array:
         y = pd.Series(y)
         # Resampled array is a different order of features:
         Xresampled = pd.DataFrame(
             {
-                "unused_feature": np.random.randn(100),
-                "x": np.random.randn(100),
-                "T": np.random.randn(100),
+                "unused_feature": self.rstate.randn(100),
+                "x": self.rstate.randn(100),
+                "T": self.rstate.randn(100),
             }
         )
         model = PySRRegressor(
@@ -185,9 +183,9 @@ class TestPipeline(unittest.TestCase):
         self.assertListEqual(list(sorted(fn._selection)), [0, 1])
         X2 = pd.DataFrame(
             {
-                "T": np.random.randn(100),
-                "unused_feature": np.random.randn(100),
-                "x": np.random.randn(100),
+                "T": self.rstate.randn(100),
+                "unused_feature": self.rstate.randn(100),
+                "x": self.rstate.randn(100),
             }
         )
         self.assertLess(np.average((fn(X2) - true_fn(X2)) ** 2), 1e-1)
@@ -218,6 +216,7 @@ class TestBest(unittest.TestCase):
         self.model.n_features = 2
         self.model.refresh()
         self.equations = self.model.equations
+        self.rstate = np.random.RandomState(0)
 
     def test_best(self):
         self.assertEqual(self.model.sympy(), sympy.cos(sympy.Symbol("x0")) ** 2)
@@ -232,7 +231,7 @@ class TestBest(unittest.TestCase):
         self.assertEqual(self.model.latex(), "\\cos^{2}{\\left(x_{0} \\right)}")
 
     def test_best_lambda(self):
-        X = np.random.randn(10, 2)
+        X = self.rstate.randn(10, 2)
         y = np.cos(X[:, 0]) ** 2
         for f in [self.model.predict, self.equations.iloc[-1]["lambda_format"]]:
             np.testing.assert_almost_equal(f(X), y, decimal=4)
@@ -240,16 +239,16 @@ class TestBest(unittest.TestCase):
 
 class TestFeatureSelection(unittest.TestCase):
     def setUp(self):
-        np.random.seed(0)
+        self.rstate = np.random.RandomState(0)
 
     def test_feature_selection(self):
-        X = np.random.randn(20000, 5)
+        X = self.rstate.randn(20000, 5)
         y = X[:, 2] ** 2 + X[:, 3] ** 2
         selected = run_feature_selection(X, y, select_k_features=2)
         self.assertEqual(sorted(selected), [2, 3])
 
     def test_feature_selection_handler(self):
-        X = np.random.randn(20000, 5)
+        X = self.rstate.randn(20000, 5)
         y = X[:, 2] ** 2 + X[:, 3] ** 2
         var_names = [f"x{i}" for i in range(5)]
         selected_X, selection = _handle_feature_selection(
