@@ -710,7 +710,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         The string `>>>>` denotes which equation is selected by the
         `model_selection`.
         """
-        if self.equations is None:
+        if not hasattr(self, "equations") or self.equations is None:
             return "PySRRegressor.equations = None"
 
         output = "PySRRegressor.equations = [\n"
