@@ -111,7 +111,7 @@ sympy_mappings = {
 }
 
 
-def pysr(X, y, weights=None, **kwargs):
+def pysr(X, y, weights=None, **kwargs):  # pragma: no cover
     warnings.warn(
         "Calling `pysr` is deprecated. Please use `model = PySRRegressor(**params); model.fit(X, y)` going forward.",
         DeprecationWarning,
@@ -221,25 +221,25 @@ def _escape_filename(filename):
     return str_repr
 
 
-def best(*args, **kwargs):
+def best(*args, **kwargs):  # pragma: no cover
     raise NotImplementedError(
         "`best` has been deprecated. Please use the `PySRRegressor` interface. After fitting, you can return `.sympy()` to get the sympy representation of the best equation."
     )
 
 
-def best_row(*args, **kwargs):
+def best_row(*args, **kwargs):  # pragma: no cover
     raise NotImplementedError(
         "`best_row` has been deprecated. Please use the `PySRRegressor` interface. After fitting, you can run `print(model)` to view the best equation, or `model.get_best()` to return the best equation's row in `model.equations`."
     )
 
 
-def best_tex(*args, **kwargs):
+def best_tex(*args, **kwargs):  # pragma: no cover
     raise NotImplementedError(
         "`best_tex` has been deprecated. Please use the `PySRRegressor` interface. After fitting, you can return `.latex()` to get the sympy representation of the best equation."
     )
 
 
-def best_callable(*args, **kwargs):
+def best_callable(*args, **kwargs):  # pragma: no cover
     raise NotImplementedError(
         "`best_callable` has been deprecated. Please use the `PySRRegressor` interface. After fitting, you can use `.predict(X)` to use the best callable."
     )
