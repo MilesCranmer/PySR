@@ -17,8 +17,6 @@ from hashlib import sha256
 
 from .version import __version__, __symbolic_regression_jl_version__
 
-is_julia_warning_silenced = False
-
 
 def install(julia_project=None, quiet=False):  # pragma: no cover
     """Install PyCall.jl and all required dependencies for SymbolicRegression.jl.
@@ -296,11 +294,6 @@ def _get_julia_project(julia_project):
     return julia_project, is_shared
 
 
-def silence_julia_warning():
-    global is_julia_warning_silenced
-    is_julia_warning_silenced = True
-
-
 def is_julia_version_greater_eq(Main, version="1.6"):
     """Check if Julia version is greater than specified version."""
     return Main.eval(f'VERSION >= v"{version}"')
@@ -308,7 +301,6 @@ def is_julia_version_greater_eq(Main, version="1.6"):
 
 def init_julia():
     """Initialize julia binary, turning off compiled modules if needed."""
-    global is_julia_warning_silenced
     from julia.core import JuliaInfo, UnsupportedPythonError
 
     try:
@@ -328,16 +320,7 @@ def init_julia():
 
         Main = _Main
     except UnsupportedPythonError:
-        if not is_julia_warning_silenced:
-            warnings.warn(
-                """
-Your Python version is statically linked to libpython. For example, this could be the python included with conda, or maybe your system's built-in python.
-This will still work, but the precompilation cache for Julia will be turned off, which may result in slower startup times on the initial pysr() call.
-
-To install a Python version that is dynamically linked to libpython, pyenv is recommended (https://github.com/pyenv/pyenv). With pyenv, you can run: `PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install 3.9.10` to install Python 3.9.10 with dynamic linking.
-
-To silence this warning, you can run pysr.silence_julia_warning() after importing pysr."""
-            )
+        # Static python binary, so we turn off pre-compiled modules.
         from julia.core import Julia
 
         jl = Julia(compiled_modules=False)
