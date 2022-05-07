@@ -28,7 +28,7 @@ jobs:
       matrix:
         julia-version: ['1.7.1']
         python-version: ['3.9']
-        os: [windows-latest]
+        os: [windows-2019]
     
     steps:
       - uses: actions/checkout@v1.0.0

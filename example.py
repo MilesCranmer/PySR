@@ -6,7 +6,7 @@ y = 2.5382 * np.cos(X[:, 3]) + X[:, 0] ** 2 - 0.5
 from pysr import PySRRegressor
 
 model = PySRRegressor(
-    niterations=5,
+    niterations=40,
     binary_operators=["+", "*"],
     unary_operators=[
         "cos",

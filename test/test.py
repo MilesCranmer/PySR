@@ -1,3 +1,4 @@
+import inspect
 import unittest
 from unittest.mock import patch
 import numpy as np
@@ -10,22 +11,26 @@ import pandas as pd
 
 class TestPipeline(unittest.TestCase):
     def setUp(self):
-        self.default_test_kwargs = dict(
-            niterations=10,
-            populations=100,
-            ncyclesperiteration=100,
-            npop=100,
-            annealing=True,
-            useFrequency=False,
+        # Using inspect,
+        # get default niterations from PySRRegressor, and double them:
+        default_niterations = (
+            inspect.signature(PySRRegressor.__init__).parameters["niterations"].default
         )
-        np.random.seed(0)
-        self.X = np.random.randn(100, 5)
+        default_populations = (
+            inspect.signature(PySRRegressor.__init__).parameters["populations"].default
+        )
+        self.default_test_kwargs = dict(
+            model_selection="accuracy",
+            niterations=default_niterations * 2,
+            populations=default_populations * 2,
+        )
+        self.rstate = np.random.RandomState(0)
+        self.X = self.rstate.randn(100, 5)
 
     def test_linear_relation(self):
         y = self.X[:, 0]
         model = PySRRegressor(**self.default_test_kwargs)
         model.fit(self.X, y)
-        model.set_params(model_selection="accuracy")
         print(model.equations)
         self.assertLessEqual(model.get_best()["loss"], 1e-4)
 
@@ -67,8 +72,9 @@ class TestPipeline(unittest.TestCase):
         self.assertGreater(bad_mse, 1e-4)
 
     def test_multioutput_weighted_with_callable_temp_equation(self):
-        y = self.X[:, [0, 1]] ** 2
-        w = np.random.rand(*y.shape)
+        X = self.X.copy()
+        y = X[:, [0, 1]] ** 2
+        w = self.rstate.rand(*y.shape)
         w[w < 0.5] = 0.0
         w[w >= 0.5] = 1.0
 
@@ -85,20 +91,19 @@ class TestPipeline(unittest.TestCase):
             temp_equation_file=True,
             delete_tempfiles=False,
         )
-        model.fit(self.X, y, weights=w)
+        model.fit(X.copy(), y, weights=w)
 
         np.testing.assert_almost_equal(
-            model.predict(self.X)[:, 0], self.X[:, 0] ** 2, decimal=4
+            model.predict(X.copy())[:, 0], X[:, 0] ** 2, decimal=4
         )
         np.testing.assert_almost_equal(
-            model.predict(self.X)[:, 1], self.X[:, 1] ** 2, decimal=4
+            model.predict(X.copy())[:, 1], X[:, 1] ** 2, decimal=4
         )
 
     def test_empty_operators_single_input_multirun(self):
-        X = np.random.randn(100, 1)
+        X = self.rstate.randn(100, 1)
         y = X[:, 0] + 3.0
         regressor = PySRRegressor(
-            model_selection="accuracy",
             unary_operators=[],
             binary_operators=["plus"],
             **self.default_test_kwargs,
@@ -124,13 +129,9 @@ class TestPipeline(unittest.TestCase):
         self.assertTrue("None" not in regressor.__repr__())
         self.assertTrue(">>>>" in regressor.__repr__())
 
-        # "best" model_selection should also give a decent loss:
-        np.testing.assert_almost_equal(regressor.predict(X), y, decimal=1)
-
     def test_noisy(self):
 
-        np.random.seed(1)
-        y = self.X[:, [0, 1]] ** 2 + np.random.randn(self.X.shape[0], 1) * 0.05
+        y = self.X[:, [0, 1]] ** 2 + self.rstate.randn(self.X.shape[0], 1) * 0.05
         model = PySRRegressor(
             # Test that passing a single operator works:
             unary_operators="sq(x) = x^2",
@@ -145,26 +146,25 @@ class TestPipeline(unittest.TestCase):
         self.assertLessEqual(model.get_best()[1]["loss"], 1e-2)
 
     def test_pandas_resample(self):
-        np.random.seed(1)
         X = pd.DataFrame(
             {
-                "T": np.random.randn(500),
-                "x": np.random.randn(500),
-                "unused_feature": np.random.randn(500),
+                "T": self.rstate.randn(500),
+                "x": self.rstate.randn(500),
+                "unused_feature": self.rstate.randn(500),
             }
         )
         true_fn = lambda x: np.array(x["T"] + x["x"] ** 2 + 1.323837)
         y = true_fn(X)
-        noise = np.random.randn(500) * 0.01
+        noise = self.rstate.randn(500) * 0.01
         y = y + noise
         # We also test y as a pandas array:
         y = pd.Series(y)
         # Resampled array is a different order of features:
         Xresampled = pd.DataFrame(
             {
-                "unused_feature": np.random.randn(100),
-                "x": np.random.randn(100),
-                "T": np.random.randn(100),
+                "unused_feature": self.rstate.randn(100),
+                "x": self.rstate.randn(100),
+                "T": self.rstate.randn(100),
             }
         )
         model = PySRRegressor(
@@ -184,9 +184,9 @@ class TestPipeline(unittest.TestCase):
         self.assertListEqual(list(sorted(fn._selection)), [0, 1])
         X2 = pd.DataFrame(
             {
-                "T": np.random.randn(100),
-                "unused_feature": np.random.randn(100),
-                "x": np.random.randn(100),
+                "T": self.rstate.randn(100),
+                "unused_feature": self.rstate.randn(100),
+                "x": self.rstate.randn(100),
             }
         )
         self.assertLess(np.average((fn(X2) - true_fn(X2)) ** 2), 1e-1)
@@ -212,10 +212,12 @@ class TestBest(unittest.TestCase):
             variable_names="x0 x1".split(" "),
             extra_sympy_mappings={},
             output_jax_format=False,
+            model_selection="accuracy",
         )
         self.model.n_features = 2
         self.model.refresh()
         self.equations = self.model.equations
+        self.rstate = np.random.RandomState(0)
 
     def test_best(self):
         self.assertEqual(self.model.sympy(), sympy.cos(sympy.Symbol("x0")) ** 2)
@@ -230,7 +232,7 @@ class TestBest(unittest.TestCase):
         self.assertEqual(self.model.latex(), "\\cos^{2}{\\left(x_{0} \\right)}")
 
     def test_best_lambda(self):
-        X = np.random.randn(10, 2)
+        X = self.rstate.randn(10, 2)
         y = np.cos(X[:, 0]) ** 2
         for f in [self.model.predict, self.equations.iloc[-1]["lambda_format"]]:
             np.testing.assert_almost_equal(f(X), y, decimal=4)
@@ -238,16 +240,16 @@ class TestBest(unittest.TestCase):
 
 class TestFeatureSelection(unittest.TestCase):
     def setUp(self):
-        np.random.seed(0)
+        self.rstate = np.random.RandomState(0)
 
     def test_feature_selection(self):
-        X = np.random.randn(20000, 5)
+        X = self.rstate.randn(20000, 5)
         y = X[:, 2] ** 2 + X[:, 3] ** 2
         selected = run_feature_selection(X, y, select_k_features=2)
         self.assertEqual(sorted(selected), [2, 3])
 
     def test_feature_selection_handler(self):
-        X = np.random.randn(20000, 5)
+        X = self.rstate.randn(20000, 5)
         y = X[:, 2] ** 2 + X[:, 3] ** 2
         var_names = [f"x{i}" for i in range(5)]
         selected_X, selection = _handle_feature_selection(
