@@ -271,7 +271,7 @@ class TestMiscellaneous(unittest.TestCase):
     def test_deprecation(self):
         # Ensure that deprecation works as expected, with a warning,
         # and sets the correct value.
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarns(UserWarning):
             model = PySRRegressor(fractionReplaced=0.2)
         # This is a deprecated parameter, so we should get a warning.
 
