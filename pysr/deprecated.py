@@ -1,5 +1,6 @@
 """Various functions to deprecate features."""
 
+
 def make_deprecated_kwargs_for_pysr_regressor():
     """Create dict of deprecated kwargs."""
 

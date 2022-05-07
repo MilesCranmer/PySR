@@ -62,7 +62,9 @@ space = dict(
         "crossover_probability", np.log(0.00001), np.log(0.2)
     ),
     #     perturbation_factor=1.0,
-    perturbation_factor=hp.loguniform("perturbation_factor", np.log(0.0001), np.log(100)),
+    perturbation_factor=hp.loguniform(
+        "perturbation_factor", np.log(0.0001), np.log(100)
+    ),
     #     maxsize=20,
     maxsize=hp.choice("maxsize", [30]),
     #     warmup_maxsize_by=0.0,

@@ -268,6 +268,7 @@ class TestFeatureSelection(unittest.TestCase):
 
 class TestMiscellaneous(unittest.TestCase):
     """Test miscellaneous functions."""
+
     def test_deprecation(self):
         # Ensure that deprecation works as expected, with a warning,
         # and sets the correct value.
