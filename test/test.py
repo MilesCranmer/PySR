@@ -264,3 +264,16 @@ class TestFeatureSelection(unittest.TestCase):
         np.testing.assert_array_equal(
             np.sort(selected_X, axis=1), np.sort(X[:, [2, 3]], axis=1)
         )
+
+
+class TestMiscellaneous(unittest.TestCase):
+    """Test miscellaneous functions."""
+    def test_deprecation(self):
+        # Ensure that deprecation works as expected, with a warning,
+        # and sets the correct value.
+        with self.assertWarns(DeprecationWarning):
+            model = PySRRegressor(fractionReplaced=0.2)
+        # This is a deprecated parameter, so we should get a warning.
+
+        # The correct value should be set:
+        self.assertEqual(model.params["fraction_replaced"], 0.2)
