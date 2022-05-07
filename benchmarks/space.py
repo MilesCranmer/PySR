@@ -25,50 +25,50 @@ space = dict(
     alpha=hp.loguniform("alpha", np.log(0.0001), np.log(1000)),
     #     annealing=False,
     annealing=hp.choice("annealing", [False, True]),
-    #     fractionReplaced=0.01,
-    fractionReplaced=hp.loguniform("fractionReplaced", np.log(0.0001), np.log(0.5)),
-    #     fractionReplacedHof=0.005,
-    fractionReplacedHof=hp.loguniform(
-        "fractionReplacedHof", np.log(0.0001), np.log(0.5)
+    #     fraction_replaced=0.01,
+    fraction_replaced=hp.loguniform("fraction_replaced", np.log(0.0001), np.log(0.5)),
+    #     fraction_replaced_hof=0.005,
+    fraction_replaced_hof=hp.loguniform(
+        "fraction_replaced_hof", np.log(0.0001), np.log(0.5)
     ),
-    #     npop=100,
-    npop=hp.qloguniform("npop", np.log(20), np.log(1000), 1),
+    #     population_size=100,
+    population_size=hp.qloguniform("population_size", np.log(20), np.log(1000), 1),
     #     parsimony=1e-4,
     parsimony=hp.loguniform("parsimony", np.log(0.0001), np.log(0.5)),
     #     topn=10,
     topn=hp.qloguniform("topn", np.log(2), np.log(50), 1),
-    #     weightAddNode=1,
-    weightAddNode=hp.loguniform("weightAddNode", np.log(0.0001), np.log(100)),
-    #     weightInsertNode=3,
-    weightInsertNode=hp.loguniform("weightInsertNode", np.log(0.0001), np.log(100)),
-    #     weightDeleteNode=3,
-    weightDeleteNode=hp.loguniform("weightDeleteNode", np.log(0.0001), np.log(100)),
-    #     weightDoNothing=1,
-    weightDoNothing=hp.loguniform("weightDoNothing", np.log(0.0001), np.log(100)),
-    #     weightMutateConstant=10,
-    weightMutateConstant=hp.loguniform(
-        "weightMutateConstant", np.log(0.0001), np.log(100)
+    #     weight_add_node=1,
+    weight_add_node=hp.loguniform("weight_add_node", np.log(0.0001), np.log(100)),
+    #     weight_insert_node=3,
+    weight_insert_node=hp.loguniform("weight_insert_node", np.log(0.0001), np.log(100)),
+    #     weight_delete_node=3,
+    weight_delete_node=hp.loguniform("weight_delete_node", np.log(0.0001), np.log(100)),
+    #     weight_do_nothing=1,
+    weight_do_nothing=hp.loguniform("weight_do_nothing", np.log(0.0001), np.log(100)),
+    #     weight_mutate_constant=10,
+    weight_mutate_constant=hp.loguniform(
+        "weight_mutate_constant", np.log(0.0001), np.log(100)
     ),
-    #     weightMutateOperator=1,
-    weightMutateOperator=hp.loguniform(
-        "weightMutateOperator", np.log(0.0001), np.log(100)
+    #     weight_mutate_operator=1,
+    weight_mutate_operator=hp.loguniform(
+        "weight_mutate_operator", np.log(0.0001), np.log(100)
     ),
-    #     weightRandomize=1,
-    weightRandomize=hp.loguniform("weightRandomize", np.log(0.0001), np.log(100)),
-    #     weightSimplify=0.002,
-    weightSimplify=hp.choice("weightSimplify", [0.002]),  # One of these is fixed.
-    #     crossoverProbability=0.01,
-    crossoverProbability=hp.loguniform(
-        "crossoverProbability", np.log(0.00001), np.log(0.2)
+    #     weight_randomize=1,
+    weight_randomize=hp.loguniform("weight_randomize", np.log(0.0001), np.log(100)),
+    #     weight_simplify=0.002,
+    weight_simplify=hp.choice("weight_simplify", [0.002]),  # One of these is fixed.
+    #     crossover_probability=0.01,
+    crossover_probability=hp.loguniform(
+        "crossover_probability", np.log(0.00001), np.log(0.2)
     ),
-    #     perturbationFactor=1.0,
-    perturbationFactor=hp.loguniform("perturbationFactor", np.log(0.0001), np.log(100)),
+    #     perturbation_factor=1.0,
+    perturbation_factor=hp.loguniform("perturbation_factor", np.log(0.0001), np.log(100)),
     #     maxsize=20,
     maxsize=hp.choice("maxsize", [30]),
-    #     warmupMaxsizeBy=0.0,
-    warmupMaxsizeBy=hp.uniform("warmupMaxsizeBy", 0.0, 0.5),
-    #     useFrequency=True,
-    useFrequency=hp.choice("useFrequency", [True, False]),
+    #     warmup_maxsize_by=0.0,
+    warmup_maxsize_by=hp.uniform("warmup_maxsize_by", 0.0, 0.5),
+    #     use_frequency=True,
+    use_frequency=hp.choice("use_frequency", [True, False]),
     #     optimizer_nrestarts=3,
     optimizer_nrestarts=hp.quniform("optimizer_nrestarts", 1, 10, 1),
     #     optimize_probability=1.0,

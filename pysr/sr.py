@@ -16,6 +16,7 @@ from collections import OrderedDict
 from hashlib import sha256
 
 from .version import __version__, __symbolic_regression_jl_version__
+from .deprecated import make_deprecated_kwargs_for_pysr_regressor
 
 
 def install(julia_project=None, quiet=False):  # pragma: no cover
@@ -356,24 +357,24 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         timeout_in_seconds=None,
         alpha=0.1,
         annealing=False,
-        fractionReplaced=0.000364,
-        fractionReplacedHof=0.035,
-        npop=33,
+        fraction_replaced=0.000364,
+        fraction_replaced_hof=0.035,
+        population_size=33,
         parsimony=0.0032,
         migration=True,
-        hofMigration=True,
-        shouldOptimizeConstants=True,
+        hof_migration=True,
+        should_optimize_constants=True,
         topn=12,
-        weightAddNode=0.79,
-        weightDeleteNode=1.7,
-        weightDoNothing=0.21,
-        weightInsertNode=5.1,
-        weightMutateConstant=0.048,
-        weightMutateOperator=0.47,
-        weightRandomize=0.00023,
-        weightSimplify=0.0020,
-        crossoverProbability=0.066,
-        perturbationFactor=0.076,
+        weight_add_node=0.79,
+        weight_delete_node=1.7,
+        weight_do_nothing=0.21,
+        weight_insert_node=5.1,
+        weight_mutate_constant=0.048,
+        weight_mutate_operator=0.47,
+        weight_randomize=0.00023,
+        weight_simplify=0.0020,
+        crossover_probability=0.066,
+        perturbation_factor=0.076,
         extra_sympy_mappings=None,
         extra_torch_mappings=None,
         extra_jax_mappings=None,
@@ -386,12 +387,12 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         maxdepth=None,
         variable_names=None,
         batching=False,
-        batchSize=50,
+        batch_size=50,
         select_k_features=None,
-        warmupMaxsizeBy=0.0,
+        warmup_maxsize_by=0.0,
         constraints=None,
-        useFrequency=True,
-        useFrequencyInTournament=True,
+        use_frequency=True,
+        use_frequency_in_tournament=True,
         tempdir=None,
         delete_tempfiles=True,
         julia_project=None,
@@ -411,6 +412,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         multithreading=None,
         use_symbolic_utils=False,
         skip_mutation_failures=True,
+        # To support deprecated kwargs:
+        **kwargs,
     ):
         """Initialize settings for an equation search in PySR.
 
@@ -442,8 +445,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         :type multithreading: bool
         :param batching: whether to compare population members on small batches during evolution. Still uses full dataset for comparing against hall of fame.
         :type batching: bool
-        :param batchSize: the amount of data to use if doing batching.
-        :type batchSize: int
+        :param batch_size: the amount of data to use if doing batching.
+        :type batch_size: int
         :param maxsize: Max size of an equation.
         :type maxsize: int
         :param ncyclesperiteration: Number of total mutations to run, per 10 samples of the population, per iteration.
@@ -454,42 +457,42 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         :type alpha: float
         :param annealing: Whether to use annealing. You should (and it is default).
         :type annealing: bool
-        :param fractionReplaced: How much of population to replace with migrating equations from other populations.
-        :type fractionReplaced: float
-        :param fractionReplacedHof: How much of population to replace with migrating equations from hall of fame.
-        :type fractionReplacedHof: float
-        :param npop: Number of individuals in each population
-        :type npop: int
+        :param fraction_replaced: How much of population to replace with migrating equations from other populations.
+        :type fraction_replaced: float
+        :param fraction_replaced_hof: How much of population to replace with migrating equations from hall of fame.
+        :type fraction_replaced_hof: float
+        :param population_size: Number of individuals in each population
+        :type population_size: int
         :param parsimony: Multiplicative factor for how much to punish complexity.
         :type parsimony: float
         :param migration: Whether to migrate.
         :type migration: bool
-        :param hofMigration: Whether to have the hall of fame migrate.
-        :type hofMigration: bool
-        :param shouldOptimizeConstants: Whether to numerically optimize constants (Nelder-Mead/Newton) at the end of each iteration.
-        :type shouldOptimizeConstants: bool
+        :param hof_migration: Whether to have the hall of fame migrate.
+        :type hof_migration: bool
+        :param should_optimize_constants: Whether to numerically optimize constants (Nelder-Mead/Newton) at the end of each iteration.
+        :type should_optimize_constants: bool
         :param topn: How many top individuals migrate from each population.
         :type topn: int
-        :param perturbationFactor: Constants are perturbed by a max factor of (perturbationFactor*T + 1). Either multiplied by this or divided by this.
-        :type perturbationFactor: float
-        :param weightAddNode: Relative likelihood for mutation to add a node
-        :type weightAddNode: float
-        :param weightInsertNode: Relative likelihood for mutation to insert a node
-        :type weightInsertNode: float
-        :param weightDeleteNode: Relative likelihood for mutation to delete a node
-        :type weightDeleteNode: float
-        :param weightDoNothing: Relative likelihood for mutation to leave the individual
-        :type weightDoNothing: float
-        :param weightMutateConstant: Relative likelihood for mutation to change the constant slightly in a random direction.
-        :type weightMutateConstant: float
-        :param weightMutateOperator: Relative likelihood for mutation to swap an operator.
-        :type weightMutateOperator: float
-        :param weightRandomize: Relative likelihood for mutation to completely delete and then randomly generate the equation
-        :type weightRandomize: float
-        :param weightSimplify: Relative likelihood for mutation to simplify constant parts by evaluation
-        :type weightSimplify: float
-        :param crossoverProbability: Absolute probability of crossover-type genetic operation, instead of a mutation.
-        :type crossoverProbability: float
+        :param perturbation_factor: Constants are perturbed by a max factor of (perturbation_factor*T + 1). Either multiplied by this or divided by this.
+        :type perturbation_factor: float
+        :param weight_add_node: Relative likelihood for mutation to add a node
+        :type weight_add_node: float
+        :param weight_insert_node: Relative likelihood for mutation to insert a node
+        :type weight_insert_node: float
+        :param weight_delete_node: Relative likelihood for mutation to delete a node
+        :type weight_delete_node: float
+        :param weight_do_nothing: Relative likelihood for mutation to leave the individual
+        :type weight_do_nothing: float
+        :param weight_mutate_constant: Relative likelihood for mutation to change the constant slightly in a random direction.
+        :type weight_mutate_constant: float
+        :param weight_mutate_operator: Relative likelihood for mutation to swap an operator.
+        :type weight_mutate_operator: float
+        :param weight_randomize: Relative likelihood for mutation to completely delete and then randomly generate the equation
+        :type weight_randomize: float
+        :param weight_simplify: Relative likelihood for mutation to simplify constant parts by evaluation
+        :type weight_simplify: float
+        :param crossover_probability: Absolute probability of crossover-type genetic operation, instead of a mutation.
+        :type crossover_probability: float
         :param equation_file: Where to save the files (.csv separated by |)
         :type equation_file: str
         :param verbosity: What verbosity level to use. 0 means minimal print statements.
@@ -504,14 +507,14 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         :type fast_cycle: bool
         :param variable_names: a list of names for the variables, other than "x0", "x1", etc.
         :type variable_names: list
-        :param warmupMaxsizeBy: whether to slowly increase max size from a small number up to the maxsize (if greater than 0).  If greater than 0, says the fraction of training time at which the current maxsize will reach the user-passed maxsize.
-        :type warmupMaxsizeBy: float
+        :param warmup_maxsize_by: whether to slowly increase max size from a small number up to the maxsize (if greater than 0).  If greater than 0, says the fraction of training time at which the current maxsize will reach the user-passed maxsize.
+        :type warmup_maxsize_by: float
         :param constraints: dictionary of int (unary) or 2-tuples (binary), this enforces maxsize constraints on the individual arguments of operators. E.g., `'pow': (-1, 1)` says that power laws can have any complexity left argument, but only 1 complexity exponent. Use this to force more interpretable solutions.
         :type constraints: dict
-        :param useFrequency: whether to measure the frequency of complexities, and use that instead of parsimony to explore equation space. Will naturally find equations of all complexities.
-        :type useFrequency: bool
-        :param useFrequencyInTournament: whether to use the frequency mentioned above in the tournament, rather than just the simulated annealing.
-        :type useFrequencyInTournament: bool
+        :param use_frequency: whether to measure the frequency of complexities, and use that instead of parsimony to explore equation space. Will naturally find equations of all complexities.
+        :type use_frequency: bool
+        :param use_frequency_in_tournament: whether to use the frequency mentioned above in the tournament, rather than just the simulated annealing.
+        :type use_frequency_in_tournament: bool
         :param tempdir: directory for the temporary files
         :type tempdir: str/None
         :param delete_tempfiles: whether to delete the temporary files after finishing
@@ -536,11 +539,65 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         :type use_symbolic_utils: bool
         :param skip_mutation_failures: Whether to skip mutation and crossover failures, rather than simply re-sampling the current member.
         :type skip_mutation_failures: bool
+        :param kwargs: Supports deprecated keyword arguments. Other arguments will result
+        in an error
+        :type kwargs: dict
         :returns: Initialized model. Call `.fit(X, y)` to fit your data!
         :type: PySRRegressor
         """
         super().__init__()
-        # TODO: Order args in docstring by order of declaration.
+        # First, check for deprecated kwargs:
+        if len(kwargs) > 0:  # pragma: no cover
+            deprecated_kwargs = make_deprecated_kwargs_for_pysr_regressor()
+            for k, v in kwargs.items():
+                if k == "fractionReplaced":
+                    fraction_replaced = v
+                elif k == "fractionReplacedHof":
+                    fraction_replaced_hof = v
+                elif k == "npop":
+                    population_size = v
+                elif k == "hofMigration":
+                    hof_migration = v
+                elif k == "shouldOptimizeConstants":
+                    should_optimize_constants = v
+                elif k == "weightAddNode":
+                    weight_add_node = v
+                elif k == "weightDeleteNode":
+                    weight_delete_node = v
+                elif k == "weightDoNothing":
+                    weight_do_nothing = v
+                elif k == "weightInsertNode":
+                    weight_insert_node = v
+                elif k == "weightMutateConstant":
+                    weight_mutate_constant = v
+                elif k == "weightMutateOperator":
+                    weight_mutate_operator = v
+                elif k == "weightRandomize":
+                    weight_randomize = v
+                elif k == "weightSimplify":
+                    weight_simplify = v
+                elif k == "crossoverProbability":
+                    crossover_probability = v
+                elif k == "perturbationFactor":
+                    perturbation_factor = v
+                elif k == "batchSize":
+                    batch_size = v
+                elif k == "warmupMaxsizeBy":
+                    warmup_maxsize_by = v
+                elif k == "useFrequency":
+                    use_frequency = v
+                elif k == "useFrequencyInTournament":
+                    use_frequency_in_tournament = v
+                else:
+                    raise TypeError(
+                        f"{k} is not a valid keyword argument for PySRRegressor"
+                    )
+
+                updated_name = deprecated_kwargs[k]
+                warnings.warn(
+                    f"{k} has been renamed to {updated_name} in PySRRegressor.",
+                    f" Please use that instead.",
+                )
         self.model_selection = model_selection
 
         if binary_operators is None:
@@ -572,7 +629,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             progress = buffer_available
 
         assert optimizer_algorithm in ["NelderMead", "BFGS"]
-        assert tournament_selection_n < npop
+        assert tournament_selection_n < population_size
 
         if extra_jax_mappings is not None:
             for value in extra_jax_mappings.values():
@@ -594,7 +651,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
 
         if maxsize > 40:
             warnings.warn(
-                "Note: Using a large maxsize for the equation search will be exponentially slower and use significant memory. You should consider turning `useFrequency` to False, and perhaps use `warmupMaxsizeBy`."
+                "Note: Using a large maxsize for the equation search will be exponentially slower and use significant memory. You should consider turning `use_frequency` to False, and perhaps use `warmup_maxsize_by`."
             )
         elif maxsize < 7:
             raise NotImplementedError("PySR requires a maxsize of at least 7")
@@ -620,24 +677,24 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 timeout_in_seconds=timeout_in_seconds,
                 alpha=alpha,
                 annealing=annealing,
-                fractionReplaced=fractionReplaced,
-                fractionReplacedHof=fractionReplacedHof,
-                npop=npop,
+                fraction_replaced=fraction_replaced,
+                fraction_replaced_hof=fraction_replaced_hof,
+                population_size=population_size,
                 parsimony=float(parsimony),
                 migration=migration,
-                hofMigration=hofMigration,
-                shouldOptimizeConstants=shouldOptimizeConstants,
+                hof_migration=hof_migration,
+                should_optimize_constants=should_optimize_constants,
                 topn=topn,
-                weightAddNode=weightAddNode,
-                weightInsertNode=weightInsertNode,
-                weightDeleteNode=weightDeleteNode,
-                weightDoNothing=weightDoNothing,
-                weightMutateConstant=weightMutateConstant,
-                weightMutateOperator=weightMutateOperator,
-                weightRandomize=weightRandomize,
-                weightSimplify=weightSimplify,
-                crossoverProbability=crossoverProbability,
-                perturbationFactor=perturbationFactor,
+                weight_add_node=weight_add_node,
+                weight_insert_node=weight_insert_node,
+                weight_delete_node=weight_delete_node,
+                weight_do_nothing=weight_do_nothing,
+                weight_mutate_constant=weight_mutate_constant,
+                weight_mutate_operator=weight_mutate_operator,
+                weight_randomize=weight_randomize,
+                weight_simplify=weight_simplify,
+                crossover_probability=crossover_probability,
+                perturbation_factor=perturbation_factor,
                 verbosity=verbosity,
                 update_verbosity=update_verbosity,
                 progress=progress,
@@ -645,12 +702,12 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 fast_cycle=fast_cycle,
                 maxdepth=maxdepth,
                 batching=batching,
-                batchSize=batchSize,
+                batch_size=batch_size,
                 select_k_features=select_k_features,
-                warmupMaxsizeBy=warmupMaxsizeBy,
+                warmup_maxsize_by=warmup_maxsize_by,
                 constraints=constraints,
-                useFrequency=useFrequency,
-                useFrequencyInTournament=useFrequencyInTournament,
+                use_frequency=use_frequency,
+                use_frequency_in_tournament=use_frequency_in_tournament,
                 tempdir=tempdir,
                 delete_tempfiles=delete_tempfiles,
                 update=update,
@@ -976,14 +1033,14 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         constraints = self.params["constraints"]
         update = self.params["update"]
         loss = self.params["loss"]
-        weightMutateConstant = self.params["weightMutateConstant"]
-        weightMutateOperator = self.params["weightMutateOperator"]
-        weightAddNode = self.params["weightAddNode"]
-        weightInsertNode = self.params["weightInsertNode"]
-        weightDeleteNode = self.params["weightDeleteNode"]
-        weightSimplify = self.params["weightSimplify"]
-        weightRandomize = self.params["weightRandomize"]
-        weightDoNothing = self.params["weightDoNothing"]
+        weight_mutate_constant = self.params["weight_mutate_constant"]
+        weight_mutate_operator = self.params["weight_mutate_operator"]
+        weight_add_node = self.params["weight_add_node"]
+        weight_insert_node = self.params["weight_insert_node"]
+        weight_delete_node = self.params["weight_delete_node"]
+        weight_simplify = self.params["weight_simplify"]
+        weight_randomize = self.params["weight_randomize"]
+        weight_do_nothing = self.params["weight_do_nothing"]
 
         if Main is None:
             if multithreading:
@@ -1129,14 +1186,14 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         Main.custom_loss = Main.eval(loss)
 
         mutationWeights = [
-            float(weightMutateConstant),
-            float(weightMutateOperator),
-            float(weightAddNode),
-            float(weightInsertNode),
-            float(weightDeleteNode),
-            float(weightSimplify),
-            float(weightRandomize),
-            float(weightDoNothing),
+            float(weight_mutate_constant),
+            float(weight_mutate_operator),
+            float(weight_add_node),
+            float(weight_insert_node),
+            float(weight_delete_node),
+            float(weight_simplify),
+            float(weight_randomize),
+            float(weight_do_nothing),
         ]
 
         params_to_hash = {
@@ -1182,7 +1239,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             npopulations=int(self.params["populations"]),
             batching=batching,
             batchSize=int(
-                min([self.params["batchSize"], len(X)]) if batching else len(X)
+                min([self.params["batch_size"], len(X)]) if batching else len(X)
             ),
             mutationWeights=mutationWeights,
             probPickFirst=self.params["tournament_selection_p"],
@@ -1193,28 +1250,28 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             maxdepth=self.params["maxdepth"],
             fast_cycle=self.params["fast_cycle"],
             migration=self.params["migration"],
-            hofMigration=self.params["hofMigration"],
-            fractionReplacedHof=self.params["fractionReplacedHof"],
-            shouldOptimizeConstants=self.params["shouldOptimizeConstants"],
-            warmupMaxsizeBy=self.params["warmupMaxsizeBy"],
-            useFrequency=self.params["useFrequency"],
-            useFrequencyInTournament=self.params["useFrequencyInTournament"],
-            npop=self.params["npop"],
+            hofMigration=self.params["hof_migration"],
+            fractionReplacedHof=self.params["fraction_replaced_hof"],
+            shouldOptimizeConstants=self.params["should_optimize_constants"],
+            warmupMaxsizeBy=self.params["warmup_maxsize_by"],
+            useFrequency=self.params["use_frequency"],
+            useFrequencyInTournament=self.params["use_frequency_in_tournament"],
+            npop=self.params["population_size"],
             ncyclesperiteration=self.params["ncyclesperiteration"],
-            fractionReplaced=self.params["fractionReplaced"],
+            fractionReplaced=self.params["fraction_replaced"],
             topn=self.params["topn"],
             verbosity=self.params["verbosity"],
             optimizer_algorithm=self.params["optimizer_algorithm"],
             optimizer_nrestarts=self.params["optimizer_nrestarts"],
             optimize_probability=self.params["optimize_probability"],
             optimizer_iterations=self.params["optimizer_iterations"],
-            perturbationFactor=self.params["perturbationFactor"],
+            perturbationFactor=self.params["perturbation_factor"],
             annealing=self.params["annealing"],
             stateReturn=True,  # Required for state saving.
             use_symbolic_utils=self.params["use_symbolic_utils"],
             progress=self.params["progress"],
             timeout_in_seconds=self.params["timeout_in_seconds"],
-            crossoverProbability=self.params["crossoverProbability"],
+            crossoverProbability=self.params["crossover_probability"],
             skip_mutation_failures=self.params["skip_mutation_failures"],
         )
 

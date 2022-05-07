@@ -7,7 +7,7 @@ for x in $(cat tags.txt); do sleep 120 && git checkout $x &> /dev/null && nohup 
 ```
 with this API call in `benchmark.sh`
 ```python
-eq = pysr(X, y, binary_operators=["plus", "mult", "div", "pow"], unary_operators=["sin"], niterations=20, procs=4, parsimony=1e-10, npop=1000, ncyclesperiteration=1000)
+eq = pysr(X, y, binary_operators=["plus", "mult", "div", "pow"], unary_operators=["sin"], niterations=20, procs=4, parsimony=1e-10, population_size=1000, ncyclesperiteration=1000)
 ```
 
 
