@@ -35,7 +35,5 @@ jobs:
         run: conda activate test && mamba install pysr
       - name: "Set up PySR's Julia dependencies"
         run: conda activate test && python3 -c 'import pysr; pysr.install()'
-      - name: "Ensure that static libpython warning appears"
-        run: conda activate test && python3 -m unittest test.test_static_libpython_warning
       - name: "Run tests"
         run: conda activate test && python3 -m unittest test.test
