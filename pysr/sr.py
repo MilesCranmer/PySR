@@ -1176,7 +1176,6 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             nested_constraints_str += ")"
             nested_constraints = Main.eval(nested_constraints_str)
 
-
         if not already_ran:
             Main.eval("using Pkg")
             io = "devnull" if self.params["update_verbosity"] == 0 else "stderr"

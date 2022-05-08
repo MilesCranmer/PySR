@@ -174,7 +174,7 @@ class TestPipeline(unittest.TestCase):
             Xresampled=Xresampled,
             denoise=True,
             select_k_features=2,
-            nested_constraints={"/": {"+": 1, "-": 1}, "+": {"*": 4}}
+            nested_constraints={"/": {"+": 1, "-": 1}, "+": {"*": 4}},
         )
         model.fit(X, y)
         self.assertNotIn("unused_feature", model.latex())
