@@ -419,6 +419,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         multithreading=None,
         cluster_manager=None,
         skip_mutation_failures=True,
+        max_evals=None,
         # To support deprecated kwargs:
         **kwargs,
     ):
@@ -559,6 +560,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         :type precision: int
         :param skip_mutation_failures: Whether to skip mutation and crossover failures, rather than simply re-sampling the current member.
         :type skip_mutation_failures: bool
+        :param max_evals: Limits the total number of evaluations of expressions to this number.
+        :type max_evals: int
         :param kwargs: Supports deprecated keyword arguments. Other arguments will result
         in an error
         :type kwargs: dict
@@ -745,6 +748,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 multithreading=multithreading,
                 cluster_manager=cluster_manager,
                 skip_mutation_failures=skip_mutation_failures,
+                max_evals=max_evals,
             ),
         }
 
@@ -1309,6 +1313,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             progress=self.params["progress"],
             timeout_in_seconds=self.params["timeout_in_seconds"],
             crossoverProbability=self.params["crossover_probability"],
+            max_evals=self.params["max_evals"],
             skip_mutation_failures=self.params["skip_mutation_failures"],
         )
 
