@@ -145,7 +145,7 @@ class TestPipeline(unittest.TestCase):
         self.assertLessEqual(model.get_best()[1]["loss"], 1e-2)
         self.assertLessEqual(model.get_best()[1]["loss"], 1e-2)
 
-    def test_pandas_resample(self):
+    def test_pandas_resample_with_nested_constraints(self):
         X = pd.DataFrame(
             {
                 "T": self.rstate.randn(500),
@@ -174,6 +174,7 @@ class TestPipeline(unittest.TestCase):
             Xresampled=Xresampled,
             denoise=True,
             select_k_features=2,
+            nested_constraints={"/": {"+": 1, "-": 1}, "+": {"*": 4}}
         )
         model.fit(X, y)
         self.assertNotIn("unused_feature", model.latex())

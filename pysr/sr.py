@@ -391,6 +391,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         select_k_features=None,
         warmup_maxsize_by=0.0,
         constraints=None,
+        nested_constraints=None,
         use_frequency=True,
         use_frequency_in_tournament=True,
         tempdir=None,
@@ -511,6 +512,16 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         :type warmup_maxsize_by: float
         :param constraints: dictionary of int (unary) or 2-tuples (binary), this enforces maxsize constraints on the individual arguments of operators. E.g., `'pow': (-1, 1)` says that power laws can have any complexity left argument, but only 1 complexity exponent. Use this to force more interpretable solutions.
         :type constraints: dict
+        :param nested_constraints: Specifies how many times a combination of operators can be nested. For example,
+        `{"sin": {"cos": 0}}, "cos": {"cos": 2}}` specifies that `cos` may never appear within a `sin`,
+        but `sin` can be nested with itself an unlimited number of times. The second term specifies that `cos`
+        can be nested up to 2 times within a `cos`, so that `cos(cos(cos(x)))` is allowed (as well as any combination
+        of `+` or `-` within it), but `cos(cos(cos(cos(x))))` is not allowed. When an operator is not specified,
+        it is assumed that it can be nested an unlimited number of times. This requires that there is no operator
+        which is used both in the unary operators and the binary operators (e.g., `-` could be both subtract, and negation).
+        For binary operators, you only need to provide a single number: both arguments are treated the same way,
+        and the max of each argument is constrained.
+        :type nested_constraints: dict
         :param use_frequency: whether to measure the frequency of complexities, and use that instead of parsimony to explore equation space. Will naturally find equations of all complexities.
         :type use_frequency: bool
         :param use_frequency_in_tournament: whether to use the frequency mentioned above in the tournament, rather than just the simulated annealing.
@@ -706,6 +717,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 select_k_features=select_k_features,
                 warmup_maxsize_by=warmup_maxsize_by,
                 constraints=constraints,
+                nested_constraints=nested_constraints,
                 use_frequency=use_frequency,
                 use_frequency_in_tournament=use_frequency_in_tournament,
                 tempdir=tempdir,
@@ -1152,6 +1164,18 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
 
         una_constraints = [constraints[op] for op in unary_operators]
         bin_constraints = [constraints[op] for op in binary_operators]
+        nested_constraints = self.params["nested_constraints"]
+        if nested_constraints is not None:
+            # Parse dict into Julia Dict:
+            nested_constraints_str = "Dict("
+            for outer_k, outer_v in nested_constraints.items():
+                nested_constraints_str += f"({outer_k}) => Dict("
+                for inner_k, inner_v in outer_v.items():
+                    nested_constraints_str += f"({inner_k}) => {inner_v}, "
+                nested_constraints_str += "), "
+            nested_constraints_str += ")"
+            nested_constraints = Main.eval(nested_constraints_str)
+
 
         if not already_ran:
             Main.eval("using Pkg")
@@ -1233,6 +1257,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             unary_operators=Main.eval(str(tuple(unary_operators)).replace("'", "")),
             bin_constraints=bin_constraints,
             una_constraints=una_constraints,
+            nested_constraints=nested_constraints,
             loss=Main.custom_loss,
             maxsize=int(maxsize),
             hofFile=_escape_filename(self.equation_file),
