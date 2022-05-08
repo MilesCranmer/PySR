@@ -333,12 +333,18 @@ def init_julia():
 
 
 def _add_sr_to_julia_project(Main, io_arg):
-    Main.spec = Main.PackageSpec(
+    Main.sr_spec = Main.PackageSpec(
         name="SymbolicRegression",
         url="https://github.com/MilesCranmer/SymbolicRegression.jl",
         rev="v" + __symbolic_regression_jl_version__,
     )
-    Main.eval(f"Pkg.add(spec, {io_arg})")
+    Main.eval(f"Pkg.add(sr_spec, {io_arg})")
+    Main.clustermanagers_spec = Main.PackageSpec(
+        name="ClusterManagers",
+        url="https://github.com/JuliaParallel/ClusterManagers.jl",
+        rev="14e7302f068794099344d5d93f71979aaf4fbeb3",
+    )
+    Main.eval(f"Pkg.add(clustermanagers_spec, {io_arg})")
 
 
 class PySRRegressor(BaseEstimator, RegressorMixin):
@@ -411,6 +417,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         Xresampled=None,
         precision=32,
         multithreading=None,
+        cluster_manager=None,
         use_symbolic_utils=False,
         skip_mutation_failures=True,
         # To support deprecated kwargs:
@@ -444,6 +451,11 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         :type procs: int
         :param multithreading: Use multithreading instead of distributed backend. Default is yes. Using procs=0 will turn off both.
         :type multithreading: bool
+        :param cluster_manager: For distributed computing, this sets the job queue
+        system. Set to one of "slurm", "pbs", "lsf", "sge", "qrsh", "scyld", or "htc".
+        If set to one of these, PySR will run in distributed mode, and use `procs` to figure
+        out how many processes to launch.
+        :type cluster_manager: str
         :param batching: whether to compare population members on small batches during evolution. Still uses full dataset for comparing against hall of fame.
         :type batching: bool
         :param batch_size: the amount of data to use if doing batching.
@@ -624,7 +636,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         if multithreading is None:
             # Default is multithreading=True, unless explicitly set,
             # or procs is set to 0 (serial mode).
-            multithreading = procs != 0
+            multithreading = procs != 0 and cluster_manager is None
         if update_verbosity is None:
             update_verbosity = verbosity
 
@@ -734,6 +746,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 Xresampled=Xresampled,
                 precision=precision,
                 multithreading=multithreading,
+                cluster_manager=cluster_manager,
                 use_symbolic_utils=use_symbolic_utils,
                 skip_mutation_failures=skip_mutation_failures,
             ),
@@ -1034,6 +1047,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 )
 
         multithreading = self.params["multithreading"]
+        cluster_manager = self.params["cluster_manager"]
         procs = self.params["procs"]
         binary_operators = self.params["binary_operators"]
         unary_operators = self.params["unary_operators"]
@@ -1059,6 +1073,10 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 os.environ["JULIA_NUM_THREADS"] = str(procs)
 
             Main = init_julia()
+
+        if cluster_manager is not None:
+            Main.eval(f"import ClusterManagers: addprocs_{cluster_manager}")
+            cluster_manager = Main.eval(f"addprocs_{cluster_manager}")
 
         if isinstance(X, pd.DataFrame):
             if variable_names is not None:
@@ -1332,6 +1350,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             numprocs=int(cprocs),
             multithreading=bool(multithreading),
             saved_state=self.raw_julia_state,
+            addprocs_function=cluster_manager,
         )
 
         self.variable_names = variable_names
