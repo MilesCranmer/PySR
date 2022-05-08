@@ -418,8 +418,9 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         precision=32,
         multithreading=None,
         cluster_manager=None,
-        use_symbolic_utils=False,
         skip_mutation_failures=True,
+        max_evals=None,
+        early_stop_condition=None,
         # To support deprecated kwargs:
         **kwargs,
     ):
@@ -558,10 +559,12 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         :type tournament_selection_p: float
         :param precision: What precision to use for the data. By default this is 32 (float32), but you can select 64 or 16 as well.
         :type precision: int
-        :param use_symbolic_utils: Whether to use SymbolicUtils during simplification.
-        :type use_symbolic_utils: bool
         :param skip_mutation_failures: Whether to skip mutation and crossover failures, rather than simply re-sampling the current member.
         :type skip_mutation_failures: bool
+        :param max_evals: Limits the total number of evaluations of expressions to this number.
+        :type max_evals: int
+        :param early_stop_condition: Stop the search early if this loss is reached.
+        :type early_stop_condition: float
         :param kwargs: Supports deprecated keyword arguments. Other arguments will result
         in an error
         :type kwargs: dict
@@ -747,8 +750,9 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 precision=precision,
                 multithreading=multithreading,
                 cluster_manager=cluster_manager,
-                use_symbolic_utils=use_symbolic_utils,
                 skip_mutation_failures=skip_mutation_failures,
+                max_evals=max_evals,
+                early_stop_condition=early_stop_condition,
             ),
         }
 
@@ -1310,11 +1314,12 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             perturbationFactor=self.params["perturbation_factor"],
             annealing=self.params["annealing"],
             stateReturn=True,  # Required for state saving.
-            use_symbolic_utils=self.params["use_symbolic_utils"],
             progress=self.params["progress"],
             timeout_in_seconds=self.params["timeout_in_seconds"],
             crossoverProbability=self.params["crossover_probability"],
             skip_mutation_failures=self.params["skip_mutation_failures"],
+            max_evals=self.params["max_evals"],
+            earlyStopCondition=self.params["early_stop_condition"],
         )
 
         np_dtype = {16: np.float16, 32: np.float32, 64: np.float64}[
