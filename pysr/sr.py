@@ -1186,17 +1186,6 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
 
         una_constraints = [constraints[op] for op in unary_operators]
         bin_constraints = [constraints[op] for op in binary_operators]
-        nested_constraints = self.params["nested_constraints"]
-        if nested_constraints is not None:
-            # Parse dict into Julia Dict:
-            nested_constraints_str = "Dict("
-            for outer_k, outer_v in nested_constraints.items():
-                nested_constraints_str += f"({outer_k}) => Dict("
-                for inner_k, inner_v in outer_v.items():
-                    nested_constraints_str += f"({inner_k}) => {inner_v}, "
-                nested_constraints_str += "), "
-            nested_constraints_str += ")"
-            nested_constraints = Main.eval(nested_constraints_str)
 
         if not already_ran:
             Main.eval("using Pkg")
@@ -1227,6 +1216,18 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             Main.mult = Main.eval("(*)")
             Main.pow = Main.eval("(^)")
             Main.div = Main.eval("(/)")
+
+        nested_constraints = self.params["nested_constraints"]
+        if nested_constraints is not None:
+            # Parse dict into Julia Dict:
+            nested_constraints_str = "Dict("
+            for outer_k, outer_v in nested_constraints.items():
+                nested_constraints_str += f"({outer_k}) => Dict("
+                for inner_k, inner_v in outer_v.items():
+                    nested_constraints_str += f"({inner_k}) => {inner_v}, "
+                nested_constraints_str += "), "
+            nested_constraints_str += ")"
+            nested_constraints = Main.eval(nested_constraints_str)
 
         Main.custom_loss = Main.eval(loss)
 
