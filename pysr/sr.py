@@ -948,9 +948,9 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             # Add extra information to the error, to say that the user
             # should try to adjust extra_sympy_params.
             raise ValueError(
-                "Failed to evaluate the expression.\n"
+                "Failed to evaluate the expression. "
                 "If you are using a custom operator, make sure to define it in extra_sympy_mappings, "
-                "e.g., `model.extra_sympy_mappings = {'inv': lambda x: 1 / x}`."
+                "e.g., `model.set_params(extra_sympy_mappings={'inv': lambda x: 1 / x})`."
             ) from error
                 
             
