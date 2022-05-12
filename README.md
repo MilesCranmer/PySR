@@ -99,7 +99,7 @@ model = PySRRegressor(
     loss="loss(x, y) = (x - y)^2",  # Custom loss function (julia syntax)
 )
 ```
-This will set up the model for 5 iterations of the search code, which contains hundreds of thousands of mutations and equation evaluations.
+This will set up the model for 40 iterations of the search code, which contains hundreds of thousands of mutations and equation evaluations.
 
 Let's train this model on our dataset:
 ```python
