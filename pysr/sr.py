@@ -940,9 +940,20 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         """
         self.refresh()
         best = self.get_best(index=index)
-        if self.multioutput:
-            return np.stack([eq["lambda_format"](X) for eq in best], axis=1)
-        return best["lambda_format"](X)
+        try:
+            if self.multioutput:
+                return np.stack([eq["lambda_format"](X) for eq in best], axis=1)
+            return best["lambda_format"](X)
+        except Exception as error:
+            # Add extra information to the error, to say that the user
+            # should try to adjust extra_sympy_params.
+            raise ValueError(
+                "Failed to evaluate the expression.\n"
+                "If you are using a custom operator, make sure to define it in extra_sympy_mappings, "
+                "e.g., `model.extra_sympy_mappings = {'inv': lambda x: 1 / x}`."
+            ) from error
+                
+            
 
     def sympy(self, index=None):
         """Return sympy representation of the equation(s) chosen by `model_selection`.
