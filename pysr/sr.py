@@ -952,8 +952,6 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 "If you are using a custom operator, make sure to define it in extra_sympy_mappings, "
                 "e.g., `model.set_params(extra_sympy_mappings={'inv': lambda x: 1 / x})`."
             ) from error
-                
-            
 
     def sympy(self, index=None):
         """Return sympy representation of the equation(s) chosen by `model_selection`.
