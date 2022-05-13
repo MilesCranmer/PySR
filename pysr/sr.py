@@ -821,6 +821,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 chosen_row = -1
             elif self.model_selection == "best":
                 chosen_row = equations["score"].idxmax()
+            elif callable(self.model_selection):
+                chosen_row = self.model_selection(equations)
             else:
                 raise NotImplementedError
             selected[chosen_row] = ">>>>"
@@ -896,6 +898,10 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             if isinstance(self.equations, list):
                 return [eq.iloc[eq["score"].idxmax()] for eq in self.equations]
             return self.equations.iloc[self.equations["score"].idxmax()]
+        elif callable(self.model_selection):
+            if isinstance(self.equations, list):
+                return [eq.iloc[self.model_selection(eq)] for eq in self.equations]
+            return self.equations.iloc[self.model_selection(self.equations)]
         else:
             raise NotImplementedError(
                 f"{self.model_selection} is not a valid model selection strategy."
