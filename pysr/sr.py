@@ -340,7 +340,7 @@ def _add_sr_to_julia_project(Main, io_arg):
     Main.sr_spec = Main.PackageSpec(
         name="SymbolicRegression",
         url="https://github.com/MilesCranmer/SymbolicRegression.jl",
-        rev="v" + __symbolic_regression_jl_version__,
+        rev=__symbolic_regression_jl_version__,
     )
     Main.eval(f"Pkg.add(sr_spec, {io_arg})")
     Main.clustermanagers_spec = Main.PackageSpec(
