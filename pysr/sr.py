@@ -246,14 +246,18 @@ def best_callable(*args, **kwargs):  # pragma: no cover
     )
 
 
-def _denoise(X, y, Xresampled=None):
+def _denoise(X, y, Xresampled=None, max_denoising_points=None):
     """Denoise the dataset using a Gaussian process"""
     from sklearn.gaussian_process import GaussianProcessRegressor
     from sklearn.gaussian_process.kernels import RBF, WhiteKernel, ConstantKernel
 
     gp_kernel = RBF(np.ones(X.shape[1])) + WhiteKernel(1e-1) + ConstantKernel()
     gpr = GaussianProcessRegressor(kernel=gp_kernel, n_restarts_optimizer=50)
-    gpr.fit(X, y)
+    if max_denoising_points and X.shape[0] > max_denoising_points:
+        idx = np.random.choice(X.shape[0], max_denoising_points, replace=False)
+        gpr.fit(X[idx], y[idx])
+    else:
+        gpr.fit(X, y)
     if Xresampled is not None:
         return Xresampled, gpr.predict(Xresampled)
 
@@ -421,6 +425,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         skip_mutation_failures=True,
         max_evals=None,
         early_stop_condition=None,
+        max_denoising_points=250,
         # To support deprecated kwargs:
         **kwargs,
     ):
@@ -565,6 +570,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         :type max_evals: int
         :param early_stop_condition: Stop the search early if this loss is reached.
         :type early_stop_condition: float
+        :param max_denoising_points: Maximum number of points to use for denoising.
+        :type max_denoising_points: int
         :param kwargs: Supports deprecated keyword arguments. Other arguments will result
         in an error
         :type kwargs: dict
@@ -753,6 +760,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 skip_mutation_failures=skip_mutation_failures,
                 max_evals=max_evals,
                 early_stop_condition=early_stop_condition,
+                max_denoising_points=max_denoising_points,
             ),
         }
 
@@ -1164,7 +1172,12 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             if self.multioutput:
                 y = np.stack(
                     [
-                        _denoise(X, y[:, i], Xresampled=Xresampled)[1]
+                        _denoise(
+                            X,
+                            y[:, i],
+                            Xresampled=Xresampled,
+                            max_denoising_points=self.params["max_denoising_points"],
+                        )[1]
                         for i in range(self.nout)
                     ],
                     axis=1,
