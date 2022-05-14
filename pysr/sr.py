@@ -264,6 +264,16 @@ def _denoise(X, y, Xresampled=None, max_denoising_points=None):
     return X, gpr.predict(X)
 
 
+def _competition_model_selection(equations):
+    """Metric to get best equations for competitions.
+
+    First we filter based on loss, then we take the best score.
+    """
+    best_loss = equations.loss.min()
+    filtered = equations.query(f"loss < {2 * best_loss}")
+    return int(filtered.score.idxmax())
+
+
 class CallableEquation:
     """Simple wrapper for numpy lambda functions built with sympy"""
 
@@ -821,6 +831,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 chosen_row = -1
             elif self.model_selection == "best":
                 chosen_row = equations["score"].idxmax()
+            elif self.model_selection == "competition":
+                chosen_row = _competition_model_selection(equations)
             elif callable(self.model_selection):
                 chosen_row = self.model_selection(equations)
             else:
@@ -898,6 +910,12 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             if isinstance(self.equations, list):
                 return [eq.iloc[eq["score"].idxmax()] for eq in self.equations]
             return self.equations.iloc[self.equations["score"].idxmax()]
+        elif self.model_selection == "competition":
+            if isinstance(self.equations, list):
+                return [
+                    eq.iloc[_competition_model_selection(eq)] for eq in self.equations
+                ]
+            return self.equations.iloc[_competition_model_selection(self.equations)]
         elif callable(self.model_selection):
             if isinstance(self.equations, list):
                 return [eq.iloc[self.model_selection(eq)] for eq in self.equations]
