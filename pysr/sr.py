@@ -1233,7 +1233,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         )
 
         una_constraints = [constraints[op] for op in unary_operators]
-        bin_constraints = [constraints[op] for op in binary_operators]
+        bin_constraints = [tuple(constraints[op]) for op in binary_operators]
 
         if not already_ran:
             Main.eval("using Pkg")
