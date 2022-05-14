@@ -109,6 +109,8 @@ sympy_mappings = {
     "ceil": sympy.ceiling,
     "sign": sympy.sign,
     "gamma": sympy.gamma,
+    "slog": sympy.log,
+    "ssqrt": sympy.sqrt,
 }
 
 
