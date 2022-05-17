@@ -1263,7 +1263,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 complexity_of_operators_str += f"({k}) => {v}, "
             complexity_of_operators_str += ")"
             complexity_of_operators = Main.eval(complexity_of_operators_str)
-        
+
         Main.custom_loss = Main.eval(loss)
 
         mutationWeights = [
