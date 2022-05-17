@@ -357,6 +357,9 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         unary_operators=None,
         procs=cpu_count(),
         loss="L2DistLoss()",
+        complexity_of_operators=None,
+        complexity_of_constants=None,
+        complexity_of_variables=None,
         populations=15,
         niterations=40,
         ncyclesperiteration=550,
@@ -444,6 +447,17 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         :type populations: int
         :param loss: String of Julia code specifying the loss function.  Can either be a loss from LossFunctions.jl, or your own loss written as a function. Examples of custom written losses include: `myloss(x, y) = abs(x-y)` for non-weighted, or `myloss(x, y, w) = w*abs(x-y)` for weighted.  Among the included losses, these are as follows. Regression: `LPDistLoss{P}()`, `L1DistLoss()`, `L2DistLoss()` (mean square), `LogitDistLoss()`, `HuberLoss(d)`, `L1EpsilonInsLoss(ϵ)`, `L2EpsilonInsLoss(ϵ)`, `PeriodicLoss(c)`, `QuantileLoss(τ)`.  Classification: `ZeroOneLoss()`, `PerceptronLoss()`, `L1HingeLoss()`, `SmoothedL1HingeLoss(γ)`, `ModifiedHuberLoss()`, `L2MarginLoss()`, `ExpLoss()`, `SigmoidLoss()`, `DWDMarginLoss(q)`.
         :type loss: str
+        :param complexity_of_operators: If you would like to use a complexity other than 1 for
+        an operator, specify the complexity here. For example, `{"sin": 2, "+": 1}` would give
+        a complexity of 2 for each use of the `sin` operator, and a complexity of 1
+        for each use of the `+` operator (which is the default). You may specify
+        real numbers for a complexity, and the total complexity of a tree will be rounded
+        to the nearest integer after computing.
+        :type complexity_of_operators: dict
+        :param complexity_of_constants: Complexity of constants. Default is 1.
+        :type complexity_of_constants: int/float
+        :param complexity_of_variables: Complexity of variables. Default is 1.
+        :type complexity_of_variables: int/float
         :param denoise: Whether to use a Gaussian Process to denoise the data before inputting to PySR. Can help PySR fit noisy data.
         :type denoise: bool
         :param select_k_features: whether to run feature selection in Python using random forests, before passing to the symbolic regression code. None means no feature selection; an int means select that many features.
@@ -697,6 +711,9 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 unary_operators=unary_operators,
                 procs=procs,
                 loss=loss,
+                complexity_of_operators=complexity_of_operators,
+                complexity_of_constants=complexity_of_constants,
+                complexity_of_variables=complexity_of_variables,
                 populations=populations,
                 niterations=niterations,
                 ncyclesperiteration=ncyclesperiteration,
@@ -1227,8 +1244,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             Main.div = Main.eval("(/)")
 
         nested_constraints = self.params["nested_constraints"]
+        # Parse dict into Julia Dict for nested constraints::
         if nested_constraints is not None:
-            # Parse dict into Julia Dict:
             nested_constraints_str = "Dict("
             for outer_k, outer_v in nested_constraints.items():
                 nested_constraints_str += f"({outer_k}) => Dict("
@@ -1238,6 +1255,15 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             nested_constraints_str += ")"
             nested_constraints = Main.eval(nested_constraints_str)
 
+        # Parse dict into Julia Dict for complexities:
+        complexity_of_operators = self.params["complexity_of_operators"]
+        if complexity_of_operators is not None:
+            complexity_of_operators_str = "Dict("
+            for k, v in complexity_of_operators.items():
+                complexity_of_operators_str += f"({k}) => {v}, "
+            complexity_of_operators_str += ")"
+            complexity_of_operators = Main.eval(complexity_of_operators_str)
+        
         Main.custom_loss = Main.eval(loss)
 
         mutationWeights = [
@@ -1288,6 +1314,9 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
             unary_operators=Main.eval(str(tuple(unary_operators)).replace("'", "")),
             bin_constraints=bin_constraints,
             una_constraints=una_constraints,
+            complexity_of_operators=complexity_of_operators,
+            complexity_of_constants=self.params["complexity_of_constants"],
+            complexity_of_variables=self.params["complexity_of_variables"],
             nested_constraints=nested_constraints,
             loss=Main.custom_loss,
             maxsize=int(maxsize),
