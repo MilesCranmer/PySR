@@ -691,7 +691,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
 
         if maxsize > 40:
             warnings.warn(
-                "Note: Using a large maxsize for the equation search will be exponentially slower and use significant memory. You should consider turning `use_frequency` to False, and perhaps use `warmup_maxsize_by`."
+                "Note: Using a large maxsize for the equation search will be exponentially slower and use significant memory."
             )
         elif maxsize < 7:
             raise NotImplementedError("PySR requires a maxsize of at least 7")
@@ -1145,6 +1145,20 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         if len(X) > 10000 and not batching:
             warnings.warn(
                 "Note: you are running with more than 10,000 datapoints. You should consider turning on batching (https://astroautomata.com/PySR/#/options?id=batching). You should also reconsider if you need that many datapoints. Unless you have a large amount of noise (in which case you should smooth your dataset first), generally < 10,000 datapoints is enough to find a functional form with symbolic regression. More datapoints will lower the search speed."
+            )
+
+        if self.n_features >= 10 and not select_k_features:
+            warnings.warn(
+                "Note: you are running with 10 features or more. "
+                "Genetic algorithms like used in PySR scale poorly with large numbers of features. "
+                "Consider using feature selection techniques to select the most important features "
+                "(you can do this automatically with the `select_k_features` parameter), "
+                "or, alternatively, doing a dimensionality reduction beforehand. "
+                "For example, `X = PCA(n_components=6).fit_transform(X)`, "
+                "using scikit-learn's `PCA` class, "
+                "will reduce the number of features to 6 in an interpretable way, "
+                "as each resultant feature "
+                "will be a linear combination of the original features. "
             )
 
         X, selection = _handle_feature_selection(

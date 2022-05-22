@@ -7,6 +7,7 @@ from pysr.sr import run_feature_selection, _handle_feature_selection
 import sympy
 from sympy import lambdify
 import pandas as pd
+import warnings
 
 
 class TestPipeline(unittest.TestCase):
@@ -275,11 +276,36 @@ class TestMiscellaneous(unittest.TestCase):
     """Test miscellaneous functions."""
 
     def test_deprecation(self):
-        # Ensure that deprecation works as expected, with a warning,
-        # and sets the correct value.
+        """Ensure that deprecation works as expected.
+
+        This should give a warning, and sets the correct value.
+        """
         with self.assertWarns(UserWarning):
             model = PySRRegressor(fractionReplaced=0.2)
         # This is a deprecated parameter, so we should get a warning.
 
         # The correct value should be set:
         self.assertEqual(model.params["fraction_replaced"], 0.2)
+
+    def test_size_warning(self):
+        """Ensure that a warning is given for a large input size."""
+        model = PySRRegressor()
+        X = np.random.randn(10001, 2)
+        y = np.random.randn(10001)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            with self.assertRaises(Exception) as context:
+                model.fit(X, y)
+            self.assertIn("more than 10,000", str(context.exception))
+
+    def test_feature_warning(self):
+        """Ensure that a warning is given for large number of features."""
+        model = PySRRegressor()
+        X = np.random.randn(100, 10)
+        y = np.random.randn(100)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            with self.assertRaises(Exception) as context:
+                model.fit(X, y)
+            self.assertIn("with 10 features or more", str(context.exception))
+
