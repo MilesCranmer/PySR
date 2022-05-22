@@ -308,4 +308,3 @@ class TestMiscellaneous(unittest.TestCase):
             with self.assertRaises(Exception) as context:
                 model.fit(X, y)
             self.assertIn("with 10 features or more", str(context.exception))
-
