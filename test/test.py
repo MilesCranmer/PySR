@@ -107,7 +107,7 @@ class TestPipeline(unittest.TestCase):
             print("Error in test_multioutput_weighted_with_callable_temp_equation")
             print("Model equations: ", model.sympy()[0])
             print("True equation: x0^2")
-            
+
         try:
             np.testing.assert_almost_equal(
                 model.predict(X.copy())[:, 1], X[:, 1] ** 2, decimal=4
@@ -320,4 +320,3 @@ class TestMiscellaneous(unittest.TestCase):
             with self.assertRaises(Exception) as context:
                 model.fit(X, y)
             self.assertIn("with 10 features or more", str(context.exception))
-
