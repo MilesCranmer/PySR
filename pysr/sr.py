@@ -1324,7 +1324,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         self.params_hash = cur_hash
 
         # Call to Julia backend.
-        # See https://github.com/search?q=%22function+Options%22+repo%3AMilesCranmer%2FSymbolicRegression.jl+path%3A%2Fsrc%2F+filename%3AOptions.jl+language%3AJulia+language%3AJulia&type=Code&ref=advsearch&l=&l=
+        # See https://github.com/search?q=%22function+Options%22+repo%3AMilesCranmer%2FSymbolicRegression.jl+path%3A%2Fsrc%2F+filename%3AOptions.jl+language%3AJulia&type=Code
         options = Main.Options(
             binary_operators=Main.eval(str(tuple(binary_operators)).replace("'", "")),
             unary_operators=Main.eval(str(tuple(unary_operators)).replace("'", "")),
@@ -1397,7 +1397,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         cprocs = 0 if multithreading else procs
 
         # Call to Julia backend.
-        # See https://github.com/search?q=%22function+EquationSearch%22+repo%3AMilesCranmer%2FSymbolicRegression.jl+path%3A%2Fsrc%2F+filename%3ASymbolicRegression.jl+language%3AJulia+language%3AJulia&type=Code&ref=advsearch&l=Julia&l=Julia
+        # See https://github.com/search?q=%22function+EquationSearch%22+repo%3AMilesCranmer%2FSymbolicRegression.jl+path%3A%2Fsrc%2F+filename%3ASymbolicRegression.jl+language%3AJulia&type=Code
         self.raw_julia_state = Main.EquationSearch(
             Main.X,
             Main.y,
