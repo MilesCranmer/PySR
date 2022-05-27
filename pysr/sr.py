@@ -1390,7 +1390,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             for that particular element of y.
 
         variable_names : list[str], default=None
-            A list of names for the variables, other than "x0", "x1", etc.
+            A list of names for the variables, rather than "x0", "x1", etc.
             If :param`X` is a pandas dataframe, the column names will be used.
             If variable_names are specified
 
