@@ -1,3 +1,4 @@
+"""Functions for initializing the Julia environment and installing deps."""
 import warnings
 from pathlib import Path
 import os
