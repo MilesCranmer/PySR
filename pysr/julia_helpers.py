@@ -6,9 +6,11 @@ from .version import __version__, __symbolic_regression_jl_version__
 
 
 def install(julia_project=None, quiet=False):  # pragma: no cover
-    """Install PyCall.jl and all required dependencies for SymbolicRegression.jl.
+    """
+    Install PyCall.jl and all required dependencies for SymbolicRegression.jl.
 
-    Also updates the local Julia registry."""
+    Also updates the local Julia registry.
+    """
     import julia
 
     julia.install(quiet=quiet)
@@ -40,7 +42,7 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
 
 
 def import_error_string(julia_project=None):
-    s = f"""
+    s = """
     Required dependencies are not installed or built.  Run the following code in the Python REPL:
 
         >>> import pysr

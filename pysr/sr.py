@@ -11,6 +11,7 @@ from pathlib import Path
 from datetime import datetime
 import warnings
 from multiprocessing import cpu_count
+from sklearn.linear_model import LinearRegression
 from sklearn.base import BaseEstimator, RegressorMixin, MultiOutputMixin
 from sklearn.utils.validation import _check_feature_names_in, check_is_fitted
 
@@ -189,10 +190,9 @@ class CallableEquation:
             return self._lambda(
                 **{k: X[k].values for k in self._variable_names}
             ) * np.ones(expected_shape)
-        else:
-            if self._selection is not None:
-                X = X[:, self._selection]
-            return self._lambda(*X.T) * np.ones(expected_shape)
+        if self._selection is not None:
+            X = X[:, self._selection]
+        return self._lambda(*X.T) * np.ones(expected_shape)
 
 
 class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
@@ -349,13 +349,15 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         Relative likelihood for mutation to leave the individual.
 
     weight_mutate_constant : float, default=0.048
-        Relative likelihood for mutation to change the constant slightly in a random direction.
+        Relative likelihood for mutation to change the constant slightly 
+        in a random direction.
 
     weight_mutate_operator : float, default=0.47
         Relative likelihood for mutation to swap an operator.
 
     weight_randomize : float, default=0.00023
-        Relative likelihood for mutation to completely delete and then randomly generate the equation
+        Relative likelihood for mutation to completely delete and then 
+        randomly generate the equation
 
     weight_simplify : float, default=0.0020
         Relative likelihood for mutation to simplify constant parts by evaluation
@@ -666,13 +668,13 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
     ):
 
         # Hyperparameters
-        ## Model search parameters
+        # - Model search parameters
         self.model_selection = model_selection
         self.binary_operators = binary_operators
         self.unary_operators = unary_operators
         self.niterations = niterations
         self.populations = populations
-        ## Model search Constraints
+        # - Model search Constraints
         self.population_size = population_size
         self.max_evals = max_evals
         self.maxsize = maxsize
@@ -681,7 +683,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         self.timeout_in_seconds = timeout_in_seconds
         self.constraints = constraints
         self.nested_constraints = nested_constraints
-        ## Loss parameters
+        # - Loss parameters
         self.loss = loss
         self.complexity_of_operators = complexity_of_operators
         self.complexity_of_constants = complexity_of_constants
@@ -692,8 +694,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         self.alpha = alpha
         self.annealing = annealing
         self.early_stop_condition = early_stop_condition
-        ## Evolutionary search parameters
-        ### Mutation parameters
+        # - Evolutionary search parameters
+        # -- Mutation parameters
         self.ncyclesperiteration = ncyclesperiteration
         self.fraction_replaced = fraction_replaced
         self.fraction_replaced_hof = fraction_replaced_hof
@@ -707,18 +709,18 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         self.weight_simplify = weight_simplify
         self.crossover_probability = crossover_probability
         self.skip_mutation_failures = skip_mutation_failures
-        ### Migration parameters
+        # -- Migration parameters
         self.migration = migration
         self.hof_migration = hof_migration
         self.topn = topn
-        ### Constants parameters
+        # -- Constants parameters
         self.should_optimize_constants = should_optimize_constants
         self.optimizer_algorithm = optimizer_algorithm
         self.optimizer_nrestarts = optimizer_nrestarts
         self.optimize_probability = optimize_probability
         self.optimizer_iterations = optimizer_iterations
         self.perturbation_factor = perturbation_factor
-        ### Selection parameters
+        # -- Selection parameters
         self.tournament_selection_n = tournament_selection_n
         self.tournament_selection_p = tournament_selection_p
         # Solver parameters
@@ -730,11 +732,11 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         self.fast_cycle = fast_cycle
         self.precision = precision
         # Additional runtime parameters
-        ## Runtime user interface
+        # - Runtime user interface
         self.verbosity = verbosity
         self.update_verbosity = update_verbosity
         self.progress = progress
-        ## Project management
+        # - Project management
         self.equation_file = equation_file
         self.temp_equation_file = temp_equation_file
         self.tempdir = tempdir
@@ -921,29 +923,27 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         # Warn if instance parameters are not sensible values:
         if self.batch_size < 1:
             warnings.warn(
-                f"Given :param`batch_size` must be greater than or equal to one."
-                f":param`batch_size` has been increased to equal one."
+                "Given :param`batch_size` must be greater than or equal to one. "
+                ":param`batch_size` has been increased to equal one."
             )
             self.batch_size = 1
 
         if n_samples > 10000 and not self.batching:
             warnings.warn(
-                """
-                Note: you are running with more than 10,000 datapoints. 
-                You should consider turning on batching (https://astroautomata.com/PySR/#/options?id=batching). 
-                You should also reconsider if you need that many datapoints. 
-                Unless you have a large amount of noise (in which case you 
-                should smooth your dataset first), generally < 10,000 datapoints 
-                is enough to find a functional form with symbolic regression. 
-                More datapoints will lower the search speed."
-                """,
+                "Note: you are running with more than 10,000 datapoints. "
+                "You should consider turning on batching (https://astroautomata.com/PySR/#/options?id=batching). "
+                "You should also reconsider if you need that many datapoints. "
+                "Unless you have a large amount of noise (in which case you "
+                "should smooth your dataset first), generally < 10,000 datapoints "
+                "is enough to find a functional form with symbolic regression. "
+                "More datapoints will lower the search speed."
             )
 
         # Ensure instance parameters are allowable values:
         # ValueError - Incompatible values
-        if not (self.tournament_selection_n < self.population_size):
+        if self.tournament_selection_n > self.population_size:
             raise ValueError(
-                f"tournament_selection_n parameter must be smaller than population_size"
+                "tournament_selection_n parameter must be smaller than population_size."
             )
 
         if self.maxsize > 40:
@@ -951,7 +951,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
                 "Note: Using a large maxsize for the equation search will be exponentially slower and use significant memory. You should consider turning `use_frequency` to False, and perhaps use `warmup_maxsize_by`."
             )
         elif self.maxsize < 7:
-            raise ValueError(f"PySR requires a maxsize of at least 7")
+            raise ValueError("PySR requires a maxsize of at least 7")
 
         if self.extra_jax_mappings is not None:
             for value in self.extra_jax_mappings.values():
@@ -971,7 +971,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         else:
             self.extra_torch_mappings = {}
 
-        # NotImplementedError - Currently incompatible values that could be supported later
+        # NotImplementedError - Values that could be supported at a later time
         if self.optimizer_algorithm not in self.VALID_OPTIMIZER_ALGORITHMS:
             raise NotImplementedError(
                 f"PySR currently only supports the following optimizer algorithms: {self.VALID_OPTIMIZER_ALGORITHMS}"
@@ -1004,7 +1004,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         y : {ndarray | pandas.DataFrame} of shape (n_samples,) or (n_samples, n_targets)
             Target values. Will be cast to X's dtype if necessary.
 
-        Xresampled : {ndarray | pandas.DataFrame} of shape (n_resampled, n_features), default=None
+        Xresampled : {ndarray | pandas.DataFrame} of shape 
+                        (n_resampled, n_features), default=None
             Resampled training data used for denoising.
 
         variable_names : list[str] of length n_features
@@ -1022,7 +1023,6 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             Validated list of variable names for each feature in `X`.
 
         """
-
         if isinstance(X, pd.DataFrame):
             variable_names = None
             warnings.warn(
@@ -1037,14 +1037,13 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
                     "Spaces have been replaced with underscores. \n"
                     "Please rename the columns to valid names."
                 )
-        elif variable_names:
-            if [" " in name for name in variable_names].any():
-                variable_names = [name.replace(" ", "_") for name in variable_names]
-                warnings.warn(
-                    "Spaces in `variable_names` are not supported. "
-                    "Spaces have been replaced with underscores. \n"
-                    "Please use valid names instead."
-                )
+        elif variable_names and [" " in name for name in variable_names].any():
+            variable_names = [name.replace(" ", "_") for name in variable_names]
+            warnings.warn(
+                "Spaces in `variable_names` are not supported. "
+                "Spaces have been replaced with underscores. \n"
+                "Please use valid names instead."
+            )
         # Only numpy values are needed from Xresampled, column metadata is
         # provided by X
         if isinstance(Xresampled, pd.DataFrame):
@@ -1080,7 +1079,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         y : {ndarray | pandas.DataFrame} of shape (n_samples,) or (n_samples, n_targets)
             Target values. Will be cast to X's dtype if necessary.
 
-        Xresampled : {ndarray | pandas.DataFrame} of shape (n_resampled, n_features), default=None
+        Xresampled : {ndarray | pandas.DataFrame} of shape 
+                        (n_resampled, n_features), default=None
             Resampled training data used for denoising.
 
         variable_names : list[str] of length n_features
@@ -1118,17 +1118,17 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             variable_names = [variable_names[i] for i in self.selection_mask_]
 
             # Re-perform data validation and feature name updating
-            X, y_transformed = self._validate_data(
+            X, y = self._validate_data(
                 X=X, y=y, reset=True, multi_output=True
             )
             # Update feature names with selected variable names
             self.feature_names_in_ = _check_feature_names_in(self, variable_names)
-            print(f"Using features {[name for name in self.feature_names_in_]}")
+            print(f"Using features {self.feature_names_in_}")
 
         # Denoising transformation
         if self.denoise:
             if self.nout_ > 1:
-                y_transformed = np.stack(
+                y = np.stack(
                     [
                         _denoise(X, y[:, i], Xresampled=Xresampled)[1]
                         for i in range(self.nout_)
@@ -1168,8 +1168,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         ImportError
             Raised when the julia backend fails to import a package.
         """
-
-        # Need to be global as we don't want to recreate/reinstate julia for every new instance of PySRRegressor
+        # Need to be global as we don't want to recreate/reinstate julia for 
+        # every new instance of PySRRegressor
         global already_ran
         global Main
 
@@ -1379,7 +1379,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         y : {ndarray | pandas.DataFrame} of shape (n_samples,) or (n_samples, n_targets)
             Target values. Will be cast to X's dtype if necessary.
 
-        Xresampled : {ndarray | pandas.DataFrame} of shape (n_resampled, n_features), default=None
+        Xresampled : {ndarray | pandas.DataFrame} of shape 
+                        (n_resampled, n_features), default=None
             Resampled training data used for denoising.
 
         weights : {ndarray | pandas.DataFrame} of the same shape as y, default=None
@@ -1420,7 +1421,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             X, y, Xresampled, variable_names
         )
 
-        # Warn about large feature counts (still warn if feature count is large after running feature selection)
+        # Warn about large feature counts (still warn if feature count is large 
+        # after running feature selection)
         if self.n_features_in_ >= 10:
             warnings.warn(
                 "Note: you are running with 10 features or more. "
@@ -1512,8 +1514,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
     def predict(self, X, index=None):
         """Predict y from input X using the equation chosen by `model_selection`.
 
-        You may see what equation is used by printing this object. X should have the same
-        columns as the training data.
+        You may see what equation is used by printing this object. X should 
+        have the same columns as the training data.
 
         Parameters
         ----------
@@ -1550,10 +1552,10 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             SymPy representation of the best equation.
         """
         self.refresh()
-        best = self.get_best(index=index)
+        best_equation = self.get_best(index=index)
         if self.nout_ > 1:
-            return [eq["sympy_format"] for eq in best]
-        return best["sympy_format"]
+            return [eq["sympy_format"] for eq in best_equation]
+        return best_equation["sympy_format"]
 
     def latex(self, index=None):
         """Return latex representation of the equation(s) chosen by `model_selection`.
@@ -1596,13 +1598,12 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             Dictionary of callable jax function in "callable" key,
             and jax array of parameters as "parameters" key.
         """
-
         self.set_params(output_jax_format=True)
         self.refresh()
-        best = self.get_best(index=index)
+        best_equation = self.get_best(index=index)
         if self.nout_ > 1:
-            return [eq["jax_format"] for eq in best]
-        return best["jax_format"]
+            return [eq["jax_format"] for eq in best_equation]
+        return best_equation["jax_format"]
 
     def pytorch(self, index=None):
         """Return pytorch representation of the equation(s) chosen by `model_selection`.
@@ -1626,10 +1627,10 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         """
         self.set_params(output_torch_format=True)
         self.refresh()
-        best = self.get_best(index=index)
+        best_equation = self.get_best(index=index)
         if self.nout_ > 1:
-            return [eq["torch_format"] for eq in best]
-        return best["torch_format"]
+            return [eq["torch_format"] for eq in best_equation]
+        return best_equation["torch_format"]
 
     def get_hof(self):
         """Get the equations from a hall of fame file. If no arguments
@@ -1796,7 +1797,6 @@ def run_feature_selection(X, y, select_k_features):
     """Use a gradient boosting tree regressor as a proxy for finding
     the k most important features in X, returning indices for those
     features as output."""
-
     from sklearn.ensemble import RandomForestRegressor
     from sklearn.feature_selection import SelectFromModel
 
