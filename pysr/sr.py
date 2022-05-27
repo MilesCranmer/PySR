@@ -1029,7 +1029,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
                 ":param`variable_names` has been reset to `None` as `X` is a DataFrame. "
                 "Will use DataFrame column names instead."
             )
-            
+
             if X.columns.is_object() and X.columns.str.contains(" ").any():
                 X.columns = X.columns.str.replace(" ", "_")
                 warnings.warn(

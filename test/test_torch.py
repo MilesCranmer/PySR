@@ -20,6 +20,40 @@ class TestTorch(unittest.TestCase):
             np.all(np.isclose(torch_module(X).detach().numpy(), true.detach().numpy()))
         )
 
+    def test_pipeline_pandas(self):
+        X = pd.DataFrame(np.random.randn(100, 10))
+        equations = pd.DataFrame(
+            {
+                "Equation": ["1.0", "cos(x1)", "square(cos(x1))"],
+                "MSE": [1.0, 0.1, 1e-5],
+                "Complexity": [1, 2, 3],
+            }
+        )
+
+        equations["Complexity MSE Equation".split(" ")].to_csv(
+            "equation_file.csv.bkup", sep="|"
+        )
+
+        model = PySRRegressor(
+            model_selection="accuracy",
+            equation_file="equation_file.csv",
+            extra_sympy_mappings={},
+            output_torch_format=True,
+        )
+        # Because a model hasn't been fit via the `fit` method, some
+        # attributes will not/cannot be set. For the purpose of
+        # testing, these attributes will be set manually here.
+        model.fit(X, y=np.ones(X.shape[0]), from_equation_file=True)
+        model.refresh()
+
+        tformat = model.pytorch()
+        self.assertEqual(str(tformat), "_SingleSymPyModule(expression=cos(x1)**2)")
+        np.testing.assert_almost_equal(
+            tformat(torch.tensor(X.values)).detach().numpy(),
+            np.square(np.cos(X.values[:, 1])),  # Selection 1st feature
+            decimal=4,
+        )
+
     def test_pipeline(self):
         X = np.random.randn(100, 10)
         equations = pd.DataFrame(
@@ -37,20 +71,18 @@ class TestTorch(unittest.TestCase):
         model = PySRRegressor(
             model_selection="accuracy",
             equation_file="equation_file.csv",
-            variable_names="x1 x2 x3".split(" "),
             extra_sympy_mappings={},
             output_torch_format=True,
         )
-        model.selection = [1, 2, 3]
-        model.n_features = 2  # TODO: Why is this 2 and not 3?
-        model.using_pandas = False
+
+        model.fit(X, y=np.ones(X.shape[0]), from_equation_file=True)
         model.refresh()
 
         tformat = model.pytorch()
         self.assertEqual(str(tformat), "_SingleSymPyModule(expression=cos(x1)**2)")
         np.testing.assert_almost_equal(
             tformat(torch.tensor(X)).detach().numpy(),
-            np.square(np.cos(X[:, 1])),  # Selection 1st feature
+            np.square(np.cos(X[:, 1])),  # 2nd feature
             decimal=4,
         )
 
@@ -89,14 +121,11 @@ class TestTorch(unittest.TestCase):
         model = PySRRegressor(
             model_selection="accuracy",
             equation_file="equation_file_custom_operator.csv",
-            variable_names="x1 x2 x3".split(" "),
             extra_sympy_mappings={"mycustomoperator": sympy.sin},
             extra_torch_mappings={"mycustomoperator": torch.sin},
             output_torch_format=True,
         )
-        model.selection = [0, 1, 2]
-        model.n_features = 3
-        model.using_pandas = False
+        model.fit(X, y=np.ones(X.shape[0]), from_equation_file=True)
         model.refresh()
         self.assertEqual(str(model.sympy()), "sin(x1)")
         # Will automatically use the set global state from get_hof.
@@ -105,6 +134,6 @@ class TestTorch(unittest.TestCase):
         self.assertEqual(str(tformat), "_SingleSymPyModule(expression=sin(x1))")
         np.testing.assert_almost_equal(
             tformat(torch.tensor(X)).detach().numpy(),
-            np.sin(X[:, 0]),  # Selection 1st feature
+            np.sin(X[:, 1]),
             decimal=4,
         )
