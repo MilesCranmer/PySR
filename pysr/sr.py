@@ -779,7 +779,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
                     )
 
     def __repr__(self):
-        """Prints all current equations fitted by the model.
+        """
+        Prints all current equations fitted by the model.
 
         The string `>>>>` denotes which equation is selected by the
         `model_selection`.
@@ -1512,7 +1513,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             ) from error
 
     def predict(self, X, index=None):
-        """Predict y from input X using the equation chosen by `model_selection`.
+        """
+        Predict y from input X using the equation chosen by `model_selection`.
 
         You may see what equation is used by printing this object. X should 
         have the same columns as the training data.
@@ -1537,7 +1539,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         return self._decision_function(X, best_equation)
 
     def sympy(self, index=None):
-        """Return sympy representation of the equation(s) chosen by `model_selection`.
+        """
+        Return sympy representation of the equation(s) chosen by `model_selection`.
 
         Parameters
         ----------
@@ -1558,7 +1561,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         return best_equation["sympy_format"]
 
     def latex(self, index=None):
-        """Return latex representation of the equation(s) chosen by `model_selection`.
+        """
+        Return latex representation of the equation(s) chosen by `model_selection`.
 
         Parameters
         ----------
@@ -1579,7 +1583,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         return sympy.latex(sympy_representation)
 
     def jax(self, index=None):
-        """Return jax representation of the equation(s) chosen by `model_selection`.
+        """
+        Return jax representation of the equation(s) chosen by `model_selection`.
 
         Each equation (multiple given if there are multiple outputs) is a dictionary
         containing {"callable": func, "parameters": params}. To call `func`, pass
@@ -1606,7 +1611,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         return best_equation["jax_format"]
 
     def pytorch(self, index=None):
-        """Return pytorch representation of the equation(s) chosen by `model_selection`.
+        """
+        Return pytorch representation of the equation(s) chosen by `model_selection`.
 
         Each equation (multiple given if there are multiple outputs) is a PyTorch module
         containing the parameters as trainable attributes. You can use the module like
@@ -1794,9 +1800,11 @@ def _handle_feature_selection(X, select_k_features, y, variable_names):
 
 
 def run_feature_selection(X, y, select_k_features):
-    """Use a gradient boosting tree regressor as a proxy for finding
+    """
+    Use a gradient boosting tree regressor as a proxy for finding
     the k most important features in X, returning indices for those
-    features as output."""
+    features as output.
+    """
     from sklearn.ensemble import RandomForestRegressor
     from sklearn.feature_selection import SelectFromModel
 
