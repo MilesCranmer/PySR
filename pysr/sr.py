@@ -349,14 +349,14 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         Relative likelihood for mutation to leave the individual.
 
     weight_mutate_constant : float, default=0.048
-        Relative likelihood for mutation to change the constant slightly 
+        Relative likelihood for mutation to change the constant slightly
         in a random direction.
 
     weight_mutate_operator : float, default=0.47
         Relative likelihood for mutation to swap an operator.
 
     weight_randomize : float, default=0.00023
-        Relative likelihood for mutation to completely delete and then 
+        Relative likelihood for mutation to completely delete and then
         randomly generate the equation
 
     weight_simplify : float, default=0.0020
@@ -891,7 +891,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         Raises
         ------
         ValueError
-            Raised when on of the following occours: `tournament_selection_n`
+            Raised when on of the following occurs: `tournament_selection_n`
             parameter is larger than `population_size`; `maxsize` is
             less than 7; invalid `extra_jax_mappings` or
             `extra_torch_mappings`; invalid optimizer algorithms.
@@ -1005,7 +1005,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         y : {ndarray | pandas.DataFrame} of shape (n_samples,) or (n_samples, n_targets)
             Target values. Will be cast to X's dtype if necessary.
 
-        Xresampled : {ndarray | pandas.DataFrame} of shape 
+        Xresampled : {ndarray | pandas.DataFrame} of shape
                         (n_resampled, n_features), default=None
             Resampled training data used for denoising.
 
@@ -1018,7 +1018,10 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             Validated training data.
 
         y_validated : ndarray of shape (n_samples,) or (n_samples, n_targets)
-            Validatee target data.
+            Validated target data.
+
+        Xresampled : ndarray of shape (n_resampled, n_features)
+            Validated resampled training data used for denoising.
 
         variable_names_validated : list[str] of length n_features
             Validated list of variable names for each feature in `X`.
@@ -1064,7 +1067,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         else:
             raise NotImplementedError("y shape not supported!")
 
-        return X, y, variable_names
+        return X, y, Xresampled, variable_names
 
     def _pre_transform_training_data(self, X, y, Xresampled, variable_names):
         """
@@ -1080,7 +1083,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         y : {ndarray | pandas.DataFrame} of shape (n_samples,) or (n_samples, n_targets)
             Target values. Will be cast to X's dtype if necessary.
 
-        Xresampled : {ndarray | pandas.DataFrame} of shape 
+        Xresampled : {ndarray | pandas.DataFrame} of shape
                         (n_resampled, n_features), default=None
             Resampled training data used for denoising.
 
@@ -1119,9 +1122,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             variable_names = [variable_names[i] for i in self.selection_mask_]
 
             # Re-perform data validation and feature name updating
-            X, y = self._validate_data(
-                X=X, y=y, reset=True, multi_output=True
-            )
+            X, y = self._validate_data(X=X, y=y, reset=True, multi_output=True)
             # Update feature names with selected variable names
             self.feature_names_in_ = _check_feature_names_in(self, variable_names)
             print(f"Using features {self.feature_names_in_}")
@@ -1169,7 +1170,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         ImportError
             Raised when the julia backend fails to import a package.
         """
-        # Need to be global as we don't want to recreate/reinstate julia for 
+        # Need to be global as we don't want to recreate/reinstate julia for
         # every new instance of PySRRegressor
         global already_ran
         global Main
@@ -1380,7 +1381,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         y : {ndarray | pandas.DataFrame} of shape (n_samples,) or (n_samples, n_targets)
             Target values. Will be cast to X's dtype if necessary.
 
-        Xresampled : {ndarray | pandas.DataFrame} of shape 
+        Xresampled : {ndarray | pandas.DataFrame} of shape
                         (n_resampled, n_features), default=None
             Resampled training data used for denoising.
 
@@ -1413,7 +1414,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
 
         # Parameter input validation (for parameters defined in __init__)
         self._validate_params(n_samples=X.shape[0])
-        X, y, variable_names = self._validate_fit_params(
+        X, y, Xresampled, variable_names = self._validate_fit_params(
             X, y, Xresampled, variable_names
         )
 
@@ -1422,7 +1423,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             X, y, Xresampled, variable_names
         )
 
-        # Warn about large feature counts (still warn if feature count is large 
+        # Warn about large feature counts (still warn if feature count is large
         # after running feature selection)
         if self.n_features_in_ >= 10:
             warnings.warn(
@@ -1516,7 +1517,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         """
         Predict y from input X using the equation chosen by `model_selection`.
 
-        You may see what equation is used by printing this object. X should 
+        You may see what equation is used by printing this object. X should
         have the same columns as the training data.
 
         Parameters
@@ -1787,7 +1788,7 @@ def _denoise(X, y, Xresampled=None):
     return X, gpr.predict(X)
 
 
-# Function hasnot been removed only due to usage in module tests
+# Function has not been removed only due to usage in module tests
 def _handle_feature_selection(X, select_k_features, y, variable_names):
     if select_k_features is not None:
         selection = run_feature_selection(X, y, select_k_features)
