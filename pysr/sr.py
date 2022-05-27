@@ -11,61 +11,18 @@ from pathlib import Path
 from datetime import datetime
 import warnings
 from multiprocessing import cpu_count
-from sklearn.base import BaseEstimator, RegressorMixin
-from collections import OrderedDict
-from hashlib import sha256
+from sklearn.base import BaseEstimator, RegressorMixin, MultiOutputMixin
+from sklearn.utils.validation import _check_feature_names_in, check_is_fitted
 
-from .version import __version__, __symbolic_regression_jl_version__
+from .julia_helpers import (
+    init_julia,
+    _get_julia_project,
+    is_julia_version_greater_eq,
+    _escape_filename,
+    _add_sr_to_julia_project,
+    import_error_string,
+)
 from .deprecated import make_deprecated_kwargs_for_pysr_regressor
-
-
-def install(julia_project=None, quiet=False):  # pragma: no cover
-    """Install PyCall.jl and all required dependencies for SymbolicRegression.jl.
-
-    Also updates the local Julia registry."""
-    import julia
-
-    julia.install(quiet=quiet)
-
-    julia_project, is_shared = _get_julia_project(julia_project)
-
-    Main = init_julia()
-    Main.eval("using Pkg")
-
-    io = "devnull" if quiet else "stderr"
-    io_arg = f"io={io}" if is_julia_version_greater_eq(Main, "1.6") else ""
-
-    # Can't pass IO to Julia call as it evaluates to PyObject, so just directly
-    # use Main.eval:
-    Main.eval(
-        f'Pkg.activate("{_escape_filename(julia_project)}", shared = Bool({int(is_shared)}), {io_arg})'
-    )
-    if is_shared:
-        # Install SymbolicRegression.jl:
-        _add_sr_to_julia_project(Main, io_arg)
-
-    Main.eval(f"Pkg.instantiate({io_arg})")
-    Main.eval(f"Pkg.precompile({io_arg})")
-    if not quiet:
-        warnings.warn(
-            "It is recommended to restart Python after installing PySR's dependencies,"
-            " so that the Julia environment is properly initialized."
-        )
-
-
-def import_error_string(julia_project=None):
-    s = f"""
-    Required dependencies are not installed or built.  Run the following code in the Python REPL:
-
-        >>> import pysr
-        >>> pysr.install()
-    """
-
-    if julia_project is not None:
-        s += f"""
-        Tried to activate project {julia_project} but failed."""
-
-    return s
 
 
 Main = None
