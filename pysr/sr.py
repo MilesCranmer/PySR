@@ -190,7 +190,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
     binary_operators : list[str], default=["+", "-", "*", "/"]
         List of strings giving the binary operators in Julia's Base.
 
-    unary_operators : list[str], default=[]
+    unary_operators : list[str], default=None
         Same as :param`binary_operators` but for operators taking a
         single scalar.
 
@@ -226,7 +226,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
     timeout_in_seconds : float, default=None
         Make the search return early once this many seconds have passed.
 
-    constraints : dict[str, int | tuple[int,int]], default={}
+    constraints : dict[str, int | tuple[int,int]], default=None
         Dictionary of int (unary) or 2-tuples (binary), this enforces
         maxsize constraints on the individual arguments of operators.
         E.g., `'pow': (-1, 1)` says that power laws can have any
@@ -462,7 +462,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         Whether to create a 'torch_format' column in the output,
         containing a torch module with trainable parameters.
 
-    extra_sympy_mappings : dict[str, Callable], default={}
+    extra_sympy_mappings : dict[str, Callable], default=None
         Provides mappings between custom :param`binary_operators` or
         :param`unary_operators` defined in julia strings, to those same
         operators defined in sympy.
@@ -470,13 +470,13 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         model to be export to sympy, :param`extra_sympy_mappings`
         would be `{"inv": lambda x: 1/x}`.
 
-    extra_jax_mappings : dict[Callable, str], default={}
+    extra_jax_mappings : dict[Callable, str], default=None
         Similar to :param`extra_sympy_mappings` but for model export
         to jax. The dictionary maps sympy functions to jax functions.
         For example: `extra_jax_mappings={sympy.sin: "jnp.sin"}` maps
         the `sympy.sin` function to the equivalent jax expression `jnp.sin`.
 
-    extra_torch_mappings : dict[Callable, Callable], default={}
+    extra_torch_mappings : dict[Callable, Callable], default=None
         The same as :param`extra_jax_mappings` but for model export
         to pytorch. Note that the dictionary keys should be callable
         pytorch expressions.
@@ -571,13 +571,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         self,
         model_selection="best",
         *,
-        binary_operators=[
-            "+",
-            "-",
-            "*",
-            "/",
-        ],
-        unary_operators=[],
+        binary_operators=None,
+        unary_operators=None,
         niterations=40,
         populations=15,
         population_size=33,
@@ -586,7 +581,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         maxdepth=None,
         warmup_maxsize_by=0.0,
         timeout_in_seconds=None,
-        constraints={},
+        constraints=None,
         nested_constraints=None,
         loss="L2DistLoss()",
         complexity_of_operators=None,
@@ -640,9 +635,9 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         update=True,
         output_jax_format=False,
         output_torch_format=False,
-        extra_sympy_mappings={},
-        extra_torch_mappings={},
-        extra_jax_mappings={},
+        extra_sympy_mappings=None,
+        extra_torch_mappings=None,
+        extra_jax_mappings=None,
         denoise=False,
         select_k_features=None,
         **kwargs,
@@ -888,6 +883,14 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
 
         """
         # Handle None values for instance parameters:
+        if self.binary_operators is None:
+            self.binary_operators = "+ * - /".split(" ")
+        if self.unary_operators is None:
+            self.unary_operators = []
+        if self.extra_sympy_mappings is None:
+            self.extra_sympy_mappings = {}
+        if self.constraints is None:
+            self.constraints = {}
         if self.multithreading is None:
             # Default is multithreading=True, unless explicitly set,
             # or procs is set to 0 (serial mode).
@@ -1018,11 +1021,12 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
 
         """
         if isinstance(X, pd.DataFrame):
-            variable_names = None
-            warnings.warn(
-                ":param`variable_names` has been reset to `None` as `X` is a DataFrame. "
-                "Will use DataFrame column names instead."
-            )
+            if variable_names:
+                variable_names = None
+                warnings.warn(
+                    ":param`variable_names` has been reset to `None` as `X` is a DataFrame. "
+                    "Will use DataFrame column names instead."
+                )
 
             if X.columns.is_object() and X.columns.str.contains(" ").any():
                 X.columns = X.columns.str.replace(" ", "_")
@@ -1395,7 +1399,6 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         self : object
             Fitted Estimator.
         """
-
         # Init attributes that are not specified in BaseEstimator
         self.equations_ = None
         self.nout_ = 1
@@ -1482,14 +1485,35 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         ValueError
             Raises if the `best_equation` cannot be evaluated.
         """
-        check_is_fitted(self)
+        check_is_fitted(self, attributes=["equations_", "feature_names_in_"])
 
-        if isinstance(X, pd.DataFrame):
-            X = X[self.feature_names_in_]
-        elif self.selection_mask_ is not None:
-            X = X[:, self.selection_mask_]
+        # When X is an numpy array or a pandas dataframe with a RangeIndex,
+        # the self.feature_names_in_ generated during fit, for the same X,
+        # will cause a warning to be thrown during _validate_data.
+        # To avoid this, convert X to a dataframe, apply the selection mask,
+        # and then set the column/feature_names of X to be equal to those
+        # generated during fit.
+        if isinstance(X, np.ndarray):
+            X = pd.DataFrame(X)
+
+        if isinstance(X.columns, pd.RangeIndex):
+            if self.selection_mask_:
+                # RangeIndex enforces column order allowing columns to
+                # be correctly filtered with self.selection_mask_
+                X = X.iloc[:, self.selection_mask_]
+            X.columns = self.feature_names_in_
+
+        # Without feature information, CallableEquation/lambda_format equations
+        # require that the column order of X matches that of the X used during
+        # the fitting process. _validate_data removes this feature information
+        # when it converts the dataframe to an np array. Thus, to ensure feature
+        # order is preserved after conversion, the dataframe columns must be
+        # reordered/reindexed to match those of the transformed (denoised and
+        # feature selected) X in fit.
+        X = X.reindex(columns=self.feature_names_in_)
 
         X = self._validate_data(X, reset=False)
+
         try:
             if self.nout_ > 1:
                 return np.stack(
@@ -1685,8 +1709,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             }
 
             sympy_symbols = [
-                sympy.Symbol(self.feature_names_in_[i])
-                for i in range(self.n_features_in_)
+                sympy.Symbol(variable) for variable in self.feature_names_in_
             ]
 
             for _, eqn_row in output.iterrows():

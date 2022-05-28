@@ -2,6 +2,7 @@
 import numpy as np
 import pandas as pd
 from sympy import lambdify
+import warnings
 
 
 class CallableEquation:
@@ -25,5 +26,12 @@ class CallableEquation:
                 **{k: X[k].values for k in self._variable_names}
             ) * np.ones(expected_shape)
         if self._selection is not None:
-            X = X[:, self._selection]
+            if X.shape[1] != len(self._selection):
+                warnings.warn(
+                    "`X` should be of shape (n_samples, len(self._selection)). "
+                    "Automatically filtering `X` to selection. "
+                    "Note: Filtered `X` column order may not match column order in fit "
+                    "this may lead to incorrect predictions and other errors."
+                )
+                X = X[:, self._selection]
         return self._lambda(*X.T) * np.ones(expected_shape)
