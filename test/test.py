@@ -4,10 +4,17 @@ from unittest.mock import patch
 import numpy as np
 from pysr import PySRRegressor
 from pysr.sr import run_feature_selection, _handle_feature_selection
+from sklearn.utils.estimator_checks import check_estimator
 import sympy
 from sympy import lambdify
 import pandas as pd
 import warnings
+
+
+class TestScikitLearn(unittest.TestCase):
+    def test_all_estimators(self):
+        model = PySRRegressor()
+        check_estimator(model)
 
 
 class TestPipeline(unittest.TestCase):
