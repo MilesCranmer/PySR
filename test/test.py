@@ -190,7 +190,6 @@ class TestPipeline(unittest.TestCase):
             **self.default_test_kwargs,
             Xresampled=Xresampled,
             denoise=True,
-            select_k_features=2,
             nested_constraints={"/": {"+": 1, "-": 1}, "+": {"*": 4}},
         )
         model.fit(X, y)
@@ -209,6 +208,24 @@ class TestPipeline(unittest.TestCase):
         )
         self.assertLess(np.average((fn(X2) - true_fn(X2)) ** 2), 1e-1)
         self.assertLess(np.average((model.predict(X2) - true_fn(X2)) ** 2), 1e-1)
+
+    def test_high_dim_selection_early_stop(self):
+        X = pd.DataFrame({f"k{i}": self.rstate.randn(10000) for i in range(10)})
+        Xresampled = pd.DataFrame({f"k{i}": self.rstate.randn(100) for i in range(10)})
+        y = X["k7"] ** 2 + np.cos(X["k9"]) * 3
+
+        model = PySRRegressor(
+            unary_operators=["cos"],
+            select_k_features=3,
+            early_stop_condition=1e-4, # Stop once most accurate equation is <1e-4 MSE
+            Xresampled=Xresampled,
+            maxsize=12,
+            **self.default_test_kwargs,
+        )
+        model.fit(X, y)
+        model.set_params(model_selection="accuracy")
+        model.predict(X)
+        self.assertLess(np.average((model.predict(X) - y) ** 2), 1e-4)
 
 
 class TestBest(unittest.TestCase):
