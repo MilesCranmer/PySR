@@ -219,10 +219,12 @@ class TestPipeline(unittest.TestCase):
             maxsize=12,
             **self.default_test_kwargs,
         )
-        model.fit(X, y, Xresampled=Xresampled)
         model.set_params(model_selection="accuracy")
-        model.predict(X)
+        model.fit(X, y, Xresampled=Xresampled)
         self.assertLess(np.average((model.predict(X) - y) ** 2), 1e-4)
+        # Again, but with numpy arrays:
+        model.fit(X.values, y.values, Xresampled=Xresampled.values)
+        self.assertLess(np.average((model.predict(X.values) - y.values) ** 2), 1e-4)
 
 
 class TestBest(unittest.TestCase):
