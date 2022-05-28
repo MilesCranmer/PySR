@@ -197,7 +197,6 @@ class TestPipeline(unittest.TestCase):
         self.assertIn("x", model.latex())
         self.assertLessEqual(model.get_best()["loss"], 1e-1)
         fn = model.get_best()["lambda_format"]
-        self.assertListEqual(list(sorted(fn._selection)), [0, 1])
         X2 = pd.DataFrame(
             {
                 "T": self.rstate.randn(100),
