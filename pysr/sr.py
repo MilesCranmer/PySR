@@ -11,7 +11,6 @@ from pathlib import Path
 from datetime import datetime
 import warnings
 from multiprocessing import cpu_count
-from sklearn.linear_model import LinearRegression
 from sklearn.base import BaseEstimator, RegressorMixin, MultiOutputMixin
 from sklearn.utils.validation import _check_feature_names_in, check_is_fitted
 
@@ -836,7 +835,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         return output
 
     @property
-    def equations(self): # pragma: no cover
+    def equations(self):  # pragma: no cover
         warnings.warn(
             "PySRRegressor.equations is now deprecated. "
             "Please use PySRRegressor.equations_ instead.",
