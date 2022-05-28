@@ -216,7 +216,7 @@ class TestPipeline(unittest.TestCase):
         model = PySRRegressor(
             unary_operators=["cos"],
             select_k_features=3,
-            early_stop_condition=1e-4, # Stop once most accurate equation is <1e-4 MSE
+            early_stop_condition=1e-4,  # Stop once most accurate equation is <1e-4 MSE
             maxsize=12,
             **self.default_test_kwargs,
         )
