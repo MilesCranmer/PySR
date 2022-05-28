@@ -830,6 +830,15 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         output += "]"
         return output
 
+    @property
+    def equations(self): # pragma: no cover
+        warnings.warn(
+            "PySRRegressor.equations is now deprecated. "
+            "Please use PySRRegressor.equations_ instead.",
+            FutureWarning,
+        )
+        return self.equations_
+
     def get_best(self, index=None):
         """
         Get best equation using `model_selection`.
