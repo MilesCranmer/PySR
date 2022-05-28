@@ -3,7 +3,6 @@ import unittest
 from unittest.mock import patch
 import numpy as np
 from pysr import PySRRegressor
-
 from pysr.sr import run_feature_selection, _handle_feature_selection
 import sympy
 from sympy import lambdify
