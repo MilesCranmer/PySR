@@ -1497,7 +1497,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             X = pd.DataFrame(X)
 
         if isinstance(X.columns, pd.RangeIndex):
-            if self.selection_mask_:
+            if self.selection_mask_ is not None:
                 # RangeIndex enforces column order allowing columns to
                 # be correctly filtered with self.selection_mask_
                 X = X.iloc[:, self.selection_mask_]
