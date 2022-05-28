@@ -197,7 +197,12 @@ class CallableEquation:
 
 class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
     """
-    Symbolic regression - scikit-learn interface for SymbolicRegression.jl.
+    High-performance symbolic regression.
+    
+    This is the scikit-learn interface for SymbolicRegression.jl.
+    This model will automatically search for equations which fit
+    a given dataset subject to a particular loss and set of
+    constraints.
 
     Parameters
     ----------
