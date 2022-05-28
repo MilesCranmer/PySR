@@ -534,19 +534,20 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
     >>> # y = 2.5372 * cos(x_3) + x_0 - 0.5
     >>> y = 2.5382 * np.cos(X[:, 3]) + X[:, 0] ** 2 - 0.5
     >>> model = PySRRegressor(
-    >>>             niterations=40,
-    >>>             binary_operators=["+", "*"],
-    >>>             unary_operators=[
-    >>>                 "cos",
-    >>>                 "exp",
-    >>>                 "sin",
-    >>>                 "inv(x) = 1/x",  # Custom operator (julia syntax)
-    >>>             ],
-    >>>             model_selection="best",
-    >>>             loss="loss(x, y) = (x - y)^2",  # Custom loss function (julia syntax)
-    >>>         )
+    ...     niterations=40,
+    ...     binary_operators=["+", "*"],
+    ...     unary_operators=[
+    ...         "cos",
+    ...         "exp",
+    ...         "sin",
+    ...         "inv(x) = 1/x",  # Custom operator (julia syntax)
+    ...     ],
+    ...     model_selection="best",
+    ...     loss="loss(x, y) = (x - y)^2",  # Custom loss function (julia syntax)
+    ... )
     >>> model.fit(X, y)
-    PySRRegressor.equations = [0e-02  (((x0 * x0) + ((cos(x3) * inv(sin(sin(cos(0.5076455))))) * (0.79839814 + sin(inv(0.5623672))))) + -0.5378383)                                                                      pick      score                                           equation          loss  complexity
+    >>> model
+    PySRRegressor.equations = [
     0         0.000000                                          3.8552167  3.360272e+01           1
     1         1.189847                                          (x0 * x0)  3.110905e+00           3
     2         0.010626                          ((x0 * x0) + -0.25573406)  3.045491e+00           5
