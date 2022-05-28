@@ -217,11 +217,10 @@ class TestPipeline(unittest.TestCase):
             unary_operators=["cos"],
             select_k_features=3,
             early_stop_condition=1e-4, # Stop once most accurate equation is <1e-4 MSE
-            Xresampled=Xresampled,
             maxsize=12,
             **self.default_test_kwargs,
         )
-        model.fit(X, y)
+        model.fit(X, y, Xresampled=Xresampled)
         model.set_params(model_selection="accuracy")
         model.predict(X)
         self.assertLess(np.average((model.predict(X) - y) ** 2), 1e-4)
