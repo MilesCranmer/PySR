@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import pandas as pd
 import sympy
-from sympy import sympify, lambdify
+from sympy import sympify
 import re
 import tempfile
 import shutil
@@ -22,6 +22,7 @@ from .julia_helpers import (
     _add_sr_to_julia_project,
     import_error_string,
 )
+from .export_numpy import CallableEquation
 from .deprecated import make_deprecated_kwargs_for_pysr_regressor
 
 
@@ -169,35 +170,10 @@ def best_callable(*args, **kwargs):  # pragma: no cover
     )
 
 
-class CallableEquation:
-    """Simple wrapper for numpy lambda functions built with sympy"""
-
-    def __init__(self, sympy_symbols, eqn, selection=None, variable_names=None):
-        self._sympy = eqn
-        self._sympy_symbols = sympy_symbols
-        self._selection = selection
-        self._variable_names = variable_names
-        self._lambda = lambdify(sympy_symbols, eqn)
-
-    def __repr__(self):
-        return f"PySRFunction(X=>{self._sympy})"
-
-    def __call__(self, X):
-        expected_shape = (X.shape[0],)
-        if isinstance(X, pd.DataFrame):
-            # Lambda function takes as argument:
-            return self._lambda(
-                **{k: X[k].values for k in self._variable_names}
-            ) * np.ones(expected_shape)
-        if self._selection is not None:
-            X = X[:, self._selection]
-        return self._lambda(*X.T) * np.ones(expected_shape)
-
-
 class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
     """
     High-performance symbolic regression.
-    
+
     This is the scikit-learn interface for SymbolicRegression.jl.
     This model will automatically search for equations which fit
     a given dataset subject to a particular loss and set of
