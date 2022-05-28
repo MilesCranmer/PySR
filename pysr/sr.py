@@ -763,7 +763,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
                     setattr(self, updated_kwarg_name, v)
                     warnings.warn(
                         f"{k} has been renamed to {updated_kwarg_name} in PySRRegressor. "
-                        f" Please use that instead.",
+                        " Please use that instead.",
                         FutureWarning,
                     )
                 # Handle kwargs that have been moved to the fit method
