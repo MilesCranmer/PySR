@@ -985,7 +985,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         """
         Validates the parameters passed to the :term`fit` method.
 
-        This method also setts the `nout_` attribute.
+        This method also sets the `nout_` attribute.
 
         Parameters
         ----------
@@ -1090,7 +1090,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             :param`self.select_k_features` if `self.select_k_features is not None`,
             otherwise it will be equal to :param`X.shape[1]`
 
-        y_transformed : ndarray of shape (n_samples,) or  (n_samples, n_outputs)
+        y_transformed : ndarray of shape (n_samples,) or (n_samples, n_outputs)
             Transformed target data. n_samples will be equal to
             :param`Xresampled.shape[0]` if :param`self.denoise` is `True`,
             and :param`Xresampled is not None`, otherwise it will be
