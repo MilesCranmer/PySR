@@ -349,6 +349,10 @@ class TestMiscellaneous(unittest.TestCase):
         )  # Return early.
         check_generator = check_estimator(model, generate_only=True)
         for (_, check) in check_generator:
+            if "pickle" in check.func.__name__:
+                # Skip pickling tests.
+                continue
+
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
