@@ -1015,16 +1015,6 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             Validated list of variable names for each feature in `X`.
 
         """
-        if X.shape[1] > 10000 and not self.batching:
-            warnings.warn(
-                "Note: you are running with more than 10,000 datapoints. "
-                "You should consider turning on batching (https://astroautomata.com/PySR/#/options?id=batching). "
-                "You should also reconsider if you need that many datapoints. "
-                "Unless you have a large amount of noise (in which case you "
-                "should smooth your dataset first), generally < 10,000 datapoints "
-                "is enough to find a functional form with symbolic regression. "
-                "More datapoints will lower the search speed."
-            )
 
         if isinstance(X, pd.DataFrame):
             if variable_names:
@@ -1414,6 +1404,17 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         self.raw_julia_state_ = None
 
         self._setup_equation_file()
+
+        if X.shape[1] > 10000 and not self.batching:
+            warnings.warn(
+                "Note: you are running with more than 10,000 datapoints. "
+                "You should consider turning on batching (https://astroautomata.com/PySR/#/options?id=batching). "
+                "You should also reconsider if you need that many datapoints. "
+                "Unless you have a large amount of noise (in which case you "
+                "should smooth your dataset first), generally < 10,000 datapoints "
+                "is enough to find a functional form with symbolic regression. "
+                "More datapoints will lower the search speed."
+            )
 
         # Parameter input validation (for parameters defined in __init__)
         X, y, Xresampled, variable_names = self._validate_fit_params(
