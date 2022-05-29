@@ -5,6 +5,7 @@ import pandas as pd
 from jax import numpy as jnp
 from jax import random
 import sympy
+from functools import partial
 
 
 class TestJAX(unittest.TestCase):
@@ -79,3 +80,21 @@ class TestJAX(unittest.TestCase):
             np.square(np.cos(X[:, 1])),  # Select feature 1
             decimal=4,
         )
+
+    def test_feature_selection(self):
+        X = pd.DataFrame({f"k{i}": np.random.randn(1000) for i in range(10, 21)})
+        y = X["k15"] ** 2 + np.cos(X["k20"])
+
+        model = PySRRegressor(
+            unary_operators=["cos"], select_k_features=3, early_stop_condition=1e-5
+        )
+        model.fit(X.values, y.values)
+        f, parameters = model.jax().values()
+
+        np_prediction = model.predict
+        jax_prediction = partial(f, parameters=parameters)
+
+        np_output = np_prediction(X.values)
+        jax_output = jax_prediction(X.values)
+
+        np.testing.assert_almost_equal(np_output, jax_output, decimal=4)
