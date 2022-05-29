@@ -754,6 +754,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
                         f"{k} is not a valid keyword argument for PySRRegressor"
                     )
 
+        self._process_params()
+
     def __repr__(self):
         """
         Prints all current equations fitted by the model.
@@ -858,20 +860,12 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
                 f"{self.model_selection} is not a valid model selection strategy."
             )
 
-    def _validate_params(self, n_samples):
+    def _process_params(self):
         """
         Perform validation on the parameters defined in init for the
-        dataset specified in :term`fit`.
-
-        Parameters
-        ----------
-        n_samples : int
-            Number of samples in the dataset to be fitted.
-
-        Returns
-        -------
-        self : object
-            Reference to `self` with validated parameters.
+        dataset specified in :term`fit`, and update them if necessary.
+        For example, this will change :param`binary_operators`
+        into `["+", "-", "*", "/"]` if `binary_operators` is `None`.
 
         Raises
         ------
@@ -1406,7 +1400,6 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         self.raw_julia_state_ = None
 
         # Parameter input validation (for parameters defined in __init__)
-        self._validate_params(n_samples=X.shape[0])
         X, y, Xresampled, variable_names = self._validate_fit_params(
             X, y, Xresampled, variable_names
         )
