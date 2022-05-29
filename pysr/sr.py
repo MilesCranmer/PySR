@@ -68,7 +68,7 @@ def import_error_string(julia_project=None):
     return s
 
 
-Main = None
+Main = None  # TODO: Rename to more descriptive name like "julia_runtime"
 
 already_ran = False
 
