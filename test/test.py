@@ -343,5 +343,5 @@ class TestMiscellaneous(unittest.TestCase):
 
     def test_scikit_learn_compatibility(self):
         """Test PySRRegressor compatibility with scikit-learn."""
-        model = PySRRegressor()
+        model = PySRRegressor(max_evals=10000)  # Return early.
         check_estimator(model)
