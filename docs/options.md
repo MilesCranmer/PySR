@@ -10,7 +10,7 @@ may find useful include:
 - `populations`
 - `weights`
 - `maxsize`, `maxdepth`
-- `batching`, `batchSize`
+- `batching`, `batch_size`
 - `variable_names` (or pandas input)
 - Constraining operator complexity
 - LaTeX, SymPy
@@ -126,7 +126,7 @@ This specifies that maxsize increases every `warmupMaxsize`.
 
 ## Batching
 One can turn on mini-batching, with the `batching` flag,
-and control the batch size with `batchSize`. This will make
+and control the batch size with `batch_size`. This will make
 evolution faster for large datasets. Equations are still evaluated
 on the entire dataset at the end of each iteration to compare to the hall
 of fame, but only on a random subset during mutations and annealing.
