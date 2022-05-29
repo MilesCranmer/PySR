@@ -125,6 +125,7 @@ class TestTorch(unittest.TestCase):
             "equation_file_custom_operator.csv.bkup", sep="|"
         )
 
+        import torch
         model = PySRRegressor(
             model_selection="accuracy",
             equation_file="equation_file_custom_operator.csv",
@@ -139,7 +140,6 @@ class TestTorch(unittest.TestCase):
 
         tformat = model.pytorch()
         self.assertEqual(str(tformat), "_SingleSymPyModule(expression=sin(x1))")
-        import torch
         np.testing.assert_almost_equal(
             tformat(torch.tensor(X)).detach().numpy(),
             np.sin(X[:, 1]),
