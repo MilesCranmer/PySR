@@ -4,6 +4,7 @@ import pandas as pd
 from pysr import sympy2torch, PySRRegressor
 import torch
 import sympy
+from functools import partial
 
 
 class TestTorch(unittest.TestCase):
@@ -137,3 +138,20 @@ class TestTorch(unittest.TestCase):
             np.sin(X[:, 1]),
             decimal=4,
         )
+
+    def test_feature_selection(self):
+        X = pd.DataFrame({f"k{i}": np.random.randn(1000) for i in range(10, 21)})
+        y = X["k15"] ** 2 + np.cos(X["k20"])
+
+        model = PySRRegressor(
+            unary_operators=["cos"],
+            select_k_features=3,
+            early_stop_condition=1e-5,
+        )
+        model.fit(X.values, y.values)
+        torch_module = model.pytorch()
+
+        np_output = model.predict(X.values)
+        torch_output = torch_module(torch.tensor(X.values)).detach().numpy()
+
+        np.testing.assert_almost_equal(np_output, torch_output, decimal=4)
