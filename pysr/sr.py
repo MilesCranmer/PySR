@@ -132,15 +132,12 @@ def _maybe_create_inline_operators(binary_operators, unary_operators):
 
 def _check_assertions(
     X,
-    binary_operators,
-    unary_operators,
     use_custom_variable_names,
     variable_names,
     weights,
     y,
 ):
     # Check for potential errors before they happen
-    assert len(unary_operators) + len(binary_operators) > 0
     assert len(X.shape) == 2
     assert len(y.shape) in [1, 2]
     assert X.shape[0] == y.shape[0]
@@ -1125,6 +1122,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         elif isinstance(unary_operators, str):
             unary_operators = [unary_operators]
 
+        assert len(unary_operators) + len(binary_operators) > 0
+
         if constraints is None:
             constraints = {}
 
@@ -1436,8 +1435,6 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
 
         _check_assertions(
             X,
-            self.binary_operators,
-            self.unary_operators,
             use_custom_variable_names,
             variable_names,
             weights,
