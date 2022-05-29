@@ -26,7 +26,7 @@ from .export_numpy import CallableEquation
 from .deprecated import make_deprecated_kwargs_for_pysr_regressor
 
 
-Main = None
+Main = None  # TODO: Rename to more descriptive name like "julia_runtime"
 
 already_ran = False
 
