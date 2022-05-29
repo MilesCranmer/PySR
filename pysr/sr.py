@@ -1752,6 +1752,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
                     module = sympy2torch(
                         eqn,
                         sympy_symbols,
+                        selection=self.selection_mask_,
                         extra_torch_mappings=self.extra_torch_mappings,
                     )
                     torch_format.append(module)
