@@ -1405,7 +1405,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
 
         self._setup_equation_file()
 
-        if X.shape[1] > 10000 and not self.batching:
+        if X.shape[0] > 10000 and not self.batching:
             warnings.warn(
                 "Note: you are running with more than 10,000 datapoints. "
                 "You should consider turning on batching (https://astroautomata.com/PySR/#/options?id=batching). "
