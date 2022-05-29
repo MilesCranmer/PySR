@@ -1740,6 +1740,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
                     func, params = sympy2jax(
                         eqn,
                         sympy_symbols,
+                        selection=self.selection_mask_,
                         extra_jax_mappings=self.extra_jax_mappings,
                     )
                     jax_format.append({"callable": func, "parameters": params})
