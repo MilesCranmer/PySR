@@ -11,12 +11,6 @@ import pandas as pd
 import warnings
 
 
-class TestScikitLearn(unittest.TestCase):
-    def test_all_estimators(self):
-        model = PySRRegressor()
-        check_estimator(model)
-
-
 class TestPipeline(unittest.TestCase):
     def setUp(self):
         # Using inspect,
@@ -346,3 +340,8 @@ class TestMiscellaneous(unittest.TestCase):
             with self.assertRaises(Exception) as context:
                 model.fit(X, y)
             self.assertIn("with 10 features or more", str(context.exception))
+
+    def test_scikit_learn_compatibility(self):
+        """Test PySRRegressor compatibility with scikit-learn."""
+        model = PySRRegressor()
+        check_estimator(model)
