@@ -974,7 +974,6 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         else:
             self.equation_file_ = self.equation_file
 
-
     def _validate_fit_params(self, X, y, Xresampled, variable_names):
         """
         Validates the parameters passed to the :term`fit` method.
@@ -1180,17 +1179,18 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
 
         if self.cluster_manager is not None:
             Main.eval(f"import ClusterManagers: addprocs_{self.cluster_manager}")
-            self.cluster_manager = Main.eval(f"addprocs_{self.cluster_manager}")
-
-        self.julia_project, is_shared = _get_julia_project(self.julia_project)
+            cluster_manager = Main.eval(f"addprocs_{self.cluster_manager}")
+        else:
+            cluster_manager = None
 
         if not already_ran:
+            julia_project, is_shared = _get_julia_project(self.julia_project)
             Main.eval("using Pkg")
             io = "devnull" if self.update_verbosity == 0 else "stderr"
             io_arg = f"io={io}" if is_julia_version_greater_eq(Main, "1.6") else ""
 
             Main.eval(
-                f'Pkg.activate("{_escape_filename(self.julia_project)}", shared = Bool({int(is_shared)}), {io_arg})'
+                f'Pkg.activate("{_escape_filename(julia_project)}", shared = Bool({int(is_shared)}), {io_arg})'
             )
             from julia.api import JuliaError
 
@@ -1205,7 +1205,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
                 else:
                     Main.eval(f"Pkg.instantiate({io_arg})")
             except (JuliaError, RuntimeError) as e:
-                raise ImportError(import_error_string(self.julia_project)) from e
+                raise ImportError(import_error_string(julia_project)) from e
             Main.eval("using SymbolicRegression")
 
             Main.plus = Main.eval("(+)")
@@ -1235,7 +1235,9 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
                     nested_constraints_str += f"({inner_k}) => {inner_v}, "
                 nested_constraints_str += "), "
             nested_constraints_str += ")"
-            self.nested_constraints = Main.eval(nested_constraints_str)
+            nested_constraints = Main.eval(nested_constraints_str)
+        else:
+            nested_constraints = None
 
         # Parse dict into Julia Dict for complexities:
         if self.complexity_of_operators is not None:
@@ -1243,7 +1245,9 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             for k, v in self.complexity_of_operators.items():
                 complexity_of_operators_str += f"({k}) => {v}, "
             complexity_of_operators_str += ")"
-            self.complexity_of_operators = Main.eval(complexity_of_operators_str)
+            complexity_of_operators = Main.eval(complexity_of_operators_str)
+        else:
+            complexity_of_operators = None
 
         Main.custom_loss = Main.eval(self.loss)
 
@@ -1269,10 +1273,10 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             ),
             bin_constraints=bin_constraints,
             una_constraints=una_constraints,
-            complexity_of_operators=self.complexity_of_operators,
+            complexity_of_operators=complexity_of_operators,
             complexity_of_constants=self.complexity_of_constants,
             complexity_of_variables=self.complexity_of_variables,
-            nested_constraints=self.nested_constraints,
+            nested_constraints=nested_constraints,
             loss=Main.custom_loss,
             maxsize=int(self.maxsize),
             hofFile=_escape_filename(self.equation_file_),
@@ -1344,7 +1348,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             numprocs=int(cprocs),
             multithreading=bool(self.multithreading),
             saved_state=self.raw_julia_state_,
-            addprocs_function=self.cluster_manager,
+            addprocs_function=cluster_manager,
         )
 
         # Set attributes
