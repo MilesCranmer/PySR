@@ -322,7 +322,7 @@ class TestMiscellaneous(unittest.TestCase):
 
     def test_size_warning(self):
         """Ensure that a warning is given for a large input size."""
-        model = PySRRegressor()
+        model = PySRRegressor(max_evals=10000, populations=2)
         X = np.random.randn(10001, 2)
         y = np.random.randn(10001)
         with warnings.catch_warnings():
