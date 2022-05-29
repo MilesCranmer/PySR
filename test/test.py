@@ -22,7 +22,7 @@ class TestPipeline(unittest.TestCase):
             inspect.signature(PySRRegressor.__init__).parameters["populations"].default
         )
         self.default_test_kwargs = dict(
-            model_selection="best",
+            model_selection="accuracy",
             niterations=default_niterations * 2,
             populations=default_populations * 2,
         )
