@@ -344,5 +344,18 @@ class TestMiscellaneous(unittest.TestCase):
 
     def test_scikit_learn_compatibility(self):
         """Test PySRRegressor compatibility with scikit-learn."""
-        model = PySRRegressor(max_evals=10000)  # Return early.
-        check_estimator(model)
+        model = PySRRegressor(
+            max_evals=10000, verbosity=0, progress=False
+        )  # Return early.
+        check_generator = check_estimator(model, generate_only=True)
+        for (_, check) in check_generator:
+            try:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    check(model)
+                print("Passed", check.func.__name__)
+            except Exception as e:
+                print("Failed", check.func.__name__, "with:")
+                # Add a leading tab to error message, which
+                # might be multi-line:
+                print("\n".join([(" " * 4) + row for row in str(e).split("\n")]))
