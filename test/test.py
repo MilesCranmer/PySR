@@ -118,7 +118,7 @@ class TestPipeline(unittest.TestCase):
             print("Model equations: ", model.sympy()[1])
             print("True equation: x1^2")
 
-    def test_empty_operators_single_input_multirun(self):
+    def test_empty_operators_single_input_warm_start(self):
         X = self.rstate.randn(100, 1)
         y = X[:, 0] + 3.0
         regressor = PySRRegressor(
@@ -135,7 +135,8 @@ class TestPipeline(unittest.TestCase):
         np.testing.assert_almost_equal(regressor.predict(X), y, decimal=1)
 
         # Test if repeated fit works:
-        regressor.set_params(niterations=0)
+        regressor.set_params(niterations=0, warm_start=True)
+        # This should exit immediately, and use the old equations
         regressor.fit(X, y)
 
         self.assertLessEqual(regressor.equations_.iloc[-1]["loss"], 1e-4)
