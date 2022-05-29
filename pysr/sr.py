@@ -894,14 +894,6 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         if self.maxdepth is None:
             self.maxdepth = self.maxsize
 
-        # Cast tempdir string as a Path object
-        self.tempdir_ = Path(tempfile.mkdtemp(dir=self.tempdir))
-        if self.temp_equation_file:
-            self.equation_file = self.tempdir_ / "hall_of_fame.csv"
-        elif self.equation_file is None:
-            date_time = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")[:-3]
-            self.equation_file = "hall_of_fame_" + date_time + ".csv"
-
         # Handle type conversion for instance parameters:
         if isinstance(self.binary_operators, str):
             self.binary_operators = [self.binary_operators]
@@ -966,6 +958,22 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             self.progress = buffer_available
 
         return self
+
+    def _setup_equation_file(self):
+        """
+        Sets the full pathname of the equation file, using :param`tempdir` and
+        :param`equation_file`.
+        """
+        # Cast tempdir string as a Path object
+        self.tempdir_ = Path(tempfile.mkdtemp(dir=self.tempdir))
+        if self.temp_equation_file:
+            self.equation_file_ = self.tempdir_ / "hall_of_fame.csv"
+        elif self.equation_file is None:
+            date_time = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")[:-3]
+            self.equation_file_ = "hall_of_fame_" + date_time + ".csv"
+        else:
+            self.equation_file_ = self.equation_file
+
 
     def _validate_fit_params(self, X, y, Xresampled, variable_names):
         """
@@ -1267,7 +1275,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             nested_constraints=self.nested_constraints,
             loss=Main.custom_loss,
             maxsize=int(self.maxsize),
-            hofFile=_escape_filename(self.equation_file),
+            hofFile=_escape_filename(self.equation_file_),
             npopulations=int(self.populations),
             batching=self.batching,
             batchSize=int(min([self.batch_size, len(X)]) if self.batching else len(X)),
@@ -1398,6 +1406,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         self.nout_ = 1
         self.selection_mask_ = None
         self.raw_julia_state_ = None
+
+        self._setup_equation_file()
 
         # Parameter input validation (for parameters defined in __init__)
         X, y, Xresampled, variable_names = self._validate_fit_params(
@@ -1654,7 +1664,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
                 all_outputs = []
                 for i in range(1, self.nout_ + 1):
                     df = pd.read_csv(
-                        str(self.equation_file) + f".out{i}" + ".bkup",
+                        str(self.equation_file_) + f".out{i}" + ".bkup",
                         sep="|",
                     )
                     # Rename Complexity column to complexity:
@@ -1669,7 +1679,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
 
                     all_outputs.append(df)
             else:
-                all_outputs = [pd.read_csv(str(self.equation_file) + ".bkup", sep="|")]
+                all_outputs = [pd.read_csv(str(self.equation_file_) + ".bkup", sep="|")]
                 all_outputs[-1].rename(
                     columns={
                         "Complexity": "complexity",
