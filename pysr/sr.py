@@ -80,7 +80,8 @@ def pysr(X, y, weights=None, **kwargs):  # pragma: no cover
     return model.equations
 
 
-def _handle_constraints(binary_operators, unary_operators, constraints):
+def _process_constraints(binary_operators, unary_operators, constraints):
+    constraints = constraints.copy()
     for op in unary_operators:
         if op not in constraints:
             constraints[op] = -1
@@ -101,10 +102,13 @@ def _handle_constraints(binary_operators, unary_operators, constraints):
                     constraints[op][1],
                     constraints[op][0],
                 )
+    return constraints
 
 
-def _create_inline_operators(binary_operators, unary_operators):
+def _maybe_create_inline_operators(binary_operators, unary_operators):
     global Main
+    binary_operators = binary_operators.copy()
+    unary_operators = unary_operators.copy()
     for op_list in [binary_operators, unary_operators]:
         for i, op in enumerate(op_list):
             is_user_defined_operator = "(" in op
@@ -123,6 +127,7 @@ def _create_inline_operators(binary_operators, unary_operators):
                         "Only alphanumeric characters, numbers, and underscores are allowed."
                     )
                 op_list[i] = function_name
+    return binary_operators, unary_operators
 
 
 def _check_assertions(
@@ -1214,17 +1219,18 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             Main.pow = Main.eval("(^)")
             Main.div = Main.eval("(/)")
 
-        _create_inline_operators(
+        # TODO(mcranmer): These functions should be part of this class.
+        binary_operators, unary_operators = _maybe_create_inline_operators(
             binary_operators=self.binary_operators, unary_operators=self.unary_operators
         )
-        _handle_constraints(
-            binary_operators=self.binary_operators,
-            unary_operators=self.unary_operators,
+        constraints = _process_constraints(
+            binary_operators=binary_operators,
+            unary_operators=unary_operators,
             constraints=self.constraints,
         )
 
-        una_constraints = [self.constraints[op] for op in self.unary_operators]
-        bin_constraints = [self.constraints[op] for op in self.binary_operators]
+        una_constraints = [constraints[op] for op in unary_operators]
+        bin_constraints = [constraints[op] for op in binary_operators]
 
         # Parse dict into Julia Dict for nested constraints::
         if self.nested_constraints is not None:
@@ -1265,12 +1271,8 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         # Call to Julia backend.
         # See https://github.com/search?q=%22function+Options%22+repo%3AMilesCranmer%2FSymbolicRegression.jl+path%3A%2Fsrc%2F+filename%3AOptions.jl+language%3AJulia&type=Code
         options = Main.Options(
-            binary_operators=Main.eval(
-                str(tuple(self.binary_operators)).replace("'", "")
-            ),
-            unary_operators=Main.eval(
-                str(tuple(self.unary_operators)).replace("'", "")
-            ),
+            binary_operators=Main.eval(str(tuple(binary_operators)).replace("'", "")),
+            unary_operators=Main.eval(str(tuple(unary_operators)).replace("'", "")),
             bin_constraints=bin_constraints,
             una_constraints=una_constraints,
             complexity_of_operators=complexity_of_operators,
