@@ -922,17 +922,6 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             )
             self.batch_size = 1
 
-        if n_samples > 10000 and not self.batching:
-            warnings.warn(
-                "Note: you are running with more than 10,000 datapoints. "
-                "You should consider turning on batching (https://astroautomata.com/PySR/#/options?id=batching). "
-                "You should also reconsider if you need that many datapoints. "
-                "Unless you have a large amount of noise (in which case you "
-                "should smooth your dataset first), generally < 10,000 datapoints "
-                "is enough to find a functional form with symbolic regression. "
-                "More datapoints will lower the search speed."
-            )
-
         # Ensure instance parameters are allowable values:
         # ValueError - Incompatible values
         if self.tournament_selection_n > self.population_size:
@@ -1020,6 +1009,17 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             Validated list of variable names for each feature in `X`.
 
         """
+        if X.shape[1] > 10000 and not self.batching:
+            warnings.warn(
+                "Note: you are running with more than 10,000 datapoints. "
+                "You should consider turning on batching (https://astroautomata.com/PySR/#/options?id=batching). "
+                "You should also reconsider if you need that many datapoints. "
+                "Unless you have a large amount of noise (in which case you "
+                "should smooth your dataset first), generally < 10,000 datapoints "
+                "is enough to find a functional form with symbolic regression. "
+                "More datapoints will lower the search speed."
+            )
+
         if isinstance(X, pd.DataFrame):
             if variable_names:
                 variable_names = None
