@@ -1392,6 +1392,11 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
 
         self._setup_equation_file()
 
+        # Parameter input validation (for parameters defined in __init__)
+        X, y, Xresampled, variable_names = self._validate_fit_params(
+            X, y, Xresampled, variable_names
+        )
+
         if X.shape[0] > 10000 and not self.batching:
             warnings.warn(
                 "Note: you are running with more than 10,000 datapoints. "
@@ -1402,11 +1407,6 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
                 "is enough to find a functional form with symbolic regression. "
                 "More datapoints will lower the search speed."
             )
-
-        # Parameter input validation (for parameters defined in __init__)
-        X, y, Xresampled, variable_names = self._validate_fit_params(
-            X, y, Xresampled, variable_names
-        )
 
         # Pre transformations (feature selection and denoising)
         X, y, variable_names = self._pre_transform_training_data(
