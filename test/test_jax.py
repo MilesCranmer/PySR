@@ -23,6 +23,13 @@ class TestJAX(unittest.TestCase):
 
     def test_pipeline_pandas(self):
         X = pd.DataFrame(np.random.randn(100, 10))
+        y = np.ones(X.shape[0])
+        model = PySRRegressor(
+            max_evals=10000,
+            output_jax_format=True,
+        )
+        model.fit(X, y)
+
         equations = pd.DataFrame(
             {
                 "Equation": ["1.0", "cos(x1)", "square(cos(x1))"],
@@ -35,14 +42,7 @@ class TestJAX(unittest.TestCase):
             "equation_file.csv.bkup", sep="|"
         )
 
-        model = PySRRegressor(
-            equation_file="equation_file.csv",
-            output_jax_format=True,
-            variable_names="x1 x2 x3".split(" "),
-        )
-
-        model.fit(X, y=np.ones(X.shape[0]), from_equation_file=True)
-        model.refresh()
+        model.refresh(checkpoint_file="equation_file.csv")
         jformat = model.jax()
 
         np.testing.assert_almost_equal(
@@ -53,6 +53,10 @@ class TestJAX(unittest.TestCase):
 
     def test_pipeline(self):
         X = np.random.randn(100, 10)
+        y = np.ones(X.shape[0])
+        model = PySRRegressor(max_evals=10000, output_jax_format=True)
+        model.fit(X, y)
+
         equations = pd.DataFrame(
             {
                 "Equation": ["1.0", "cos(x1)", "square(cos(x1))"],
@@ -65,14 +69,7 @@ class TestJAX(unittest.TestCase):
             "equation_file.csv.bkup", sep="|"
         )
 
-        model = PySRRegressor(
-            equation_file="equation_file.csv",
-            output_jax_format=True,
-            variable_names="x1 x2 x3".split(" "),
-        )
-
-        model.fit(X, y=np.ones(X.shape[0]), from_equation_file=True)
-        model.refresh()
+        model.refresh(checkpoint_file="equation_file.csv")
         jformat = model.jax()
 
         np.testing.assert_almost_equal(

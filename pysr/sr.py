@@ -1402,7 +1402,6 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         Xresampled=None,
         weights=None,
         variable_names=None,
-        from_equation_file=False,
     ):
         """
         Search for equations to fit the dataset and store them in `self.equations_`.
@@ -1500,18 +1499,21 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         )
 
         # Fitting procedure
-        if not from_equation_file:
-            self._run(X=X, y=y, weights=weights, seed=seed)
-        else:
-            self.equations_ = self.get_hof()
+        return self._run(X=X, y=y, weights=weights, seed=seed)
 
-        return self
-
-    def refresh(self):
+    def refresh(self, checkpoint_file=None):
         """
         Updates self.equations_ with any new options passed, such as
         :param`extra_sympy_mappings`.
+
+        Parameters
+        ----------
+        checkpoint_file : str, default=None
+            Path to checkpoint hall of fame file to be loaded.
         """
+        check_is_fitted(self, attributes=["equation_file_"])
+        if checkpoint_file:
+            self.equation_file_ = checkpoint_file
         self.equations_ = self.get_hof()
 
     def _decision_function(self, X, best_equation):
@@ -1709,6 +1711,15 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
     def get_hof(self):
         """Get the equations from a hall of fame file. If no arguments
         entered, the ones used previously from a call to PySR will be used."""
+        check_is_fitted(
+            self,
+            attributes=[
+                "nout_",
+                "equation_file_",
+                "selection_mask_",
+                "feature_names_in_",
+            ],
+        )
         try:
             if self.nout_ > 1:
                 all_outputs = []

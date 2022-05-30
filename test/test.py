@@ -231,6 +231,17 @@ class TestPipeline(unittest.TestCase):
 
 class TestBest(unittest.TestCase):
     def setUp(self):
+        self.rstate = np.random.RandomState(0)
+        self.X = self.rstate.randn(10, 2)
+        self.y = np.cos(self.X[:, 0]) ** 2
+        self.model = PySRRegressor(
+            niterations=1,
+            extra_sympy_mappings={},
+            output_jax_format=False,
+            model_selection="accuracy",
+            equation_file="equation_file.csv",
+        )
+        self.model.fit(self.X, self.y)
         equations = pd.DataFrame(
             {
                 "equation": ["1.0", "cos(x0)", "square(cos(x0))"],
@@ -243,18 +254,6 @@ class TestBest(unittest.TestCase):
             "equation_file.csv.bkup", sep="|"
         )
 
-        self.model = PySRRegressor(
-            equation_file="equation_file.csv",
-            variable_names="x0 x1".split(" "),
-            extra_sympy_mappings={},
-            output_jax_format=False,
-            model_selection="accuracy",
-        )
-        self.rstate = np.random.RandomState(0)
-        # Placeholder values needed to fit the model from an equation file
-        self.X = self.rstate.randn(10, 2)
-        self.y = np.cos(self.X[:, 0]) ** 2
-        self.model.fit(self.X, self.y, from_equation_file=True)
         self.model.refresh()
         self.equations_ = self.model.equations_
 
@@ -307,6 +306,10 @@ class TestFeatureSelection(unittest.TestCase):
 
 class TestMiscellaneous(unittest.TestCase):
     """Test miscellaneous functions."""
+
+    def setUp(self):
+        # Allows all scikit-learn exception messages to be read.
+        self.maxDiff = None
 
     def test_deprecation(self):
         """Ensure that deprecation works as expected.

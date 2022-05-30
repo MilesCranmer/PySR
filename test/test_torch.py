@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 from pysr import sympy2torch, PySRRegressor
 import sympy
-from functools import partial
 
 
 class TestTorch(unittest.TestCase):
@@ -15,6 +14,7 @@ class TestTorch(unittest.TestCase):
         cosx = 1.0 * sympy.cos(x) + y
 
         import torch
+
         X = torch.tensor(np.random.randn(1000, 3))
         true = 1.0 * torch.cos(X[:, 0]) + X[:, 1]
         torch_module = sympy2torch(cosx, [x, y, z])
@@ -23,7 +23,6 @@ class TestTorch(unittest.TestCase):
         )
 
     def test_pipeline_pandas(self):
-        X = pd.DataFrame(np.random.randn(100, 10))
         equations = pd.DataFrame(
             {
                 "Equation": ["1.0", "cos(x1)", "square(cos(x1))"],
@@ -36,18 +35,16 @@ class TestTorch(unittest.TestCase):
             "equation_file.csv.bkup", sep="|"
         )
 
+        X = pd.DataFrame(np.random.randn(100, 10))
+        y = np.ones(X.shape[0])
         model = PySRRegressor(
+            max_evals=10000,
             model_selection="accuracy",
-            equation_file="equation_file.csv",
             extra_sympy_mappings={},
             output_torch_format=True,
         )
-        # Because a model hasn't been fit via the `fit` method, some
-        # attributes will not/cannot be set. For the purpose of
-        # testing, these attributes will be set manually here.
-        model.fit(X, y=np.ones(X.shape[0]), from_equation_file=True)
-        model.refresh()
-
+        model.fit(X, y)
+        model.refresh(checkpoint_file="equation_file.csv")
         tformat = model.pytorch()
         self.assertEqual(str(tformat), "_SingleSymPyModule(expression=cos(x1)**2)")
         import torch
@@ -60,6 +57,14 @@ class TestTorch(unittest.TestCase):
 
     def test_pipeline(self):
         X = np.random.randn(100, 10)
+        y = np.ones(X.shape[0])
+        model = PySRRegressor(
+            max_evals=10000,
+            model_selection="accuracy",
+            output_torch_format=True,
+        )
+        model.fit(X, y)
+
         equations = pd.DataFrame(
             {
                 "Equation": ["1.0", "cos(x1)", "square(cos(x1))"],
@@ -72,20 +77,13 @@ class TestTorch(unittest.TestCase):
             "equation_file.csv.bkup", sep="|"
         )
 
-        model = PySRRegressor(
-            model_selection="accuracy",
-            equation_file="equation_file.csv",
-            extra_sympy_mappings={},
-            output_torch_format=True,
-        )
-
-        model.fit(X, y=np.ones(X.shape[0]), from_equation_file=True)
-        model.refresh()
+        model.refresh(checkpoint_file="equation_file.csv")
 
         tformat = model.pytorch()
         self.assertEqual(str(tformat), "_SingleSymPyModule(expression=cos(x1)**2)")
 
         import torch
+
         np.testing.assert_almost_equal(
             tformat(torch.tensor(X)).detach().numpy(),
             np.square(np.cos(X[:, 1])),  # 2nd feature
@@ -99,6 +97,7 @@ class TestTorch(unittest.TestCase):
         module = sympy2torch(expression, [x, y, z])
 
         import torch
+
         X = torch.rand(100, 3).float() * 10
 
         true_out = (
@@ -112,6 +111,13 @@ class TestTorch(unittest.TestCase):
 
     def test_custom_operator(self):
         X = np.random.randn(100, 3)
+        y = np.ones(X.shape[0])
+        model = PySRRegressor(
+            max_evals=10000,
+            model_selection="accuracy",
+            output_torch_format=True,
+        )
+        model.fit(X, y)
 
         equations = pd.DataFrame(
             {
@@ -126,15 +132,13 @@ class TestTorch(unittest.TestCase):
         )
 
         import torch
-        model = PySRRegressor(
-            model_selection="accuracy",
+
+        model.set_params(
             equation_file="equation_file_custom_operator.csv",
             extra_sympy_mappings={"mycustomoperator": sympy.sin},
             extra_torch_mappings={"mycustomoperator": torch.sin},
-            output_torch_format=True,
         )
-        model.fit(X, y=np.ones(X.shape[0]), from_equation_file=True)
-        model.refresh()
+        model.refresh(checkpoint_file="equation_file_custom_operator.csv")
         self.assertEqual(str(model.sympy()), "sin(x1)")
         # Will automatically use the set global state from get_hof.
 
@@ -160,6 +164,7 @@ class TestTorch(unittest.TestCase):
 
         np_output = model.predict(X.values)
         import torch
+
         torch_output = torch_module(torch.tensor(X.values)).detach().numpy()
 
         np.testing.assert_almost_equal(np_output, torch_output, decimal=4)
