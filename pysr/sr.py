@@ -2,6 +2,7 @@ import os
 import sys
 import numpy as np
 import pandas as pd
+from sklearn.utils import check_array, check_random_state
 import sympy
 from sympy import sympify
 import re
@@ -170,6 +171,10 @@ def best_callable(*args, **kwargs):  # pragma: no cover
     raise NotImplementedError(
         "`best_callable` has been deprecated. Please use the `PySRRegressor` interface. After fitting, you can use `.predict(X)` to use the best callable."
     )
+
+
+# Class validation constants
+VALID_OPTIMIZER_ALGORITHMS = ["NelderMead", "BFGS"]
 
 
 class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
@@ -422,6 +427,10 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         What precision to use for the data. By default this is 32
         (float32), but you can select 64 or 16 as well.
 
+    random_state : int, Numpy RandomState instance or None, default=None
+        Pass an int for reproducible results across multiple function calls.
+        See :term:`Glossary <random_state>`.
+
     verbosity : int, default=1e9
         What verbosity level to use. 0 means minimal print statements.
 
@@ -566,9 +575,6 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
     array([-1.15907818, -1.15907818, -1.15907818, -1.15907818, -1.15907818])
     """
 
-    # Class validation constants
-    VALID_OPTIMIZER_ALGORITHMS = ["NelderMead", "BFGS"]
-
     def __init__(
         self,
         model_selection="best",
@@ -626,6 +632,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         batch_size=50,
         fast_cycle=False,
         precision=32,
+        random_state=None,
         verbosity=1e9,
         update_verbosity=None,
         progress=True,
@@ -709,6 +716,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         self.batch_size = batch_size
         self.fast_cycle = fast_cycle
         self.precision = precision
+        self.random_state = random_state
         # Additional runtime parameters
         # - Runtime user interface
         self.verbosity = verbosity
@@ -940,9 +948,9 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
                     )
 
         # NotImplementedError - Values that could be supported at a later time
-        if self.optimizer_algorithm not in self.VALID_OPTIMIZER_ALGORITHMS:
+        if self.optimizer_algorithm not in VALID_OPTIMIZER_ALGORITHMS:
             raise NotImplementedError(
-                f"PySR currently only supports the following optimizer algorithms: {self.VALID_OPTIMIZER_ALGORITHMS}"
+                f"PySR currently only supports the following optimizer algorithms: {VALID_OPTIMIZER_ALGORITHMS}"
             )
 
         if isinstance(X, pd.DataFrame):
@@ -988,7 +996,9 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
 
         return X, y, Xresampled, variable_names
 
-    def _pre_transform_training_data(self, X, y, Xresampled, variable_names):
+    def _pre_transform_training_data(
+        self, X, y, Xresampled, variable_names, random_state
+    ):
         """
         Transforms the training data before fitting the symbolic regressor.
 
@@ -1008,6 +1018,10 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
 
         variable_names : list[str] of length n_features
             Names of each variable in the training dataset, `X`.
+
+        random_state : int, Numpy RandomState instance or None, default=None
+            Pass an int for reproducible results across multiple function calls.
+            See :term:`Glossary <random_state>`.
 
         Returns
         -------
@@ -1031,7 +1045,9 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         """
         # Feature selection transformation
         if self.select_k_features:
-            self.selection_mask_ = run_feature_selection(X, y, self.select_k_features)
+            self.selection_mask_ = run_feature_selection(
+                X, y, self.select_k_features, random_state=random_state
+            )
             X = X[:, self.selection_mask_]
 
             if Xresampled is not None:
@@ -1051,7 +1067,9 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             if self.nout_ > 1:
                 y = np.stack(
                     [
-                        _denoise(X, y[:, i], Xresampled=Xresampled)[1]
+                        _denoise(
+                            X, y[:, i], Xresampled=Xresampled, random_state=random_state
+                        )[1]
                         for i in range(self.nout_)
                     ],
                     axis=1,
@@ -1059,11 +1077,11 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
                 if Xresampled is not None:
                     X = Xresampled
             else:
-                X, y = _denoise(X, y, Xresampled=Xresampled)
+                X, y = _denoise(X, y, Xresampled=Xresampled, random_state=random_state)
 
         return X, y, variable_names
 
-    def _run(self, X, y, weights):
+    def _run(self, X, y, weights, seed):
         """
         Run the symbolic regression fitting process on the julia backend.
 
@@ -1245,7 +1263,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         ]
 
         # Call to Julia backend.
-        # See https://github.com/search?q=%22function+Options%22+repo%3AMilesCranmer%2FSymbolicRegression.jl+path%3A%2Fsrc%2F+filename%3AOptions.jl+language%3AJulia&type=Code
+        # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/OptionsStruct.jl
         options = Main.Options(
             binary_operators=Main.eval(str(tuple(binary_operators)).replace("'", "")),
             unary_operators=Main.eval(str(tuple(unary_operators)).replace("'", "")),
@@ -1294,6 +1312,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             skip_mutation_failures=self.skip_mutation_failures,
             max_evals=self.max_evals,
             earlyStopCondition=self.early_stop_condition,
+            seed=seed,
         )
 
         # Convert data to desired precision
@@ -1316,7 +1335,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         cprocs = 0 if multithreading else self.procs
 
         # Call to Julia backend.
-        # See https://github.com/search?q=%22function+EquationSearch%22+repo%3AMilesCranmer%2FSymbolicRegression.jl+path%3A%2Fsrc%2F+filename%3ASymbolicRegression.jl+language%3AJulia&type=Code
+        # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/SymbolicRegression.jl
         self.raw_julia_state_ = Main.EquationSearch(
             Main.X,
             Main.y,
@@ -1390,6 +1409,9 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         self.selection_mask_ = None
         self.raw_julia_state_ = None
 
+        random_state = check_random_state(self.random_state)  # For np random
+        seed = random_state.get_state()[1][0]  # For julia random
+
         self._setup_equation_file()
 
         # Parameter input validation (for parameters defined in __init__)
@@ -1410,7 +1432,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
 
         # Pre transformations (feature selection and denoising)
         X, y, variable_names = self._pre_transform_training_data(
-            X, y, Xresampled, variable_names
+            X, y, Xresampled, variable_names, random_state
         )
 
         # Warn about large feature counts (still warn if feature count is large
@@ -1443,7 +1465,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
 
         # Fitting procedure
         if not from_equation_file:
-            self._run(X=X, y=y, weights=weights)
+            self._run(X=X, y=y, weights=weights, seed=seed)
         else:
             self.equations_ = self.get_hof()
 
@@ -1790,13 +1812,15 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         return ret_outputs[0]
 
 
-def _denoise(X, y, Xresampled=None):
+def _denoise(X, y, Xresampled=None, random_state=None):
     """Denoise the dataset using a Gaussian process"""
     from sklearn.gaussian_process import GaussianProcessRegressor
     from sklearn.gaussian_process.kernels import RBF, WhiteKernel, ConstantKernel
 
     gp_kernel = RBF(np.ones(X.shape[1])) + WhiteKernel(1e-1) + ConstantKernel()
-    gpr = GaussianProcessRegressor(kernel=gp_kernel, n_restarts_optimizer=50)
+    gpr = GaussianProcessRegressor(
+        kernel=gp_kernel, n_restarts_optimizer=50, random_state=random_state
+    )
     gpr.fit(X, y)
     if Xresampled is not None:
         return Xresampled, gpr.predict(Xresampled)
@@ -1816,7 +1840,7 @@ def _handle_feature_selection(X, select_k_features, y, variable_names):
     return X, selection
 
 
-def run_feature_selection(X, y, select_k_features):
+def run_feature_selection(X, y, select_k_features, random_state=None):
     """
     Use a gradient boosting tree regressor as a proxy for finding
     the k most important features in X, returning indices for those
@@ -1825,7 +1849,9 @@ def run_feature_selection(X, y, select_k_features):
     from sklearn.ensemble import RandomForestRegressor
     from sklearn.feature_selection import SelectFromModel
 
-    clf = RandomForestRegressor(n_estimators=100, max_depth=3, random_state=0)
+    clf = RandomForestRegressor(
+        n_estimators=100, max_depth=3, random_state=random_state
+    )
     clf.fit(X, y)
     selector = SelectFromModel(
         clf, threshold=-np.inf, max_features=select_k_features, prefit=True
