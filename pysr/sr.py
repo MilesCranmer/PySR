@@ -177,7 +177,7 @@ def best_callable(*args, **kwargs):  # pragma: no cover
 VALID_OPTIMIZER_ALGORITHMS = ["NelderMead", "BFGS"]
 
 
-class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
+class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     """
     High-performance symbolic regression.
 
@@ -431,6 +431,10 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         Pass an int for reproducible results across multiple function calls.
         See :term:`Glossary <random_state>`.
 
+    warm_start : bool, default=False
+        Tells fit to continue from where the last call to fit finished.
+        If false, each call to fit will be fresh, overwriting previous results.
+
     verbosity : int, default=1e9
         What verbosity level to use. 0 means minimal print statements.
 
@@ -633,6 +637,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         fast_cycle=False,
         precision=32,
         random_state=None,
+        warm_start=False,
         verbosity=1e9,
         update_verbosity=None,
         progress=True,
@@ -717,6 +722,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         self.fast_cycle = fast_cycle
         self.precision = precision
         self.random_state = random_state
+        self.warm_start = warm_start
         # Additional runtime parameters
         # - Runtime user interface
         self.verbosity = verbosity
@@ -914,8 +920,11 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         if self.temp_equation_file:
             self.equation_file_ = self.tempdir_ / "hall_of_fame.csv"
         elif self.equation_file is None:
-            date_time = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")[:-3]
-            self.equation_file_ = "hall_of_fame_" + date_time + ".csv"
+            if self.warm_start and self.equation_file_:
+                pass
+            else:
+                date_time = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")[:-3]
+                self.equation_file_ = "hall_of_fame_" + date_time + ".csv"
         else:
             self.equation_file_ = self.equation_file
 
@@ -1433,10 +1442,13 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             Fitted Estimator.
         """
         # Init attributes that are not specified in BaseEstimator
-        self.equations_ = None
-        self.nout_ = 1
-        self.selection_mask_ = None
-        self.raw_julia_state_ = None
+        if self.warm_start and hasattr(self, "raw_julia_state_"):
+            pass
+        else:
+            self.equations_ = None
+            self.nout_ = 1
+            self.selection_mask_ = None
+            self.raw_julia_state_ = None
 
         random_state = check_random_state(self.random_state)  # For np random
         seed = random_state.get_state()[1][0]  # For julia random
@@ -1510,72 +1522,6 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             self.equation_file_ = checkpoint_file
         self.equations_ = self.get_hof()
 
-    def _decision_function(self, X, best_equation):
-        """
-        Decide what value to predict based on the 'best' equation found
-        from fitting.
-
-        Parameters
-        ----------
-        X : {ndarray | pandas.DataFrame} of shape (n_samples, n_features)
-            Testing data for evaluating the model.
-
-        best_equation : pd.Series
-            Selected best equation from `self.equations_`.
-
-        Returns
-        -------
-        y_predicted : ndarray of shape (n_samples,) or (n_samples, nout_)
-            Values predicted by substituting `X` into the
-            :param`best_equation`.
-
-        Raises
-        ------
-        ValueError
-            Raises if the `best_equation` cannot be evaluated.
-        """
-        check_is_fitted(self, attributes=["equations_", "feature_names_in_"])
-
-        # When X is an numpy array or a pandas dataframe with a RangeIndex,
-        # the self.feature_names_in_ generated during fit, for the same X,
-        # will cause a warning to be thrown during _validate_data.
-        # To avoid this, convert X to a dataframe, apply the selection mask,
-        # and then set the column/feature_names of X to be equal to those
-        # generated during fit.
-        if isinstance(X, np.ndarray):
-            X = pd.DataFrame(X)
-
-        if isinstance(X.columns, pd.RangeIndex):
-            if self.selection_mask_ is not None:
-                # RangeIndex enforces column order allowing columns to
-                # be correctly filtered with self.selection_mask_
-                X = X.iloc[:, self.selection_mask_]
-            X.columns = self.feature_names_in_
-
-        # Without feature information, CallableEquation/lambda_format equations
-        # require that the column order of X matches that of the X used during
-        # the fitting process. _validate_data removes this feature information
-        # when it converts the dataframe to an np array. Thus, to ensure feature
-        # order is preserved after conversion, the dataframe columns must be
-        # reordered/reindexed to match those of the transformed (denoised and
-        # feature selected) X in fit.
-        X = X.reindex(columns=self.feature_names_in_)
-
-        X = self._validate_data(X, reset=False)
-
-        try:
-            if self.nout_ > 1:
-                return np.stack(
-                    [eq["lambda_format"](X) for eq in best_equation], axis=1
-                )
-            return best_equation["lambda_format"](X)
-        except Exception as error:
-            raise ValueError(
-                "Failed to evaluate the expression. "
-                "If you are using a custom operator, make sure to define it in :param`extra_sympy_mappings`, "
-                "e.g., `model.set_params(extra_sympy_mappings={'inv': lambda x: 1 / x})`."
-            ) from error
-
     def predict(self, X, index=None):
         """
         Predict y from input X using the equation chosen by `model_selection`.
@@ -1597,10 +1543,52 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         y_predicted : ndarray of shape (n_samples, nout_)
             Values predicted by substituting `X` into the fitted symbolic
             regression model.
+
+        Raises
+        ------
+        ValueError
+            Raises if the `best_equation` cannot be evaluated.
         """
         self.refresh()
         best_equation = self.get_best(index=index)
-        return self._decision_function(X, best_equation)
+
+        # When X is an numpy array or a pandas dataframe with a RangeIndex,
+        # the self.feature_names_in_ generated during fit, for the same X,
+        # will cause a warning to be thrown during _validate_data.
+        # To avoid this, convert X to a dataframe, apply the selection mask,
+        # and then set the column/feature_names of X to be equal to those
+        # generated during fit.
+        if not isinstance(X, pd.DataFrame):
+            X = check_array(X)
+            X = pd.DataFrame(X)
+        if isinstance(X.columns, pd.RangeIndex):
+            if self.selection_mask_ is not None:
+                # RangeIndex enforces column order allowing columns to
+                # be correctly filtered with self.selection_mask_
+                X = X.iloc[:, self.selection_mask_]
+            X.columns = self.feature_names_in_
+        # Without feature information, CallableEquation/lambda_format equations
+        # require that the column order of X matches that of the X used during
+        # the fitting process. _validate_data removes this feature information
+        # when it converts the dataframe to an np array. Thus, to ensure feature
+        # order is preserved after conversion, the dataframe columns must be
+        # reordered/reindexed to match those of the transformed (denoised and
+        # feature selected) X in fit.
+        X = X.reindex(columns=self.feature_names_in_)
+        X = self._validate_data(X, reset=False)
+
+        try:
+            if self.nout_ > 1:
+                return np.stack(
+                    [eq["lambda_format"](X) for eq in best_equation], axis=1
+                )
+            return best_equation["lambda_format"](X)
+        except Exception as error:
+            raise ValueError(
+                "Failed to evaluate the expression. "
+                "If you are using a custom operator, make sure to define it in :param`extra_sympy_mappings`, "
+                "e.g., `model.set_params(extra_sympy_mappings={'inv': lambda x: 1 / x})`."
+            ) from error
 
     def sympy(self, index=None):
         """
