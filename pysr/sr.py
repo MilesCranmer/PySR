@@ -1427,12 +1427,6 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
             If :param`X` is a pandas dataframe, the column names will be used.
             If variable_names are specified
 
-        from_equation_file : bool, default=False
-            Allows model to be initialized/fit from a previous run that has
-            been saved to a file. If true, a value of y still needs to be
-            passed such that `nout_` can be determined, however, the values of
-            y are irrelevant and can be all zeros.
-
         Returns
         -------
         self : object

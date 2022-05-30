@@ -23,6 +23,16 @@ class TestTorch(unittest.TestCase):
         )
 
     def test_pipeline_pandas(self):
+        X = pd.DataFrame(np.random.randn(100, 10))
+        y = np.ones(X.shape[0])
+        model = PySRRegressor(
+            max_evals=10000,
+            model_selection="accuracy",
+            extra_sympy_mappings={},
+            output_torch_format=True,
+        )
+        model.fit(X, y)
+
         equations = pd.DataFrame(
             {
                 "Equation": ["1.0", "cos(x1)", "square(cos(x1))"],
@@ -35,15 +45,6 @@ class TestTorch(unittest.TestCase):
             "equation_file.csv.bkup", sep="|"
         )
 
-        X = pd.DataFrame(np.random.randn(100, 10))
-        y = np.ones(X.shape[0])
-        model = PySRRegressor(
-            max_evals=10000,
-            model_selection="accuracy",
-            extra_sympy_mappings={},
-            output_torch_format=True,
-        )
-        model.fit(X, y)
         model.refresh(checkpoint_file="equation_file.csv")
         tformat = model.pytorch()
         self.assertEqual(str(tformat), "_SingleSymPyModule(expression=cos(x1)**2)")
