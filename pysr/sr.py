@@ -529,6 +529,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         List of indices for input features that are selected when
         :param`select_k_features` is set.
 
+    tempdir_ : Path
+        Path to the temporary equations directory.
+
+    equation_file_ : str
+        Output equation file name produced by the julia backend.
+
     raw_julia_state_ : tuple[list[PyCall.jlwrap], PyCall.jlwrap]
         The state for the julia SymbolicRegression.jl backend post fitting.
 
@@ -928,6 +934,71 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         else:
             self.equation_file_ = self.equation_file
 
+    def _validate_init_params(self):
+
+        # Immutable parameter validation
+        # Ensure instance parameters are allowable values:
+        if self.tournament_selection_n > self.population_size:
+            raise ValueError(
+                "tournament_selection_n parameter must be smaller than population_size."
+            )
+
+        if self.maxsize > 40:
+            warnings.warn(
+                "Note: Using a large maxsize for the equation search will be exponentially slower and use significant memory. You should consider turning `use_frequency` to False, and perhaps use `warmup_maxsize_by`."
+            )
+        elif self.maxsize < 7:
+            raise ValueError("PySR requires a maxsize of at least 7")
+
+        # NotImplementedError - Values that could be supported at a later time
+        if self.optimizer_algorithm not in VALID_OPTIMIZER_ALGORITHMS:
+            raise NotImplementedError(
+                f"PySR currently only supports the following optimizer algorithms: {VALID_OPTIMIZER_ALGORITHMS}"
+            )
+
+        # 'Mutable' parameter validation
+        buffer_available = "buffer" in sys.stdout.__dir__()
+        modifiable_params = {
+            "binary_operators": "+ * - /".split(" "),
+            "unary_operators": [],
+            "maxdepth": self.maxsize,
+            "constraints": {},
+            "multithreading": self.procs != 0 and self.cluster_manager is None,
+            "batch_size": 1,
+            "update_verbosity": self.verbosity,
+            "progress": buffer_available,
+        }
+        packed_modified_params = {}
+        for parameter, default_value in modifiable_params.items():
+            parameter_value = getattr(self, parameter)
+            if parameter_value is None:
+                parameter_value = default_value
+            else:
+                # Special cases such as when binary_operators is a string
+                if parameter in ["binary_operators", "unary_operators"] and isinstance(
+                    parameter_value, str
+                ):
+                    parameter_value = [parameter_value]
+                elif parameter is "batch_size" and parameter_value < 1:
+                    warnings.warn(
+                        "Given :param`batch_size` must be greater than or equal to one. "
+                        ":param`batch_size` has been increased to equal one."
+                    )
+                    parameter_value = 1
+                elif parameter is "progress" and not buffer_available:
+                    warnings.warn(
+                        "Note: it looks like you are running in Jupyter. The progress bar will be turned off."
+                    )
+                    parameter_value = False
+            packed_modified_params[parameter] = parameter_value
+
+        assert (
+            len(packed_modified_params["binary_operators"])
+            + len(packed_modified_params["unary_operators"])
+            > 0
+        )
+        return packed_modified_params
+
     def _validate_fit_params(self, X, y, Xresampled, variable_names):
         """
         Validates the parameters passed to the :term`fit` method.
@@ -965,39 +1036,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         """
 
-        # Ensure instance parameters are allowable values:
-        if self.tournament_selection_n > self.population_size:
-            raise ValueError(
-                "tournament_selection_n parameter must be smaller than population_size."
-            )
-
-        if self.maxsize > 40:
-            warnings.warn(
-                "Note: Using a large maxsize for the equation search will be exponentially slower and use significant memory. You should consider turning `use_frequency` to False, and perhaps use `warmup_maxsize_by`."
-            )
-        elif self.maxsize < 7:
-            raise ValueError("PySR requires a maxsize of at least 7")
-
-        if self.extra_jax_mappings is not None:
-            for value in self.extra_jax_mappings.values():
-                if not isinstance(value, str):
-                    raise ValueError(
-                        "extra_jax_mappings must have keys that are strings! e.g., {sympy.sqrt: 'jnp.sqrt'}."
-                    )
-
-        if self.extra_torch_mappings is not None:
-            for value in self.extra_jax_mappings.values():
-                if not callable(value):
-                    raise ValueError(
-                        "extra_torch_mappings must be callable functions! e.g., {sympy.sqrt: torch.sqrt}."
-                    )
-
-        # NotImplementedError - Values that could be supported at a later time
-        if self.optimizer_algorithm not in VALID_OPTIMIZER_ALGORITHMS:
-            raise NotImplementedError(
-                f"PySR currently only supports the following optimizer algorithms: {VALID_OPTIMIZER_ALGORITHMS}"
-            )
-
         if isinstance(X, pd.DataFrame):
             if variable_names:
                 variable_names = None
@@ -1020,13 +1058,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 "Spaces have been replaced with underscores. \n"
                 "Please use valid names instead."
             )
-        # Only numpy values are needed from Xresampled, column metadata is
-        # provided by X
-        if isinstance(Xresampled, pd.DataFrame):
-            Xresampled = Xresampled.values
 
         # Data validation and feature name fetching via sklearn
         # This method sets the n_features_in_ attribute
+        Xresampled = check_array(Xresampled)
         X, y = self._validate_data(X=X, y=y, reset=True, multi_output=True)
         self.feature_names_in_ = _check_feature_names_in(self, variable_names)
         variable_names = self.feature_names_in_
@@ -1126,7 +1161,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         return X, y, variable_names
 
-    def _run(self, X, y, weights, seed):
+    def _run(self, X, y, mutated_params, weights, seed):
         """
         Run the symbolic regression fitting process on the julia backend.
 
@@ -1138,9 +1173,15 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         y : {ndarray | pandas.DataFrame} of shape (n_samples,) or (n_samples, n_targets)
             Target values. Will be cast to X's dtype if necessary.
 
-        weights : {ndarray | pandas.DataFrame} of the same shape as y, default=None
+        mutated_params : dict[str, Any]
+            Dictionary of mutated versions of some parameters passed in __init__.
+
+        weights : {ndarray | pandas.DataFrame} of the same shape as y
             Each element is how to weight the mean-square-error loss
             for that particular element of y.
+
+        seed : int
+            Random seed for julia backend process.
 
         Returns
         -------
@@ -1159,66 +1200,17 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # These are the parameters which may be modified from the ones
         # specified in init, so we define them here locally:
-        binary_operators = self.binary_operators
-        unary_operators = self.unary_operators
-        constraints = self.constraints
+        binary_operators = mutated_params["binary_operators"]
+        unary_operators = mutated_params["unary_operators"]
+        maxdepth = mutated_params["maxdepth"]
+        constraints = mutated_params["constraints"]
         nested_constraints = self.nested_constraints
         complexity_of_operators = self.complexity_of_operators
-        multithreading = self.multithreading
-        update_verbosity = self.update_verbosity
-        maxdepth = self.maxdepth
-        batch_size = self.batch_size
-        progress = self.progress
+        multithreading = mutated_params["multithreading"]
         cluster_manager = self.cluster_manager
-
-        # TODO: Clean this up into a readable format, such that
-        #  a function call automatically configures each default.
-
-        # Deal with default values, and type conversions:
-        if binary_operators is None:
-            binary_operators = "+ * - /".split(" ")
-        elif isinstance(binary_operators, str):
-            binary_operators = [binary_operators]
-
-        if unary_operators is None:
-            unary_operators = []
-        elif isinstance(unary_operators, str):
-            unary_operators = [unary_operators]
-
-        assert len(unary_operators) + len(binary_operators) > 0
-
-        if constraints is None:
-            constraints = {}
-
-        if multithreading is None:
-            # Default is multithreading=True, unless explicitly set,
-            # or procs is set to 0 (serial mode).
-            multithreading = self.procs != 0 and cluster_manager is None
-
-        if update_verbosity is None:
-            update_verbosity = self.verbosity
-
-        if maxdepth is None:
-            maxdepth = self.maxsize
-
-        # Warn if instance parameters are not sensible values:
-        if batch_size < 1:
-            warnings.warn(
-                "Given :param`batch_size` must be greater than or equal to one. "
-                ":param`batch_size` has been increased to equal one."
-            )
-            batch_size = 1
-
-        # Handle presentation of the progress bar:
-        buffer_available = "buffer" in sys.stdout.__dir__()
-        if progress is not None:
-            if progress and not buffer_available:
-                warnings.warn(
-                    "Note: it looks like you are running in Jupyter. The progress bar will be turned off."
-                )
-                progress = False
-        else:
-            progress = buffer_available
+        batch_size = mutated_params["batch_size"]
+        update_verbosity = mutated_params["update_verbosity"]
+        progress = mutated_params["progress"]
 
         # Start julia backend processes
         if Main is None:
@@ -1455,6 +1447,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         self._setup_equation_file()
 
+        mutated_params = self._validate_init_params()
+
         # Parameter input validation (for parameters defined in __init__)
         X, y, Xresampled, variable_names = self._validate_fit_params(
             X, y, Xresampled, variable_names
@@ -1505,7 +1499,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         )
 
         # Fitting procedure
-        return self._run(X=X, y=y, weights=weights, seed=seed)
+        return self._run(X, y, mutated_params, weights=weights, seed=seed)
 
     def refresh(self, checkpoint_file=None):
         """
@@ -1735,6 +1729,27 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             raise RuntimeError(
                 "Couldn't find equation file! The equation search likely exited before a single iteration completed."
             )
+
+        # It is expected extra_jax/torch_mappings will be updated after fit.
+        # Thus, validation is performed here instead of in _validate_init_params
+        extra_jax_mappings = self.extra_jax_mappings
+        extra_torch_mappings = self.extra_torch_mappings
+        if extra_jax_mappings is not None:
+            for value in self.extra_jax_mappings.values():
+                if not isinstance(value, str):
+                    raise ValueError(
+                        "extra_jax_mappings must have keys that are strings! e.g., {sympy.sqrt: 'jnp.sqrt'}."
+                    )
+        else:
+            extra_jax_mappings = {}
+        if extra_torch_mappings is not None:
+            for value in self.extra_jax_mappings.values():
+                if not callable(value):
+                    raise ValueError(
+                        "extra_torch_mappings must be callable functions! e.g., {sympy.sqrt: torch.sqrt}."
+                    )
+        else:
+            extra_torch_mappings = {}
 
         ret_outputs = []
 
