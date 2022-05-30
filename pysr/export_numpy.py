@@ -13,7 +13,6 @@ class CallableEquation:
         self._sympy_symbols = sympy_symbols
         self._selection = selection
         self._variable_names = variable_names
-        self._lambda = lambdify(sympy_symbols, eqn)
 
     def __repr__(self):
         return f"PySRFunction(X=>{self._sympy})"
@@ -35,3 +34,7 @@ class CallableEquation:
                 )
                 X = X[:, self._selection]
         return self._lambda(*X.T) * np.ones(expected_shape)
+
+    @property
+    def _lambda(self):
+        return lambdify(self._sympy_symbols, self._sympy)

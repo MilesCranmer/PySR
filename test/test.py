@@ -348,18 +348,18 @@ class TestMiscellaneous(unittest.TestCase):
             max_evals=10000, verbosity=0, progress=False
         )  # Return early.
         check_generator = check_estimator(model, generate_only=True)
+        exception_messages = []
         for (_, check) in check_generator:
-            if "pickle" in check.func.__name__:
-                # Skip pickling tests.
-                continue
-
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
                     check(model)
                 print("Passed", check.func.__name__)
             except Exception as e:
+                exception_messages.append(f"{check.func.__name__}: {e}\n")
                 print("Failed", check.func.__name__, "with:")
                 # Add a leading tab to error message, which
                 # might be multi-line:
                 print("\n".join([(" " * 4) + row for row in str(e).split("\n")]))
+        # If any checks failed don't let the test pass.
+        self.assertEqual([], exception_messages)

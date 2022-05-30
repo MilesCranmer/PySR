@@ -816,6 +816,42 @@ class PySRRegressor(BaseEstimator, RegressorMixin, MultiOutputMixin):
         output += "]"
         return output
 
+    def __getstate__(self):
+        """
+        Handles pickle serialization for PySRRegressor.
+
+        The Scikit-learn standard requires estimators to be serializable via
+        `pickle.dumps()`. However, `PyCall.jlwrap` does not support pickle
+        serialization.
+
+        Thus, for `PySRRegressor` to support pickle serialization, the
+        `raw_julia_state_` attribute must be hidden from pickle. This will
+        prevent the `warm_start` of any model that is loaded via `pickle.loads()`,
+        but does allow all other attributes of a fitted `PySRRegressor` estimator
+        to be serialized. Note: Jax and Torch format equations are also removed
+        from the pickled instance.
+        """
+        warnings.warn(
+            "raw_julia_state_ cannot be pickled and will be removed from the "
+            "serialized instance. This will prevent a `warm_start` fit of any "
+            "model that is deserialized via `pickle.loads()`."
+        )
+        state = self.__dict__
+        pickled_state = {
+            key: None if key == "raw_julia_state_" else value
+            for key, value in state.items()
+        }
+        if "equations_" in pickled_state:
+            pickled_state["output_torch_format"] = False
+            pickled_state["output_jax_format"] = False
+            pickled_columns = ~pickled_state["equations_"].columns.isin(
+                ["jax_format", "torch_format"]
+            )
+            pickled_state["equations_"] = (
+                pickled_state["equations_"].loc[:, pickled_columns].copy()
+            )
+        return pickled_state
+
     @property
     def equations(self):  # pragma: no cover
         warnings.warn(
