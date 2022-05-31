@@ -1749,7 +1749,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         extra_jax_mappings = self.extra_jax_mappings
         extra_torch_mappings = self.extra_torch_mappings
         if extra_jax_mappings is not None:
-            for value in self.extra_jax_mappings.values():
+            for value in extra_jax_mappings.values():
                 if not isinstance(value, str):
                     raise ValueError(
                         "extra_jax_mappings must have keys that are strings! e.g., {sympy.sqrt: 'jnp.sqrt'}."
@@ -1757,7 +1757,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         else:
             extra_jax_mappings = {}
         if extra_torch_mappings is not None:
-            for value in self.extra_jax_mappings.values():
+            for value in extra_jax_mappings.values():
                 if not callable(value):
                     raise ValueError(
                         "extra_torch_mappings must be callable functions! e.g., {sympy.sqrt: torch.sqrt}."
