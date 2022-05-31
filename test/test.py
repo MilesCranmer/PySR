@@ -350,7 +350,17 @@ class TestMiscellaneous(unittest.TestCase):
         model = PySRRegressor(
             max_evals=10000, verbosity=0, progress=False
         )  # Return early.
+
+        # TODO: Add deterministic option so that we can test these.
+        # (would require backend changes, and procs=0 for serialism.)
         check_generator = check_estimator(model, generate_only=True)
+        tests_requiring_determinism = [
+            "check_regressors_int",  # PySR is not deterministic, so fails this.
+            "check_regressor_data_not_an_array",
+            "check_supervised_y_2d",
+            "check_regressors_int",
+            "check_fit_idempotent",
+        ]
         exception_messages = []
         for (_, check) in check_generator:
             try:
@@ -359,10 +369,20 @@ class TestMiscellaneous(unittest.TestCase):
                     check(model)
                 print("Passed", check.func.__name__)
             except Exception as e:
-                exception_messages.append(f"{check.func.__name__}: {e}\n")
+                error_message = str(e)
+                failed_tolerance_check = "Not equal to tolerance" in error_message
+
+                if (
+                    failed_tolerance_check
+                    and check.func.__name__ in tests_requiring_determinism
+                ):
+                    # Skip test as PySR is not deterministic.
+                    continue
+
+                exception_messages.append(f"{check.func.__name__}: {error_message}\n")
                 print("Failed", check.func.__name__, "with:")
                 # Add a leading tab to error message, which
                 # might be multi-line:
-                print("\n".join([(" " * 4) + row for row in str(e).split("\n")]))
+                print("\n".join([(" " * 4) + row for row in error_message.split("\n")]))
         # If any checks failed don't let the test pass.
         self.assertEqual([], exception_messages)
