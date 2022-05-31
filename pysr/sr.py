@@ -1061,7 +1061,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # Data validation and feature name fetching via sklearn
         # This method sets the n_features_in_ attribute
-        Xresampled = check_array(Xresampled)
+        if Xresampled is not None:
+            Xresampled = check_array(Xresampled)
         X, y = self._validate_data(X=X, y=y, reset=True, multi_output=True)
         self.feature_names_in_ = _check_feature_names_in(self, variable_names)
         variable_names = self.feature_names_in_
