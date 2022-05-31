@@ -13,7 +13,11 @@ from datetime import datetime
 import warnings
 from multiprocessing import cpu_count
 from sklearn.base import BaseEstimator, RegressorMixin, MultiOutputMixin
-from sklearn.utils.validation import _check_feature_names_in, check_is_fitted
+from sklearn.utils.validation import (
+    _check_feature_names_in,
+    _check_sample_weight,
+    check_is_fitted,
+)
 
 from .julia_helpers import (
     init_julia,
@@ -980,13 +984,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     parameter_value, str
                 ):
                     parameter_value = [parameter_value]
-                elif parameter is "batch_size" and parameter_value < 1:
+                elif parameter == "batch_size" and parameter_value < 1:
                     warnings.warn(
                         "Given :param`batch_size` must be greater than or equal to one. "
                         ":param`batch_size` has been increased to equal one."
                     )
                     parameter_value = 1
-                elif parameter is "progress" and not buffer_available:
+                elif parameter == "progress" and not buffer_available:
                     warnings.warn(
                         "Note: it looks like you are running in Jupyter. The progress bar will be turned off."
                     )
@@ -1000,7 +1004,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         )
         return packed_modified_params
 
-    def _validate_fit_params(self, X, y, Xresampled, variable_names):
+    def _validate_fit_params(self, X, y, Xresampled, weights, variable_names):
         """
         Validates the parameters passed to the :term`fit` method.
 
@@ -1017,6 +1021,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Xresampled : {ndarray | pandas.DataFrame} of shape
                         (n_resampled, n_features), default=None
             Resampled training data used for denoising.
+
+        weights : {ndarray | pandas.DataFrame} of the same shape as y
+            Each element is how to weight the mean-square-error loss
+            for that particular element of y.
 
         variable_names : list[str] of length n_features
             Names of each variable in the training dataset, `X`.
@@ -1064,6 +1072,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # This method sets the n_features_in_ attribute
         if Xresampled is not None:
             Xresampled = check_array(Xresampled)
+        if weights is not None:
+            weights = _check_sample_weight(weights, y)
         X, y = self._validate_data(X=X, y=y, reset=True, multi_output=True)
         self.feature_names_in_ = _check_feature_names_in(self, variable_names)
         variable_names = self.feature_names_in_
@@ -1076,7 +1086,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         else:
             raise NotImplementedError("y shape not supported!")
 
-        return X, y, Xresampled, variable_names
+        return X, y, Xresampled, weights, variable_names
 
     def _pre_transform_training_data(
         self, X, y, Xresampled, variable_names, random_state
@@ -1452,8 +1462,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         mutated_params = self._validate_init_params()
 
         # Parameter input validation (for parameters defined in __init__)
-        X, y, Xresampled, variable_names = self._validate_fit_params(
-            X, y, Xresampled, variable_names
+        X, y, Xresampled, weights, variable_names = self._validate_fit_params(
+            X, y, Xresampled, weights, variable_names
         )
 
         if X.shape[0] > 10000 and not self.batching:
