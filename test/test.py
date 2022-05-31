@@ -366,6 +366,12 @@ class TestMiscellaneous(unittest.TestCase):
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
+                    # To ensure an equation file is written for each output in
+                    # nout, set stop condition to niterations=1
+                    if check.func.__name__ == "check_regressor_multioutput":
+                        model.set_params(niterations=1, max_evals=None)
+                    else:
+                        model.set_params(max_evals=10000)
                     check(model)
                 print("Passed", check.func.__name__)
             except Exception as e:
