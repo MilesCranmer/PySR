@@ -377,12 +377,22 @@ class TestMiscellaneous(unittest.TestCase):
                     and check.func.__name__ in tests_requiring_determinism
                 ):
                     # Skip test as PySR is not deterministic.
-                    continue
-
-                exception_messages.append(f"{check.func.__name__}: {error_message}\n")
-                print("Failed", check.func.__name__, "with:")
-                # Add a leading tab to error message, which
-                # might be multi-line:
-                print("\n".join([(" " * 4) + row for row in error_message.split("\n")]))
+                    print(
+                        "Failed",
+                        check.func.__name__,
+                        "which is an allowed failure, as the test requires determinism.",
+                    )
+                else:
+                    exception_messages.append(
+                        f"{check.func.__name__}: {error_message}\n"
+                    )
+                    print("Failed", check.func.__name__, "with:")
+                    # Add a leading tab to error message, which
+                    # might be multi-line:
+                    print(
+                        "\n".join(
+                            [(" " * 4) + row for row in error_message.split("\n")]
+                        )
+                    )
         # If any checks failed don't let the test pass.
         self.assertEqual([], exception_messages)
