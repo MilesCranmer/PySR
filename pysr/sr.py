@@ -894,6 +894,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         NotImplementedError
             Raised when an invalid model selection strategy is provided.
         """
+        check_is_fitted(self, attributes=["equations_"])
         if self.equations_ is None:
             raise ValueError("No equations have been generated yet.")
 
@@ -1544,7 +1545,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         ValueError
             Raises if the `best_equation` cannot be evaluated.
         """
-        self.refresh()
+        check_is_fitted(
+            self, attributes=["selection_mask_", "feature_names_in_", "nout_"]
+        )
         best_equation = self.get_best(index=index)
 
         # When X is an numpy array or a pandas dataframe with a RangeIndex,
