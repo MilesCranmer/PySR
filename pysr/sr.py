@@ -2,7 +2,7 @@ import os
 import sys
 import numpy as np
 import pandas as pd
-from sklearn.utils import check_array, check_random_state
+from sklearn.utils import check_array, check_consistent_length, check_random_state
 import sympy
 from sympy import sympify
 import re
@@ -15,7 +15,7 @@ from multiprocessing import cpu_count
 from sklearn.base import BaseEstimator, RegressorMixin, MultiOutputMixin
 from sklearn.utils.validation import (
     _check_feature_names_in,
-    _check_sample_weight,
+    check_X_y,
     check_is_fitted,
 )
 
@@ -1073,7 +1073,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if Xresampled is not None:
             Xresampled = check_array(Xresampled)
         if weights is not None:
-            weights = _check_sample_weight(weights, y)
+            weights = check_array(weights)
+            check_consistent_length(weights, y)
         X, y = self._validate_data(X=X, y=y, reset=True, multi_output=True)
         self.feature_names_in_ = _check_feature_names_in(self, variable_names)
         variable_names = self.feature_names_in_
@@ -1461,7 +1462,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         mutated_params = self._validate_init_params()
 
-        # Parameter input validation (for parameters defined in __init__)
         X, y, Xresampled, weights, variable_names = self._validate_fit_params(
             X, y, Xresampled, weights, variable_names
         )
