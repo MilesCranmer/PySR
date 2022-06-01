@@ -26,6 +26,7 @@ class TestTorch(unittest.TestCase):
         X = pd.DataFrame(np.random.randn(100, 10))
         y = np.ones(X.shape[0])
         model = PySRRegressor(
+            progress=False,
             max_evals=10000,
             model_selection="accuracy",
             extra_sympy_mappings={},
@@ -60,6 +61,7 @@ class TestTorch(unittest.TestCase):
         X = np.random.randn(100, 10)
         y = np.ones(X.shape[0])
         model = PySRRegressor(
+            progress=False,
             max_evals=10000,
             model_selection="accuracy",
             output_torch_format=True,
@@ -114,6 +116,7 @@ class TestTorch(unittest.TestCase):
         X = np.random.randn(100, 3)
         y = np.ones(X.shape[0])
         model = PySRRegressor(
+            progress=False,
             max_evals=10000,
             model_selection="accuracy",
             output_torch_format=True,
@@ -156,6 +159,7 @@ class TestTorch(unittest.TestCase):
         y = X["k15"] ** 2 + np.cos(X["k20"])
 
         model = PySRRegressor(
+            progress=False,
             unary_operators=["cos"],
             select_k_features=3,
             early_stop_condition=1e-5,

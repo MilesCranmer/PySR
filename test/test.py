@@ -1,12 +1,10 @@
 import inspect
 import unittest
-from unittest.mock import patch
 import numpy as np
 from pysr import PySRRegressor
 from pysr.sr import run_feature_selection, _handle_feature_selection
 from sklearn.utils.estimator_checks import check_estimator
 import sympy
-from sympy import lambdify
 import pandas as pd
 import warnings
 
@@ -22,6 +20,7 @@ class TestPipeline(unittest.TestCase):
             inspect.signature(PySRRegressor.__init__).parameters["populations"].default
         )
         self.default_test_kwargs = dict(
+            progress=False,
             model_selection="accuracy",
             niterations=default_niterations * 2,
             populations=default_populations * 2,
@@ -235,6 +234,7 @@ class TestBest(unittest.TestCase):
         self.X = self.rstate.randn(10, 2)
         self.y = np.cos(self.X[:, 0]) ** 2
         self.model = PySRRegressor(
+            progress=False,
             niterations=1,
             extra_sympy_mappings={},
             output_jax_format=False,

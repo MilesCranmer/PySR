@@ -25,6 +25,7 @@ class TestJAX(unittest.TestCase):
         X = pd.DataFrame(np.random.randn(100, 10))
         y = np.ones(X.shape[0])
         model = PySRRegressor(
+            progress=False,
             max_evals=10000,
             output_jax_format=True,
         )
@@ -54,7 +55,7 @@ class TestJAX(unittest.TestCase):
     def test_pipeline(self):
         X = np.random.randn(100, 10)
         y = np.ones(X.shape[0])
-        model = PySRRegressor(max_evals=10000, output_jax_format=True)
+        model = PySRRegressor(progress=False, max_evals=10000, output_jax_format=True)
         model.fit(X, y)
 
         equations = pd.DataFrame(
@@ -83,7 +84,10 @@ class TestJAX(unittest.TestCase):
         y = X["k15"] ** 2 + np.cos(X["k20"])
 
         model = PySRRegressor(
-            unary_operators=["cos"], select_k_features=3, early_stop_condition=1e-5
+            progress=False,
+            unary_operators=["cos"],
+            select_k_features=3,
+            early_stop_condition=1e-5,
         )
         model.fit(X.values, y.values)
         f, parameters = model.jax().values()
