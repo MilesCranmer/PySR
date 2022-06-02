@@ -435,6 +435,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Pass an int for reproducible results across multiple function calls.
         See :term:`Glossary <random_state>`.
 
+    deterministic : bool, default=False
+        Make a PySR search give the same result every run.
+        To use this, you must turn off parallelism
+        (with :param`procs`=0, :param`multithreading`=False),
+        and set :param`random_state` to a fixed seed.
+
     warm_start : bool, default=False
         Tells fit to continue from where the last call to fit finished.
         If false, each call to fit will be fresh, overwriting previous results.
@@ -647,6 +653,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         fast_cycle=False,
         precision=32,
         random_state=None,
+        deterministic=False,
         warm_start=False,
         verbosity=1e9,
         update_verbosity=None,
@@ -732,6 +739,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.fast_cycle = fast_cycle
         self.precision = precision
         self.random_state = random_state
+        self.deterministic = deterministic
         self.warm_start = warm_start
         # Additional runtime parameters
         # - Runtime user interface
@@ -1363,6 +1371,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             max_evals=self.max_evals,
             earlyStopCondition=self.early_stop_condition,
             seed=seed,
+            deterministic=self.deterministic,
         )
 
         # Convert data to desired precision
