@@ -2,6 +2,10 @@ import unittest
 import numpy as np
 import pandas as pd
 from pysr import sympy2torch, PySRRegressor
+# Need to initialize Julia before importing torch...
+from pysr.julia_helpers import init_julia
+Main = init_julia()
+import torch
 import sympy
 
 
@@ -12,8 +16,6 @@ class TestTorch(unittest.TestCase):
     def test_sympy2torch(self):
         x, y, z = sympy.symbols("x y z")
         cosx = 1.0 * sympy.cos(x) + y
-
-        import torch
 
         X = torch.tensor(np.random.randn(1000, 3))
         true = 1.0 * torch.cos(X[:, 0]) + X[:, 1]
@@ -49,7 +51,6 @@ class TestTorch(unittest.TestCase):
         model.refresh(checkpoint_file="equation_file.csv")
         tformat = model.pytorch()
         self.assertEqual(str(tformat), "_SingleSymPyModule(expression=cos(x1)**2)")
-        import torch
 
         np.testing.assert_almost_equal(
             tformat(torch.tensor(X.values)).detach().numpy(),
@@ -85,8 +86,6 @@ class TestTorch(unittest.TestCase):
         tformat = model.pytorch()
         self.assertEqual(str(tformat), "_SingleSymPyModule(expression=cos(x1)**2)")
 
-        import torch
-
         np.testing.assert_almost_equal(
             tformat(torch.tensor(X)).detach().numpy(),
             np.square(np.cos(X[:, 1])),  # 2nd feature
@@ -98,8 +97,6 @@ class TestTorch(unittest.TestCase):
         expression = x**2 + sympy.atanh(sympy.Mod(y + 1, 2) - 1) * 3.2 * z
 
         module = sympy2torch(expression, [x, y, z])
-
-        import torch
 
         X = torch.rand(100, 3).float() * 10
 
@@ -135,8 +132,6 @@ class TestTorch(unittest.TestCase):
             "equation_file_custom_operator.csv.bkup", sep="|"
         )
 
-        import torch
-
         model.set_params(
             equation_file="equation_file_custom_operator.csv",
             extra_sympy_mappings={"mycustomoperator": sympy.sin},
@@ -168,7 +163,6 @@ class TestTorch(unittest.TestCase):
         torch_module = model.pytorch()
 
         np_output = model.predict(X.values)
-        import torch
 
         torch_output = torch_module(torch.tensor(X.values)).detach().numpy()
 
