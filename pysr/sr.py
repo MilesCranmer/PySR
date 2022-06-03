@@ -965,6 +965,17 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         elif self.maxsize < 7:
             raise ValueError("PySR requires a maxsize of at least 7")
 
+        if self.deterministic:
+            if not (
+                self.multithreading in [False, None]
+                and self.procs == 0
+                and self.random_state != None
+            ):
+                raise ValueError(
+                    "To ensure deterministic searches, you must set `random_state` to a seed, "
+                    "`multithreading` to `False` or `None`, and `procs` to `0`."
+                )
+
         # NotImplementedError - Values that could be supported at a later time
         if self.optimizer_algorithm not in VALID_OPTIMIZER_ALGORITHMS:
             raise NotImplementedError(
