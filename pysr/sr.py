@@ -15,7 +15,6 @@ from multiprocessing import cpu_count
 from sklearn.base import BaseEstimator, RegressorMixin, MultiOutputMixin
 from sklearn.utils.validation import (
     _check_feature_names_in,
-    check_X_y,
     check_is_fitted,
 )
 
