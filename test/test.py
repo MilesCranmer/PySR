@@ -1,6 +1,7 @@
 import inspect
 import unittest
 import numpy as np
+from sklearn import model_selection
 from pysr import PySRRegressor
 from pysr.sr import run_feature_selection, _handle_feature_selection
 from sklearn.utils.estimator_checks import check_estimator
@@ -166,18 +167,15 @@ class TestPipeline(unittest.TestCase):
             unary_operators="sq(x) = x^2",
             binary_operators="plus",
             extra_sympy_mappings={"sq": lambda x: x**2},
-            **{
-                k: v
-                for k, v in self.default_test_kwargs.items()
-                if k != "model_selection"
-            },
+            **self.default_test_kwargs,
             procs=0,
             denoise=True,
             early_stop_condition="stop_if(loss, complexity) = loss < 0.05 && complexity == 2",
-            model_selection="best",
         )
+        # We expect in this case that the "best"
+        # equation should be the right one:
+        model.set_params(model_selection="best")
         model.fit(self.X, y)
-        print(model)
         self.assertLessEqual(model.get_best()[1]["loss"], 1e-2)
         self.assertLessEqual(model.get_best()[1]["loss"], 1e-2)
 
@@ -326,10 +324,6 @@ class TestFeatureSelection(unittest.TestCase):
 class TestMiscellaneous(unittest.TestCase):
     """Test miscellaneous functions."""
 
-    def setUp(self):
-        # Allows all scikit-learn exception messages to be read.
-        self.maxDiff = None
-
     def test_deprecation(self):
         """Ensure that deprecation works as expected.
 
@@ -344,7 +338,7 @@ class TestMiscellaneous(unittest.TestCase):
 
     def test_size_warning(self):
         """Ensure that a warning is given for a large input size."""
-        model = PySRRegressor(max_evals=10000, populations=2)
+        model = PySRRegressor()
         X = np.random.randn(10001, 2)
         y = np.random.randn(10001)
         with warnings.catch_warnings():
