@@ -2,10 +2,13 @@ import unittest
 import numpy as np
 import pandas as pd
 from pysr import sympy2torch, PySRRegressor
+
 # Need to initialize Julia before importing torch...
 import platform
+
 if platform.system() == "Darwin":
     from pysr.julia_helpers import init_julia
+
     Main = init_julia()
     import torch
 else:
