@@ -565,7 +565,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     >>> from pysr import PySRRegressor
     >>> randstate = np.random.RandomState(0)
     >>> X = 2 * randstate.randn(100, 5)
-    >>> # y = 2.5372 * cos(x_3) + x_0 - 0.5
+    >>> # y = 2.5382 * cos(x_3) + x_0 - 0.5
     >>> y = 2.5382 * np.cos(X[:, 3]) + X[:, 0] ** 2 - 0.5
     >>> model = PySRRegressor(
     ...     niterations=40,
