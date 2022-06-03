@@ -987,7 +987,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             ):
                 raise ValueError(
                     "To ensure deterministic searches, you must set `random_state` to a seed, "
-                    "`multithreading` to `False` or `None`, and `procs` to `0`."
+                    "`procs` to `0`, and `multithreading` to `False` or `None`."
                 )
 
         if self.random_state != None and (not self.deterministic or self.procs != 0):
@@ -1006,7 +1006,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # 'Mutable' parameter validation
         buffer_available = "buffer" in sys.stdout.__dir__()
         # Params and their default values, if None is given:
-        modifiable_params = {
+        default_param_mapping = {
             "binary_operators": "+ * - /".split(" "),
             "unary_operators": [],
             "maxdepth": self.maxsize,
@@ -1017,7 +1017,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             "progress": buffer_available,
         }
         packed_modified_params = {}
-        for parameter, default_value in modifiable_params.items():
+        for parameter, default_value in default_param_mapping.items():
             parameter_value = getattr(self, parameter)
             if parameter_value is None:
                 parameter_value = default_value
@@ -1093,7 +1093,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 variable_names = None
                 warnings.warn(
                     ":param`variable_names` has been reset to `None` as `X` is a DataFrame. "
-                    "Will use DataFrame column names instead."
+                    "Using DataFrame column names instead."
                 )
 
             if X.columns.is_object() and X.columns.str.contains(" ").any():
@@ -1480,21 +1480,26 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Xresampled : {ndarray | pandas.DataFrame} of shape
                         (n_resampled, n_features), default=None
-            Resampled training data used for denoising.
+            Resampled training data to generate a denoised data on. This
+            will be used as the training data, rather than `X`.
 
         weights : {ndarray | pandas.DataFrame} of the same shape as y, default=None
             Each element is how to weight the mean-square-error loss
-            for that particular element of y.
+            for that particular element of `y`. Alternatively,
+            if a custom `loss` was set, it will can be used
+            in arbitrary ways.
 
         variable_names : list[str], default=None
             A list of names for the variables, rather than "x0", "x1", etc.
-            If :param`X` is a pandas dataframe, the column names will be used.
-            If variable_names are specified
+            If :param`X` is a pandas dataframe, the column names will be used
+            instead of `variable_names`. Cannot contain spaces or special
+            characters. Avoid variable names which are also
+            function names in `sympy`, such as "N".
 
         Returns
         -------
         self : object
-            Fitted Estimator.
+            Fitted estimator.
         """
         # Init attributes that are not specified in BaseEstimator
         if self.warm_start and hasattr(self, "raw_julia_state_"):
@@ -1892,6 +1897,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     cur_score = 0.0
                 else:
                     if curMSE > 0.0:
+                        # TODO Move this to more obvious function/file.
                         cur_score = -np.log(curMSE / lastMSE) / (
                             curComplexity - lastComplexity
                         )
