@@ -1314,16 +1314,19 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         custom_loss = Main.eval(self.loss)
         early_stop_condition = Main.eval(str(self.early_stop_condition))
 
-        mutationWeights = [
-            float(self.weight_mutate_constant),
-            float(self.weight_mutate_operator),
-            float(self.weight_add_node),
-            float(self.weight_insert_node),
-            float(self.weight_delete_node),
-            float(self.weight_simplify),
-            float(self.weight_randomize),
-            float(self.weight_do_nothing),
-        ]
+        mutation_weights = np.array(
+            [
+                self.weight_mutate_constant,
+                self.weight_mutate_operator,
+                self.weight_add_node,
+                self.weight_insert_node,
+                self.weight_delete_node,
+                self.weight_simplify,
+                self.weight_randomize,
+                self.weight_do_nothing,
+            ],
+            dtype=float,
+        )
 
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/OptionsStruct.jl
@@ -1342,7 +1345,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             npopulations=int(self.populations),
             batching=self.batching,
             batchSize=int(min([batch_size, len(X)]) if self.batching else len(X)),
-            mutationWeights=mutationWeights,
+            mutationWeights=mutation_weights,
             probPickFirst=self.tournament_selection_p,
             ns=self.tournament_selection_n,
             # These have the same name:
