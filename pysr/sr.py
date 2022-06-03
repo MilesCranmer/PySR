@@ -458,7 +458,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     equation_file : str, default=None
         Where to save the files (.csv separated by |).
 
-    temp_equation_file :
+    temp_equation_file : bool, default=False
         Whether to put the hall of fame file in the temp directory.
         Deletion is then controlled with the :param`delete_tempfiles`
         parameter.
