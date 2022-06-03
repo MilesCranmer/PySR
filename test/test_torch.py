@@ -3,9 +3,15 @@ import numpy as np
 import pandas as pd
 from pysr import sympy2torch, PySRRegressor
 # Need to initialize Julia before importing torch...
-from pysr.julia_helpers import init_julia
-Main = init_julia()
-import torch
+import platform
+if platform.system() == "Darwin":
+    from pysr.julia_helpers import init_julia
+    Main = init_julia()
+    import torch
+else:
+    # Switch order of imports.
+    # https://github.com/pytorch/pytorch/issues/78829
+    import torch
 import sympy
 
 
