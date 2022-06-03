@@ -7,12 +7,13 @@ from pysr import sympy2torch, PySRRegressor
 import platform
 
 if platform.system() == "Darwin":
+    # Import PyJulia, then Torch
     from pysr.julia_helpers import init_julia
 
     Main = init_julia()
     import torch
 else:
-    # Switch order of imports.
+    # Import Torch, then PyJulia
     # https://github.com/pytorch/pytorch/issues/78829
     import torch
 import sympy
