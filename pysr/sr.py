@@ -1307,7 +1307,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             complexity_of_operators_str += ")"
             complexity_of_operators = Main.eval(complexity_of_operators_str)
 
-        Main.custom_loss = Main.eval(self.loss)
+        custom_loss = Main.eval(self.loss)
 
         mutationWeights = [
             float(self.weight_mutate_constant),
@@ -1331,7 +1331,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             complexity_of_constants=self.complexity_of_constants,
             complexity_of_variables=self.complexity_of_variables,
             nested_constraints=nested_constraints,
-            loss=Main.custom_loss,
+            loss=custom_loss,
             maxsize=int(self.maxsize),
             hofFile=_escape_filename(self.equation_file_),
             npopulations=int(self.populations),
