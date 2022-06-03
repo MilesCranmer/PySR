@@ -976,6 +976,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     "`multithreading` to `False` or `None`, and `procs` to `0`."
                 )
 
+        if self.random_state != None and (not self.deterministic or self.procs != 0):
+            warnings.warn(
+                "Note: Setting `random_state` without also setting `deterministic` "
+                "to True and `procs` to 0 "
+                "will result in non-deterministic searches. "
+            )
+
         # NotImplementedError - Values that could be supported at a later time
         if self.optimizer_algorithm not in VALID_OPTIMIZER_ALGORITHMS:
             raise NotImplementedError(
