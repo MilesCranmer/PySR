@@ -1312,7 +1312,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             complexity_of_operators = Main.eval(complexity_of_operators_str)
 
         custom_loss = Main.eval(self.loss)
-        early_stop_condition = Main.eval(self.early_stop_condition)
+        early_stop_condition = Main.eval(str(self.early_stop_condition))
 
         mutationWeights = [
             float(self.weight_mutate_constant),
