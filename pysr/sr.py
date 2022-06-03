@@ -1464,6 +1464,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if self.warm_start and hasattr(self, "raw_julia_state_"):
             pass
         else:
+            if hasattr(self, "raw_julia_state_"):
+                warnings.warn(
+                    "The discovered expressions are being reset. "
+                    "Please set `warm_start=True` if you wish to continue "
+                    "to start a search where you left off.",
+                )
+
             self.equations_ = None
             self.nout_ = 1
             self.selection_mask_ = None
