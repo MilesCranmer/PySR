@@ -220,12 +220,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         this number.
 
     maxsize : int, default=20
-        Max size of an equation.
+        Max complexity of an equation.
 
     maxdepth : int, default=None
         Max depth of an equation. You can use both :param`maxsize` and
-        :param`maxdepth`. :param`maxdepth` is by default set to equal
-        :param`maxsize`, which means that it is redundant.
+        :param`maxdepth`. :param`maxdepth` is by default not used.
 
     warmup_maxsize_by : float, default=0.0
         Whether to slowly increase max size from a small number up to
@@ -240,8 +239,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Dictionary of int (unary) or 2-tuples (binary), this enforces
         maxsize constraints on the individual arguments of operators.
         E.g., `'pow': (-1, 1)` says that power laws can have any
-        complexity left argument, but only 1 complexity exponent. Use
-        this to force more interpretable solutions.
+        complexity left argument, but only 1 complexity in the right
+        argument. Use this to force more interpretable solutions.
 
     nested_constraints : dict[str, dict], default=None
         Specifies how many times a combination of operators can be
@@ -683,31 +682,30 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.unary_operators = unary_operators
         self.niterations = niterations
         self.populations = populations
-        # - Model search Constraints
         self.population_size = population_size
-        self.max_evals = max_evals
+        self.ncyclesperiteration = ncyclesperiteration
+        # - Equation Constraints
         self.maxsize = maxsize
         self.maxdepth = maxdepth
-        self.warmup_maxsize_by = warmup_maxsize_by
-        self.timeout_in_seconds = timeout_in_seconds
         self.constraints = constraints
         self.nested_constraints = nested_constraints
+        self.warmup_maxsize_by = warmup_maxsize_by
+        # - Early exit conditions:
+        self.max_evals = max_evals
+        self.timeout_in_seconds = timeout_in_seconds
+        self.early_stop_condition = early_stop_condition
         # - Loss parameters
         self.loss = loss
         self.complexity_of_operators = complexity_of_operators
         self.complexity_of_constants = complexity_of_constants
         self.complexity_of_variables = complexity_of_variables
-        self.parsimony = float(parsimony)
+        self.parsimony = parsimony
         self.use_frequency = use_frequency
         self.use_frequency_in_tournament = use_frequency_in_tournament
         self.alpha = alpha
         self.annealing = annealing
-        self.early_stop_condition = early_stop_condition
         # - Evolutionary search parameters
         # -- Mutation parameters
-        self.ncyclesperiteration = ncyclesperiteration
-        self.fraction_replaced = fraction_replaced
-        self.fraction_replaced_hof = fraction_replaced_hof
         self.weight_add_node = weight_add_node
         self.weight_insert_node = weight_insert_node
         self.weight_delete_node = weight_delete_node
@@ -721,6 +719,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # -- Migration parameters
         self.migration = migration
         self.hof_migration = hof_migration
+        self.fraction_replaced = fraction_replaced
+        self.fraction_replaced_hof = fraction_replaced_hof
         self.topn = topn
         # -- Constants parameters
         self.should_optimize_constants = should_optimize_constants
