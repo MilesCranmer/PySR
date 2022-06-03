@@ -857,12 +857,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         to be serialized. Note: Jax and Torch format equations are also removed
         from the pickled instance.
         """
-        warnings.warn(
-            "raw_julia_state_ cannot be pickled and will be removed from the "
-            "serialized instance. This will prevent a `warm_start` fit of any "
-            "model that is deserialized via `pickle.loads()`."
-        )
         state = self.__dict__
+        if "raw_julia_state_" in state:
+            warnings.warn(
+                "raw_julia_state_ cannot be pickled and will be removed from the "
+                "serialized instance. This will prevent a `warm_start` fit of any "
+                "model that is deserialized via `pickle.load()`."
+            )
         pickled_state = {
             key: None if key == "raw_julia_state_" else value
             for key, value in state.items()
