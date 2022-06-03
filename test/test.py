@@ -30,14 +30,22 @@ class TestPipeline(unittest.TestCase):
 
     def test_linear_relation(self):
         y = self.X[:, 0]
-        model = PySRRegressor(**self.default_test_kwargs)
+        model = PySRRegressor(
+            **self.default_test_kwargs,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
+        )
         model.fit(self.X, y)
         print(model.equations_)
         self.assertLessEqual(model.get_best()["loss"], 1e-4)
 
     def test_multiprocessing(self):
         y = self.X[:, 0]
-        model = PySRRegressor(**self.default_test_kwargs, procs=2, multithreading=False)
+        model = PySRRegressor(
+            **self.default_test_kwargs,
+            procs=2,
+            multithreading=False,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
+        )
         model.fit(self.X, y)
         print(model.equations_)
         self.assertLessEqual(model.equations_.iloc[-1]["loss"], 1e-4)
@@ -55,6 +63,7 @@ class TestPipeline(unittest.TestCase):
             # Test custom operators with constraints:
             nested_constraints={"square_op": {"square_op": 3}},
             constraints={"square_op": 10},
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 3",
         )
         model.fit(self.X, y)
         equations = model.equations_
@@ -95,6 +104,7 @@ class TestPipeline(unittest.TestCase):
             procs=0,
             temp_equation_file=True,
             delete_tempfiles=False,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 2",
         )
         model.fit(X.copy(), y, weights=w)
 
@@ -124,6 +134,7 @@ class TestPipeline(unittest.TestCase):
             unary_operators=[],
             binary_operators=["plus"],
             **self.default_test_kwargs,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 3",
         )
         self.assertTrue("None" in regressor.__repr__())
         regressor.fit(X, y)
@@ -134,7 +145,7 @@ class TestPipeline(unittest.TestCase):
         np.testing.assert_almost_equal(regressor.predict(X), y, decimal=1)
 
         # Test if repeated fit works:
-        regressor.set_params(niterations=0, warm_start=True)
+        regressor.set_params(niterations=0, warm_start=True, early_stop_condition=None)
         # This should exit immediately, and use the old equations
         regressor.fit(X, y)
 
@@ -155,11 +166,18 @@ class TestPipeline(unittest.TestCase):
             unary_operators="sq(x) = x^2",
             binary_operators="plus",
             extra_sympy_mappings={"sq": lambda x: x**2},
-            **self.default_test_kwargs,
+            **{
+                k: v
+                for k, v in self.default_test_kwargs.items()
+                if k != "model_selection"
+            },
             procs=0,
             denoise=True,
+            early_stop_condition="stop_if(loss, complexity) = loss < 0.05 && complexity == 2",
+            model_selection="best",
         )
         model.fit(self.X, y)
+        print(model)
         self.assertLessEqual(model.get_best()[1]["loss"], 1e-2)
         self.assertLessEqual(model.get_best()[1]["loss"], 1e-2)
 
@@ -191,6 +209,7 @@ class TestPipeline(unittest.TestCase):
             **self.default_test_kwargs,
             denoise=True,
             nested_constraints={"/": {"+": 1, "-": 1}, "+": {"*": 4}},
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-3 && complexity == 7",
         )
         model.fit(X, y, Xresampled=Xresampled)
         self.assertNotIn("unused_feature", model.latex())
@@ -348,13 +367,14 @@ class TestMiscellaneous(unittest.TestCase):
     def test_scikit_learn_compatibility(self):
         """Test PySRRegressor compatibility with scikit-learn."""
         model = PySRRegressor(
-            max_evals=10000,
+            max_evals=1000,
             verbosity=0,
             progress=False,
             random_state=0,
             deterministic=True,
             procs=0,
             multithreading=False,
+            warm_start=False,
         )  # Return early.
 
         check_generator = check_estimator(model, generate_only=True)
