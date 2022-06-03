@@ -358,6 +358,25 @@ class TestMiscellaneous(unittest.TestCase):
                 model.fit(X, y)
             self.assertIn("with 10 features or more", str(context.exception))
 
+    def test_deterministic_warnings(self):
+        """Ensure that warnings are given for determinism"""
+        model = PySRRegressor(random_state=0)
+        X = np.random.randn(100, 2)
+        y = np.random.randn(100)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            with self.assertRaises(Exception) as context:
+                model.fit(X, y)
+            self.assertIn("`deterministic`", str(context.exception))
+
+    def test_deterministic_errors(self):
+        """Setting deterministic without random_state should error"""
+        model = PySRRegressor(deterministic=True)
+        X = np.random.randn(100, 2)
+        y = np.random.randn(100)
+        with self.assertRaises(ValueError):
+            model.fit(X, y)
+
     def test_scikit_learn_compatibility(self):
         """Test PySRRegressor compatibility with scikit-learn."""
         model = PySRRegressor(
