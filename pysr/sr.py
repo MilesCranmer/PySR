@@ -312,8 +312,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     annealing : bool, default=True
         Whether to use annealing. You should (and it is default).
 
-    early_stop_condition : float, default=None
-        Stop the search early if this loss is reached.
+    early_stop_condition : { float | str }, default=None
+        Stop the search early if this loss is reached. You may also
+        pass a string containing a Julia function which
+        takes a loss and complexity as input, for example:
+        `"f(loss, complexity) = (loss < 0.1) && (complexity < 10)"`.
 
     ncyclesperiteration : int, default=550
         Number of total mutations to run, per 10 samples of the
@@ -971,6 +974,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # 'Mutable' parameter validation
         buffer_available = "buffer" in sys.stdout.__dir__()
+        # Params and their default values, if None is given:
         modifiable_params = {
             "binary_operators": "+ * - /".split(" "),
             "unary_operators": [],
@@ -1308,6 +1312,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             complexity_of_operators = Main.eval(complexity_of_operators_str)
 
         custom_loss = Main.eval(self.loss)
+        early_stop_condition = Main.eval(self.early_stop_condition)
 
         mutationWeights = [
             float(self.weight_mutate_constant),
@@ -1369,7 +1374,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             crossoverProbability=self.crossover_probability,
             skip_mutation_failures=self.skip_mutation_failures,
             max_evals=self.max_evals,
-            earlyStopCondition=self.early_stop_condition,
+            earlyStopCondition=early_stop_condition,
             seed=seed,
             deterministic=self.deterministic,
         )
