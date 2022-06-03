@@ -950,7 +950,20 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         else:
             self.equation_file_ = self.equation_file
 
-    def _validate_init_params(self):
+    def _validate_and_set_init_params(self):
+        """
+        Ensures parameters passed at initialization are valid.
+
+        Also returns a dictionary of parameters to update from their
+        values given at initialization.
+
+        Returns
+        -------
+        packed_modified_params : dict
+            Dictionary of parameters to modify from their initialized
+            values. For example, default parameters are set here
+            when a parameter is left set to `None`.
+        """
 
         # Immutable parameter validation
         # Ensure instance parameters are allowable values:
@@ -1034,7 +1047,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         )
         return packed_modified_params
 
-    def _validate_fit_params(self, X, y, Xresampled, weights, variable_names):
+    def _validate_and_set_fit_params(self, X, y, Xresampled, weights, variable_names):
         """
         Validates the parameters passed to the :term`fit` method.
 
@@ -1504,9 +1517,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         self._setup_equation_file()
 
-        mutated_params = self._validate_init_params()
+        mutated_params = self._validate_and_set_init_params()
 
-        X, y, Xresampled, weights, variable_names = self._validate_fit_params(
+        X, y, Xresampled, weights, variable_names = self._validate_and_set_fit_params(
             X, y, Xresampled, weights, variable_names
         )
 
