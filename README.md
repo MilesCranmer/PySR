@@ -119,7 +119,7 @@ print(model)
 ```
 to print the learned equations:
 ```python
-PySRRegressor.equations = [
+PySRRegressor.equations_ = [
 	   pick     score                                           equation       loss  complexity
 	0        0.000000                                          4.4324794  42.354317           1
 	1        1.255691                                          (x0 * x0)   3.437307           3
@@ -133,7 +133,7 @@ This arrow in the `pick` column indicates which equation is currently selected b
 `model_selection` strategy for prediction.
 (You may change `model_selection` after `.fit(X, y)` as well.)
 
-`model.equations` is a pandas DataFrame containing all equations, including callable format 
+`model.equations_` is a pandas DataFrame containing all equations, including callable format 
 (`lambda_format`),
 SymPy format (`sympy_format` - which you can also get with `model.sympy()`), and even JAX and PyTorch format 
 (both of which are differentiable - which you can get with `model.jax()` and `model.pytorch()`).

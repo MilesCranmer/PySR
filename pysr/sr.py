@@ -82,7 +82,7 @@ def pysr(X, y, weights=None, **kwargs):  # pragma: no cover
     )
     model = PySRRegressor(**kwargs)
     model.fit(X, y, weights=weights)
-    return model.equations
+    return model.equations_
 
 
 def _process_constraints(binary_operators, unary_operators, constraints):
@@ -167,7 +167,7 @@ def best_row(*args, **kwargs):  # pragma: no cover
     raise NotImplementedError(
         "`best_row` has been deprecated. Please use the `PySRRegressor` interface. "
         "After fitting, you can run `print(model)` to view the best equation, or "
-        "`model.get_best()` to return the best equation's row in `model.equations`."
+        "`model.get_best()` to return the best equation's row in `model.equations_`."
     )
 
 
@@ -589,7 +589,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     ... )
     >>> model.fit(X, y)
     >>> model
-    PySRRegressor.equations = [
+    PySRRegressor.equations_ = [
     0         0.000000                                          3.8552167  3.360272e+01           1
     1         1.189847                                          (x0 * x0)  3.110905e+00           3
     2         0.010626                          ((x0 * x0) + -0.25573406)  3.045491e+00           5
