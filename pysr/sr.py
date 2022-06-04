@@ -2,7 +2,6 @@ import os
 import sys
 import numpy as np
 import pandas as pd
-from sklearn.utils import check_array, check_consistent_length, check_random_state
 import sympy
 from sympy import sympify
 import re
@@ -13,6 +12,7 @@ from datetime import datetime
 import warnings
 from multiprocessing import cpu_count
 from sklearn.base import BaseEstimator, RegressorMixin, MultiOutputMixin
+from sklearn.utils import check_array, check_consistent_length, check_random_state
 from sklearn.utils.validation import (
     _check_feature_names_in,
     check_is_fitted,
@@ -76,7 +76,8 @@ sympy_mappings = {
 
 def pysr(X, y, weights=None, **kwargs):  # pragma: no cover
     warnings.warn(
-        "Calling `pysr` is deprecated. Please use `model = PySRRegressor(**params); model.fit(X, y)` going forward.",
+        "Calling `pysr` is deprecated. "
+        "Please use `model = PySRRegressor(**params); model.fit(X, y)` going forward.",
         FutureWarning,
     )
     model = PySRRegressor(**kwargs)
@@ -95,7 +96,8 @@ def _process_constraints(binary_operators, unary_operators, constraints):
         if op in ["plus", "sub", "+", "-"]:
             if constraints[op][0] != constraints[op][1]:
                 raise NotImplementedError(
-                    "You need equal constraints on both sides for - and +, due to simplification strategies."
+                    "You need equal constraints on both sides for - and +, "
+                    "due to simplification strategies."
                 )
         elif op in ["mult", "*"]:
             # Make sure the complex expression is in the left side.
@@ -128,7 +130,8 @@ def _maybe_create_inline_operators(binary_operators, unary_operators):
                 if not re.match(r"^[a-zA-Z0-9_]+$", function_name):
                     raise ValueError(
                         f"Invalid function name {function_name}. "
-                        "Only alphanumeric characters, numbers, and underscores are allowed."
+                        "Only alphanumeric characters, numbers, "
+                        "and underscores are allowed."
                     )
                 op_list[i] = function_name
     return binary_operators, unary_operators
@@ -154,25 +157,32 @@ def _check_assertions(
 
 def best(*args, **kwargs):  # pragma: no cover
     raise NotImplementedError(
-        "`best` has been deprecated. Please use the `PySRRegressor` interface. After fitting, you can return `.sympy()` to get the sympy representation of the best equation."
+        "`best` has been deprecated. Please use the `PySRRegressor` interface. "
+        "After fitting, you can return `.sympy()` to get the sympy representation "
+        "of the best equation."
     )
 
 
 def best_row(*args, **kwargs):  # pragma: no cover
     raise NotImplementedError(
-        "`best_row` has been deprecated. Please use the `PySRRegressor` interface. After fitting, you can run `print(model)` to view the best equation, or `model.get_best()` to return the best equation's row in `model.equations`."
+        "`best_row` has been deprecated. Please use the `PySRRegressor` interface. "
+        "After fitting, you can run `print(model)` to view the best equation, or "
+        "`model.get_best()` to return the best equation's row in `model.equations`."
     )
 
 
 def best_tex(*args, **kwargs):  # pragma: no cover
     raise NotImplementedError(
-        "`best_tex` has been deprecated. Please use the `PySRRegressor` interface. After fitting, you can return `.latex()` to get the sympy representation of the best equation."
+        "`best_tex` has been deprecated. Please use the `PySRRegressor` interface. "
+        "After fitting, you can return `.latex()` to get the sympy representation "
+        "of the best equation."
     )
 
 
 def best_callable(*args, **kwargs):  # pragma: no cover
     raise NotImplementedError(
-        "`best_callable` has been deprecated. Please use the `PySRRegressor` interface. After fitting, you can use `.predict(X)` to use the best callable."
+        "`best_callable` has been deprecated. Please use the `PySRRegressor` "
+        "interface. After fitting, you can use `.predict(X)` to use the best callable."
     )
 
 
@@ -775,7 +785,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     setattr(self, updated_kwarg_name, v)
                     warnings.warn(
                         f"{k} has been renamed to {updated_kwarg_name} in PySRRegressor. "
-                        " Please use that instead.",
+                        "Please use that instead.",
                         FutureWarning,
                     )
                 # Handle kwargs that have been moved to the fit method
@@ -787,7 +797,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     )
                 else:
                     raise TypeError(
-                        f"{k} is not a valid keyword argument for PySRRegressor"
+                        f"{k} is not a valid keyword argument for PySRRegressor."
                     )
 
     def __repr__(self):
@@ -964,7 +974,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             values. For example, default parameters are set here
             when a parameter is left set to `None`.
         """
-
         # Immutable parameter validation
         # Ensure instance parameters are allowable values:
         if self.tournament_selection_n > self.population_size:
@@ -974,27 +983,29 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         if self.maxsize > 40:
             warnings.warn(
-                "Note: Using a large maxsize for the equation search will be exponentially slower and use significant memory. You should consider turning `use_frequency` to False, and perhaps use `warmup_maxsize_by`."
+                "Note: Using a large maxsize for the equation search will be "
+                "exponentially slower and use significant memory. You should consider "
+                "turning `use_frequency` to False, and perhaps use `warmup_maxsize_by`."
             )
         elif self.maxsize < 7:
             raise ValueError("PySR requires a maxsize of at least 7")
 
-        if self.deterministic:
-            if not (
-                self.multithreading in [False, None]
-                and self.procs == 0
-                and self.random_state != None
-            ):
-                raise ValueError(
-                    "To ensure deterministic searches, you must set `random_state` to a seed, "
-                    "`procs` to `0`, and `multithreading` to `False` or `None`."
-                )
+        if self.deterministic and not (
+            self.multithreading in [False, None]
+            and self.procs == 0
+            and self.random_state is not None
+        ):
+            raise ValueError(
+                "To ensure deterministic searches, you must set `random_state` to a seed, "
+                "`procs` to `0`, and `multithreading` to `False` or `None`."
+            )
 
-        if self.random_state != None and (not self.deterministic or self.procs != 0):
+        if self.random_state is not None and (
+            not self.deterministic or self.procs != 0
+        ):
             warnings.warn(
                 "Note: Setting `random_state` without also setting `deterministic` "
-                "to True and `procs` to 0 "
-                "will result in non-deterministic searches. "
+                "to True and `procs` to 0 will result in non-deterministic searches. "
             )
 
         # NotImplementedError - Values that could be supported at a later time
@@ -1035,7 +1046,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     parameter_value = 1
                 elif parameter == "progress" and not buffer_available:
                     warnings.warn(
-                        "Note: it looks like you are running in Jupyter. The progress bar will be turned off."
+                        "Note: it looks like you are running in Jupyter. "
+                        "The progress bar will be turned off."
                     )
                     parameter_value = False
             packed_modified_params[parameter] = parameter_value
@@ -1087,7 +1099,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Validated list of variable names for each feature in `X`.
 
         """
-
         if isinstance(X, pd.DataFrame):
             if variable_names:
                 variable_names = None
@@ -1803,7 +1814,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 )
         except FileNotFoundError:
             raise RuntimeError(
-                "Couldn't find equation file! The equation search likely exited before a single iteration completed."
+                "Couldn't find equation file! The equation search likely exited "
+                "before a single iteration completed."
             )
 
         # It is expected extra_jax/torch_mappings will be updated after fit.
@@ -1814,7 +1826,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             for value in extra_jax_mappings.values():
                 if not isinstance(value, str):
                     raise ValueError(
-                        "extra_jax_mappings must have keys that are strings! e.g., {sympy.sqrt: 'jnp.sqrt'}."
+                        "extra_jax_mappings must have keys that are strings! "
+                        "e.g., {sympy.sqrt: 'jnp.sqrt'}."
                     )
         else:
             extra_jax_mappings = {}
@@ -1822,7 +1835,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             for value in extra_jax_mappings.values():
                 if not callable(value):
                     raise ValueError(
-                        "extra_torch_mappings must be callable functions! e.g., {sympy.sqrt: torch.sqrt}."
+                        "extra_torch_mappings must be callable functions! "
+                        "e.g., {sympy.sqrt: torch.sqrt}."
                     )
         else:
             extra_torch_mappings = {}
