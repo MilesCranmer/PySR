@@ -1,11 +1,11 @@
 import inspect
 import unittest
-from unittest.mock import patch
 import numpy as np
+from sklearn import model_selection
 from pysr import PySRRegressor
 from pysr.sr import run_feature_selection, _handle_feature_selection
+from sklearn.utils.estimator_checks import check_estimator
 import sympy
-from sympy import lambdify
 import pandas as pd
 import warnings
 
@@ -21,6 +21,7 @@ class TestPipeline(unittest.TestCase):
             inspect.signature(PySRRegressor.__init__).parameters["populations"].default
         )
         self.default_test_kwargs = dict(
+            progress=False,
             model_selection="accuracy",
             niterations=default_niterations * 2,
             populations=default_populations * 2,
@@ -30,17 +31,25 @@ class TestPipeline(unittest.TestCase):
 
     def test_linear_relation(self):
         y = self.X[:, 0]
-        model = PySRRegressor(**self.default_test_kwargs)
+        model = PySRRegressor(
+            **self.default_test_kwargs,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
+        )
         model.fit(self.X, y)
-        print(model.equations)
+        print(model.equations_)
         self.assertLessEqual(model.get_best()["loss"], 1e-4)
 
     def test_multiprocessing(self):
         y = self.X[:, 0]
-        model = PySRRegressor(**self.default_test_kwargs, procs=2, multithreading=False)
+        model = PySRRegressor(
+            **self.default_test_kwargs,
+            procs=2,
+            multithreading=False,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
+        )
         model.fit(self.X, y)
-        print(model.equations)
-        self.assertLessEqual(model.equations.iloc[-1]["loss"], 1e-4)
+        print(model.equations_)
+        self.assertLessEqual(model.equations_.iloc[-1]["loss"], 1e-4)
 
     def test_multioutput_custom_operator_quiet_custom_complexity(self):
         y = self.X[:, [0, 1]] ** 2
@@ -55,11 +64,12 @@ class TestPipeline(unittest.TestCase):
             # Test custom operators with constraints:
             nested_constraints={"square_op": {"square_op": 3}},
             constraints={"square_op": 10},
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 3",
         )
         model.fit(self.X, y)
-        equations = model.equations
+        equations = model.equations_
         print(equations)
-        self.assertIn("square_op", model.equations[0].iloc[-1]["equation"])
+        self.assertIn("square_op", model.equations_[0].iloc[-1]["equation"])
         self.assertLessEqual(equations[0].iloc[-1]["loss"], 1e-4)
         self.assertLessEqual(equations[1].iloc[-1]["loss"], 1e-4)
 
@@ -95,6 +105,7 @@ class TestPipeline(unittest.TestCase):
             procs=0,
             temp_equation_file=True,
             delete_tempfiles=False,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 2",
         )
         model.fit(X.copy(), y, weights=w)
 
@@ -117,27 +128,29 @@ class TestPipeline(unittest.TestCase):
             print("Model equations: ", model.sympy()[1])
             print("True equation: x1^2")
 
-    def test_empty_operators_single_input_multirun(self):
+    def test_empty_operators_single_input_warm_start(self):
         X = self.rstate.randn(100, 1)
         y = X[:, 0] + 3.0
         regressor = PySRRegressor(
             unary_operators=[],
             binary_operators=["plus"],
             **self.default_test_kwargs,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 3",
         )
         self.assertTrue("None" in regressor.__repr__())
         regressor.fit(X, y)
         self.assertTrue("None" not in regressor.__repr__())
         self.assertTrue(">>>>" in regressor.__repr__())
 
-        self.assertLessEqual(regressor.equations.iloc[-1]["loss"], 1e-4)
+        self.assertLessEqual(regressor.equations_.iloc[-1]["loss"], 1e-4)
         np.testing.assert_almost_equal(regressor.predict(X), y, decimal=1)
 
         # Test if repeated fit works:
-        regressor.set_params(niterations=0)
+        regressor.set_params(niterations=0, warm_start=True, early_stop_condition=None)
+        # This should exit immediately, and use the old equations
         regressor.fit(X, y)
 
-        self.assertLessEqual(regressor.equations.iloc[-1]["loss"], 1e-4)
+        self.assertLessEqual(regressor.equations_.iloc[-1]["loss"], 1e-4)
         np.testing.assert_almost_equal(regressor.predict(X), y, decimal=1)
 
         # Tweak model selection:
@@ -157,7 +170,11 @@ class TestPipeline(unittest.TestCase):
             **self.default_test_kwargs,
             procs=0,
             denoise=True,
+            early_stop_condition="stop_if(loss, complexity) = loss < 0.05 && complexity == 2",
         )
+        # We expect in this case that the "best"
+        # equation should be the right one:
+        model.set_params(model_selection="best")
         model.fit(self.X, y)
         self.assertLessEqual(model.get_best()[1]["loss"], 1e-2)
         self.assertLessEqual(model.get_best()[1]["loss"], 1e-2)
@@ -188,11 +205,11 @@ class TestPipeline(unittest.TestCase):
             unary_operators=[],
             binary_operators=["+", "*", "/", "-"],
             **self.default_test_kwargs,
-            Xresampled=Xresampled,
             denoise=True,
             nested_constraints={"/": {"+": 1, "-": 1}, "+": {"*": 4}},
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-3 && complexity == 7",
         )
-        model.fit(X, y)
+        model.fit(X, y, Xresampled=Xresampled)
         self.assertNotIn("unused_feature", model.latex())
         self.assertIn("T", model.latex())
         self.assertIn("x", model.latex())
@@ -217,18 +234,31 @@ class TestPipeline(unittest.TestCase):
             unary_operators=["cos"],
             select_k_features=3,
             early_stop_condition=1e-4,  # Stop once most accurate equation is <1e-4 MSE
-            Xresampled=Xresampled,
             maxsize=12,
             **self.default_test_kwargs,
         )
-        model.fit(X, y)
         model.set_params(model_selection="accuracy")
-        model.predict(X)
+        model.fit(X, y, Xresampled=Xresampled)
         self.assertLess(np.average((model.predict(X) - y) ** 2), 1e-4)
+        # Again, but with numpy arrays:
+        model.fit(X.values, y.values, Xresampled=Xresampled.values)
+        self.assertLess(np.average((model.predict(X.values) - y.values) ** 2), 1e-4)
 
 
 class TestBest(unittest.TestCase):
     def setUp(self):
+        self.rstate = np.random.RandomState(0)
+        self.X = self.rstate.randn(10, 2)
+        self.y = np.cos(self.X[:, 0]) ** 2
+        self.model = PySRRegressor(
+            progress=False,
+            niterations=1,
+            extra_sympy_mappings={},
+            output_jax_format=False,
+            model_selection="accuracy",
+            equation_file="equation_file.csv",
+        )
+        self.model.fit(self.X, self.y)
         equations = pd.DataFrame(
             {
                 "equation": ["1.0", "cos(x0)", "square(cos(x0))"],
@@ -241,17 +271,8 @@ class TestBest(unittest.TestCase):
             "equation_file.csv.bkup", sep="|"
         )
 
-        self.model = PySRRegressor(
-            equation_file="equation_file.csv",
-            variable_names="x0 x1".split(" "),
-            extra_sympy_mappings={},
-            output_jax_format=False,
-            model_selection="accuracy",
-        )
-        self.model.n_features = 2
         self.model.refresh()
-        self.equations = self.model.equations
-        self.rstate = np.random.RandomState(0)
+        self.equations_ = self.model.equations_
 
     def test_best(self):
         self.assertEqual(self.model.sympy(), sympy.cos(sympy.Symbol("x0")) ** 2)
@@ -266,9 +287,9 @@ class TestBest(unittest.TestCase):
         self.assertEqual(self.model.latex(), "\\cos^{2}{\\left(x_{0} \\right)}")
 
     def test_best_lambda(self):
-        X = self.rstate.randn(10, 2)
-        y = np.cos(X[:, 0]) ** 2
-        for f in [self.model.predict, self.equations.iloc[-1]["lambda_format"]]:
+        X = self.X
+        y = self.y
+        for f in [self.model.predict, self.equations_.iloc[-1]["lambda_format"]]:
             np.testing.assert_almost_equal(f(X), y, decimal=4)
 
 
@@ -308,12 +329,12 @@ class TestMiscellaneous(unittest.TestCase):
 
         This should give a warning, and sets the correct value.
         """
-        with self.assertWarns(UserWarning):
+        with self.assertWarns(FutureWarning):
             model = PySRRegressor(fractionReplaced=0.2)
         # This is a deprecated parameter, so we should get a warning.
 
         # The correct value should be set:
-        self.assertEqual(model.params["fraction_replaced"], 0.2)
+        self.assertEqual(model.fraction_replaced, 0.2)
 
     def test_size_warning(self):
         """Ensure that a warning is given for a large input size."""
@@ -336,3 +357,59 @@ class TestMiscellaneous(unittest.TestCase):
             with self.assertRaises(Exception) as context:
                 model.fit(X, y)
             self.assertIn("with 10 features or more", str(context.exception))
+
+    def test_deterministic_warnings(self):
+        """Ensure that warnings are given for determinism"""
+        model = PySRRegressor(random_state=0)
+        X = np.random.randn(100, 2)
+        y = np.random.randn(100)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            with self.assertRaises(Exception) as context:
+                model.fit(X, y)
+            self.assertIn("`deterministic`", str(context.exception))
+
+    def test_deterministic_errors(self):
+        """Setting deterministic without random_state should error"""
+        model = PySRRegressor(deterministic=True)
+        X = np.random.randn(100, 2)
+        y = np.random.randn(100)
+        with self.assertRaises(ValueError):
+            model.fit(X, y)
+
+    def test_scikit_learn_compatibility(self):
+        """Test PySRRegressor compatibility with scikit-learn."""
+        model = PySRRegressor(
+            max_evals=1000,
+            verbosity=0,
+            progress=False,
+            random_state=0,
+            deterministic=True,
+            procs=0,
+            multithreading=False,
+            warm_start=False,
+        )  # Return early.
+
+        check_generator = check_estimator(model, generate_only=True)
+        exception_messages = []
+        for (_, check) in check_generator:
+            try:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    # To ensure an equation file is written for each output in
+                    # nout, set stop condition to niterations=1
+                    if check.func.__name__ == "check_regressor_multioutput":
+                        model.set_params(niterations=1, max_evals=None)
+                    else:
+                        model.set_params(max_evals=10000)
+                    check(model)
+                print("Passed", check.func.__name__)
+            except Exception as e:
+                error_message = str(e)
+                exception_messages.append(f"{check.func.__name__}: {error_message}\n")
+                print("Failed", check.func.__name__, "with:")
+                # Add a leading tab to error message, which
+                # might be multi-line:
+                print("\n".join([(" " * 4) + row for row in error_message.split("\n")]))
+        # If any checks failed don't let the test pass.
+        self.assertEqual([], exception_messages)
