@@ -25,6 +25,7 @@ class TestPipeline(unittest.TestCase):
             model_selection="accuracy",
             niterations=default_niterations * 2,
             populations=default_populations * 2,
+            temp_equation_file=True,
         )
         self.rstate = np.random.RandomState(0)
         self.X = self.rstate.randn(100, 5)
@@ -186,6 +187,8 @@ class TestPipeline(unittest.TestCase):
         # We expect in this case that the "best"
         # equation should be the right one:
         model.set_params(model_selection="best")
+        # Also try without a temp equation file:
+        model.set_params(temp_equation_file=False)
         model.fit(self.X, y)
         self.assertLessEqual(model.get_best()[1]["loss"], 1e-2)
         self.assertLessEqual(model.get_best()[1]["loss"], 1e-2)
@@ -399,6 +402,7 @@ class TestMiscellaneous(unittest.TestCase):
             procs=0,
             multithreading=False,
             warm_start=False,
+            temp_equation_file=True,
         )  # Return early.
 
         check_generator = check_estimator(model, generate_only=True)
