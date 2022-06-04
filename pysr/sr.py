@@ -1127,7 +1127,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if Xresampled is not None:
             Xresampled = check_array(Xresampled)
         if weights is not None:
-            weights = check_array(weights)
+            weights = check_array(weights, ensure_2d=False)
             check_consistent_length(weights, y)
         X, y = self._validate_data(X=X, y=y, reset=True, multi_output=True)
         self.feature_names_in_ = _check_feature_names_in(self, variable_names)

@@ -39,6 +39,17 @@ class TestPipeline(unittest.TestCase):
         print(model.equations_)
         self.assertLessEqual(model.get_best()["loss"], 1e-4)
 
+    def test_linear_relation_weighted(self):
+        y = self.X[:, 0]
+        weights = np.ones_like(y)
+        model = PySRRegressor(
+            **self.default_test_kwargs,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
+        )
+        model.fit(self.X, y, weights=weights)
+        print(model.equations_)
+        self.assertLessEqual(model.get_best()["loss"], 1e-4)
+
     def test_multiprocessing(self):
         y = self.X[:, 0]
         model = PySRRegressor(
