@@ -58,7 +58,7 @@ python interface.
 
 # Installation
 
-| pip | conda |
+| pip (macOS, Linux, Windows) | conda (macOS - only Intel, Linux) |
 |---|---|
 | 1. Install Julia manually (see [downloads](https://julialang.org/downloads/))<br>2. `pip install pysr`<br>3. `python -c 'import pysr; pysr.install()'` | 1. `conda install -c conda-forge pysr`<br>2. `python -c 'import pysr; pysr.install()'`|
 
