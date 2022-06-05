@@ -559,6 +559,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     raw_julia_state_ : tuple[list[PyCall.jlwrap], PyCall.jlwrap]
         The state for the julia SymbolicRegression.jl backend post fitting.
 
+    equation_file_contents_ : list[pandas.DataFrame]
+        Contents of the equation file output by the Julia backend.
+
     Notes
     -----
     Most default parameters have been tuned over several example equations,
@@ -959,6 +962,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 self.equation_file_ = "hall_of_fame_" + date_time + ".csv"
         else:
             self.equation_file_ = self.equation_file
+        self.equation_file_contents_ = None
 
     def _validate_and_set_init_params(self):
         """
@@ -1599,6 +1603,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         check_is_fitted(self, attributes=["equation_file_"])
         if checkpoint_file:
             self.equation_file_ = checkpoint_file
+            self.equation_file_contents_ = None
         self.equations_ = self.get_hof()
 
     def predict(self, X, index=None):
@@ -1771,18 +1776,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             return [eq["torch_format"] for eq in best_equation]
         return best_equation["torch_format"]
 
-    def get_hof(self):
-        """Get the equations from a hall of fame file. If no arguments
-        entered, the ones used previously from a call to PySR will be used."""
-        check_is_fitted(
-            self,
-            attributes=[
-                "nout_",
-                "equation_file_",
-                "selection_mask_",
-                "feature_names_in_",
-            ],
-        )
+    def _read_equation_file(self):
+        """Read the hall of fame file created by SymbolicRegression.jl"""
         try:
             if self.nout_ > 1:
                 all_outputs = []
@@ -1817,6 +1812,24 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 "Couldn't find equation file! The equation search likely exited "
                 "before a single iteration completed."
             )
+        return all_outputs
+
+    def get_hof(self):
+        """Get the equations from a hall of fame file. If no arguments
+        entered, the ones used previously from a call to PySR will be used."""
+        check_is_fitted(
+            self,
+            attributes=[
+                "nout_",
+                "equation_file_",
+                "selection_mask_",
+                "feature_names_in_",
+            ],
+        )
+        if (
+            not hasattr(self, "equation_file_contents_")
+        ) or self.equation_file_contents_ is None:
+            self.equation_file_contents_ = self._read_equation_file()
 
         # It is expected extra_jax/torch_mappings will be updated after fit.
         # Thus, validation is performed here instead of in _validate_init_params
@@ -1843,7 +1856,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         ret_outputs = []
 
-        for output in all_outputs:
+        for output in self.equation_file_contents_:
 
             scores = []
             lastMSE = None

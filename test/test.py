@@ -115,7 +115,6 @@ class TestPipeline(unittest.TestCase):
             extra_sympy_mappings={"sq": lambda x: x**2},
             **self.default_test_kwargs,
             procs=0,
-            temp_equation_file=True,
             delete_tempfiles=False,
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 2",
         )
@@ -158,8 +157,13 @@ class TestPipeline(unittest.TestCase):
         np.testing.assert_almost_equal(regressor.predict(X), y, decimal=1)
 
         # Test if repeated fit works:
-        regressor.set_params(niterations=0, warm_start=True, early_stop_condition=None)
-        # This should exit immediately, and use the old equations
+        regressor.set_params(
+            niterations=1,
+            ncyclesperiteration=2,
+            warm_start=True,
+            early_stop_condition=None,
+        )
+        # This should exit almost immediately, and use the old equations
         regressor.fit(X, y)
 
         self.assertLessEqual(regressor.equations_.iloc[-1]["loss"], 1e-4)
@@ -272,7 +276,6 @@ class TestBest(unittest.TestCase):
             model_selection="accuracy",
             equation_file="equation_file.csv",
         )
-        self.model.fit(self.X, self.y)
         equations = pd.DataFrame(
             {
                 "equation": ["1.0", "cos(x0)", "square(cos(x0))"],
@@ -281,6 +284,11 @@ class TestBest(unittest.TestCase):
             }
         )
 
+        # Set up internal parameters as if it had been fitted:
+        self.model.equation_file_ = "equation_file.csv"
+        self.model.nout_ = 1
+        self.model.selection_mask_ = None
+        self.model.feature_names_in_ = np.array(["x0", "x1"], dtype=object)
         equations["complexity loss equation".split(" ")].to_csv(
             "equation_file.csv.bkup", sep="|"
         )
