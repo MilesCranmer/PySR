@@ -533,8 +533,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
     Attributes
     ----------
-    equations_ : pandas.DataFrame
-        DataFrame containing the results of model fitting.
+    equations_ : { pandas.DataFrame | list[pandas.DataFrame] }
+        Processed DataFrame containing the results of model fitting.
 
     n_features_in_ : int
         Number of features seen during :term:`fit`.
