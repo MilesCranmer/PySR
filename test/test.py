@@ -9,22 +9,22 @@ import sympy
 import pandas as pd
 import warnings
 
+DEFAULT_NITERATIONS = (
+    inspect.signature(PySRRegressor.__init__).parameters["niterations"].default
+)
+DEFAULT_POPULATIONS = (
+    inspect.signature(PySRRegressor.__init__).parameters["populations"].default
+)
 
 class TestPipeline(unittest.TestCase):
     def setUp(self):
         # Using inspect,
         # get default niterations from PySRRegressor, and double them:
-        default_niterations = (
-            inspect.signature(PySRRegressor.__init__).parameters["niterations"].default
-        )
-        default_populations = (
-            inspect.signature(PySRRegressor.__init__).parameters["populations"].default
-        )
         self.default_test_kwargs = dict(
             progress=False,
             model_selection="accuracy",
-            niterations=default_niterations * 2,
-            populations=default_populations * 2,
+            niterations=DEFAULT_NITERATIONS * 2,
+            populations=DEFAULT_POPULATIONS * 2,
             temp_equation_file=True,
         )
         self.rstate = np.random.RandomState(0)
