@@ -571,6 +571,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
     Examples
     --------
+    ```python
     >>> import numpy as np
     >>> from pysr import PySRRegressor
     >>> randstate = np.random.RandomState(0)
@@ -606,6 +607,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     1.0
     >>> model.predict(np.array([1,2,3,4,5]))
     array([-1.15907818, -1.15907818, -1.15907818, -1.15907818, -1.15907818])
+    ```
     """
 
     def __init__(
