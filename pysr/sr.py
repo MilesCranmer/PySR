@@ -633,7 +633,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         use_frequency=True,
         use_frequency_in_tournament=True,
         alpha=0.1,
-        annealing=True,
+        annealing=False,
         early_stop_condition=None,
         ncyclesperiteration=550,
         fraction_replaced=0.000364,
