@@ -275,8 +275,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         function. Examples of custom written losses include:
         `myloss(x, y) = abs(x-y)` for non-weighted, or
         `myloss(x, y, w) = w*abs(x-y)` for weighted.
-
-        Among the included losses, these are as follows.
+        The included losses include:
         Regression: `LPDistLoss{P}()`, `L1DistLoss()`,
         `L2DistLoss()` (mean square), `LogitDistLoss()`,
         `HuberLoss(d)`, `L1EpsilonInsLoss(ϵ)`, `L2EpsilonInsLoss(ϵ)`,
@@ -318,7 +317,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         (requires :param`annealing` to be `True`).
 
     annealing : bool, default=True
-        Whether to use annealing. You should (and it is default).
+        Whether to use annealing.
 
     early_stop_condition : { float | str }, default=None
         Stop the search early if this loss is reached. You may also
