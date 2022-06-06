@@ -316,7 +316,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Initial temperature for simulated annealing
         (requires :param`annealing` to be `True`).
 
-    annealing : bool, default=True
+    annealing : bool, default=False
         Whether to use annealing.
 
     early_stop_condition : { float | str }, default=None
