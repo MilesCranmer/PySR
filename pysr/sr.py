@@ -884,12 +884,24 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if "equations_" in pickled_state:
             pickled_state["output_torch_format"] = False
             pickled_state["output_jax_format"] = False
-            pickled_columns = ~pickled_state["equations_"].columns.isin(
-                ["jax_format", "torch_format"]
-            )
-            pickled_state["equations_"] = (
-                pickled_state["equations_"].loc[:, pickled_columns].copy()
-            )
+            if self.nout_ == 1:
+                pickled_columns = ~pickled_state["equations_"].columns.isin(
+                    ["jax_format", "torch_format"]
+                )
+                pickled_state["equations_"] = (
+                    pickled_state["equations_"].loc[:, pickled_columns].copy()
+                )
+            else:
+                pickled_columns = [
+                    ~dataframe.columns.isin(["jax_format", "torch_format"])
+                    for dataframe in pickled_state["equations_"]
+                ]
+                pickled_state["equations_"] = [
+                    dataframe.loc[:, signle_pickled_columns]
+                    for dataframe, signle_pickled_columns in zip(
+                        pickled_state["equations_"], pickled_columns
+                    )
+                ]
         return pickled_state
 
     @property
