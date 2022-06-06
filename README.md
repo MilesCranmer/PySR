@@ -1,8 +1,6 @@
-[//]: # (Logo:)
-
 <img src="https://raw.githubusercontent.com/MilesCranmer/PySR/master/docs/images/pysr_logo.svg" width="400" />
 
-# PySR: High-Performance Symbolic Regression in Python
+## PySR: High-Performance Symbolic Regression in Python
 
 PySR is built on an extremely optimized pure-Julia backend, and uses regularized evolution, simulated annealing, and gradient-free optimization to search for equations that fit your data.
 
@@ -17,13 +15,15 @@ If you find PySR useful, please cite it using the citation information given in 
 If you've finished a project with PySR, please submit a PR to showcase your work on the [Research Showcase page](https://astroautomata.com/PySR/#/papers)!
 
 
-### Test status:
+### Test status
+
 | **Linux** | **Windows** | **macOS (intel)** |
 |---|---|---|
 |[![Linux](https://github.com/MilesCranmer/PySR/actions/workflows/CI.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI.yml)|[![Windows](https://github.com/MilesCranmer/PySR/actions/workflows/CI_Windows.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_Windows.yml)|[![macOS](https://github.com/MilesCranmer/PySR/actions/workflows/CI_mac.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_mac.yml)|
 | **Docker** | **Conda** | **Coverage** | 
 |[![Docker](https://github.com/MilesCranmer/PySR/actions/workflows/CI_docker.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_docker.yml)|[![conda-forge](https://github.com/MilesCranmer/PySR/actions/workflows/CI_conda_forge.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_conda_forge.yml)|[![Coverage Status](https://coveralls.io/repos/github/MilesCranmer/PySR/badge.svg?branch=master&service=github)](https://coveralls.io/github/MilesCranmer/PySR)|
 
+## Backend
 
 Check out [SymbolicRegression.jl](https://github.com/MilesCranmer/SymbolicRegression.jl) for
 the pure-Julia backend of this package.
@@ -56,7 +56,7 @@ as efficient as eureqa, while also exposing a configurable
 python interface.
 
 
-# Installation
+## Installation
 
 | pip (macOS, Linux, Windows) | conda (macOS - only Intel, Linux) |
 |---|---|
@@ -71,7 +71,7 @@ If none of these folders contain your Julia binary, then you need to add Julia's
 
 **Running PySR on macOS with an M1 processor:** you should use the pip version, and make sure to get the Julia binary for M1 processors. You might have to scroll down to [upcoming releases](https://julialang.org/downloads/#upcoming_release).
 
-# Introduction
+## Example
 
 Let's create a PySR example. First, let's import
 numpy to generate some test data:
@@ -149,7 +149,7 @@ For a detailed look at more options, see the [options page](https://astroautomat
 You can also see the full API at [this page](https://astroautomata.com/PySR/#/api).
 
 
-# Docker
+### Docker
 
 You can also test out PySR in Docker, without
 installing it locally, by running the following command in

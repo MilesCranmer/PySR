@@ -1,0 +1,7 @@
+site_name: PySR
+
+theme:
+  name: material
+  palette:
+    primary: red
+
