@@ -1,3 +1,5 @@
+import os
+import traceback
 import inspect
 import unittest
 import numpy as np
@@ -8,13 +10,14 @@ from sklearn.utils.estimator_checks import check_estimator
 import sympy
 import pandas as pd
 import warnings
+import pickle as pkl
+import tempfile
 
-DEFAULT_NITERATIONS = (
-    inspect.signature(PySRRegressor.__init__).parameters["niterations"].default
-)
-DEFAULT_POPULATIONS = (
-    inspect.signature(PySRRegressor.__init__).parameters["populations"].default
-)
+DEFAULT_PARAMS = inspect.signature(PySRRegressor.__init__).parameters
+DEFAULT_NITERATIONS =  DEFAULT_PARAMS["niterations"].default
+DEFAULT_POPULATIONS = DEFAULT_PARAMS["populations"].default
+DEFAULT_NCYCLES = DEFAULT_PARAMS["ncyclesperiteration"].default
+
 
 class TestPipeline(unittest.TestCase):
     def setUp(self):
@@ -399,14 +402,49 @@ class TestMiscellaneous(unittest.TestCase):
         with self.assertRaises(ValueError):
             model.fit(X, y)
 
+    def test_pickle_with_temp_equation_file(self):
+        """If we have a temporary equation file, unpickle the estimator."""
+        model = PySRRegressor(
+            populations=int(1 + DEFAULT_POPULATIONS / 5),
+            temp_equation_file=True,
+            procs=0,
+            multithreading=False,
+        )
+        nout = 3
+        X = np.random.randn(100, 2)
+        y = np.random.randn(100, nout)
+        model.fit(X, y)
+        contents = model.equation_file_contents_.copy()
+
+        y_predictions = model.predict(X)
+
+        equation_file_base = model.equation_file_
+        for i in range(1, nout + 1):
+            assert not os.path.exists(str(equation_file_base) + f".out{i}.bkup")
+
+        with tempfile.NamedTemporaryFile() as pickle_file:
+            pkl.dump(model, pickle_file)
+            pickle_file.seek(0)
+            model2 = pkl.load(pickle_file)
+
+        contents2 = model2.equation_file_contents_
+        cols_to_check = ["equation", "loss", "complexity"]
+        for frame1, frame2 in zip(contents, contents2):
+            pd.testing.assert_frame_equal(frame1[cols_to_check], frame2[cols_to_check])
+
+        y_predictions2 = model2.predict(X)
+        np.testing.assert_array_equal(y_predictions, y_predictions2)
+
     def test_scikit_learn_compatibility(self):
         """Test PySRRegressor compatibility with scikit-learn."""
         model = PySRRegressor(
-            max_evals=1000,
+            niterations=int(1 + DEFAULT_NITERATIONS / 10),
+            populations=int(1 + DEFAULT_POPULATIONS / 3),
+            ncyclesperiteration=int(2 + DEFAULT_NCYCLES / 10),
             verbosity=0,
             progress=False,
             random_state=0,
-            deterministic=True,
+            deterministic=True,  # Deterministic as tests require this.
             procs=0,
             multithreading=False,
             warm_start=False,
@@ -419,20 +457,16 @@ class TestMiscellaneous(unittest.TestCase):
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    # To ensure an equation file is written for each output in
-                    # nout, set stop condition to niterations=1
-                    if check.func.__name__ == "check_regressor_multioutput":
-                        model.set_params(niterations=1, max_evals=None)
-                    else:
-                        model.set_params(max_evals=10000)
                     check(model)
                 print("Passed", check.func.__name__)
-            except Exception as e:
-                error_message = str(e)
-                exception_messages.append(f"{check.func.__name__}: {error_message}\n")
+            except Exception:
+                error_message = str(traceback.format_exc())
+                exception_messages.append(
+                    f"{check.func.__name__}:\n" + error_message + "\n"
+                )
                 print("Failed", check.func.__name__, "with:")
                 # Add a leading tab to error message, which
                 # might be multi-line:
                 print("\n".join([(" " * 4) + row for row in error_message.split("\n")]))
         # If any checks failed don't let the test pass.
-        self.assertEqual([], exception_messages)
+        self.assertEqual(len(exception_messages), 0)
