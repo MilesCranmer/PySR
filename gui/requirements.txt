@@ -1,2 +1,3 @@
 pysr==0.9.1
-numpy==1.22.2
+numpy
+pandas
