@@ -28,6 +28,7 @@ from .julia_helpers import (
 )
 from .export_numpy import CallableEquation
 from .deprecated import make_deprecated_kwargs_for_pysr_regressor
+from .version_check import pysr_version_check
 
 
 Main = None  # TODO: Rename to more descriptive name like "julia_runtime"
@@ -1295,6 +1296,16 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         batch_size = mutated_params["batch_size"]
         update_verbosity = mutated_params["update_verbosity"]
         progress = mutated_params["progress"]
+
+        # Check pysr version:
+        if not already_ran:
+            is_latest_version, current_version, latest_version = pysr_version_check()
+            if not is_latest_version:
+                warnings.warn(
+                    "You are using an old version of PySR. "
+                    f"Your version is {current_version}, "
+                    f"but version {latest_version} is available."
+                )
 
         # Start julia backend processes
         if Main is None:
