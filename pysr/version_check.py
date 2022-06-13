@@ -48,10 +48,16 @@ def package_version_check(name: str):
         The currently installed version.
     """
 
+    # TODO: What if someone does not have pip?
     latest_version = run_pip_command("install", f"{name}==random")
     latest_version = latest_version[latest_version.find("(from versions:") + 15 :]
     latest_version = latest_version[: latest_version.find(")")]
     latest_version = latest_version.replace(" ", "").split(",")[-1]
+
+    install_check_failed = latest_version == "none"
+    if install_check_failed:
+        # Could be due to no internet, or other reason.
+        return True, "none", "none"
 
     if name == "pysr":
         current_version = __version__
