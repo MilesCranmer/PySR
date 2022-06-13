@@ -2,6 +2,7 @@
 import subprocess
 import sys
 from typing import List
+from .version import __version__
 
 
 def run_pip_command(*commands: List[str]):
@@ -26,7 +27,7 @@ def run_pip_command(*commands: List[str]):
     return str(raw_output)
 
 
-def is_up_to_date(name: str):
+def package_version_check(name: str):
     """Checks if a particular Python package is up-to-date.
 
     Credit to
@@ -41,6 +42,10 @@ def is_up_to_date(name: str):
     -------
     flag : bool
         True if the package is up-to-date, False otherwise.
+    current_version : str
+        The most up-to-date version of the package.
+    latest_version : str
+        The currently installed version.
     """
 
     latest_version = run_pip_command("install", f"{name}==random")
@@ -48,16 +53,19 @@ def is_up_to_date(name: str):
     latest_version = latest_version[: latest_version.find(")")]
     latest_version = latest_version.replace(" ", "").split(",")[-1]
 
-    current_version = run_pip_command("show", name)
-    current_version = current_version[current_version.find("Version:") + 8 :]
-    current_version = current_version[: current_version.find("\\n")].replace(" ", "")
+    if name == "pysr":
+        current_version = __version__
+    else:
+        current_version = run_pip_command("show", name)
+        current_version = current_version[current_version.find("Version:") + 8 :]
+        current_version = current_version[: current_version.find("\\n")].replace(" ", "")
 
     if latest_version == current_version:
-        return True
+        return True, current_version, latest_version
     else:
-        return False
+        return False, current_version, latest_version
 
 
-def is_pysr_up_to_date():
+def pysr_version_check():
     """Checks if PySR is up-to-date"""
-    return is_up_to_date("pysr")
+    return package_version_check("pysr")
