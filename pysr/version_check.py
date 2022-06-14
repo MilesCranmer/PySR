@@ -61,7 +61,7 @@ def package_version_check(name: str):
 
     if name == "pysr":
         current_version = __version__
-    else:
+    else: 
         current_version = run_pip_command("show", name)
         current_version = current_version[current_version.find("Version:") + 8 :]
         current_version = current_version[: current_version.find("\\n")].replace(" ", "")
