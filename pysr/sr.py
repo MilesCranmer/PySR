@@ -438,6 +438,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         max_evals=None,
         early_stop_condition=None,
         max_denoising_points=250,
+        downsample_to=None,
         # To support deprecated kwargs:
         **kwargs,
     ):
@@ -773,6 +774,7 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
                 max_evals=max_evals,
                 early_stop_condition=early_stop_condition,
                 max_denoising_points=max_denoising_points,
+                downsample_to=downsample_to,
             ),
         }
 
@@ -943,6 +945,12 @@ class PySRRegressor(BaseEstimator, RegressorMixin):
         if variable_names is None:
             variable_names = self.variable_names
 
+        if self.params["downsample_to"] is not None:
+            idx = np.random.choice(
+                X.shape[0], self.params["downsample_to"], replace=False
+            )
+            X = X[idx]
+            y = y[idx]
         self._run(
             X=X,
             y=y,
