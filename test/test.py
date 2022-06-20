@@ -178,6 +178,12 @@ class TestPipeline(unittest.TestCase):
         self.assertTrue("None" not in regressor.__repr__())
         self.assertTrue(">>>>" in regressor.__repr__())
 
+    def test_warm_start_set_at_init(self):
+        # Smoke test for bug where warm_start=True is set at init
+        y = self.X[:, 0]
+        regressor = PySRRegressor(warm_start=True, max_evals=10)
+        regressor.fit(self.X, y)
+
     def test_noisy(self):
 
         y = self.X[:, [0, 1]] ** 2 + self.rstate.randn(self.X.shape[0], 1) * 0.05
