@@ -968,7 +968,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if self.temp_equation_file:
             self.equation_file_ = self.tempdir_ / "hall_of_fame.csv"
         elif self.equation_file is None:
-            if self.warm_start and self.equation_file_:
+            if self.warm_start and (
+                hasattr(self, "equation_file_") and self.equation_file_
+            ):
                 pass
             else:
                 date_time = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")[:-3]
