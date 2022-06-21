@@ -159,15 +159,19 @@ class TestTorch(unittest.TestCase):
             decimal=4,
         )
 
-    def test_feature_selection(self):
+    def test_feature_selection_custom_operators(self):
         X = pd.DataFrame({f"k{i}": np.random.randn(1000) for i in range(10, 21)})
-        y = X["k15"] ** 2 + np.cos(X["k20"])
+        cos_approx = lambda x: 1 - (x**2) / 2 + (x**4) / 24 + (x**6) / 720
+        y = X["k15"] ** 2 + cos_approx(X["k20"])
 
         model = PySRRegressor(
             progress=False,
-            unary_operators=["cos"],
+            unary_operators=["cos_approx(x) = 1 - x^2 / 2 + x^4 / 24 + x^6 / 720"],
             select_k_features=3,
+            maxsize=10,
             early_stop_condition=1e-5,
+            extra_sympy_mappings={"cos_approx": cos_approx},
+            extra_torch_mappings={"cos_approx": cos_approx},
         )
         model.fit(X.values, y.values)
         torch_module = model.pytorch()
