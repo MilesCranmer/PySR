@@ -1860,7 +1860,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         else:
             extra_jax_mappings = {}
         if extra_torch_mappings is not None:
-            for value in extra_jax_mappings.values():
+            for value in extra_torch_mappings.values():
                 if not callable(value):
                     raise ValueError(
                         "extra_torch_mappings must be callable functions! "
