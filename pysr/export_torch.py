@@ -94,6 +94,11 @@ def _initialize_torch():
                     self._value = torch.nn.Parameter(torch.tensor(float(expr)))
                     self._torch_func = lambda: self._value
                     self._args = ()
+                elif issubclass(expr.func, sympy.Rational):
+                    # This is some fraction fixed in the operator.
+                    self._value = float(expr)
+                    self._torch_func = lambda: self._value
+                    self._args = ()
                 elif issubclass(expr.func, sympy.UnevaluatedExpr):
                     if len(expr.args) != 1 or not issubclass(
                         expr.args[0].func, sympy.Float
