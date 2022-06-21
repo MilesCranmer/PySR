@@ -155,8 +155,7 @@ You can also see the full API at [this page](https://astroautomata.com/PySR/#/ap
 ## Detailed Example
 
 The following code makes use of as many PySR features as possible.
-Note that in practice you may not want to run with all of these, but
-it shows the types of things you can do.
+Note that is just a demonstration of features and you should not use this example as-is.
 
 ```python
 model = PySRRegressor(
