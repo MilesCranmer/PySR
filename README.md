@@ -89,16 +89,20 @@ PySR's main interface is in the style of scikit-learn:
 ```python
 from pysr import PySRRegressor
 model = PySRRegressor(
+    model_selection="best",  # Result is mix of simplicity+accuracy
     niterations=40,
     binary_operators=["+", "*"],
     unary_operators=[
         "cos",
         "exp",
         "sin",
-        "inv(x) = 1/x",  # Custom operator (julia syntax)
+        "inv(x) = 1/x",
+	# ^ Custom operator (julia syntax)
     ],
-    model_selection="best",
-    loss="loss(x, y) = (x - y)^2",  # Custom loss function (julia syntax)
+    extra_sympy_mappings={"inv": lambda x: 1 / x},
+    # ^ Define operator for SymPy as well
+    loss="loss(x, y) = (x - y)^2",
+    # ^ Custom loss function (julia syntax)
 )
 ```
 This will set up the model for 40 iterations of the search code, which contains hundreds of thousands of mutations and equation evaluations.
