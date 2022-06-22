@@ -69,8 +69,8 @@ def main():
         fn=greet,
         description="A demo of PySR",
         inputs=[
-            gr.File(label="Upload a CSV file"),
-            gr.Textbox(placeholder="Column to predict"),
+            gr.File(label="Upload a CSV File"),
+            gr.Textbox(label="Column to Predict", placeholder="y"),
             gr.Slider(
                 minimum=1,
                 maximum=1000,
@@ -88,7 +88,7 @@ def main():
                 value=[],
             ),
         ],
-        outputs=["dataframe", "text"],
+        outputs=[gr.DataFrame(label="Equations"), gr.Textbox(label="Error Log")],
     )
     # Add file to the demo:
 
