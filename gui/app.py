@@ -50,13 +50,19 @@ def greet(
             empty_df,
             "The file has only one column!",
         )
+    if col_to_fit not in df.columns:
+        return (
+            empty_df,
+            f"The column to predict, {col_to_fit}, is not in the file!"
+            f"I found {df.columns}.",
+        )
     if len(df) > 1000 and not force_run:
         return (
             empty_df,
             "You have uploaded a file with more than 2000 rows. "
             "This will take very long to run. "
             "Please upload a subsample of the data, "
-            "or check the box 'Ignore Warnings'."
+            "or check the box 'Ignore Warnings'.",
         )
 
     binary_operators = str(binary_operators).replace("'", '"')
@@ -102,15 +108,24 @@ def main():
                 default=["+", "-", "*", "/"],
             ),
             gr.inputs.CheckboxGroup(
-                choices=["sin", "cos", "exp", "log", "square", "cube",
-                         "sqrt", "abs", "tan"],
+                choices=[
+                    "sin",
+                    "cos",
+                    "exp",
+                    "log",
+                    "square",
+                    "cube",
+                    "sqrt",
+                    "abs",
+                    "tan",
+                ],
                 label="Unary Operators",
                 default=[],
             ),
             gr.inputs.Checkbox(
                 default=False,
                 label="Ignore Warnings",
-            )
+            ),
         ],
         outputs=[
             "dataframe",
