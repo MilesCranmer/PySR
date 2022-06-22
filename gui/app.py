@@ -16,9 +16,9 @@ os.system("bash install_pysr.sh")
 
 def greet(
     file_obj: tempfile._TemporaryFileWrapper,
-    maxsize: int,
     col_to_fit: str,
     niterations: int,
+    maxsize: int,
     binary_operators: list,
     unary_operators: list,
     force_run: bool,
