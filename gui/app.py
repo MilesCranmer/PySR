@@ -4,6 +4,7 @@ import os
 import tempfile
 import numpy as np
 import pandas as pd
+import traceback as tb
 
 
 def greet(
@@ -56,7 +57,22 @@ def greet(
         binary_operators=binary_operators,
         unary_operators=unary_operators,
     )
-    model.fit(X, y)
+    try:
+        model.fit(X, y)
+    # Catch all error:
+    except Exception as e:
+        error_traceback = tb.format_exc()
+        if "CalledProcessError" in error_traceback:
+            return (
+                empty_df,
+                "Could not initialize Julia. Error message:\n"
+                + error_traceback,
+            )
+        else:
+            return (
+                empty_df,
+                "Failed due to error:\n" + error_traceback,
+            )
 
     df = model.equations_[["equation", "loss", "complexity"]]
     # Convert all columns to string type:
