@@ -50,11 +50,6 @@ def greet(
             empty_df,
             "The file has only one column!",
         )
-    if col_to_fit not in df.columns:
-        return (
-            empty_df,
-            "The column to predict is not in the file!",
-        )
     if len(df) > 1000 and not force_run:
         return (
             empty_df,
