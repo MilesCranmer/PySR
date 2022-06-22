@@ -67,8 +67,15 @@ if __name__ == "__main__":
         error_message = (
             "Success!\n"
             f"You may run the model locally (faster) with "
-            f"the following parameters:\n" + str(model.get_params())
-        )
+            f"the following parameters:"
+            +f"""
+model = PySRRegressor(
+    niterations={niterations},
+    binary_operators={str(binary_operators)},
+    unary_operators={str(unary_operators)},
+    maxsize={maxsize},
+)
+model.fit(X, y)""")
     except Exception as e:
         error_message = tb.format_exc()
         # Dump to file:
