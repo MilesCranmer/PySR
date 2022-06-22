@@ -58,11 +58,13 @@ if __name__ == "__main__":
         df = model.equations_[["equation", "loss", "complexity"]]
         # Convert all columns to string type:
         df = df.astype(str)
-        df.to_csv("pysr_output.csv", index=False)
+        error_message = "Success!"
     except Exception as e:
         error_message = tb.format_exc()
         # Dump to file:
-        empty_df.to_csv("pysr_output.csv", index=False)
-        with open("error.log", "w") as f:
-            f.write(error_message)
+        df = empty_df
+
+    df.to_csv("pysr_output.csv", index=False)
+    with open("error.log", "w") as f:
+        f.write(error_message)
     
