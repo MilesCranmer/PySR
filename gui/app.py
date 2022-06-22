@@ -45,7 +45,7 @@ def greet(
         wget https://julialang-s3.julialang.org/bin/linux/x64/1.7/julia-1.7.3-linux-x86_64.tar.gz
         tar zxvf julia-1.7.3-linux-x86_64.tar.gz
         mkdir ~/julia
-        mv julia-1.7.3-linux/* ~/julia/
+        mv julia-1.7.3/* ~/julia/
     fi""")
     os.environ["PATH"] += ":~/julia/bin/"
     # Need to install PySR in separate python instance:
