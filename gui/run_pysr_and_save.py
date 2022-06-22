@@ -37,8 +37,10 @@ if __name__ == "__main__":
     try:
         import pysr
         from julia.api import JuliaInfo
+
         info = JuliaInfo.load(julia="/home/user/.local/bin/julia")
         from julia import Main as _Main
+
         pysr.sr.Main = _Main
 
         from pysr import PySRRegressor
@@ -59,7 +61,11 @@ if __name__ == "__main__":
         df = model.equations_[["equation", "loss", "complexity"]]
         # Convert all columns to string type:
         df = df.astype(str)
-        error_message = "Success!"
+        error_message = (
+            "Success!\n"
+            f"You may run the model locally (faster) with "
+            f"the following parameters:\n" + str(model.get_params())
+        )
     except Exception as e:
         error_message = tb.format_exc()
         # Dump to file:
@@ -68,4 +74,3 @@ if __name__ == "__main__":
     df.to_csv("pysr_output.csv", index=False)
     with open("error.log", "w") as f:
         f.write(error_message)
-    
