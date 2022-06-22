@@ -20,11 +20,11 @@ empty_df = pd.DataFrame(
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument("niterations", type=int)
-    parser.add_argument("binary_operators", type=str)
-    parser.add_argument("unary_operators", type=str)
-    parser.add_argument("col_to_fit", type=str)
-    parser.add_argument("filename", type=str)
+    parser.add_argument("--niterations", type=int)
+    parser.add_argument("--binary_operators", type=str)
+    parser.add_argument("--unary_operators", type=str)
+    parser.add_argument("--col_to_fit", type=str)
+    parser.add_argument("--filename", type=str)
     args = parser.parse_args()
     niterations = args.niterations
     binary_operators = eval(args.binary_operators)
