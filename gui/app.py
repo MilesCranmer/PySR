@@ -74,23 +74,23 @@ def main():
             gr.inputs.Slider(
                 minimum=1,
                 maximum=1000,
-                value=40,
+                default=40,
                 label="Number of iterations",
             ),
             gr.inputs.CheckboxGroup(
                 choices=["+", "-", "*", "/", "^"],
                 label="Binary Operators",
-                value=["+", "-", "*", "/"],
+                default=["+", "-", "*", "/"],
             ),
             gr.inputs.CheckboxGroup(
                 choices=["sin", "cos", "exp", "log"],
                 label="Unary Operators",
-                value=[],
+                default=[],
             ),
         ],
         outputs=[
-            gr.outputs.DataFrame(label="Equations"),
-            gr.outputs.Textbox(label="Error Log")
+            "dataframe",
+            gr.outputs.Textbox(label="Error Log"),
         ],
     )
     # Add file to the demo:
