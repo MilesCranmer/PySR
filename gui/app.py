@@ -16,6 +16,7 @@ os.system("bash install_pysr.sh")
 
 def greet(
     file_obj: tempfile._TemporaryFileWrapper,
+    maxsize: int,
     col_to_fit: str,
     niterations: int,
     binary_operators: list,
@@ -68,6 +69,7 @@ def greet(
     os.system(
         f"python run_pysr_and_save.py "
         f"--niterations {niterations} "
+        f"--maxsize {maxsize} "
         f"--binary_operators '{binary_operators}' "
         f"--unary_operators '{unary_operators}' "
         f"--col_to_fit {col_to_fit} "
@@ -89,7 +91,13 @@ def main():
                 minimum=1,
                 maximum=1000,
                 default=40,
-                label="Number of iterations",
+                label="Number of Iterations",
+            ),
+            gr.inputs.Slider(
+                minimum=7,
+                maximum=35,
+                default=20,
+                label="Maximum Complexity"
             ),
             gr.inputs.CheckboxGroup(
                 choices=["+", "-", "*", "/", "^"],

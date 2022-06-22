@@ -21,6 +21,7 @@ empty_df = pd.DataFrame(
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("--niterations", type=int)
+    parser.add_argument("--maxsize", type=int)
     parser.add_argument("--binary_operators", type=str)
     parser.add_argument("--unary_operators", type=str)
     parser.add_argument("--col_to_fit", type=str)
@@ -31,6 +32,7 @@ if __name__ == "__main__":
     unary_operators = eval(args.unary_operators)
     col_to_fit = args.col_to_fit
     filename = args.filename
+    maxsize = args.maxsize
 
     os.environ["PATH"] += ":/home/user/.local/bin/"
 
@@ -52,6 +54,7 @@ if __name__ == "__main__":
         model = PySRRegressor(
             update=False,
             progress=False,
+            maxsize=maxsize,
             niterations=niterations,
             binary_operators=binary_operators,
             unary_operators=unary_operators,
