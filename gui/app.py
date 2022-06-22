@@ -97,7 +97,8 @@ def main():
                 default=["+", "-", "*", "/"],
             ),
             gr.inputs.CheckboxGroup(
-                choices=["sin", "cos", "exp", "log"],
+                choices=["sin", "cos", "exp", "log", "square", "cube",
+                         "sqrt", "abs", "tan"],
                 label="Unary Operators",
                 default=[],
             ),
