@@ -14,6 +14,7 @@ empty_df = pd.DataFrame(
         "complexity": [],
     }
 )
+Main = None
 
 def greet(
     file_obj: tempfile._TemporaryFileWrapper,
@@ -22,6 +23,12 @@ def greet(
     binary_operators: list,
     unary_operators: list,
 ):
+    global Main
+    if Main is not None:
+        return (
+            empty_df,
+            "Refresh the page to run with a different configuration."
+        )
     if col_to_fit == "":
         return (
             empty_df,
