@@ -2,6 +2,8 @@ import io
 import gradio as gr
 import os
 import tempfile
+import numpy as np
+import pandas as pd
 
 
 def greet(
@@ -11,8 +13,28 @@ def greet(
     binary_operators: list,
     unary_operators: list,
 ):
+    empty_df = pd.DataFrame(
+        {
+            "equation": [],
+            "loss": [],
+            "complexity": [],
+        }
+    )
     if col_to_fit == "":
-        raise ValueError("Please enter a column to predict")
+        return (
+            empty_df,
+            "Please enter a column to predict!",
+        )
+    if len(binary_operators) == 0 and len(unary_operators) == 0:
+        return (
+            empty_df,
+            "Please select at least one operator!",
+        )
+    if file_obj is None:
+        return (
+            empty_df,
+            "Please upload a CSV file!",
+        )
     niterations = int(niterations)
     # Need to install PySR in separate python instance:
     os.system(
@@ -22,8 +44,6 @@ def greet(
     fi"""
     )
     from pysr import PySRRegressor
-    import numpy as np
-    import pandas as pd
 
     df = pd.read_csv(file_obj.name)
     y = np.array(df[col_to_fit])
@@ -38,7 +58,10 @@ def greet(
     )
     model.fit(X, y)
 
-    return model.equations_
+    df = model.equations_[["equation", "loss", "complexity"]]
+    # Convert all columns to string type:
+    df = df.astype(str)
+    return df, "Successful."
 
 
 def main():
@@ -65,7 +88,7 @@ def main():
                 value=[],
             ),
         ],
-        outputs="dataframe",
+        outputs=["dataframe", "text"],
     )
     # Add file to the demo:
 
