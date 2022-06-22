@@ -81,7 +81,7 @@ def greet(
 def main():
     demo = gr.Interface(
         fn=greet,
-        description="PySR Demo",
+        description="Symbolic Regression with PySR. Watch search progress by clicking 'See logs'!",
         inputs=[
             gr.inputs.File(label="Upload a CSV File"),
             gr.inputs.Textbox(label="Column to Predict", placeholder="y"),
