@@ -49,6 +49,7 @@ if __name__ == "__main__":
 
         model = PySRRegressor(
             update=False,
+            progress=False,
             niterations=niterations,
             binary_operators=binary_operators,
             unary_operators=unary_operators,
