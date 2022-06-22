@@ -67,7 +67,7 @@ def greet(
 def main():
     demo = gr.Interface(
         fn=greet,
-        description="A demo of PySR",
+        description="PySR Demo",
         inputs=[
             gr.inputs.File(label="Upload a CSV File"),
             gr.inputs.Textbox(label="Column to Predict", placeholder="y"),
