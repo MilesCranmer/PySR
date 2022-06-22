@@ -38,7 +38,7 @@ def greet(
     niterations = int(niterations)
     # Need to install PySR in separate python instance:
     os.system(
-        """if [ ! -d "$HOME/.julia/environments/pysr-0.9.1" ]
+        """if [ ! -d "$HOME/.julia/environments/pysr-0.9.3" ]
     then
         python -c 'import pysr; pysr.install()'
     fi"""
