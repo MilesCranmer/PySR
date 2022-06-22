@@ -1,8 +1,11 @@
 import os
 
 # Install Julia:
-if [ ! -f "/home/user/.local/bin/julia" ]; then
-    bash -ci "$(curl -fsSL https://raw.githubusercontent.com/abelsiqueira/jill/main/jill.sh)"
+if [ ! -d "/home/user/julia" ]; then
+    wget https://julialang-s3.julialang.org/bin/linux/x64/1.7/julia-1.7.3-linux-x86_64.tar.gz
+    tar zxvf julia-1.7.3-linux-x86_64.tar.gz
+    mkdir /home/user/julia
+    mv julia-1.7.3/* /home/user/.local/
 fi
 
 # Need to install PySR in separate python instance:
