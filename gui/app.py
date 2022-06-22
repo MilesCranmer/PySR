@@ -13,6 +13,7 @@ empty_df = pd.DataFrame(
 
 os.system("bash install_pysr.sh")
 
+
 def greet(
     file_obj: tempfile._TemporaryFileWrapper,
     col_to_fit: str,
@@ -36,7 +37,16 @@ def greet(
             "Please upload a CSV file!",
         )
 
-    os.system(f"python run_pysr_and_save.py --niterations {niterations} --binary_operators '{binary_operators}' --unary_operators '{unary_operators}' --col_to_fit {col_to_fit} --filename {file_obj.name}")
+    binary_operators = str(binary_operators).replace("'", '"')
+    unary_operators = str(unary_operators).replace("'", '"')
+    os.system(
+        f"python run_pysr_and_save.py "
+        f"--niterations {niterations} "
+        f"--binary_operators '{binary_operators}' "
+        f"--unary_operators '{unary_operators}' "
+        f"--col_to_fit {col_to_fit} "
+        f"--filename {file_obj.name}"
+    )
     df = pd.read_csv("pysr_output.csv")
     error_log = open("error.log", "r").read()
     return df, error_log
