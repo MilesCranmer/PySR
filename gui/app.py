@@ -1,5 +1,6 @@
 import io
 import gradio as gr
+import sys
 import os
 import tempfile
 import numpy as np
@@ -44,6 +45,13 @@ def greet(
         python -c 'import pysr; pysr.install()'
     fi"""
     )
+
+    # Check if /usr/bin/julia exists:
+    if not os.path.isfile("/usr/bin/julia"):
+        return (
+            empty_df,
+            "Julia is not installed! (assuming '/usr/bin/julia')",
+        )
 
     import pysr
     try:
