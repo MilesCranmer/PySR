@@ -6,6 +6,13 @@ import numpy as np
 import pandas as pd
 import traceback as tb
 
+empty_df = pd.DataFrame(
+    {
+        "equation": [],
+        "loss": [],
+        "complexity": [],
+    }
+)
 
 def greet(
     file_obj: tempfile._TemporaryFileWrapper,
@@ -14,13 +21,6 @@ def greet(
     binary_operators: list,
     unary_operators: list,
 ):
-    empty_df = pd.DataFrame(
-        {
-            "equation": [],
-            "loss": [],
-            "complexity": [],
-        }
-    )
     if col_to_fit == "":
         return (
             empty_df,
@@ -44,6 +44,21 @@ def greet(
         python -c 'import pysr; pysr.install()'
     fi"""
     )
+
+    import pysr
+    try:
+        from julia.api import JuliaInfo
+        info = JuliaInfo.load(julia="/usr/bin/julia")
+        from julia import Main as _Main
+        pysr.sr.Main = _Main
+    except Exception as e:
+        error_message = tb.format_exc()
+        return (
+            empty_df,
+            error_message,
+        )
+
+
     from pysr import PySRRegressor
 
     df = pd.read_csv(file_obj.name)
