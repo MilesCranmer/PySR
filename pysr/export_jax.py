@@ -58,9 +58,11 @@ def sympy2jaxtext(expr, parameters, symbols_in, extra_jax_mappings=None):
     if issubclass(expr.func, sympy.Float):
         parameters.append(float(expr))
         return f"parameters[{len(parameters) - 1}]"
-    if issubclass(expr.func, sympy.Integer):
+    elif issubclass(expr.func, sympy.Rational):
+        return f"{float(expr)}"
+    elif issubclass(expr.func, sympy.Integer):
         return f"{int(expr)}"
-    if issubclass(expr.func, sympy.Symbol):
+    elif issubclass(expr.func, sympy.Symbol):
         return (
             f"X[:, {[i for i in range(len(symbols_in)) if symbols_in[i] == expr][0]}]"
         )
