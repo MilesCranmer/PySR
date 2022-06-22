@@ -1,5 +1,5 @@
 sympy
 pandas
 numpy
-scikit_learn
+scikit_learn >= 1.0.0
 julia
