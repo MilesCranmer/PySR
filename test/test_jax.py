@@ -80,9 +80,10 @@ class TestJAX(unittest.TestCase):
         )
 
     def test_feature_selection_custom_operators(self):
-        X = pd.DataFrame({f"k{i}": np.random.randn(1000) for i in range(10, 21)})
+        rstate = np.random.RandomState(0)
+        X = pd.DataFrame({f"k{i}": rstate.randn(2000) for i in range(10, 21)})
         cos_approx = lambda x: 1 - (x**2) / 2 + (x**4) / 24 + (x**6) / 720
-        y = X["k15"] ** 2 + cos_approx(X["k20"])
+        y = X["k15"] ** 2 + 2 * cos_approx(X["k20"])
 
         model = PySRRegressor(
             progress=False,
@@ -94,7 +95,12 @@ class TestJAX(unittest.TestCase):
             extra_jax_mappings={
                 "cos_approx": "(lambda x: 1 - x**2 / 2 + x**4 / 24 + x**6 / 720)"
             },
+            random_state=0,
+            deterministic=True,
+            procs=0,
+            multithreading=False,
         )
+        np.random.seed(0)
         model.fit(X.values, y.values)
         f, parameters = model.jax().values()
 
@@ -104,4 +110,5 @@ class TestJAX(unittest.TestCase):
         np_output = np_prediction(X.values)
         jax_output = jax_prediction(X.values)
 
-        np.testing.assert_almost_equal(np_output, jax_output, decimal=4)
+        np.testing.assert_almost_equal(y.values, np_output, decimal=4)
+        np.testing.assert_almost_equal(y.values, jax_output, decimal=4)
