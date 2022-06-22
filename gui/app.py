@@ -20,6 +20,7 @@ def greet(
     niterations: int,
     binary_operators: list,
     unary_operators: list,
+    force_run: bool,
 ):
     if col_to_fit == "":
         return (
@@ -35,6 +36,31 @@ def greet(
         return (
             empty_df,
             "Please upload a CSV file!",
+        )
+    # Look at some statistics of the file:
+    df = pd.read_csv(file_obj.name)
+    if len(df) == 0:
+        return (
+            empty_df,
+            "The file is empty!",
+        )
+    if len(df.columns) == 1:
+        return (
+            empty_df,
+            "The file has only one column!",
+        )
+    if col_to_fit not in df.columns:
+        return (
+            empty_df,
+            "The column to predict is not in the file!",
+        )
+    if len(df) > 1000 and not force_run:
+        return (
+            empty_df,
+            "You have uploaded a file with more than 2000 rows. "
+            "This will take very long to run. "
+            "Please upload a subsample of the data, "
+            "or check the box 'Ignore Warnings'."
         )
 
     binary_operators = str(binary_operators).replace("'", '"')
@@ -75,6 +101,10 @@ def main():
                 label="Unary Operators",
                 default=[],
             ),
+            gr.inputs.Checkbox(
+                default=False,
+                label="Ignore Warnings",
+            )
         ],
         outputs=[
             "dataframe",
