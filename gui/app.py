@@ -59,7 +59,7 @@ def greet(
     import pysr
     try:
         from julia.api import JuliaInfo
-        info = JuliaInfo.load(julia="/usr/bin/julia")
+        info = JuliaInfo.load(julia="/home/user/julia/bin/julia")
         from julia import Main as _Main
         pysr.sr.Main = _Main
     except Exception as e:
