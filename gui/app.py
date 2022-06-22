@@ -92,12 +92,14 @@ def main():
                 maximum=1000,
                 default=40,
                 label="Number of Iterations",
+                step=1,
             ),
             gr.inputs.Slider(
                 minimum=7,
                 maximum=35,
                 default=20,
-                label="Maximum Complexity"
+                label="Maximum Complexity",
+                step=1,
             ),
             gr.inputs.CheckboxGroup(
                 choices=["+", "-", "*", "/", "^"],
