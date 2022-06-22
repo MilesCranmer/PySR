@@ -69,26 +69,29 @@ def main():
         fn=greet,
         description="A demo of PySR",
         inputs=[
-            gr.File(label="Upload a CSV File"),
-            gr.Textbox(label="Column to Predict", placeholder="y"),
-            gr.Slider(
+            gr.inputs.File(label="Upload a CSV File"),
+            gr.inputs.Textbox(label="Column to Predict", placeholder="y"),
+            gr.inputs.Slider(
                 minimum=1,
                 maximum=1000,
                 value=40,
                 label="Number of iterations",
             ),
-            gr.CheckboxGroup(
+            gr.inputs.CheckboxGroup(
                 choices=["+", "-", "*", "/", "^"],
                 label="Binary Operators",
                 value=["+", "-", "*", "/"],
             ),
-            gr.CheckboxGroup(
+            gr.inputs.CheckboxGroup(
                 choices=["sin", "cos", "exp", "log"],
                 label="Unary Operators",
                 value=[],
             ),
         ],
-        outputs=[gr.DataFrame(label="Equations"), gr.Textbox(label="Error Log")],
+        outputs=[
+            gr.outputs.DataFrame(label="Equations"),
+            gr.outputs.Textbox(label="Error Log")
+        ],
     )
     # Add file to the demo:
 
