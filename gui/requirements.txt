@@ -1,0 +1,3 @@
+pysr==0.9.3
+numpy
+pandas
