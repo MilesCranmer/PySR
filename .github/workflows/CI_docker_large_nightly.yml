@@ -17,10 +17,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        julia-version: ['1.7.1']
+        julia-version: ['1.8.0-rc1-buster']
         python-version: ['3.9.10']
         os: [ubuntu-latest]
-        arch: ['linux/x86_64', 'linux/amd64', 'linux/aarch64']
+        arch: ['linux/x86_64', 'linux/amd64', 'linux/arm64']
     
     steps:
       - uses: actions/checkout@v1.0.0
