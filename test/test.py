@@ -281,19 +281,38 @@ class TestPipeline(unittest.TestCase):
         self.assertLess(np.average((model.predict(X.values) - y.values) ** 2), 1e-4)
 
 
+def manually_create_model(equations, feature_names=None):
+    if feature_names is None:
+        feature_names = ["x0", "x1"]
+
+    model = PySRRegressor(
+        progress=False,
+        niterations=1,
+        extra_sympy_mappings={},
+        output_jax_format=False,
+        model_selection="accuracy",
+        equation_file="equation_file.csv",
+    )
+
+    # Set up internal parameters as if it had been fitted:
+    model.equation_file_ = "equation_file.csv"
+    model.nout_ = 1
+    model.selection_mask_ = None
+    model.feature_names_in_ = np.array(feature_names, dtype=object)
+    equations["complexity loss equation".split(" ")].to_csv(
+        "equation_file.csv.bkup", sep="|"
+    )
+
+    model.refresh()
+
+    return model
+
+
 class TestBest(unittest.TestCase):
     def setUp(self):
         self.rstate = np.random.RandomState(0)
         self.X = self.rstate.randn(10, 2)
         self.y = np.cos(self.X[:, 0]) ** 2
-        self.model = PySRRegressor(
-            progress=False,
-            niterations=1,
-            extra_sympy_mappings={},
-            output_jax_format=False,
-            model_selection="accuracy",
-            equation_file="equation_file.csv",
-        )
         equations = pd.DataFrame(
             {
                 "equation": ["1.0", "cos(x0)", "square(cos(x0))"],
@@ -301,17 +320,7 @@ class TestBest(unittest.TestCase):
                 "complexity": [1, 2, 3],
             }
         )
-
-        # Set up internal parameters as if it had been fitted:
-        self.model.equation_file_ = "equation_file.csv"
-        self.model.nout_ = 1
-        self.model.selection_mask_ = None
-        self.model.feature_names_in_ = np.array(["x0", "x1"], dtype=object)
-        equations["complexity loss equation".split(" ")].to_csv(
-            "equation_file.csv.bkup", sep="|"
-        )
-
-        self.model.refresh()
+        self.model = manually_create_model(equations)
         self.equations_ = self.model.equations_
 
     def test_best(self):
@@ -485,3 +494,82 @@ class TestMiscellaneous(unittest.TestCase):
                 print("\n".join([(" " * 4) + row for row in error_message.split("\n")]))
         # If any checks failed don't let the test pass.
         self.assertEqual(len(exception_messages), 0)
+
+
+class TestLaTeXTable(unittest.TestCase):
+    def create_true_latex(self, middle_part, include_score=False):
+        if include_score:
+            true_latex_table_str = r"""
+                \begin{table}[h]
+                \begin{center}
+                \begin{tabular}{@{}clll@{}}
+                \toprule
+                Equation & Complexity & Loss & Score \\
+                \midrule"""
+        else:
+            true_latex_table_str = r"""
+                \begin{table}[h]
+                \begin{center}
+                \begin{tabular}{@{}cll@{}}
+                \toprule
+                Equation & Complexity & Loss \\
+                \midrule"""
+        true_latex_table_str += middle_part
+        true_latex_table_str += r"""\bottomrule
+            \end{tabular}
+            \end{center}
+            \end{table}
+        """
+        # First, remove empty lines:
+        true_latex_table_str = "\n".join(
+            [line.strip() for line in true_latex_table_str.split("\n") if len(line) > 0]
+        )
+        return true_latex_table_str.strip()
+
+    def test_simple_table(self):
+        equations = pd.DataFrame(
+            dict(
+                equation=["x0", "cos(x0)", "x0 + x1 - cos(x1 * x0)"],
+                loss=[1.052, 0.02315, 1.12347e-15],
+                complexity=[1, 2, 8],
+            )
+        )
+        model = manually_create_model(equations)
+
+        # Regular table:
+        latex_table_str = model.latex_table()
+        middle_part = r"""
+            $x_{0}$ & 1 & 1.05 \\
+            $\cos{\left(x_{0} \right)}$ & 2 & 0.0232 \\
+            $x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & 8 & 1.12e-15 \\
+        """
+        true_latex_table_str = self.create_true_latex(middle_part)
+        self.assertEqual(latex_table_str, true_latex_table_str)
+
+        # Different precision:
+        latex_table_str = model.latex_table(precision=5)
+        middle_part = r"""
+            $x_{0}$ & 1 & 1.052 \\
+            $\cos{\left(x_{0} \right)}$ & 2 & 0.02315 \\
+            $x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & 8 & 1.1235e-15 \\
+        """
+        true_latex_table_str = self.create_true_latex(middle_part)
+        self.assertEqual(latex_table_str, self.create_true_latex(middle_part))
+
+        # Including score:
+        latex_table_str = model.latex_table(include_score=True)
+        middle_part = r"""
+            $x_{0}$ & 1 & 1.05 & 0 \\
+            $\cos{\left(x_{0} \right)}$ & 2 & 0.0232 & 3.82 \\
+            $x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & 8 & 1.12e-15 & 5.11 \\
+        """
+        true_latex_table_str = self.create_true_latex(middle_part, include_score=True)
+        self.assertEqual(latex_table_str, true_latex_table_str)
+
+        # Only last equation:
+        latex_table_str = model.latex_table(indices=[2])
+        middle_part = r"""
+            $x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & 8 & 1.12e-15 \\
+        """
+        true_latex_table_str = self.create_true_latex(middle_part)
+        self.assertEqual(latex_table_str, true_latex_table_str)
