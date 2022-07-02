@@ -27,6 +27,11 @@ from .julia_helpers import (
     import_error_string,
 )
 from .export_numpy import CallableEquation
+from .export_latex import (
+    set_precision_of_constants_in_string,
+    generate_top_of_latex_table,
+    generate_bottom_of_latex_table,
+)
 from .deprecated import make_deprecated_kwargs_for_pysr_regressor
 
 
@@ -1999,7 +2004,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             return ret_outputs
         return ret_outputs[0]
 
-    def latex_table(self, indices=None):
+    def latex_table(self, indices=None, precision=3):
         """Create a LaTeX/booktabs table for all, or some, of the equations.
 
         Parameters
@@ -2008,10 +2013,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             If you wish to select a particular subset of equations from
             `self.equations_`, give the row numbers here. By default,
             all equations will be used.
+        precision : int, default=3
+            The number of significant figures shown in the LaTeX
+            representations.
 
         Returns
         -------
-        latex_table_string : str
+        latex_table_str : str
             A string that will render a table in LaTeX of the equations.
         """
         if self.nout_ > 1:
@@ -2020,31 +2028,25 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             )
         if indices is None:
             indices = range(len(self.equations_))
-        latex_table_pieces = [
-            r"\begin{table}[h]",
-            r"\centering",
-            r"\caption{}",
-            r"\label{}",
-            r"\begin{tabular}{@{}lcc@{}}",
-            r"\toprule",
-            r"Equation & Complexity & Loss \\",
-            r"\midrule",
-        ]
+        latex_table_content = []
         for i in indices:
-            row_pieces = [
-                "$" + self.latex(i) + "$",
-                str(self.equations_.iloc[i]["complexity"]),
-                str(self.equations_.iloc[i]["loss"]),
-            ]
-            latex_table_pieces += [
+            equation = self.latex(i, precision=precision)
+            complexity = str(self.equations_.iloc[i]["complexity"])
+            loss = str(self.equations_.iloc[i]["loss"])
+            row_pieces = ["$" + equation + "$", complexity, loss]
+            latex_table_content.append(
                 " & ".join(row_pieces) + r" \\",
+            )
+        latex_table_top = generate_top_of_latex_table()
+        latex_table_bottom = generate_bottom_of_latex_table()
+        latex_table_str = "\n".join(
+            [
+                latex_table_top,
+                *latex_table_content,
+                latex_table_bottom,
             ]
-        latex_table_pieces += [
-            r"\bottomrule",
-            r"\end{tabular}",
-            r"\end{table}",
-        ]
-        return "\n".join(latex_table_pieces)
+        )
+        return latex_table_str
 
 
 def _denoise(X, y, Xresampled=None, random_state=None):
