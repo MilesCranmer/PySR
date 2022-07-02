@@ -12,7 +12,7 @@ def set_precision_of_constants_in_string(s, precision=3):
 
 
 def generate_top_of_latex_table(columns=["Equation", "Complexity", "Loss"]):
-    margins = "".join([("c" if col == "Equation" else "l") for col in columns])
+    margins = "".join([("l" if col == "Equation" else "c") for col in columns])
     latex_table_pieces = [
         r"\begin{table}[h]",
         r"\begin{center}",

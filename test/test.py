@@ -502,7 +502,7 @@ class TestLaTeXTable(unittest.TestCase):
             true_latex_table_str = r"""
                 \begin{table}[h]
                 \begin{center}
-                \begin{tabular}{@{}clll@{}}
+                \begin{tabular}{@{}lccc@{}}
                 \toprule
                 Equation & Complexity & Loss & Score \\
                 \midrule"""
@@ -510,7 +510,7 @@ class TestLaTeXTable(unittest.TestCase):
             true_latex_table_str = r"""
                 \begin{table}[h]
                 \begin{center}
-                \begin{tabular}{@{}cll@{}}
+                \begin{tabular}{@{}lcc@{}}
                 \toprule
                 Equation & Complexity & Loss \\
                 \midrule"""
