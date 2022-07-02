@@ -11,13 +11,14 @@ def set_precision_of_constants_in_string(s, precision=3):
     return s
 
 
-def generate_top_of_latex_table():
+def generate_top_of_latex_table(columns=["Equation", "Complexity", "Loss"]):
+    margins = "".join([("c" if col == "Equation" else "l") for col in columns])
     latex_table_pieces = [
         r"\begin{table}[h]",
         r"\begin{center}",
-        r"\begin{tabular}{@{}lcc@{}}",
+        r"\begin{tabular}{@{}" + margins + r"@{}}",
         r"\toprule",
-        r"Equation & Complexity & Loss \\",
+        " & ".join(columns) + r" \\",
         r"\midrule",
     ]
     return "\n".join(latex_table_pieces)

@@ -2004,7 +2004,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             return ret_outputs
         return ret_outputs[0]
 
-    def latex_table(self, indices=None, precision=3):
+    def latex_table(self, indices=None, precision=3, include_score=False):
         """Create a LaTeX/booktabs table for all, or some, of the equations.
 
         Parameters
@@ -2016,6 +2016,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         precision : int, default=3
             The number of significant figures shown in the LaTeX
             representations.
+        include_score : bool, default=False
+            Whether to include the score in the table.
 
         Returns
         -------
@@ -2028,17 +2030,33 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             )
         if indices is None:
             indices = range(len(self.equations_))
+
+        columns = ["Equation", "Complexity", "Loss"]
+        if include_score:
+            columns.append("Score")
+
+        latex_table_top = generate_top_of_latex_table(columns)
+
         latex_table_content = []
         for i in indices:
             equation = self.latex(i, precision=precision)
-            complexity = str(self.equations_.iloc[i]["complexity"])
-            loss = str(self.equations_.iloc[i]["loss"])
+            # Also convert these to reduced precision:
+            # loss = self.equations_.iloc[i]["loss"]
+            # score = self.equations_.iloc[i]["score"]
+            complexity = "{:d}".format(self.equations_.iloc[i]["complexity"])
+            loss = "{:.{p}g}".format(self.equations_.iloc[i]["loss"], p=precision)
+            score = "{:.{p}g}".format(self.equations_.iloc[i]["score"], p=precision)
+
             row_pieces = ["$" + equation + "$", complexity, loss]
+            if include_score:
+                row_pieces.append(score)
+
             latex_table_content.append(
                 " & ".join(row_pieces) + r" \\",
             )
-        latex_table_top = generate_top_of_latex_table()
+
         latex_table_bottom = generate_bottom_of_latex_table()
+
         latex_table_str = "\n".join(
             [
                 latex_table_top,
