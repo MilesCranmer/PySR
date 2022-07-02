@@ -2003,6 +2003,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         latex_table_string : str
             A string that will render a table in LaTeX of the equations.
         """
+        if self.nout_ > 1:
+            raise NotImplementedError(
+                "LaTeX tables are not implemented for multiple outputs."
+            )
         if indices is None:
             indices = range(len(self.equations_))
         latex_table_pieces = [
