@@ -28,7 +28,7 @@ from .julia_helpers import (
 )
 from .export_numpy import CallableEquation
 from .export_latex import (
-    set_precision_of_constants_in_string,
+    to_latex,
     generate_top_of_latex_table,
     generate_bottom_of_latex_table,
 )
@@ -1752,14 +1752,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if self.nout_ > 1:
             output = []
             for s in sympy_representation:
-                raw_latex = sympy.latex(s)
-                reduced_latex = set_precision_of_constants_in_string(
-                    raw_latex, precision
-                )
-                output.append(reduced_latex)
+                latex = to_latex(s, prec=precision)
+                output.append(latex)
             return output
-        raw_latex = sympy.latex(sympy_representation)
-        return set_precision_of_constants_in_string(raw_latex, precision)
+        return to_latex(sympy_representation, prec=precision)
 
     def jax(self, index=None):
         """

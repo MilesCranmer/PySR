@@ -6,6 +6,7 @@ import numpy as np
 from sklearn import model_selection
 from pysr import PySRRegressor
 from pysr.sr import run_feature_selection, _handle_feature_selection
+from pysr.export_latex import to_latex
 from sklearn.utils.estimator_checks import check_estimator
 import sympy
 import pandas as pd
@@ -573,3 +574,25 @@ class TestLaTeXTable(unittest.TestCase):
         """
         true_latex_table_str = self.create_true_latex(middle_part)
         self.assertEqual(latex_table_str, true_latex_table_str)
+
+    def test_latex_float_precision(self):
+        """Test that we can print latex expressions with custom precision"""
+        expr = sympy.Float(4583.4485748, dps=50)
+        self.assertEqual(to_latex(expr, prec=6), r"4583.45")
+        self.assertEqual(to_latex(expr, prec=5), r"4583.4")
+        self.assertEqual(to_latex(expr, prec=4), r"4583.0")
+        self.assertEqual(to_latex(expr, prec=3), r"4.58 \cdot 10^{3}")
+        self.assertEqual(to_latex(expr, prec=2), r"4.6 \cdot 10^{3}")
+
+        # Multiple numbers:
+        x = sympy.Symbol("x")
+        expr = x * 3232.324857384 - 1.4857485e-10
+        self.assertEqual(
+            to_latex(expr, prec=2), "3.2 \cdot 10^{3} x - 1.5 \cdot 10^{-10}"
+        )
+        self.assertEqual(
+            to_latex(expr, prec=3), "3.23 \cdot 10^{3} x - 1.49 \cdot 10^{-10}"
+        )
+        self.assertEqual(
+            to_latex(expr, prec=8), "3232.3249 x - 1.4857485 \cdot 10^{-10}"
+        )

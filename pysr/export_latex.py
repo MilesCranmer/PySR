@@ -1,14 +1,26 @@
 """Functions to help export PySR equations to LaTeX."""
-import re
+import sympy
+from sympy.printing.latex import LatexPrinter
 
 
-def set_precision_of_constants_in_string(s, precision=3):
-    """Set precision of constants in string."""
-    constants = re.findall(r"\b[-+]?\d*\.\d+|\b[-+]?\d+\.?\d*", s)
-    for c in constants:
-        reduced_c = "{:.{precision}g}".format(float(c), precision=precision)
-        s = s.replace(c, reduced_c)
-    return s
+class PreciseLatexPrinter(LatexPrinter):
+    """Modified SymPy printer with custom float precision."""
+    def __init__(self, settings=None, prec=3):
+        super().__init__(settings)
+        self.prec = prec
+
+    def _print_Float(self, expr):
+        # Reduce precision of float:
+        reduced_float = sympy.Float(expr, self.prec)
+        return super()._print_Float(reduced_float)
+
+
+def to_latex(expr, prec=3, **settings):
+    """Convert sympy expression to LaTeX with custom precision."""
+    if len(settings) == 0:
+        settings = None
+    printer = PreciseLatexPrinter(settings=settings, prec=prec)
+    return printer.doprint(expr)
 
 
 def generate_top_of_latex_table(columns=["Equation", "Complexity", "Loss"]):
