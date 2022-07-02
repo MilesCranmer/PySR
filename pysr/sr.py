@@ -1721,7 +1721,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             return [eq["sympy_format"] for eq in best_equation]
         return best_equation["sympy_format"]
 
-    def latex(self, index=None):
+    def latex(self, index=None, precision=3):
         """
         Return latex representation of the equation(s) chosen by `model_selection`.
 
@@ -1733,6 +1733,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             the `model_selection` parameter. If there are multiple output
             features, then pass a list of indices with the order the same
             as the output feature.
+        precision : int, default=3
+            The number of significant figures shown in the LaTeX
+            representation.
 
         Returns
         -------
@@ -1742,8 +1745,16 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.refresh()
         sympy_representation = self.sympy(index=index)
         if self.nout_ > 1:
-            return [sympy.latex(s) for s in sympy_representation]
-        return sympy.latex(sympy_representation)
+            output = []
+            for s in sympy_representation:
+                raw_latex = sympy.latex(s)
+                reduced_latex = set_precision_of_constants_in_string(
+                    raw_latex, precision
+                )
+                output.append(reduced_latex)
+            return output
+        raw_latex = sympy.latex(sympy_representation)
+        return set_precision_of_constants_in_string(raw_latex, precision)
 
     def jax(self, index=None):
         """
