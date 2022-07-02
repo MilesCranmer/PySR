@@ -1988,6 +1988,49 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             return ret_outputs
         return ret_outputs[0]
 
+    def latex_table(self, indices=None):
+        """Create a LaTeX/booktabs table for all, or some, of the equations.
+
+        Parameters
+        ----------
+        indices : list[int], default=None
+            If you wish to select a particular subset of equations from
+            `self.equations_`, give the row numbers here. By default,
+            all equations will be used.
+
+        Returns
+        -------
+        latex_table_string : str
+            A string that will render a table in LaTeX of the equations.
+        """
+        if indices is None:
+            indices = range(len(self.equations_))
+        latex_table_pieces = [
+            r"\begin{table}[h]",
+            r"\centering",
+            r"\caption{}",
+            r"\label{}",
+            r"\begin{tabular}{@{}lcc@{}}",
+            r"\toprule",
+            r"Equation & Complexity & Loss \\",
+            r"\midrule",
+        ]
+        for i in indices:
+            row_pieces = [
+                "$" + self.latex(i) + "$",
+                str(self.equations_.iloc[i]["complexity"]),
+                str(self.equations_.iloc[i]["loss"]),
+            ]
+            latex_table_pieces += [
+                " & ".join(row_pieces) + r" \\",
+            ]
+        latex_table_pieces += [
+            r"\bottomrule",
+            r"\end{tabular}",
+            r"\end{table}",
+        ]
+        return "\n".join(latex_table_pieces)
+
 
 def _denoise(X, y, Xresampled=None, random_state=None):
     """Denoise the dataset using a Gaussian process"""
