@@ -65,7 +65,7 @@ class TestTorch(unittest.TestCase):
         np.testing.assert_almost_equal(
             tformat(torch.tensor(X.values)).detach().numpy(),
             np.square(np.cos(X.values[:, 1])),  # Selection 1st feature
-            decimal=4,
+            decimal=3,
         )
 
     def test_pipeline(self):
@@ -99,7 +99,7 @@ class TestTorch(unittest.TestCase):
         np.testing.assert_almost_equal(
             tformat(torch.tensor(X)).detach().numpy(),
             np.square(np.cos(X[:, 1])),  # 2nd feature
-            decimal=4,
+            decimal=3,
         )
 
     def test_mod_mapping(self):
@@ -116,7 +116,7 @@ class TestTorch(unittest.TestCase):
         torch_out = module(X)
 
         np.testing.assert_array_almost_equal(
-            true_out.detach(), torch_out.detach(), decimal=4
+            true_out.detach(), torch_out.detach(), decimal=3
         )
 
     def test_custom_operator(self):
@@ -156,7 +156,7 @@ class TestTorch(unittest.TestCase):
         np.testing.assert_almost_equal(
             tformat(torch.tensor(X)).detach().numpy(),
             np.sin(X[:, 1]),
-            decimal=4,
+            decimal=3,
         )
 
     def test_feature_selection_custom_operators(self):
@@ -186,5 +186,5 @@ class TestTorch(unittest.TestCase):
 
         torch_output = torch_module(torch.tensor(X.values)).detach().numpy()
 
-        np.testing.assert_almost_equal(y.values, np_output, decimal=4)
-        np.testing.assert_almost_equal(y.values, torch_output, decimal=4)
+        np.testing.assert_almost_equal(y.values, np_output, decimal=3)
+        np.testing.assert_almost_equal(y.values, torch_output, decimal=3)
