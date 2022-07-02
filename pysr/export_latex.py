@@ -5,6 +5,7 @@ from sympy.printing.latex import LatexPrinter
 
 class PreciseLatexPrinter(LatexPrinter):
     """Modified SymPy printer with custom float precision."""
+
     def __init__(self, settings=None, prec=3):
         super().__init__(settings)
         self.prec = prec

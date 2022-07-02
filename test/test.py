@@ -540,9 +540,9 @@ class TestLaTeXTable(unittest.TestCase):
         # Regular table:
         latex_table_str = model.latex_table()
         middle_part = r"""
-            $x_{0}$ & 1 & 1.05 \\
-            $\cos{\left(x_{0} \right)}$ & 2 & 0.0232 \\
-            $x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & 8 & 1.12e-15 \\
+            $x_{0}$ & $1$ & $1.05$ \\
+            $\cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ \\
+            $x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.12 \cdot 10^{-15}$ \\
         """
         true_latex_table_str = self.create_true_latex(middle_part)
         self.assertEqual(latex_table_str, true_latex_table_str)
@@ -550,9 +550,9 @@ class TestLaTeXTable(unittest.TestCase):
         # Different precision:
         latex_table_str = model.latex_table(precision=5)
         middle_part = r"""
-            $x_{0}$ & 1 & 1.052 \\
-            $\cos{\left(x_{0} \right)}$ & 2 & 0.02315 \\
-            $x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & 8 & 1.1235e-15 \\
+            $x_{0}$ & $1$ & $1.052$ \\
+            $\cos{\left(x_{0} \right)}$ & $2$ & $0.02315$ \\
+            $x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.1235 \cdot 10^{-15}$ \\
         """
         true_latex_table_str = self.create_true_latex(middle_part)
         self.assertEqual(latex_table_str, self.create_true_latex(middle_part))
@@ -560,9 +560,9 @@ class TestLaTeXTable(unittest.TestCase):
         # Including score:
         latex_table_str = model.latex_table(include_score=True)
         middle_part = r"""
-            $x_{0}$ & 1 & 1.05 & 0 \\
-            $\cos{\left(x_{0} \right)}$ & 2 & 0.0232 & 3.82 \\
-            $x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & 8 & 1.12e-15 & 5.11 \\
+            $x_{0}$ & $1$ & $1.05$ & $0.0$ \\
+            $\cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ & $3.82$ \\
+            $x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.12 \cdot 10^{-15}$ & $5.11$ \\
         """
         true_latex_table_str = self.create_true_latex(middle_part, include_score=True)
         self.assertEqual(latex_table_str, true_latex_table_str)
@@ -570,7 +570,7 @@ class TestLaTeXTable(unittest.TestCase):
         # Only last equation:
         latex_table_str = model.latex_table(indices=[2])
         middle_part = r"""
-            $x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & 8 & 1.12e-15 \\
+            $x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.12 \cdot 10^{-15}$ \\
         """
         true_latex_table_str = self.create_true_latex(middle_part)
         self.assertEqual(latex_table_str, true_latex_table_str)

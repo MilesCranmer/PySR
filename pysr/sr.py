@@ -2039,13 +2039,19 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             # Also convert these to reduced precision:
             # loss = self.equations_.iloc[i]["loss"]
             # score = self.equations_.iloc[i]["score"]
-            complexity = "{:d}".format(self.equations_.iloc[i]["complexity"])
-            loss = "{:.{p}g}".format(self.equations_.iloc[i]["loss"], p=precision)
-            score = "{:.{p}g}".format(self.equations_.iloc[i]["score"], p=precision)
+            complexity = str(self.equations_.iloc[i]["complexity"])
+            loss = to_latex(
+                sympy.Float(self.equations_.iloc[i]["loss"]), prec=precision
+            )
+            score = to_latex(
+                sympy.Float(self.equations_.iloc[i]["score"]), prec=precision
+            )
 
-            row_pieces = ["$" + equation + "$", complexity, loss]
+            row_pieces = [equation, complexity, loss]
             if include_score:
                 row_pieces.append(score)
+
+            row_pieces = ["$" + piece + "$" for piece in row_pieces]
 
             latex_table_content.append(
                 " & ".join(row_pieces) + r" \\",
