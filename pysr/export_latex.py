@@ -14,9 +14,7 @@ def set_precision_of_constants_in_string(s, precision=3):
 def generate_top_of_latex_table():
     latex_table_pieces = [
         r"\begin{table}[h]",
-        r"\centering",
-        r"\caption{}",
-        r"\label{}",
+        r"\begin{center}",
         r"\begin{tabular}{@{}lcc@{}}",
         r"\toprule",
         r"Equation & Complexity & Loss \\",
@@ -29,6 +27,7 @@ def generate_bottom_of_latex_table():
     latex_table_pieces = [
         r"\bottomrule",
         r"\end{tabular}",
+        r"\end{center}",
         r"\end{table}",
     ]
     return "\n".join(latex_table_pieces)
