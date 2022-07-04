@@ -6,22 +6,20 @@ from sympy.printing.latex import LatexPrinter
 class PreciseLatexPrinter(LatexPrinter):
     """Modified SymPy printer with custom float precision."""
 
-    def __init__(self, settings=None, prec=3, full_prec=True):
+    def __init__(self, settings=None, prec=3):
         super().__init__(settings)
         self.prec = prec
-        self.full_prec = full_prec
 
     def _print_Float(self, expr):
         # Reduce precision of float:
-        reduced_float = sympy.Float(expr, self.prec, full_prec=self.full_prec)
+        reduced_float = sympy.Float(expr, self.prec)
         return super()._print_Float(reduced_float)
 
 
 def to_latex(expr, prec=3, full_prec=True, **settings):
     """Convert sympy expression to LaTeX with custom precision."""
-    if len(settings) == 0:
-        settings = None
-    printer = PreciseLatexPrinter(settings=settings, prec=prec, full_prec=full_prec)
+    settings["full_prec"] = full_prec
+    printer = PreciseLatexPrinter(settings=settings, prec=prec)
     return printer.doprint(expr)
 
 
