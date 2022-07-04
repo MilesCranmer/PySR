@@ -21,9 +21,7 @@ def to_latex(expr, prec=3, full_prec=True, **settings):
     """Convert sympy expression to LaTeX with custom precision."""
     if len(settings) == 0:
         settings = None
-    printer = PreciseLatexPrinter(
-        settings=settings, prec=prec, full_prec=full_prec
-    )
+    printer = PreciseLatexPrinter(settings=settings, prec=prec, full_prec=full_prec)
     return printer.doprint(expr)
 
 
