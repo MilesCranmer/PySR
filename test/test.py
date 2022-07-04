@@ -550,8 +550,8 @@ class TestLaTeXTable(unittest.TestCase):
         # Different precision:
         latex_table_str = model.latex_table(precision=5)
         middle_part = r"""
-            $x_{0}$ & $1$ & $1.052$ \\
-            $\cos{\left(x_{0} \right)}$ & $2$ & $0.02315$ \\
+            $x_{0}$ & $1$ & $1.0520$ \\
+            $\cos{\left(x_{0} \right)}$ & $2$ & $0.023150$ \\
             $x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.1235 \cdot 10^{-15}$ \\
         """
         true_latex_table_str = self.create_true_latex(middle_part)
@@ -580,7 +580,7 @@ class TestLaTeXTable(unittest.TestCase):
         expr = sympy.Float(4583.4485748, dps=50)
         self.assertEqual(to_latex(expr, prec=6), r"4583.45")
         self.assertEqual(to_latex(expr, prec=5), r"4583.4")
-        self.assertEqual(to_latex(expr, prec=4), r"4583.0")
+        self.assertEqual(to_latex(expr, prec=4), r"4583.")
         self.assertEqual(to_latex(expr, prec=3), r"4.58 \cdot 10^{3}")
         self.assertEqual(to_latex(expr, prec=2), r"4.6 \cdot 10^{3}")
 
