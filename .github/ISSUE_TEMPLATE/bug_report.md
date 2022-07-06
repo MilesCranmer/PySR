@@ -10,7 +10,7 @@ assignees: MilesCranmer
 **Describe the bug**
 A clear and concise description of what the bug is.
 
-**Version (please complete the following information):**
+**Version (please include the following information):**
 - OS: [e.g. macOS]
 - Julia version [Run `julia --version` in the terminal]
 - Python version [Run `python --version` in the terminal]
