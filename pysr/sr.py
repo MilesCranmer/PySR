@@ -1133,7 +1133,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     "Spaces have been replaced with underscores. \n"
                     "Please rename the columns to valid names."
                 )
-        elif variable_names and [" " in name for name in variable_names].any():
+        elif variable_names and any([" " in name for name in variable_names]):
             variable_names = [name.replace(" ", "_") for name in variable_names]
             warnings.warn(
                 "Spaces in `variable_names` are not supported. "
