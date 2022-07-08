@@ -43,6 +43,15 @@ class TestPipeline(unittest.TestCase):
         print(model.equations_)
         self.assertLessEqual(model.get_best()["loss"], 1e-4)
 
+    def test_linear_relation_named(self):
+        y = self.X[:, 0]
+        model = PySRRegressor(
+            **self.default_test_kwargs,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
+        )
+        model.fit(self.X, y, variable_names=["c1", "c2", "c3", "c4", "c5"])
+        self.assertIn("c1", model.equations_.iloc[-1]["equation"])
+
     def test_linear_relation_weighted(self):
         y = self.X[:, 0]
         weights = np.ones_like(y)
