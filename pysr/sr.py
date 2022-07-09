@@ -2032,6 +2032,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
             generator_fnc = generate_multiple_tables
         else:
+            if indices is not None:
+                assert isinstance(indices, list)
+                assert isinstance(indices[0], int)
+
             generator_fnc = generate_single_table
 
         return generator_fnc(
