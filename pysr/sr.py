@@ -27,11 +27,7 @@ from .julia_helpers import (
     import_error_string,
 )
 from .export_numpy import CallableEquation
-from .export_latex import (
-    to_latex,
-    generate_top_of_latex_table,
-    generate_bottom_of_latex_table,
-)
+from .export_latex import to_latex, generate_table_environment
 from .deprecated import make_deprecated_kwargs_for_pysr_regressor
 
 
@@ -2037,8 +2033,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             else:
                 indices = list(range(len(self.equations_)))
 
-        latex_table_top = generate_top_of_latex_table(columns)
-        latex_table_bottom = generate_bottom_of_latex_table()
+        latex_top, latex_bottom = generate_table_environment(columns)
 
         equations = self.equations_
 
@@ -2092,9 +2087,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             all_latex_table_str.append(
                 "\n".join(
                     [
-                        latex_table_top,
+                        latex_top,
                         *latex_table_content,
-                        latex_table_bottom,
+                        latex_bottom,
                     ]
                 )
             )

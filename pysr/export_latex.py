@@ -23,7 +23,7 @@ def to_latex(expr, prec=3, full_prec=True, **settings):
     return printer.doprint(expr)
 
 
-def generate_top_of_latex_table(columns=["equation", "complexity", "loss"]):
+def generate_table_environment(columns=["equation", "complexity", "loss"]):
     margins = "".join([("l" if col == "equation" else "c") for col in columns])
     column_map = {
         "complexity": "Complexity",
@@ -32,7 +32,7 @@ def generate_top_of_latex_table(columns=["equation", "complexity", "loss"]):
         "score": "Score",
     }
     columns = [column_map[col] for col in columns]
-    latex_table_pieces = [
+    top_pieces = [
         r"\begin{table}[h]",
         r"\begin{center}",
         r"\begin{tabular}{@{}" + margins + r"@{}}",
@@ -40,14 +40,14 @@ def generate_top_of_latex_table(columns=["equation", "complexity", "loss"]):
         " & ".join(columns) + r" \\",
         r"\midrule",
     ]
-    return "\n".join(latex_table_pieces)
 
-
-def generate_bottom_of_latex_table():
-    latex_table_pieces = [
+    bottom_pieces = [
         r"\bottomrule",
         r"\end{tabular}",
         r"\end{center}",
         r"\end{table}",
     ]
-    return "\n".join(latex_table_pieces)
+    top_latex_table = "\n".join(top_pieces)
+    bottom_latex_table = "\n".join(bottom_pieces)
+
+    return top_latex_table, bottom_latex_table
