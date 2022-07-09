@@ -27,7 +27,7 @@ from .julia_helpers import (
     import_error_string,
 )
 from .export_numpy import CallableEquation
-from .export_latex import to_latex, generate_table
+from .export_latex import generate_single_table, generate_multiple_tables, to_latex
 from .deprecated import make_deprecated_kwargs_for_pysr_regressor
 
 
@@ -2024,26 +2024,18 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         """
         self.refresh()
 
-        # All indices:
-        if indices is None:
-            if self.nout_ > 1:
-                indices = [
-                    list(range(len(out_equations))) for out_equations in self.equations_
-                ]
-            else:
-                indices = list(range(len(self.equations_)))
+        if self.nout_ > 1:
+            if indices is not None:
+                assert isinstance(indices, list)
+                assert isinstance(indices[0], list)
+                assert isinstance(len(indices), self.nout_)
 
-        equations = self.equations_
+            generator_fnc = generate_multiple_tables
+        else:
+            generator_fnc = generate_single_table
 
-        if isinstance(indices[0], int):
-            assert self.nout_ == 1, "For multiple outputs, pass a list of lists."
-            indices = [indices]
-            equations = [equations]
-
-        assert len(indices) == self.nout_
-
-        return generate_table(
-            equations, indices=indices, precision=precision, columns=columns
+        return generator_fnc(
+            self.equations_, indices=indices, precision=precision, columns=columns
         )
 
 
