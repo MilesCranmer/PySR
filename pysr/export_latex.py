@@ -61,6 +61,7 @@ def generate_single_table(
     precision: int = 3,
     columns=["equation", "complexity", "loss", "score"],
 ):
+    """Generate a booktabs-style LaTeX table for a single set of equations."""
     assert isinstance(equations, pd.DataFrame)
 
     latex_top, latex_bottom = generate_table_environment(columns)
@@ -112,6 +113,7 @@ def generate_multiple_tables(
     precision: int = 3,
     columns=["equation", "complexity", "loss", "score"],
 ):
+    """Generate multiple latex tables for a list of equation sets."""
 
     latex_tables = [
         generate_single_table(
