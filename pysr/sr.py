@@ -2005,10 +2005,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        indices : list[int], default=None
+        indices : list[int] | list[list[int]], default=None
             If you wish to select a particular subset of equations from
             `self.equations_`, give the row numbers here. By default,
-            all equations will be used.
+            all equations will be used. If there are multiple output
+            features, then pass a list of lists.
         precision : int, default=3
             The number of significant figures shown in the LaTeX
             representations.
@@ -2020,53 +2021,72 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         latex_table_str : str
             A string that will render a table in LaTeX of the equations.
         """
-        if self.nout_ > 1:
-            raise NotImplementedError(
-                "LaTeX tables are not implemented for multiple outputs."
-            )
-        if indices is None:
-            indices = range(len(self.equations_))
+        self.refresh()
 
         columns = ["Equation", "Complexity", "Loss"]
         if include_score:
             columns.append("Score")
 
+        # All indices:
+        if indices is None:
+            if self.nout_ > 1:
+                indices = [
+                    list(range(len(out_equations))) for out_equations in self.equations_
+                ]
+            else:
+                indices = list(range(len(self.equations_)))
+
         latex_table_top = generate_top_of_latex_table(columns)
-
-        latex_table_content = []
-        for i in indices:
-            equation = self.latex(i, precision=precision)
-            # Also convert these to reduced precision:
-            # loss = self.equations_.iloc[i]["loss"]
-            # score = self.equations_.iloc[i]["score"]
-            complexity = str(self.equations_.iloc[i]["complexity"])
-            loss = to_latex(
-                sympy.Float(self.equations_.iloc[i]["loss"]), prec=precision
-            )
-            score = to_latex(
-                sympy.Float(self.equations_.iloc[i]["score"]), prec=precision
-            )
-
-            row_pieces = [equation, complexity, loss]
-            if include_score:
-                row_pieces.append(score)
-
-            row_pieces = ["$" + piece + "$" for piece in row_pieces]
-
-            latex_table_content.append(
-                " & ".join(row_pieces) + r" \\",
-            )
-
         latex_table_bottom = generate_bottom_of_latex_table()
 
-        latex_table_str = "\n".join(
-            [
-                latex_table_top,
-                *latex_table_content,
-                latex_table_bottom,
-            ]
-        )
-        return latex_table_str
+        equations = self.equations_
+
+        if isinstance(indices[0], int):
+            indices = [indices]
+            equations = [equations]
+
+        latex_equations = [
+            [to_latex(eq, prec=precision) for eq in equation_set["sympy_format"]]
+            for equation_set in equations
+        ]
+
+        all_latex_table_str = []
+
+        for output_feature, index_set in enumerate(indices):
+            latex_table_content = []
+            for i in index_set:
+                latex_equation = latex_equations[output_feature][i]
+                complexity = str(equations[output_feature].iloc[i]["complexity"])
+                loss = to_latex(
+                    sympy.Float(equations[output_feature].iloc[i]["loss"]),
+                    prec=precision,
+                )
+                score = to_latex(
+                    sympy.Float(equations[output_feature].iloc[i]["score"]),
+                    prec=precision,
+                )
+
+                row_pieces = [latex_equation, complexity, loss]
+                if include_score:
+                    row_pieces.append(score)
+
+                row_pieces = ["$" + piece + "$" for piece in row_pieces]
+
+                latex_table_content.append(
+                    " & ".join(row_pieces) + r" \\",
+                )
+
+            all_latex_table_str.append(
+                "\n".join(
+                    [
+                        latex_table_top,
+                        *latex_table_content,
+                        latex_table_bottom,
+                    ]
+                )
+            )
+
+        return "\n\n".join(all_latex_table_str)
 
 
 def _denoise(X, y, Xresampled=None, random_state=None):
