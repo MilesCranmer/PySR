@@ -921,10 +921,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        index : int, default=None
+        index : int | list[int], default=None
             If you wish to select a particular equation from `self.equations_`,
             give the row number here. This overrides the :param`model_selection`
-            parameter.
+            parameter. If there are multiple output features, then pass
+            a list of indices with the order the same as the output feature.
 
         Returns
         -------
@@ -942,7 +943,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         if index is not None:
             if isinstance(self.equations_, list):
-                assert isinstance(index, list)
+                assert isinstance(
+                    index, list
+                ), "With multiple output features, index must be a list."
                 return [eq.iloc[i] for eq, i in zip(self.equations_, index)]
             return self.equations_.iloc[index]
 
@@ -1634,9 +1637,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         X : {ndarray | pandas.DataFrame} of shape (n_samples, n_features)
             Training data.
 
-        index : int, default=None
+        index : int | list[int], default=None
             If you want to compute the output of an expression using a
             particular row of `self.equations_`, you may specify the index here.
+            For multiple output equations, you must pass a list of indices
+            in the same order.
 
         Returns
         -------
@@ -1698,10 +1703,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        index : int, default=None
+        index : int | list[int], default=None
             If you wish to select a particular equation from
             `self.equations_`, give the index number here. This overrides
-            the `model_selection` parameter.
+            the `model_selection` parameter. If there are multiple output
+            features, then pass a list of indices with the order the same
+            as the output feature.
 
         Returns
         -------
@@ -1720,10 +1727,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        index : int, default=None
+        index : int | list[int], default=None
             If you wish to select a particular equation from
             `self.equations_`, give the index number here. This overrides
-            the `model_selection` parameter.
+            the `model_selection` parameter. If there are multiple output
+            features, then pass a list of indices with the order the same
+            as the output feature.
 
         Returns
         -------
@@ -1746,10 +1755,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        index : int, default=None
+        index : int | list[int], default=None
             If you wish to select a particular equation from
-            `self.equations_`, give the row number here. This overrides
-            the `model_selection` parameter.
+            `self.equations_`, give the index number here. This overrides
+            the `model_selection` parameter. If there are multiple output
+            features, then pass a list of indices with the order the same
+            as the output feature.
 
         Returns
         -------
@@ -1775,10 +1786,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        index : int, default=None
+        index : int | list[int], default=None
             If you wish to select a particular equation from
-            `self.equations_`, give the row number here. This overrides
-            the `model_selection` parameter.
+            `self.equations_`, give the index number here. This overrides
+            the `model_selection` parameter. If there are multiple output
+            features, then pass a list of indices with the order the same
+            as the output feature.
 
         Returns
         -------
