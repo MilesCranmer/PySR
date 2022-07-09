@@ -2000,7 +2000,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             return ret_outputs
         return ret_outputs[0]
 
-    def latex_table(self, indices=None, precision=3, include_score=False):
+    def _latex_table(self, indices=None, precision=3, include_score=False):
         """Create a LaTeX/booktabs table for all, or some, of the equations.
 
         Parameters

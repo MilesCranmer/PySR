@@ -538,7 +538,7 @@ class TestLaTeXTable(unittest.TestCase):
         model = manually_create_model(equations)
 
         # Regular table:
-        latex_table_str = model.latex_table()
+        latex_table_str = model._latex_table()
         middle_part = r"""
             $x_{0}$ & $1$ & $1.05$ \\
             $\cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ \\
@@ -548,7 +548,7 @@ class TestLaTeXTable(unittest.TestCase):
         self.assertEqual(latex_table_str, true_latex_table_str)
 
         # Different precision:
-        latex_table_str = model.latex_table(precision=5)
+        latex_table_str = model._latex_table(precision=5)
         middle_part = r"""
             $x_{0}$ & $1$ & $1.0520$ \\
             $\cos{\left(x_{0} \right)}$ & $2$ & $0.023150$ \\
@@ -558,7 +558,7 @@ class TestLaTeXTable(unittest.TestCase):
         self.assertEqual(latex_table_str, self.create_true_latex(middle_part))
 
         # Including score:
-        latex_table_str = model.latex_table(include_score=True)
+        latex_table_str = model._latex_table(include_score=True)
         middle_part = r"""
             $x_{0}$ & $1$ & $1.05$ & $0.0$ \\
             $\cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ & $3.82$ \\
@@ -568,7 +568,7 @@ class TestLaTeXTable(unittest.TestCase):
         self.assertEqual(latex_table_str, true_latex_table_str)
 
         # Only last equation:
-        latex_table_str = model.latex_table(indices=[2])
+        latex_table_str = model._latex_table(indices=[2])
         middle_part = r"""
             $x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.12 \cdot 10^{-15}$ \\
         """
