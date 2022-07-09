@@ -23,8 +23,15 @@ def to_latex(expr, prec=3, full_prec=True, **settings):
     return printer.doprint(expr)
 
 
-def generate_top_of_latex_table(columns=["Equation", "Complexity", "Loss"]):
-    margins = "".join([("l" if col == "Equation" else "c") for col in columns])
+def generate_top_of_latex_table(columns=["equation", "complexity", "loss"]):
+    margins = "".join([("l" if col == "equation" else "c") for col in columns])
+    column_map = {
+        "complexity": "Complexity",
+        "loss": "Loss",
+        "equation": "Equation",
+        "score": "Score",
+    }
+    columns = [column_map[col] for col in columns]
     latex_table_pieces = [
         r"\begin{table}[h]",
         r"\begin{center}",

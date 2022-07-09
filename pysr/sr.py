@@ -2000,7 +2000,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             return ret_outputs
         return ret_outputs[0]
 
-    def latex_table(self, indices=None, precision=3, include_score=False):
+    def latex_table(
+        self,
+        indices=None,
+        precision=3,
+        columns=["equation", "complexity", "loss", "score"],
+    ):
         """Create a LaTeX/booktabs table for all, or some, of the equations.
 
         Parameters
@@ -2013,8 +2018,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         precision : int, default=3
             The number of significant figures shown in the LaTeX
             representations.
-        include_score : bool, default=False
-            Whether to include the score in the table.
+        columns : list[str], default=["equation", "complexity", "loss", "score"]
+            Which columns to include in the table.
 
         Returns
         -------
@@ -2022,10 +2027,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             A string that will render a table in LaTeX of the equations.
         """
         self.refresh()
-
-        columns = ["Equation", "Complexity", "Loss"]
-        if include_score:
-            columns.append("Score")
 
         # All indices:
         if indices is None:
@@ -2069,9 +2070,18 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     prec=precision,
                 )
 
-                row_pieces = [latex_equation, complexity, loss]
-                if include_score:
-                    row_pieces.append(score)
+                row_pieces = []
+                for col in columns:
+                    if col == "equation":
+                        row_pieces.append(latex_equation)
+                    elif col == "complexity":
+                        row_pieces.append(complexity)
+                    elif col == "loss":
+                        row_pieces.append(loss)
+                    elif col == "score":
+                        row_pieces.append(score)
+                    else:
+                        raise ValueError(f"Unknown column: {col}")
 
                 row_pieces = ["$" + piece + "$" for piece in row_pieces]
 
