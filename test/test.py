@@ -296,13 +296,24 @@ def manually_create_model(equations, feature_names=None):
     )
 
     # Set up internal parameters as if it had been fitted:
-    model.equation_file_ = "equation_file.csv"
-    model.nout_ = 1
-    model.selection_mask_ = None
-    model.feature_names_in_ = np.array(feature_names, dtype=object)
-    equations["complexity loss equation".split(" ")].to_csv(
-        "equation_file.csv.bkup", sep="|"
-    )
+    if isinstance(equations, list):
+        # Multi-output.
+        model.equation_file_ = "equation_file.csv"
+        model.nout_ = len(equations)
+        model.selection_mask_ = None
+        model.feature_names_in_ = np.array(feature_names, dtype=object)
+        for i in range(model.nout_):
+            equations[i]["complexity loss equation".split(" ")].to_csv(
+                f"equation_file.csv.out{i+1}.bkup", sep="|"
+            )
+    else:
+        model.equation_file_ = "equation_file.csv"
+        model.nout_ = 1
+        model.selection_mask_ = None
+        model.feature_names_in_ = np.array(feature_names, dtype=object)
+        equations["complexity loss equation".split(" ")].to_csv(
+            "equation_file.csv.bkup", sep="|"
+        )
 
     model.refresh()
 
@@ -579,6 +590,41 @@ class TestLaTeXTable(unittest.TestCase):
             $x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.12 \cdot 10^{-15}$ \\
         """
         true_latex_table_str = self.create_true_latex(middle_part)
+        self.assertEqual(latex_table_str, true_latex_table_str)
+
+    def test_multi_output(self):
+        equations1 = pd.DataFrame(
+            dict(
+                equation=["x0", "cos(x0)", "x0 + x1 - cos(x1 * x0)"],
+                loss=[1.052, 0.02315, 1.12347e-15],
+                complexity=[1, 2, 8],
+            )
+        )
+        equations2 = pd.DataFrame(
+            dict(
+                equation=["x1", "cos(x1)", "x0 * x0 * x1"],
+                loss=[1.32, 0.052, 2e-15],
+                complexity=[1, 2, 5],
+            )
+        )
+        equations = [equations1, equations2]
+        model = manually_create_model(equations)
+        middle_part_1 = r"""
+            $x_{0}$ & $1$ & $1.05$ & $0.0$ \\
+            $\cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ & $3.82$ \\
+            $x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.12 \cdot 10^{-15}$ & $5.11$ \\
+        """
+        middle_part_2 = r"""
+            $x_{1}$ & $1$ & $1.32$ & $0.0$ \\
+            $\cos{\left(x_{1} \right)}$ & $2$ & $0.0520$ & $3.23$ \\
+            $x_{0}^{2} x_{1}$ & $5$ & $2.00 \cdot 10^{-15}$ & $10.3$ \\
+        """
+        true_latex_table_str = "\n\n".join(
+            self.create_true_latex(part, include_score=True)
+            for part in [middle_part_1, middle_part_2]
+        )
+        latex_table_str = model.latex_table()
+
         self.assertEqual(latex_table_str, true_latex_table_str)
 
     def test_latex_float_precision(self):
