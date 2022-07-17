@@ -3,11 +3,12 @@
 
 ARG ARCH=linux/amd64
 ARG VERSION=latest
+ARG PKGVERSION=0.9.0
 
 FROM --platform=$ARCH julia:$VERSION
 
 # metainformation
-LABEL org.opencontainers.image.version = "0.9.0"
+LABEL org.opencontainers.image.version = $PKGVERSION
 LABEL org.opencontainers.image.authors = "Miles Cranmer"
 LABEL org.opencontainers.image.source = "https://github.com/MilesCranmer/PySR"
 LABEL org.opencontainers.image.licenses = "Apache License 2.0"
