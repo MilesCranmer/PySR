@@ -3,7 +3,7 @@
 
 ARG ARCH=linux/amd64
 ARG VERSION=latest
-ARG PKGVERSION=0.9.0
+ARG PKGVERSION=0.9.5
 
 FROM --platform=$ARCH julia:$VERSION
 
