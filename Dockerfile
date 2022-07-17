@@ -6,6 +6,12 @@ ARG VERSION=latest
 
 FROM --platform=$ARCH julia:$VERSION
 
+# metainformation
+LABEL org.opencontainers.image.version = "0.9.0"
+LABEL org.opencontainers.image.authors = "Miles Cranmer"
+LABEL org.opencontainers.image.source = "https://github.com/MilesCranmer/PySR"
+LABEL org.opencontainers.image.licenses = "Apache License 2.0"
+
 # Need to use ARG after FROM, otherwise it won't get passed through.
 ARG PYVERSION=3.9.10
 
