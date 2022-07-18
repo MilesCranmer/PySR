@@ -553,9 +553,9 @@ class TestLaTeXTable(unittest.TestCase):
             columns=["equation", "complexity", "loss"]
         )
         middle_part = r"""
-            $x_{0}$ & $1$ & $1.05$ \\
-            $\cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ \\
-            $x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.12 \cdot 10^{-15}$ \\
+            $y = x_{0}$ & $1$ & $1.05$ \\
+            $y = \cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ \\
+            $y = x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.12 \cdot 10^{-15}$ \\
         """
         true_latex_table_str = self.create_true_latex(middle_part)
         self.assertEqual(latex_table_str, true_latex_table_str)
@@ -565,9 +565,9 @@ class TestLaTeXTable(unittest.TestCase):
             precision=5, columns=["equation", "complexity", "loss"]
         )
         middle_part = r"""
-            $x_{0}$ & $1$ & $1.0520$ \\
-            $\cos{\left(x_{0} \right)}$ & $2$ & $0.023150$ \\
-            $x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.1235 \cdot 10^{-15}$ \\
+            $y = x_{0}$ & $1$ & $1.0520$ \\
+            $y = \cos{\left(x_{0} \right)}$ & $2$ & $0.023150$ \\
+            $y = x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.1235 \cdot 10^{-15}$ \\
         """
         true_latex_table_str = self.create_true_latex(middle_part)
         self.assertEqual(latex_table_str, true_latex_table_str)
@@ -575,9 +575,9 @@ class TestLaTeXTable(unittest.TestCase):
     def test_include_score(self):
         latex_table_str = self.model.latex_table()
         middle_part = r"""
-            $x_{0}$ & $1$ & $1.05$ & $0.0$ \\
-            $\cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ & $3.82$ \\
-            $x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.12 \cdot 10^{-15}$ & $5.11$ \\
+            $y = x_{0}$ & $1$ & $1.05$ & $0.0$ \\
+            $y = \cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ & $3.82$ \\
+            $y = x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.12 \cdot 10^{-15}$ & $5.11$ \\
         """
         true_latex_table_str = self.create_true_latex(middle_part, include_score=True)
         self.assertEqual(latex_table_str, true_latex_table_str)
@@ -587,7 +587,7 @@ class TestLaTeXTable(unittest.TestCase):
             indices=[2], columns=["equation", "complexity", "loss"]
         )
         middle_part = r"""
-            $x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.12 \cdot 10^{-15}$ \\
+            $y = x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.12 \cdot 10^{-15}$ \\
         """
         true_latex_table_str = self.create_true_latex(middle_part)
         self.assertEqual(latex_table_str, true_latex_table_str)
@@ -610,14 +610,14 @@ class TestLaTeXTable(unittest.TestCase):
         equations = [equations1, equations2]
         model = manually_create_model(equations)
         middle_part_1 = r"""
-            $x_{0}$ & $1$ & $1.05$ & $0.0$ \\
-            $\cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ & $3.82$ \\
-            $x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.12 \cdot 10^{-15}$ & $5.11$ \\
+            $y_{0} = x_{0}$ & $1$ & $1.05$ & $0.0$ \\
+            $y_{0} = \cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ & $3.82$ \\
+            $y_{0} = x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.12 \cdot 10^{-15}$ & $5.11$ \\
         """
         middle_part_2 = r"""
-            $x_{1}$ & $1$ & $1.32$ & $0.0$ \\
-            $\cos{\left(x_{1} \right)}$ & $2$ & $0.0520$ & $3.23$ \\
-            $x_{0}^{2} x_{1}$ & $5$ & $2.00 \cdot 10^{-15}$ & $10.3$ \\
+            $y_{1} = x_{1}$ & $1$ & $1.32$ & $0.0$ \\
+            $y_{1} = \cos{\left(x_{1} \right)}$ & $2$ & $0.0520$ & $3.23$ \\
+            $y_{1} = x_{0}^{2} x_{1}$ & $5$ & $2.00 \cdot 10^{-15}$ & $10.3$ \\
         """
         true_latex_table_str = "\n\n".join(
             self.create_true_latex(part, include_score=True)
@@ -667,9 +667,9 @@ class TestLaTeXTable(unittest.TestCase):
         model = manually_create_model(equations)
         latex_table_str = model.latex_table()
         middle_part = r"""
-        $x_{0}$ & $1$ & $1.05$ & $0.0$ \\
-        $\cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ & $3.82$ \\
-        \begin{minipage}{0.8\linewidth} \vspace{-1em} \begin{dmath*} x_{0}^{5} + x_{0}^{3} + 3.20 x_{0} + x_{1}^{3} - 1.20 x_{1} - 5.20 \sin{\left(2.60 x_{0} - 0.326 \sin{\left(x_{2} \right)} \right)} - \cos{\left(x_{0} x_{1} \right)} + \cos{\left(x_{0}^{3} + 3.20 x_{0} + x_{1}^{3} - 1.20 x_{1} + \cos{\left(x_{0} x_{1} \right)} \right)} \end{dmath*} \end{minipage} & $30$ & $1.12 \cdot 10^{-15}$ & $1.09$ \\
+        $y = x_{0}$ & $1$ & $1.05$ & $0.0$ \\
+        $y = \cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ & $3.82$ \\
+        \begin{minipage}{0.8\linewidth} \vspace{-1em} \begin{dmath*} y = x_{0}^{5} + x_{0}^{3} + 3.20 x_{0} + x_{1}^{3} - 1.20 x_{1} - 5.20 \sin{\left(2.60 x_{0} - 0.326 \sin{\left(x_{2} \right)} \right)} - \cos{\left(x_{0} x_{1} \right)} + \cos{\left(x_{0}^{3} + 3.20 x_{0} + x_{1}^{3} - 1.20 x_{1} + \cos{\left(x_{0} x_{1} \right)} \right)} \end{dmath*} \end{minipage} & $30$ & $1.12 \cdot 10^{-15}$ & $1.09$ \\
         """
         true_latex_table_str = self.create_true_latex(middle_part, include_score=True)
         self.assertEqual(latex_table_str, true_latex_table_str)

@@ -65,6 +65,7 @@ def generate_single_table(
     precision: int = 3,
     columns=["equation", "complexity", "loss", "score"],
     max_equation_length: int = 50,
+    output_variable_name: str = "y",
 ):
     """Generate a booktabs-style LaTeX table for a single set of equations."""
     assert isinstance(equations, pd.DataFrame)
@@ -96,7 +97,9 @@ def generate_single_table(
         for col in columns:
             if col == "equation":
                 if len(latex_equation) < max_equation_length:
-                    row_pieces.append("$" + latex_equation + "$")
+                    row_pieces.append(
+                        "$" + output_variable_name + " = " + latex_equation + "$"
+                    )
                 else:
                     if not raised_long_equation_warning:
                         warnings.warn(
@@ -109,7 +112,7 @@ def generate_single_table(
                             r"\begin{minipage}{0.8\linewidth}",
                             r"\vspace{-1em}",
                             r"\begin{dmath*}",
-                            latex_equation,
+                            output_variable_name + " = " + latex_equation,
                             r"\end{dmath*}",
                             r"\end{minipage}",
                         ]
@@ -137,8 +140,10 @@ def generate_multiple_tables(
     indices: List[List[int]] = None,
     precision: int = 3,
     columns=["equation", "complexity", "loss", "score"],
+    output_variable_names: str = None,
 ):
     """Generate multiple latex tables for a list of equation sets."""
+    # TODO: Let user specify custom output variable
 
     latex_tables = [
         generate_single_table(
@@ -146,6 +151,11 @@ def generate_multiple_tables(
             (None if not indices else indices[i]),
             precision=precision,
             columns=columns,
+            output_variable_name=(
+                "y_{" + str(i) + "}"
+                if output_variable_names is None
+                else output_variable_names[i]
+            ),
         )
         for i in range(len(equations))
     ]
