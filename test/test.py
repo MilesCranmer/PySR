@@ -524,7 +524,7 @@ class TestLaTeXTable(unittest.TestCase):
             true_latex_table_str = r"""
                 \begin{table}[h]
                 \begin{center}
-                \begin{tabular}{@{}lccc@{}}
+                \begin{tabular}{@{}cccc@{}}
                 \toprule
                 Equation & Complexity & Loss & Score \\
                 \midrule"""
@@ -532,7 +532,7 @@ class TestLaTeXTable(unittest.TestCase):
             true_latex_table_str = r"""
                 \begin{table}[h]
                 \begin{center}
-                \begin{tabular}{@{}lcc@{}}
+                \begin{tabular}{@{}ccc@{}}
                 \toprule
                 Equation & Complexity & Loss \\
                 \midrule"""
@@ -669,7 +669,7 @@ class TestLaTeXTable(unittest.TestCase):
         middle_part = r"""
         $x_{0}$ & $1$ & $1.05$ & $0.0$ \\
         $\cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ & $3.82$ \\
-        \vbox{ \vspace{-1em} \begin{flushleft} $\displaystyle x_{0}^{5} + x_{0}^{3} + 3.20 x_{0} + x_{1}^{3} - 1.20 x_{1} - 5.20 \sin{\left(2.60 x_{0} - 0.326 \sin{\left(x_{2} \right)} \right)} - \cos{\left(x_{0} x_{1} \right)} + \cos{\left(x_{0}^{3} + 3.20 x_{0} + x_{1}^{3} - 1.20 x_{1} + \cos{\left(x_{0} x_{1} \right)} \right)} $ \end{flushleft} \vspace{-1em} } & $30$ & $1.12 \cdot 10^{-15}$ & $1.09$ \\
+        \begin{minipage}{0.8\linewidth} \vspace{-1em} \begin{dmath*} x_{0}^{5} + x_{0}^{3} + 3.20 x_{0} + x_{1}^{3} - 1.20 x_{1} - 5.20 \sin{\left(2.60 x_{0} - 0.326 \sin{\left(x_{2} \right)} \right)} - \cos{\left(x_{0} x_{1} \right)} + \cos{\left(x_{0}^{3} + 3.20 x_{0} + x_{1}^{3} - 1.20 x_{1} + \cos{\left(x_{0} x_{1} \right)} \right)} \end{dmath*} \end{minipage} & $30$ & $1.12 \cdot 10^{-15}$ & $1.09$ \\
         """
         true_latex_table_str = self.create_true_latex(middle_part, include_score=True)
         self.assertEqual(latex_table_str, true_latex_table_str)

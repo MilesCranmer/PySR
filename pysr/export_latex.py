@@ -3,6 +3,10 @@ import sympy
 from sympy.printing.latex import LatexPrinter
 import pandas as pd
 from typing import List
+import warnings
+
+
+raised_long_equation_warning = False
 
 
 class PreciseLatexPrinter(LatexPrinter):
@@ -26,7 +30,7 @@ def to_latex(expr, prec=3, full_prec=True, **settings):
 
 
 def generate_table_environment(columns=["equation", "complexity", "loss"]):
-    margins = "".join([("l" if col == "equation" else "c") for col in columns])
+    margins = "c" * len(columns)
     column_map = {
         "complexity": "Complexity",
         "loss": "Loss",
@@ -65,6 +69,8 @@ def generate_single_table(
     """Generate a booktabs-style LaTeX table for a single set of equations."""
     assert isinstance(equations, pd.DataFrame)
 
+    global raised_long_equation_warning
+
     latex_top, latex_bottom = generate_table_environment(columns)
     latex_table_content = []
 
@@ -92,17 +98,20 @@ def generate_single_table(
                 if len(latex_equation) < max_equation_length:
                     row_pieces.append("$" + latex_equation + "$")
                 else:
+                    if not raised_long_equation_warning:
+                        warnings.warn(
+                            "Please add \\usepackage{breqn} to your LaTeX preamble."
+                        )
+                        raised_long_equation_warning = True
+
                     broken_latex_equation = " ".join(
                         [
-                            r"\vbox{",
+                            r"\begin{minipage}{0.8\linewidth}",
                             r"\vspace{-1em}",
-                            r"\begin{flushleft}",
-                            r"$\displaystyle",
+                            r"\begin{dmath*}",
                             latex_equation,
-                            "$",
-                            r"\end{flushleft}",
-                            r"\vspace{-1em}",
-                            "}",
+                            r"\end{dmath*}",
+                            r"\end{minipage}",
                         ]
                     )
                     row_pieces.append(broken_latex_equation)
