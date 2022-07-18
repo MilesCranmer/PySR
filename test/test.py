@@ -648,3 +648,28 @@ class TestLaTeXTable(unittest.TestCase):
         self.assertEqual(
             to_latex(expr, prec=8), "3232.3249 x - 1.4857485 \cdot 10^{-10}"
         )
+
+    def test_latex_break_long_equation(self):
+        """Test that we can break a long equation inside the table"""
+        long_equation = """
+        - cos(x1 * x0) + 3.2 * x0 - 1.2 * x1 + x1 * x1 * x1 + x0 * x0 * x0
+        + 5.2 * sin(0.3256 * sin(x2) - 2.6 * x0) + x0 * x0 * x0 * x0 * x0
+        + cos(cos(x1 * x0) + 3.2 * x0 - 1.2 * x1 + x1 * x1 * x1 + x0 * x0 * x0)
+        """
+        long_equation = "".join(long_equation.split("\n")).strip()
+        equations = pd.DataFrame(
+            dict(
+                equation=["x0", "cos(x0)", long_equation],
+                loss=[1.052, 0.02315, 1.12347e-15],
+                complexity=[1, 2, 30],
+            )
+        )
+        model = manually_create_model(equations)
+        latex_table_str = model.latex_table()
+        middle_part = r"""
+        $x_{0}$ & $1$ & $1.05$ & $0.0$ \\
+        $\cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ & $3.82$ \\
+        \vbox{ \vspace{-1em} \begin{flushleft} $\displaystyle x_{0}^{5} + x_{0}^{3} + 3.20 x_{0} + x_{1}^{3} - 1.20 x_{1} - 5.20 \sin{\left(2.60 x_{0} - 0.326 \sin{\left(x_{2} \right)} \right)} - \cos{\left(x_{0} x_{1} \right)} + \cos{\left(x_{0}^{3} + 3.20 x_{0} + x_{1}^{3} - 1.20 x_{1} + \cos{\left(x_{0} x_{1} \right)} \right)} $ \end{flushleft} \vspace{-1em} } & $30$ & $1.12 \cdot 10^{-15}$ & $1.09$ \\
+        """
+        true_latex_table_str = self.create_true_latex(middle_part, include_score=True)
+        self.assertEqual(latex_table_str, true_latex_table_str)

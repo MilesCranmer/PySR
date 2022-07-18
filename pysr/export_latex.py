@@ -60,6 +60,7 @@ def generate_single_table(
     indices: List[int] = None,
     precision: int = 3,
     columns=["equation", "complexity", "loss", "score"],
+    max_equation_length: int = 50,
 ):
     """Generate a booktabs-style LaTeX table for a single set of equations."""
     assert isinstance(equations, pd.DataFrame)
@@ -88,17 +89,32 @@ def generate_single_table(
         row_pieces = []
         for col in columns:
             if col == "equation":
-                row_pieces.append(latex_equation)
+                if len(latex_equation) < max_equation_length:
+                    row_pieces.append("$" + latex_equation + "$")
+                else:
+                    broken_latex_equation = " ".join(
+                        [
+                            r"\vbox{",
+                            r"\vspace{-1em}",
+                            r"\begin{flushleft}",
+                            r"$\displaystyle",
+                            latex_equation,
+                            "$",
+                            r"\end{flushleft}",
+                            r"\vspace{-1em}",
+                            "}",
+                        ]
+                    )
+                    row_pieces.append(broken_latex_equation)
+
             elif col == "complexity":
-                row_pieces.append(complexity)
+                row_pieces.append("$" + complexity + "$")
             elif col == "loss":
-                row_pieces.append(loss)
+                row_pieces.append("$" + loss + "$")
             elif col == "score":
-                row_pieces.append(score)
+                row_pieces.append("$" + score + "$")
             else:
                 raise ValueError(f"Unknown column: {col}")
-
-        row_pieces = ["$" + piece + "$" for piece in row_pieces]
 
         latex_table_content.append(
             " & ".join(row_pieces) + r" \\",
