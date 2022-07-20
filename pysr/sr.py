@@ -2090,7 +2090,6 @@ def load(
         **pysr_kwargs,
     )
 
-    model.equation_file_ = equation_file
     model.nout_ = nout
     model.n_features_in_ = n_features_in
 
@@ -2105,6 +2104,6 @@ def load(
     else:
         model.selection_mask_ = selection_mask
 
-    model.refresh()
+    model.refresh(checkpoint_file=equation_file)
 
     return model
