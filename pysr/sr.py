@@ -2034,3 +2034,77 @@ def run_feature_selection(X, y, select_k_features, random_state=None):
         clf, threshold=-np.inf, max_features=select_k_features, prefit=True
     )
     return selector.get_support(indices=True)
+
+
+def load(
+    equation_file,
+    *,
+    binary_operators,
+    unary_operators,
+    n_features_in,
+    feature_names_in=None,
+    selection_mask=None,
+    nout=1,
+    **pysr_kwargs,
+):
+    """
+    Create a model from equations stored as a csv file
+
+    Parameters
+    ----------
+    equation_file : str
+        Path to a csv file containing equations.
+
+    binary_operators : list[str], default=["+", "-", "*", "/"]
+        The same binary operators used when creating the model.
+
+    unary_operators : list[str], default=None
+        The same unary operators used when creating the model.
+
+    n_features_in : int
+        Number of features passed to the model.
+
+    feature_names_in : list[str], default=None
+        Names of the features passed to the model.
+
+    selection_mask : list[bool], default=None
+        If using select_k_features, you must pass `model.selection_mask_` here.
+
+    nout : int, default=1
+        Number of outputs of the model.
+
+    pysr_kwargs : dict
+        Any other keyword arguments to initialize the PySRRegressor object.
+
+    Returns
+    -------
+    model : PySRRegressor
+        The model with fitted equations.
+    """
+
+    # TODO: copy .bkup file if exists.
+    model = PySRRegressor(
+        equation_file=equation_file,
+        binary_operators=binary_operators,
+        unary_operators=unary_operators,
+        **pysr_kwargs,
+    )
+
+    model.equation_file_ = equation_file
+    model.nout_ = nout
+    model.n_features_in_ = n_features_in
+
+    if feature_names_in is None:
+        model.feature_names_in_ = [f"x{i}" for i in range(n_features_in)]
+    else:
+        assert len(feature_names_in) == n_features_in
+        model.feature_names_in_ = feature_names_in
+
+    if selection_mask is None:
+        model.selection_mask_ = np.ones(n_features_in, dtype=bool)
+    else:
+        model.selection_mask_ = selection_mask
+
+    model.refresh()
+
+    return model

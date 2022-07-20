@@ -4,7 +4,7 @@ import inspect
 import unittest
 import numpy as np
 from sklearn import model_selection
-from pysr import PySRRegressor
+from pysr import PySRRegressor, load
 from pysr.sr import run_feature_selection, _handle_feature_selection
 from sklearn.utils.estimator_checks import check_estimator
 import sympy
@@ -279,6 +279,32 @@ class TestPipeline(unittest.TestCase):
         # Again, but with numpy arrays:
         model.fit(X.values, y.values, Xresampled=Xresampled.values)
         self.assertLess(np.average((model.predict(X.values) - y.values) ** 2), 1e-4)
+
+    def test_load_model(self):
+        """See if we can load a ran model from the equation file."""
+        csv_file_data = """
+        Complexity|MSE|Equation
+        1|0.19951081|1.9762075
+        3|0.12717344|(f0 + 1.4724599)
+        4|0.104823045|pow_abs(2.2683423, cos(f3))"""
+        # Strip the indents:
+        csv_file_data = "\n".join([l.strip() for l in csv_file_data.split("\n")])
+        with open("equation_file.csv", "w") as f:
+            f.write(csv_file_data)
+        with open("equation_file.csv.bkup", "w") as f:
+            f.write(csv_file_data)
+        model = load(
+            "equation_file.csv",
+            n_features_in=5,
+            feature_names_in=["f0", "f1", "f2", "f3", "f4"],
+            binary_operators=["+", "*", "/", "-", "^"],
+            unary_operators=["cos"],
+        )
+        X = self.rstate.rand(100, 5)
+        y_truth = 2.2683423 ** np.cos(X[:, 3])
+        y_test = model.predict(X, 2)
+
+        np.testing.assert_allclose(y_truth, y_test)
 
 
 class TestBest(unittest.TestCase):
