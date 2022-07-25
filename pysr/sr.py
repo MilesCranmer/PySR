@@ -1642,10 +1642,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         checkpoint_file : str, default=None
             Path to checkpoint hall of fame file to be loaded.
         """
-        check_is_fitted(self, attributes=["equation_file_"])
         if checkpoint_file:
             self.equation_file_ = checkpoint_file
             self.equation_file_contents_ = None
+        check_is_fitted(self, attributes=["equation_file_"])
         self.equations_ = self.get_hof()
 
     def predict(self, X, index=None):
