@@ -562,6 +562,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     equation_file_contents_ : list[pandas.DataFrame]
         Contents of the equation file output by the Julia backend.
 
+    show_pickle_warnings_ : bool
+        Whether to show warnings about what attributes can be pickled.
+
     Notes
     -----
     Most default parameters have been tuned over several example equations,
@@ -873,14 +876,26 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         from the pickled instance.
         """
         state = self.__dict__
-        if "raw_julia_state_" in state:
+        show_pickle_warning = not (
+            "show_pickle_warnings_" in state and not state["show_pickle_warnings_"]
+        )
+        if "raw_julia_state_" in state and show_pickle_warning:
             warnings.warn(
                 "raw_julia_state_ cannot be pickled and will be removed from the "
                 "serialized instance. This will prevent a `warm_start` fit of any "
                 "model that is deserialized via `pickle.load()`."
             )
+        state_keys_containing_lambdas = ["extra_sympy_mappings", "extra_torch_mappings"]
+        for state_key in state_keys_containing_lambdas:
+            if state[state_key] is not None and show_pickle_warning:
+                warnings.warn(
+                    f"`{state_key}` cannot be pickled and will be removed from the "
+                    "serialized instance. When loading the model, please redefine "
+                    f"`{state_key}` at runtime."
+                )
+        state_keys_to_clear = ["raw_julia_state_"] + state_keys_containing_lambdas
         pickled_state = {
-            key: None if key == "raw_julia_state_" else value
+            key: (None if key in state_keys_to_clear else value)
             for key, value in state.items()
         }
         if ("equations_" in pickled_state) and (
