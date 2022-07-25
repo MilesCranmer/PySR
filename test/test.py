@@ -294,7 +294,7 @@ class TestPipeline(unittest.TestCase):
         equation_filename = rand_dir / "equation.csv"
         with open(equation_filename, "w") as f:
             f.write(csv_file_data)
-        with open(equation_filename + ".bkup", "w") as f:
+        with open(str(equation_filename) + ".bkup", "w") as f:
             f.write(csv_file_data)
         model = load(
             equation_filename,
