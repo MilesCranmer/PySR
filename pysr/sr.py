@@ -1834,10 +1834,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             if self.nout_ > 1:
                 all_outputs = []
                 for i in range(1, self.nout_ + 1):
-                    df = pd.read_csv(
-                        str(self.equation_file_) + f".out{i}" + ".bkup",
-                        sep="|",
-                    )
+                    cur_filename = str(self.equation_file_) + f".out{i}" + ".bkup"
+                    if not os.path.exists(cur_filename):
+                        cur_filename = str(self.equation_file_) + f".out{i}"
+                    df = pd.read_csv(cur_filename, sep="|")
                     # Rename Complexity column to complexity:
                     df.rename(
                         columns={
@@ -1850,7 +1850,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
                     all_outputs.append(df)
             else:
-                all_outputs = [pd.read_csv(str(self.equation_file_) + ".bkup", sep="|")]
+                filename = str(self.equation_file_) + ".bkup"
+                if not os.path.exists(filename):
+                    filename = str(self.equation_file_)
+                all_outputs = [pd.read_csv(filename, sep="|")]
                 all_outputs[-1].rename(
                     columns={
                         "Complexity": "complexity",
