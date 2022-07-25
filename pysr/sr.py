@@ -8,6 +8,7 @@ import re
 import tempfile
 import shutil
 from pathlib import Path
+import pickle as pkl
 from datetime import datetime
 import warnings
 from multiprocessing import cpu_count
