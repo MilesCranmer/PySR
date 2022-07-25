@@ -2061,9 +2061,9 @@ def run_feature_selection(X, y, select_k_features, random_state=None):
 def load(
     equation_file,
     *,
-    binary_operators,
-    unary_operators,
-    n_features_in,
+    binary_operators=None,
+    unary_operators=None,
+    n_features_in=None,
     feature_names_in=None,
     selection_mask=None,
     nout=1,
@@ -2097,12 +2097,33 @@ def load(
 
     pysr_kwargs : dict
         Any other keyword arguments to initialize the PySRRegressor object.
+        These will overwrite those stored in the pickle file.
 
     Returns
     -------
     model : PySRRegressor
         The model with fitted equations.
     """
+    # Try to load model from <equation_file>.pkl
+    print(f"Checking if {equation_file}.pkl exists...")
+    if os.path.exists(str(equation_file) + ".pkl"):
+        assert binary_operators is None
+        assert unary_operators is None
+        assert n_features_in is None
+        with open(str(equation_file) + ".pkl", "rb") as f:
+            model = pkl.load(f)
+        model.set_params(**pysr_kwargs)
+        model.refresh()
+        return model
+
+    # Else, we re-create it.
+    print(
+        f"{equation_file}.pkl does not exist, "
+        "so we must create the model from scratch."
+    )
+    assert binary_operators is not None
+    assert unary_operators is not None
+    assert n_features_in is not None
 
     # TODO: copy .bkup file if exists.
     model = PySRRegressor(
