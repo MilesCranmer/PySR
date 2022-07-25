@@ -883,7 +883,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             key: None if key == "raw_julia_state_" else value
             for key, value in state.items()
         }
-        if "equations_" in pickled_state:
+        if ("equations_" in pickled_state) and (
+            pickled_state["equations_"] is not None
+        ):
             pickled_state["output_torch_format"] = False
             pickled_state["output_jax_format"] = False
             if self.nout_ == 1:
