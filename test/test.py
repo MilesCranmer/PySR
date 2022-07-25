@@ -12,6 +12,7 @@ import pandas as pd
 import warnings
 import pickle as pkl
 import tempfile
+from pathlib import Path
 
 DEFAULT_PARAMS = inspect.signature(PySRRegressor.__init__).parameters
 DEFAULT_NITERATIONS = DEFAULT_PARAMS["niterations"].default
@@ -289,12 +290,14 @@ class TestPipeline(unittest.TestCase):
         4|0.104823045|pow_abs(2.2683423, cos(f3))"""
         # Strip the indents:
         csv_file_data = "\n".join([l.strip() for l in csv_file_data.split("\n")])
-        with open("equation_file.csv", "w") as f:
+        rand_dir = Path(tempfile.mkdtemp())
+        equation_filename = rand_dir / "equation.csv"
+        with open(equation_filename, "w") as f:
             f.write(csv_file_data)
-        with open("equation_file.csv.bkup", "w") as f:
+        with open(equation_filename + ".bkup", "w") as f:
             f.write(csv_file_data)
         model = load(
-            "equation_file.csv",
+            equation_filename,
             n_features_in=5,
             feature_names_in=["f0", "f1", "f2", "f3", "f4"],
             binary_operators=["+", "*", "/", "-", "^"],
