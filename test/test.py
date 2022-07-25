@@ -290,24 +290,24 @@ class TestPipeline(unittest.TestCase):
         4|0.104823045|pow_abs(2.2683423, cos(f3))"""
         # Strip the indents:
         csv_file_data = "\n".join([l.strip() for l in csv_file_data.split("\n")])
-        rand_dir = Path(tempfile.mkdtemp())
-        equation_filename = rand_dir / "equation.csv"
-        with open(equation_filename, "w") as f:
-            f.write(csv_file_data)
-        with open(str(equation_filename) + ".bkup", "w") as f:
-            f.write(csv_file_data)
-        model = load(
-            equation_filename,
-            n_features_in=5,
-            feature_names_in=["f0", "f1", "f2", "f3", "f4"],
-            binary_operators=["+", "*", "/", "-", "^"],
-            unary_operators=["cos"],
-        )
-        X = self.rstate.rand(100, 5)
-        y_truth = 2.2683423 ** np.cos(X[:, 3])
-        y_test = model.predict(X, 2)
 
-        np.testing.assert_allclose(y_truth, y_test)
+        for from_backup in [False, True]:
+            rand_dir = Path(tempfile.mkdtemp())
+            equation_filename = str(rand_dir / "equation.csv")
+            with open(equation_filename + (".bkup" if from_backup else ""), "w") as f:
+                f.write(csv_file_data)
+            model = load(
+                equation_filename,
+                n_features_in=5,
+                feature_names_in=["f0", "f1", "f2", "f3", "f4"],
+                binary_operators=["+", "*", "/", "-", "^"],
+                unary_operators=["cos"],
+            )
+            X = self.rstate.rand(100, 5)
+            y_truth = 2.2683423 ** np.cos(X[:, 3])
+            y_test = model.predict(X, 2)
+
+            np.testing.assert_allclose(y_truth, y_test)
 
     def test_load_model_simple(self):
         # Test that we can simply load a model from its equation file.
