@@ -1623,6 +1623,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             y,
         )
 
+        # Save model state:
+        self.show_pickle_warnings_ = False
+        with open(str(self.equation_file_) + ".pkl", "wb") as f:
+            pkl.dump(self, f)
+        self.show_pickle_warnings_ = True
         # Fitting procedure
         return self._run(X, y, mutated_params, weights=weights, seed=seed)
 
