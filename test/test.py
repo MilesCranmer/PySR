@@ -309,6 +309,33 @@ class TestPipeline(unittest.TestCase):
 
         np.testing.assert_allclose(y_truth, y_test)
 
+    def test_load_model_simple(self):
+        # Test that we can simply load a model from its equation file.
+        y = self.X[:, [0, 1]] ** 2
+        model = PySRRegressor(
+            # Test that passing a single operator works:
+            unary_operators="sq(x) = x^2",
+            binary_operators="plus",
+            extra_sympy_mappings={"sq": lambda x: x**2},
+            **self.default_test_kwargs,
+            procs=0,
+            denoise=True,
+            early_stop_condition="stop_if(loss, complexity) = loss < 0.05 && complexity == 2",
+        )
+        rand_dir = Path(tempfile.mkdtemp())
+        equation_file = rand_dir / "equations.csv"
+        model.set_params(temp_equation_file=False)
+        model.set_params(equation_file=equation_file)
+        model.fit(self.X, y)
+
+        # lambda functions are removed from the pickling, so we need
+        # to pass it during the loading:
+        model2 = load(
+            model.equation_file_, extra_sympy_mappings={"sq": lambda x: x**2}
+        )
+
+        np.testing.assert_allclose(model.predict(self.X), model2.predict(self.X))
+
 
 class TestBest(unittest.TestCase):
     def setUp(self):
