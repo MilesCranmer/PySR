@@ -2111,6 +2111,7 @@ def load(
     # Try to load model from <equation_file>.pkl
     print(f"Checking if {equation_file}.pkl exists...")
     if os.path.exists(str(equation_file) + ".pkl"):
+        print(f"Loading model from {equation_file}.pkl.")
         assert binary_operators is None
         assert unary_operators is None
         assert n_features_in is None
