@@ -1694,7 +1694,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             raise ValueError(
                 "Failed to evaluate the expression. "
                 "If you are using a custom operator, make sure to define it in :param`extra_sympy_mappings`, "
-                "e.g., `model.set_params(extra_sympy_mappings={'inv': lambda x: 1 / x})`."
+                "e.g., `model.set_params(extra_sympy_mappings={'inv': lambda x: 1 / x})`. You can then "
+                "run `model.refresh()` to re-load the expressions."
             ) from error
 
     def sympy(self, index=None):
