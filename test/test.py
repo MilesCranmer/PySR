@@ -336,6 +336,16 @@ class TestPipeline(unittest.TestCase):
 
         np.testing.assert_allclose(model.predict(self.X), model2.predict(self.X))
 
+        # Try again, but using only the pickle file:
+        for file_to_delete in [str(equation_file), str(equation_file) + ".bkup"]:
+            if os.path.exists(file_to_delete):
+                os.remove(file_to_delete)
+
+        model3 = load(
+            model.equation_file_, extra_sympy_mappings={"sq": lambda x: x**2}
+        )
+        np.testing.assert_allclose(model.predict(self.X), model3.predict(self.X))
+
 
 class TestBest(unittest.TestCase):
     def setUp(self):

@@ -926,7 +926,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
     def _checkpoint(self):
         """Saves the model's current state to a checkpoint file.
-        
+
         This should only be used internally by PySRRegressor."""
         # Save model state:
         self.show_pickle_warnings_ = False
@@ -2132,8 +2132,12 @@ def load(
         assert n_features_in is None
         with open(str(equation_file) + ".pkl", "rb") as f:
             model = pkl.load(f)
+        # Update any parameters if necessary, such as
+        # extra_sympy_mappings:
         model.set_params(**pysr_kwargs)
-        model.refresh()
+        if "equations_" not in model.__dict__ or model.equations_ is None:
+            model.refresh()
+
         return model
 
     # Else, we re-create it.
