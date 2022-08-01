@@ -924,6 +924,16 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 ]
         return pickled_state
 
+    def _checkpoint(self):
+        """Saves the model's current state to a checkpoint file.
+        
+        This should only be used internally by PySRRegressor."""
+        # Save model state:
+        self.show_pickle_warnings_ = False
+        with open(str(self.equation_file_) + ".pkl", "wb") as f:
+            pkl.dump(self, f)
+        self.show_pickle_warnings_ = True
+
     @property
     def equations(self):  # pragma: no cover
         warnings.warn(
@@ -1624,13 +1634,18 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             y,
         )
 
-        # Save model state:
-        self.show_pickle_warnings_ = False
-        with open(str(self.equation_file_) + ".pkl", "wb") as f:
-            pkl.dump(self, f)
-        self.show_pickle_warnings_ = True
-        # Fitting procedure
-        return self._run(X, y, mutated_params, weights=weights, seed=seed)
+        # Initially, just save model parameters, so that
+        # it can be loaded from an early exit:
+        self._checkpoint()
+
+        # Perform the search:
+        self._run(X, y, mutated_params, weights=weights, seed=seed)
+
+        # Then, after fit, we save again, so the pickle file contains
+        # the equations:
+        self._checkpoint()
+
+        return self
 
     def refresh(self, checkpoint_file=None):
         """
