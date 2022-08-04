@@ -1,3 +1,4 @@
+import copy
 import os
 import sys
 import numpy as np
@@ -1928,7 +1929,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         ret_outputs = []
 
-        for output in self.equation_file_contents_:
+        equation_file_contents = copy.deepcopy(self.equation_file_contents_)
+
+        for output in equation_file_contents:
 
             scores = []
             lastMSE = None
