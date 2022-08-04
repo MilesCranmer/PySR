@@ -930,7 +930,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         This should only be used internally by PySRRegressor."""
         # Save model state:
         self.show_pickle_warnings_ = False
-        with open(str(self.equation_file_) + ".pkl", "wb") as f:
+        with open(_csv_filename_to_pkl_filename(self.equation_file_), "wb") as f:
             pkl.dump(self, f)
         self.show_pickle_warnings_ = True
 
@@ -1636,14 +1636,16 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # Initially, just save model parameters, so that
         # it can be loaded from an early exit:
-        self._checkpoint()
+        if not self.temp_equation_file:
+            self._checkpoint()
 
         # Perform the search:
         self._run(X, y, mutated_params, weights=weights, seed=seed)
 
         # Then, after fit, we save again, so the pickle file contains
         # the equations:
-        self._checkpoint()
+        if not self.temp_equation_file:
+            self._checkpoint()
 
         return self
 
@@ -2077,6 +2079,17 @@ def run_feature_selection(X, y, select_k_features, random_state=None):
     return selector.get_support(indices=True)
 
 
+def _csv_filename_to_pkl_filename(csv_filename) -> str:
+    # Assume that the csv filename is of the form "foo.csv"
+    dirname = str(os.path.dirname(csv_filename))
+    basename = str(os.path.basename(csv_filename))
+    base = str(os.path.splitext(basename)[0])
+
+    pkl_basename = base + ".pkl"
+
+    return os.path.join(dirname, pkl_basename)
+
+
 def load(
     equation_file,
     *,
@@ -2094,7 +2107,8 @@ def load(
     Parameters
     ----------
     equation_file : str
-        Path to a csv file containing equations.
+        Path to a csv file containing equations, or a pickle file
+        containing the model.
 
     binary_operators : list[str], default=["+", "-", "*", "/"]
         The same binary operators used when creating the model.
@@ -2123,14 +2137,19 @@ def load(
     model : PySRRegressor
         The model with fitted equations.
     """
+    if os.path.splitext(equation_file)[1] != ".pkl":
+        pkl_filename = _csv_filename_to_pkl_filename(equation_file)
+    else:
+        pkl_filename = equation_file
+
     # Try to load model from <equation_file>.pkl
-    print(f"Checking if {equation_file}.pkl exists...")
-    if os.path.exists(str(equation_file) + ".pkl"):
-        print(f"Loading model from {equation_file}.pkl.")
+    print(f"Checking if {pkl_filename} exists...")
+    if os.path.exists(pkl_filename):
+        print(f"Loading model from {pkl_filename}")
         assert binary_operators is None
         assert unary_operators is None
         assert n_features_in is None
-        with open(str(equation_file) + ".pkl", "rb") as f:
+        with open(pkl_filename, "rb") as f:
             model = pkl.load(f)
         # Update any parameters if necessary, such as
         # extra_sympy_mappings:
@@ -2142,8 +2161,7 @@ def load(
 
     # Else, we re-create it.
     print(
-        f"{equation_file}.pkl does not exist, "
-        "so we must create the model from scratch."
+        f"{equation_file} does not exist, " "so we must create the model from scratch."
     )
     assert binary_operators is not None
     assert unary_operators is not None

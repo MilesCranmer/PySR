@@ -5,7 +5,11 @@ import unittest
 import numpy as np
 from sklearn import model_selection
 from pysr import PySRRegressor, load
-from pysr.sr import run_feature_selection, _handle_feature_selection
+from pysr.sr import (
+    run_feature_selection,
+    _handle_feature_selection,
+    _csv_filename_to_pkl_filename,
+)
 from sklearn.utils.estimator_checks import check_estimator
 import sympy
 import pandas as pd
@@ -341,6 +345,7 @@ class TestPipeline(unittest.TestCase):
             if os.path.exists(file_to_delete):
                 os.remove(file_to_delete)
 
+        pickle_file = rand_dir / "equations.pkl"
         model3 = load(
             model.equation_file_, extra_sympy_mappings={"sq": lambda x: x**2}
         )
@@ -429,6 +434,20 @@ class TestFeatureSelection(unittest.TestCase):
 
 class TestMiscellaneous(unittest.TestCase):
     """Test miscellaneous functions."""
+
+    def test_csv_to_pkl_conversion(self):
+        """Test that csv filename to pkl filename works as expected."""
+        tmpdir = Path(tempfile.mkdtemp())
+        equation_file = tmpdir / "equations.389479384.28378374.csv"
+        expected_pkl_file = tmpdir / "equations.389479384.28378374.pkl"
+
+        # First, test inputting the paths:
+        test_pkl_file = _csv_filename_to_pkl_filename(equation_file)
+        self.assertEqual(test_pkl_file, str(expected_pkl_file))
+
+        # Next, test inputting the strings.
+        test_pkl_file = _csv_filename_to_pkl_filename(str(equation_file))
+        self.assertEqual(test_pkl_file, str(expected_pkl_file))
 
     def test_deprecation(self):
         """Ensure that deprecation works as expected.
