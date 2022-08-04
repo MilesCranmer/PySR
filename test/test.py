@@ -140,7 +140,7 @@ class TestPipeline(unittest.TestCase):
         # These tests are flaky, so don't fail test:
         try:
             np.testing.assert_almost_equal(
-                model.predict(X.copy())[:, 0], X[:, 0] ** 2, decimal=4
+                model.predict(X.copy())[:, 0], X[:, 0] ** 2, decimal=3
             )
         except AssertionError:
             print("Error in test_multioutput_weighted_with_callable_temp_equation")
@@ -149,7 +149,7 @@ class TestPipeline(unittest.TestCase):
 
         try:
             np.testing.assert_almost_equal(
-                model.predict(X.copy())[:, 1], X[:, 1] ** 2, decimal=4
+                model.predict(X.copy())[:, 1], X[:, 1] ** 2, decimal=3
             )
         except AssertionError:
             print("Error in test_multioutput_weighted_with_callable_temp_equation")
@@ -401,7 +401,7 @@ class TestBest(unittest.TestCase):
         X = self.X
         y = self.y
         for f in [self.model.predict, self.equations_.iloc[-1]["lambda_format"]]:
-            np.testing.assert_almost_equal(f(X), y, decimal=4)
+            np.testing.assert_almost_equal(f(X), y, decimal=3)
 
 
 class TestFeatureSelection(unittest.TestCase):
