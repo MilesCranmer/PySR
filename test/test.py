@@ -4,7 +4,7 @@ import inspect
 import unittest
 import numpy as np
 from sklearn import model_selection
-from pysr import PySRRegressor, load
+from pysr import PySRRegressor
 from pysr.sr import (
     run_feature_selection,
     _handle_feature_selection,
@@ -300,7 +300,7 @@ class TestPipeline(unittest.TestCase):
             equation_filename = str(rand_dir / "equation.csv")
             with open(equation_filename + (".bkup" if from_backup else ""), "w") as f:
                 f.write(csv_file_data)
-            model = load(
+            model = PySRRegressor.from_file(
                 equation_filename,
                 n_features_in=5,
                 feature_names_in=["f0", "f1", "f2", "f3", "f4"],
@@ -334,7 +334,7 @@ class TestPipeline(unittest.TestCase):
 
         # lambda functions are removed from the pickling, so we need
         # to pass it during the loading:
-        model2 = load(
+        model2 = PySRRegressor.from_file(
             model.equation_file_, extra_sympy_mappings={"sq": lambda x: x**2}
         )
 
@@ -346,7 +346,7 @@ class TestPipeline(unittest.TestCase):
                 os.remove(file_to_delete)
 
         pickle_file = rand_dir / "equations.pkl"
-        model3 = load(
+        model3 = PySRRegressor.from_file(
             model.equation_file_, extra_sympy_mappings={"sq": lambda x: x**2}
         )
         np.testing.assert_allclose(model.predict(self.X), model3.predict(self.X))

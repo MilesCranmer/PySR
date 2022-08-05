@@ -6,7 +6,6 @@ from .sr import (
     best_tex,
     best_callable,
     best_row,
-    load,
 )
 from .julia_helpers import install
 from .feynman_problems import Problem, FeynmanProblem
