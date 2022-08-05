@@ -2197,7 +2197,7 @@ def run_feature_selection(X, y, select_k_features, random_state=None):
 
 def _csv_filename_to_pkl_filename(csv_filename) -> str:
     # Assume that the csv filename is of the form "foo.csv"
-    assert csv_filename.endswith(".csv")
+    assert str(csv_filename).endswith(".csv")
 
     dirname = str(os.path.dirname(csv_filename))
     basename = str(os.path.basename(csv_filename))
