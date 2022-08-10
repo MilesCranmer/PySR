@@ -469,7 +469,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Whether to use a progress bar instead of printing to stdout.
 
     equation_file : str, default=None
-        Where to save the files (.csv separated by |).
+        Where to save the files (with `.csv` extension).
 
     temp_equation_file : bool, default=False
         Whether to put the hall of fame file in the temp directory.
