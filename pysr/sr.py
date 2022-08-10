@@ -212,7 +212,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
           (highest accuracy).
         - `"score"` selects the candidate model with the highest score.
           Score is defined as the derivative of the log-loss with
-          respect to complexity - if an expression has a much better 
+          respect to complexity - if an expression has a much better
           oss at a slightly higher complexity, it is preferred.
         - `"best"` selects the candidate model with the highest score
           among expressions with a loss better than at least 1.5x the
