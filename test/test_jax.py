@@ -76,7 +76,7 @@ class TestJAX(unittest.TestCase):
         np.testing.assert_almost_equal(
             np.array(jformat["callable"](jnp.array(X), jformat["parameters"])),
             np.square(np.cos(X[:, 1])),  # Select feature 1
-            decimal=4,
+            decimal=3,
         )
 
     def test_feature_selection_custom_operators(self):

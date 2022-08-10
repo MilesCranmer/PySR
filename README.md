@@ -162,7 +162,15 @@ This arrow in the `pick` column indicates which equation is currently selected b
 SymPy format (`sympy_format` - which you can also get with `model.sympy()`), and even JAX and PyTorch format 
 (both of which are differentiable - which you can get with `model.jax()` and `model.pytorch()`).
 
-Note that `PySRRegressor` stores the state of the last search, and will restart from where you left off the next time you call `.fit()`. This will cause problems if significant changes are made to the search parameters (like changing the operators). You can run `model.reset()` to reset the state.
+Note that `PySRRegressor` stores the state of the last search, and will restart from where you left off the next time you call `.fit()`, assuming you have set `warm_start=True`.
+This will cause problems if significant changes are made to the search parameters (like changing the operators). You can run `model.reset()` to reset the state.
+
+You will notice that PySR will save two files: `hall_of_fame...csv` and `hall_of_fame...pkl`.
+The csv file is a list of equations and their losses, and the pkl file is a saved state of the model.
+You may load the model from the `pkl` file with:
+```python
+model = PySRRegressor.from_file("hall_of_fame.2022-08-10_100832.281.pkl")
+``` 
 
 There are several other useful features such as denoising (e.g., `denoising=True`),
 feature selection (e.g., `select_k_features=3`).
