@@ -205,10 +205,16 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     Parameters
     ----------
     model_selection : str, default="best"
-        Model selection criterion. Can be 'accuracy' or 'best'.
-        `"accuracy"` selects the candidate model with the lowest loss
-        (highest accuracy). `"best"` selects the candidate model with
-        the lowest sum of normalized loss and complexity.
+        Model selection criterion. Can be 'accuracy', 'best', or 'score'.
+        - `"accuracy"` selects the candidate model with the lowest loss
+          (highest accuracy).
+        - `"score"` selects the candidate model with the highest score.
+          Score is defined as the derivative of the log-loss with
+          respect to complexity - if an expression has a much better 
+          oss at a slightly higher complexity, it is preferred.
+        - `"best"` selects the candidate model with the highest score
+          among expressions with a loss better than at least 1.5x the
+          most accurate model.
 
     binary_operators : list[str], default=["+", "-", "*", "/"]
         List of strings giving the binary operators in Julia's Base.
@@ -469,7 +475,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Whether to use a progress bar instead of printing to stdout.
 
     equation_file : str, default=None
-        Where to save the files (with `.csv` extension).
+        Where to save the files (.csv extension).
 
     temp_equation_file : bool, default=False
         Whether to put the hall of fame file in the temp directory.
@@ -943,12 +949,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         for i, equations in enumerate(all_equations):
             selected = ["" for _ in range(len(equations))]
-            if self.model_selection == "accuracy":
-                chosen_row = -1
-            elif self.model_selection == "best":
-                chosen_row = equations["score"].idxmax()
-            else:
-                raise NotImplementedError
+            chosen_row = idx_model_selection(equations, self.model_selection)
             selected[chosen_row] = ">>>>"
             repr_equations = pd.DataFrame(
                 dict(
@@ -1091,18 +1092,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 return [eq.iloc[i] for eq, i in zip(self.equations_, index)]
             return self.equations_.iloc[index]
 
-        if self.model_selection == "accuracy":
-            if isinstance(self.equations_, list):
-                return [eq.iloc[-1] for eq in self.equations_]
-            return self.equations_.iloc[-1]
-        elif self.model_selection == "best":
-            if isinstance(self.equations_, list):
-                return [eq.iloc[eq["score"].idxmax()] for eq in self.equations_]
-            return self.equations_.iloc[self.equations_["score"].idxmax()]
-        else:
-            raise NotImplementedError(
-                f"{self.model_selection} is not a valid model selection strategy."
-            )
+        if isinstance(self.equations_, list):
+            return [
+                eq.iloc[idx_model_selection(eq, self.model_selection)]
+                for eq in self.equations_
+            ]
+        return self.equations_.iloc[
+            idx_model_selection(self.equations_, self.model_selection)
+        ]
 
     def _setup_equation_file(self):
         """
@@ -2147,6 +2144,26 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if self.nout_ > 1:
             return ret_outputs
         return ret_outputs[0]
+
+
+def idx_model_selection(equations: pd.DataFrame, model_selection: str) -> int:
+    """
+    Return the index of the selected expression, given a dataframe of
+    equations and a model selection.
+    """
+    if model_selection == "accuracy":
+        chosen_idx = equations["loss"].idxmin()
+    elif model_selection == "best":
+        threshold = 1.5 * equations["loss"].min()
+        filtered_equations = equations.query(f"loss < {threshold}")
+        chosen_idx = filtered_equations["score"].idxmax()
+    elif model_selection == "score":
+        chosen_idx = equations["score"].idxmax()
+    else:
+        raise NotImplementedError(
+            f"{model_selection} is not a valid model selection strategy."
+        )
+    return chosen_idx
 
 
 def _denoise(X, y, Xresampled=None, random_state=None):
