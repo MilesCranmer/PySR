@@ -49,7 +49,7 @@ class TestJAX(unittest.TestCase):
         np.testing.assert_almost_equal(
             np.array(jformat["callable"](jnp.array(X), jformat["parameters"])),
             np.square(np.cos(X.values[:, 1])),  # Select feature 1
-            decimal=4,
+            decimal=3,
         )
 
     def test_pipeline(self):
@@ -110,5 +110,5 @@ class TestJAX(unittest.TestCase):
         np_output = np_prediction(X.values)
         jax_output = jax_prediction(X.values)
 
-        np.testing.assert_almost_equal(y.values, np_output, decimal=4)
-        np.testing.assert_almost_equal(y.values, jax_output, decimal=4)
+        np.testing.assert_almost_equal(y.values, np_output, decimal=3)
+        np.testing.assert_almost_equal(y.values, jax_output, decimal=3)
