@@ -469,7 +469,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Whether to use a progress bar instead of printing to stdout.
 
     equation_file : str, default=None
-        Where to save the files (.csv separated by |).
+        Where to save the files (with `.csv` extension).
 
     temp_equation_file : bool, default=False
         Whether to put the hall of fame file in the temp directory.
@@ -1969,12 +1969,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     cur_filename = str(self.equation_file_) + f".out{i}" + ".bkup"
                     if not os.path.exists(cur_filename):
                         cur_filename = str(self.equation_file_) + f".out{i}"
-                    df = pd.read_csv(cur_filename, sep="|")
+                    df = pd.read_csv(cur_filename)
                     # Rename Complexity column to complexity:
                     df.rename(
                         columns={
                             "Complexity": "complexity",
-                            "MSE": "loss",
+                            "Loss": "loss",
                             "Equation": "equation",
                         },
                         inplace=True,
@@ -1985,11 +1985,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 filename = str(self.equation_file_) + ".bkup"
                 if not os.path.exists(filename):
                     filename = str(self.equation_file_)
-                all_outputs = [pd.read_csv(filename, sep="|")]
+                all_outputs = [pd.read_csv(filename)]
                 all_outputs[-1].rename(
                     columns={
                         "Complexity": "complexity",
-                        "MSE": "loss",
+                        "Loss": "loss",
                         "Equation": "equation",
                     },
                     inplace=True,
