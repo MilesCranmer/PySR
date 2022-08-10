@@ -612,7 +612,6 @@ TRUE_PREAMBLE = "\n".join(
     [
         r"\usepackage{breqn}",
         r"\usepackage{booktabs}",
-        r"\usepackage{tabularx}",
         "",
         "...",
         "",

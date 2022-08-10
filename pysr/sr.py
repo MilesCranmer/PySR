@@ -2203,7 +2203,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         preamble_string = [
             r"\usepackage{breqn}",
             r"\usepackage{booktabs}",
-            r"\usepackage{tabularx}",
             "",
             "...",
             "",
