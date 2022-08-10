@@ -49,13 +49,13 @@ class TestTorch(unittest.TestCase):
         equations = pd.DataFrame(
             {
                 "Equation": ["1.0", "cos(x1)", "square(cos(x1))"],
-                "MSE": [1.0, 0.1, 1e-5],
+                "Loss": [1.0, 0.1, 1e-5],
                 "Complexity": [1, 2, 3],
             }
         )
 
-        equations["Complexity MSE Equation".split(" ")].to_csv(
-            "equation_file.csv.bkup", sep="|"
+        equations["Complexity Loss Equation".split(" ")].to_csv(
+            "equation_file.csv.bkup"
         )
 
         model.refresh(checkpoint_file="equation_file.csv")
@@ -82,13 +82,13 @@ class TestTorch(unittest.TestCase):
         equations = pd.DataFrame(
             {
                 "Equation": ["1.0", "cos(x1)", "square(cos(x1))"],
-                "MSE": [1.0, 0.1, 1e-5],
+                "Loss": [1.0, 0.1, 1e-5],
                 "Complexity": [1, 2, 3],
             }
         )
 
-        equations["Complexity MSE Equation".split(" ")].to_csv(
-            "equation_file.csv.bkup", sep="|"
+        equations["Complexity Loss Equation".split(" ")].to_csv(
+            "equation_file.csv.bkup"
         )
 
         model.refresh(checkpoint_file="equation_file.csv")
@@ -133,13 +133,13 @@ class TestTorch(unittest.TestCase):
         equations = pd.DataFrame(
             {
                 "Equation": ["1.0", "mycustomoperator(x1)"],
-                "MSE": [1.0, 0.1],
+                "Loss": [1.0, 0.1],
                 "Complexity": [1, 2],
             }
         )
 
-        equations["Complexity MSE Equation".split(" ")].to_csv(
-            "equation_file_custom_operator.csv.bkup", sep="|"
+        equations["Complexity Loss Equation".split(" ")].to_csv(
+            "equation_file_custom_operator.csv.bkup"
         )
 
         model.set_params(

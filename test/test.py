@@ -5,7 +5,12 @@ import unittest
 import numpy as np
 from sklearn import model_selection
 from pysr import PySRRegressor
-from pysr.sr import run_feature_selection, _handle_feature_selection
+from pysr.sr import (
+    run_feature_selection,
+    _handle_feature_selection,
+    _csv_filename_to_pkl_filename,
+    idx_model_selection,
+)
 from pysr.export_latex import to_latex
 from sklearn.utils.estimator_checks import check_estimator
 import sympy
@@ -13,6 +18,7 @@ import pandas as pd
 import warnings
 import pickle as pkl
 import tempfile
+from pathlib import Path
 
 DEFAULT_PARAMS = inspect.signature(PySRRegressor.__init__).parameters
 DEFAULT_NITERATIONS = DEFAULT_PARAMS["niterations"].default
@@ -136,7 +142,7 @@ class TestPipeline(unittest.TestCase):
         # These tests are flaky, so don't fail test:
         try:
             np.testing.assert_almost_equal(
-                model.predict(X.copy())[:, 0], X[:, 0] ** 2, decimal=4
+                model.predict(X.copy())[:, 0], X[:, 0] ** 2, decimal=3
             )
         except AssertionError:
             print("Error in test_multioutput_weighted_with_callable_temp_equation")
@@ -145,7 +151,7 @@ class TestPipeline(unittest.TestCase):
 
         try:
             np.testing.assert_almost_equal(
-                model.predict(X.copy())[:, 1], X[:, 1] ** 2, decimal=4
+                model.predict(X.copy())[:, 1], X[:, 1] ** 2, decimal=3
             )
         except AssertionError:
             print("Error in test_multioutput_weighted_with_callable_temp_equation")
@@ -281,6 +287,72 @@ class TestPipeline(unittest.TestCase):
         model.fit(X.values, y.values, Xresampled=Xresampled.values)
         self.assertLess(np.average((model.predict(X.values) - y.values) ** 2), 1e-4)
 
+    def test_load_model(self):
+        """See if we can load a ran model from the equation file."""
+        csv_file_data = """
+        Complexity,Loss,Equation
+        1,0.19951081,"1.9762075"
+        3,0.12717344,"(f0 + 1.4724599)"
+        4,0.104823045,"pow_abs(2.2683423, cos(f3))\""""
+        # Strip the indents:
+        csv_file_data = "\n".join([l.strip() for l in csv_file_data.split("\n")])
+
+        for from_backup in [False, True]:
+            rand_dir = Path(tempfile.mkdtemp())
+            equation_filename = str(rand_dir / "equation.csv")
+            with open(equation_filename + (".bkup" if from_backup else ""), "w") as f:
+                f.write(csv_file_data)
+            model = PySRRegressor.from_file(
+                equation_filename,
+                n_features_in=5,
+                feature_names_in=["f0", "f1", "f2", "f3", "f4"],
+                binary_operators=["+", "*", "/", "-", "^"],
+                unary_operators=["cos"],
+            )
+            X = self.rstate.rand(100, 5)
+            y_truth = 2.2683423 ** np.cos(X[:, 3])
+            y_test = model.predict(X, 2)
+
+            np.testing.assert_allclose(y_truth, y_test)
+
+    def test_load_model_simple(self):
+        # Test that we can simply load a model from its equation file.
+        y = self.X[:, [0, 1]] ** 2
+        model = PySRRegressor(
+            # Test that passing a single operator works:
+            unary_operators="sq(x) = x^2",
+            binary_operators="plus",
+            extra_sympy_mappings={"sq": lambda x: x**2},
+            **self.default_test_kwargs,
+            procs=0,
+            denoise=True,
+            early_stop_condition="stop_if(loss, complexity) = loss < 0.05 && complexity == 2",
+        )
+        rand_dir = Path(tempfile.mkdtemp())
+        equation_file = rand_dir / "equations.csv"
+        model.set_params(temp_equation_file=False)
+        model.set_params(equation_file=equation_file)
+        model.fit(self.X, y)
+
+        # lambda functions are removed from the pickling, so we need
+        # to pass it during the loading:
+        model2 = PySRRegressor.from_file(
+            model.equation_file_, extra_sympy_mappings={"sq": lambda x: x**2}
+        )
+
+        np.testing.assert_allclose(model.predict(self.X), model2.predict(self.X))
+
+        # Try again, but using only the pickle file:
+        for file_to_delete in [str(equation_file), str(equation_file) + ".bkup"]:
+            if os.path.exists(file_to_delete):
+                os.remove(file_to_delete)
+
+        pickle_file = rand_dir / "equations.pkl"
+        model3 = PySRRegressor.from_file(
+            model.equation_file_, extra_sympy_mappings={"sq": lambda x: x**2}
+        )
+        np.testing.assert_allclose(model.predict(self.X), model3.predict(self.X))
+
 
 def manually_create_model(equations, feature_names=None):
     if feature_names is None:
@@ -304,7 +376,7 @@ def manually_create_model(equations, feature_names=None):
         model.feature_names_in_ = np.array(feature_names, dtype=object)
         for i in range(model.nout_):
             equations[i]["complexity loss equation".split(" ")].to_csv(
-                f"equation_file.csv.out{i+1}.bkup", sep="|"
+                f"equation_file.csv.out{i+1}.bkup"
             )
     else:
         model.equation_file_ = "equation_file.csv"
@@ -312,7 +384,7 @@ def manually_create_model(equations, feature_names=None):
         model.selection_mask_ = None
         model.feature_names_in_ = np.array(feature_names, dtype=object)
         equations["complexity loss equation".split(" ")].to_csv(
-            "equation_file.csv.bkup", sep="|"
+            "equation_file.csv.bkup"
         )
 
     model.refresh()
@@ -351,7 +423,21 @@ class TestBest(unittest.TestCase):
         X = self.X
         y = self.y
         for f in [self.model.predict, self.equations_.iloc[-1]["lambda_format"]]:
-            np.testing.assert_almost_equal(f(X), y, decimal=4)
+            np.testing.assert_almost_equal(f(X), y, decimal=3)
+
+    def test_all_selection_strategies(self):
+        equations = pd.DataFrame(
+            dict(
+                loss=[1.0, 0.1, 0.01, 0.001 * 1.4, 0.001],
+                score=[0.5, 1.0, 0.5, 0.5, 0.3],
+            )
+        )
+        idx_accuracy = idx_model_selection(equations, "accuracy")
+        self.assertEqual(idx_accuracy, 4)
+        idx_best = idx_model_selection(equations, "best")
+        self.assertEqual(idx_best, 3)
+        idx_score = idx_model_selection(equations, "score")
+        self.assertEqual(idx_score, 1)
 
 
 class TestFeatureSelection(unittest.TestCase):
@@ -384,6 +470,20 @@ class TestFeatureSelection(unittest.TestCase):
 
 class TestMiscellaneous(unittest.TestCase):
     """Test miscellaneous functions."""
+
+    def test_csv_to_pkl_conversion(self):
+        """Test that csv filename to pkl filename works as expected."""
+        tmpdir = Path(tempfile.mkdtemp())
+        equation_file = tmpdir / "equations.389479384.28378374.csv"
+        expected_pkl_file = tmpdir / "equations.389479384.28378374.pkl"
+
+        # First, test inputting the paths:
+        test_pkl_file = _csv_filename_to_pkl_filename(equation_file)
+        self.assertEqual(test_pkl_file, str(expected_pkl_file))
+
+        # Next, test inputting the strings.
+        test_pkl_file = _csv_filename_to_pkl_filename(str(equation_file))
+        self.assertEqual(test_pkl_file, str(expected_pkl_file))
 
     def test_deprecation(self):
         """Ensure that deprecation works as expected.

@@ -1,14 +1,23 @@
 [//]: # (Logo:)
 
-<img src="https://raw.githubusercontent.com/MilesCranmer/PySR/master/docs/images/pysr_logo.svg" width="400" />
+<div align="center">
 
+<img src="https://raw.githubusercontent.com/MilesCranmer/PySR/master/docs/images/pysr_logo.svg" width="200" />
+    
 # PySR: High-Performance Symbolic Regression in Python
 
+</div>
+
+
 PySR is built on an extremely optimized pure-Julia backend, and uses regularized evolution, simulated annealing, and gradient-free optimization to search for equations that fit your data.
+
+<div align="center">
 
 | **Docs** | **colab** | **pip** | **conda** | **Stats** |
 |---|---|---|---|---|
 |[![Documentation](https://github.com/MilesCranmer/PySR/actions/workflows/docs.yml/badge.svg)](https://astroautomata.com/PySR/)|[![Colab](https://img.shields.io/badge/colab-notebook-yellow)](https://colab.research.google.com/github/MilesCranmer/PySR/blob/master/examples/pysr_demo.ipynb)|[![PyPI version](https://badge.fury.io/py/pysr.svg)](https://badge.fury.io/py/pysr)|[![Conda Version](https://img.shields.io/conda/vn/conda-forge/pysr.svg)](https://anaconda.org/conda-forge/pysr)|[![Downloads](https://pepy.tech/badge/pysr)](https://badge.fury.io/py/pysr)|
+
+</div>
 
 
 (pronounced like *py* as in python, and then *sur* as in surface)
@@ -17,13 +26,18 @@ If you find PySR useful, please cite it using the citation information given in 
 If you've finished a project with PySR, please submit a PR to showcase your work on the [Research Showcase page](https://astroautomata.com/PySR/#/papers)!
 
 
-### Test status:
+<div align="center">
+
+### Test status
+
 | **Linux** | **Windows** | **macOS (intel)** |
 |---|---|---|
 |[![Linux](https://github.com/MilesCranmer/PySR/actions/workflows/CI.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI.yml)|[![Windows](https://github.com/MilesCranmer/PySR/actions/workflows/CI_Windows.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_Windows.yml)|[![macOS](https://github.com/MilesCranmer/PySR/actions/workflows/CI_mac.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_mac.yml)|
 | **Docker** | **Conda** | **Coverage** | 
 |[![Docker](https://github.com/MilesCranmer/PySR/actions/workflows/CI_docker.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_docker.yml)|[![conda-forge](https://github.com/MilesCranmer/PySR/actions/workflows/CI_conda_forge.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_conda_forge.yml)|[![Coverage Status](https://coveralls.io/repos/github/MilesCranmer/PySR/badge.svg?branch=master&service=github)](https://coveralls.io/github/MilesCranmer/PySR)|
 
+
+</div>
 
 Check out [SymbolicRegression.jl](https://github.com/MilesCranmer/SymbolicRegression.jl) for
 the pure-Julia backend of this package.
@@ -58,9 +72,13 @@ python interface.
 
 # Installation
 
+<div align="center">
+
 | pip (macOS, Linux, Windows) | conda (macOS - only Intel, Linux) |
 |---|---|
 | 1. Install Julia manually (see [downloads](https://julialang.org/downloads/))<br>2. `pip install pysr`<br>3. `python -c 'import pysr; pysr.install()'` | 1. `conda install -c conda-forge pysr`<br>2. `python -c 'import pysr; pysr.install()'`|
+
+</div>
 
 This last step will install and update the required Julia packages, including
 `PyCall.jl`.
@@ -144,7 +162,15 @@ This arrow in the `pick` column indicates which equation is currently selected b
 SymPy format (`sympy_format` - which you can also get with `model.sympy()`), and even JAX and PyTorch format 
 (both of which are differentiable - which you can get with `model.jax()` and `model.pytorch()`).
 
-Note that `PySRRegressor` stores the state of the last search, and will restart from where you left off the next time you call `.fit()`. This will cause problems if significant changes are made to the search parameters (like changing the operators). You can run `model.reset()` to reset the state.
+Note that `PySRRegressor` stores the state of the last search, and will restart from where you left off the next time you call `.fit()`, assuming you have set `warm_start=True`.
+This will cause problems if significant changes are made to the search parameters (like changing the operators). You can run `model.reset()` to reset the state.
+
+You will notice that PySR will save two files: `hall_of_fame...csv` and `hall_of_fame...pkl`.
+The csv file is a list of equations and their losses, and the pkl file is a saved state of the model.
+You may load the model from the `pkl` file with:
+```python
+model = PySRRegressor.from_file("hall_of_fame.2022-08-10_100832.281.pkl")
+``` 
 
 There are several other useful features such as denoising (e.g., `denoising=True`),
 feature selection (e.g., `select_k_features=3`).

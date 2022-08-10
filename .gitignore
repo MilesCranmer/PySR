@@ -3,6 +3,7 @@
 *.csv
 *.csv.out*
 *.bkup
+*.pkl
 performance*txt
 *.out
 trials*

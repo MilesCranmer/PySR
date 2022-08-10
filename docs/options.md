@@ -16,6 +16,7 @@ may find useful include:
 - LaTeX, SymPy
 - Callable exports: numpy, pytorch, jax
 - `loss`
+- Model loading
 
 These are described below
 
@@ -252,3 +253,20 @@ Can also uses these losses for weighted (weighted-average):
 model = PySRRegressor(..., weights=weights, loss="LPDistLoss{3}()")
 model.fit(..., weights=weights)
 ```
+
+## Model loading
+
+PySR will automatically save a pickle file of the model state
+when you call `model.fit`, once before the search starts,
+and again after the search finishes. The filename will
+have the same base name as the input file, but with a `.pkl` extension.
+You can load the saved model state with:
+```python
+model = PySRRegressor.from_file(pickle_filename)
+```
+If you have a long-running job and would like to load the model
+before completion, you can also do this. In this case, the model
+loading will use the `csv` file to load the equations, since the
+`csv` file is continually updated during the search. Once
+the search completes, the model including its equations will
+be saved to the pickle file, overwriting the existing version.
