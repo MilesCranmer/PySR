@@ -9,6 +9,7 @@ from pysr.sr import (
     run_feature_selection,
     _handle_feature_selection,
     _csv_filename_to_pkl_filename,
+    idx_model_selection,
 )
 from sklearn.utils.estimator_checks import check_estimator
 import sympy
@@ -402,6 +403,20 @@ class TestBest(unittest.TestCase):
         y = self.y
         for f in [self.model.predict, self.equations_.iloc[-1]["lambda_format"]]:
             np.testing.assert_almost_equal(f(X), y, decimal=3)
+
+    def test_all_selection_strategies(self):
+        equations = pd.DataFrame(
+            dict(
+                loss=[1.0, 0.1, 0.01, 0.001 * 1.4, 0.001],
+                score=[0.5, 1.0, 0.5, 0.5, 0.3],
+            )
+        )
+        idx_accuracy = idx_model_selection(equations, "accuracy")
+        self.assertEqual(idx_accuracy, 4)
+        idx_best = idx_model_selection(equations, "best")
+        self.assertEqual(idx_best, 3)
+        idx_score = idx_model_selection(equations, "score")
+        self.assertEqual(idx_score, 1)
 
 
 class TestFeatureSelection(unittest.TestCase):
