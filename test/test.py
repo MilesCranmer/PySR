@@ -11,6 +11,7 @@ from pysr.sr import (
     _csv_filename_to_pkl_filename,
     idx_model_selection,
 )
+from pysr.export_latex import to_latex
 from sklearn.utils.estimator_checks import check_estimator
 import sympy
 import pandas as pd
@@ -353,19 +354,49 @@ class TestPipeline(unittest.TestCase):
         np.testing.assert_allclose(model.predict(self.X), model3.predict(self.X))
 
 
+def manually_create_model(equations, feature_names=None):
+    if feature_names is None:
+        feature_names = ["x0", "x1"]
+
+    model = PySRRegressor(
+        progress=False,
+        niterations=1,
+        extra_sympy_mappings={},
+        output_jax_format=False,
+        model_selection="accuracy",
+        equation_file="equation_file.csv",
+    )
+
+    # Set up internal parameters as if it had been fitted:
+    if isinstance(equations, list):
+        # Multi-output.
+        model.equation_file_ = "equation_file.csv"
+        model.nout_ = len(equations)
+        model.selection_mask_ = None
+        model.feature_names_in_ = np.array(feature_names, dtype=object)
+        for i in range(model.nout_):
+            equations[i]["complexity loss equation".split(" ")].to_csv(
+                f"equation_file.csv.out{i+1}.bkup"
+            )
+    else:
+        model.equation_file_ = "equation_file.csv"
+        model.nout_ = 1
+        model.selection_mask_ = None
+        model.feature_names_in_ = np.array(feature_names, dtype=object)
+        equations["complexity loss equation".split(" ")].to_csv(
+            "equation_file.csv.bkup"
+        )
+
+    model.refresh()
+
+    return model
+
+
 class TestBest(unittest.TestCase):
     def setUp(self):
         self.rstate = np.random.RandomState(0)
         self.X = self.rstate.randn(10, 2)
         self.y = np.cos(self.X[:, 0]) ** 2
-        self.model = PySRRegressor(
-            progress=False,
-            niterations=1,
-            extra_sympy_mappings={},
-            output_jax_format=False,
-            model_selection="accuracy",
-            equation_file="equation_file.csv",
-        )
         equations = pd.DataFrame(
             {
                 "equation": ["1.0", "cos(x0)", "square(cos(x0))"],
@@ -373,17 +404,7 @@ class TestBest(unittest.TestCase):
                 "complexity": [1, 2, 3],
             }
         )
-
-        # Set up internal parameters as if it had been fitted:
-        self.model.equation_file_ = "equation_file.csv"
-        self.model.nout_ = 1
-        self.model.selection_mask_ = None
-        self.model.feature_names_in_ = np.array(["x0", "x1"], dtype=object)
-        equations["complexity loss equation".split(" ")].to_csv(
-            "equation_file.csv.bkup"
-        )
-
-        self.model.refresh()
+        self.model = manually_create_model(equations)
         self.equations_ = self.model.equations_
 
     def test_best(self):
@@ -585,3 +606,197 @@ class TestMiscellaneous(unittest.TestCase):
                 print("\n".join([(" " * 4) + row for row in error_message.split("\n")]))
         # If any checks failed don't let the test pass.
         self.assertEqual(len(exception_messages), 0)
+
+
+TRUE_PREAMBLE = "\n".join(
+    [
+        r"\usepackage{breqn}",
+        r"\usepackage{booktabs}",
+        "",
+        "...",
+        "",
+    ]
+)
+
+
+class TestLaTeXTable(unittest.TestCase):
+    def setUp(self):
+        equations = pd.DataFrame(
+            dict(
+                equation=["x0", "cos(x0)", "x0 + x1 - cos(x1 * x0)"],
+                loss=[1.052, 0.02315, 1.12347e-15],
+                complexity=[1, 2, 8],
+            )
+        )
+        self.model = manually_create_model(equations)
+        self.maxDiff = None
+
+    def create_true_latex(self, middle_part, include_score=False):
+        if include_score:
+            true_latex_table_str = r"""
+                \begin{table}[h]
+                \begin{center}
+                \begin{tabular}{@{}cccc@{}}
+                \toprule
+                Equation & Complexity & Loss & Score \\
+                \midrule"""
+        else:
+            true_latex_table_str = r"""
+                \begin{table}[h]
+                \begin{center}
+                \begin{tabular}{@{}ccc@{}}
+                \toprule
+                Equation & Complexity & Loss \\
+                \midrule"""
+        true_latex_table_str += middle_part
+        true_latex_table_str += r"""\bottomrule
+            \end{tabular}
+            \end{center}
+            \end{table}
+        """
+        # First, remove empty lines:
+        true_latex_table_str = "\n".join(
+            [line.strip() for line in true_latex_table_str.split("\n") if len(line) > 0]
+        )
+        return true_latex_table_str.strip()
+
+    def test_simple_table(self):
+        latex_table_str = self.model.latex_table(
+            columns=["equation", "complexity", "loss"]
+        )
+        middle_part = r"""
+            $y = x_{0}$ & $1$ & $1.05$ \\
+            $y = \cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ \\
+            $y = x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.12 \cdot 10^{-15}$ \\
+        """
+        true_latex_table_str = (
+            TRUE_PREAMBLE + "\n" + self.create_true_latex(middle_part)
+        )
+        self.assertEqual(latex_table_str, true_latex_table_str)
+
+    def test_other_precision(self):
+        latex_table_str = self.model.latex_table(
+            precision=5, columns=["equation", "complexity", "loss"]
+        )
+        middle_part = r"""
+            $y = x_{0}$ & $1$ & $1.0520$ \\
+            $y = \cos{\left(x_{0} \right)}$ & $2$ & $0.023150$ \\
+            $y = x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.1235 \cdot 10^{-15}$ \\
+        """
+        true_latex_table_str = (
+            TRUE_PREAMBLE + "\n" + self.create_true_latex(middle_part)
+        )
+        self.assertEqual(latex_table_str, true_latex_table_str)
+
+    def test_include_score(self):
+        latex_table_str = self.model.latex_table()
+        middle_part = r"""
+            $y = x_{0}$ & $1$ & $1.05$ & $0.0$ \\
+            $y = \cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ & $3.82$ \\
+            $y = x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.12 \cdot 10^{-15}$ & $5.11$ \\
+        """
+        true_latex_table_str = (
+            TRUE_PREAMBLE
+            + "\n"
+            + self.create_true_latex(middle_part, include_score=True)
+        )
+        self.assertEqual(latex_table_str, true_latex_table_str)
+
+    def test_last_equation(self):
+        latex_table_str = self.model.latex_table(
+            indices=[2], columns=["equation", "complexity", "loss"]
+        )
+        middle_part = r"""
+            $y = x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.12 \cdot 10^{-15}$ \\
+        """
+        true_latex_table_str = (
+            TRUE_PREAMBLE + "\n" + self.create_true_latex(middle_part)
+        )
+        self.assertEqual(latex_table_str, true_latex_table_str)
+
+    def test_multi_output(self):
+        equations1 = pd.DataFrame(
+            dict(
+                equation=["x0", "cos(x0)", "x0 + x1 - cos(x1 * x0)"],
+                loss=[1.052, 0.02315, 1.12347e-15],
+                complexity=[1, 2, 8],
+            )
+        )
+        equations2 = pd.DataFrame(
+            dict(
+                equation=["x1", "cos(x1)", "x0 * x0 * x1"],
+                loss=[1.32, 0.052, 2e-15],
+                complexity=[1, 2, 5],
+            )
+        )
+        equations = [equations1, equations2]
+        model = manually_create_model(equations)
+        middle_part_1 = r"""
+            $y_{0} = x_{0}$ & $1$ & $1.05$ & $0.0$ \\
+            $y_{0} = \cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ & $3.82$ \\
+            $y_{0} = x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.12 \cdot 10^{-15}$ & $5.11$ \\
+        """
+        middle_part_2 = r"""
+            $y_{1} = x_{1}$ & $1$ & $1.32$ & $0.0$ \\
+            $y_{1} = \cos{\left(x_{1} \right)}$ & $2$ & $0.0520$ & $3.23$ \\
+            $y_{1} = x_{0}^{2} x_{1}$ & $5$ & $2.00 \cdot 10^{-15}$ & $10.3$ \\
+        """
+        true_latex_table_str = "\n\n".join(
+            self.create_true_latex(part, include_score=True)
+            for part in [middle_part_1, middle_part_2]
+        )
+        true_latex_table_str = TRUE_PREAMBLE + "\n" + true_latex_table_str
+        latex_table_str = model.latex_table()
+
+        self.assertEqual(latex_table_str, true_latex_table_str)
+
+    def test_latex_float_precision(self):
+        """Test that we can print latex expressions with custom precision"""
+        expr = sympy.Float(4583.4485748, dps=50)
+        self.assertEqual(to_latex(expr, prec=6), r"4583.45")
+        self.assertEqual(to_latex(expr, prec=5), r"4583.4")
+        self.assertEqual(to_latex(expr, prec=4), r"4583.")
+        self.assertEqual(to_latex(expr, prec=3), r"4.58 \cdot 10^{3}")
+        self.assertEqual(to_latex(expr, prec=2), r"4.6 \cdot 10^{3}")
+
+        # Multiple numbers:
+        x = sympy.Symbol("x")
+        expr = x * 3232.324857384 - 1.4857485e-10
+        self.assertEqual(
+            to_latex(expr, prec=2), "3.2 \cdot 10^{3} x - 1.5 \cdot 10^{-10}"
+        )
+        self.assertEqual(
+            to_latex(expr, prec=3), "3.23 \cdot 10^{3} x - 1.49 \cdot 10^{-10}"
+        )
+        self.assertEqual(
+            to_latex(expr, prec=8), "3232.3249 x - 1.4857485 \cdot 10^{-10}"
+        )
+
+    def test_latex_break_long_equation(self):
+        """Test that we can break a long equation inside the table"""
+        long_equation = """
+        - cos(x1 * x0) + 3.2 * x0 - 1.2 * x1 + x1 * x1 * x1 + x0 * x0 * x0
+        + 5.2 * sin(0.3256 * sin(x2) - 2.6 * x0) + x0 * x0 * x0 * x0 * x0
+        + cos(cos(x1 * x0) + 3.2 * x0 - 1.2 * x1 + x1 * x1 * x1 + x0 * x0 * x0)
+        """
+        long_equation = "".join(long_equation.split("\n")).strip()
+        equations = pd.DataFrame(
+            dict(
+                equation=["x0", "cos(x0)", long_equation],
+                loss=[1.052, 0.02315, 1.12347e-15],
+                complexity=[1, 2, 30],
+            )
+        )
+        model = manually_create_model(equations)
+        latex_table_str = model.latex_table()
+        middle_part = r"""
+        $y = x_{0}$ & $1$ & $1.05$ & $0.0$ \\
+        $y = \cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ & $3.82$ \\
+        \begin{minipage}{0.8\linewidth} \vspace{-1em} \begin{dmath*} y = x_{0}^{5} + x_{0}^{3} + 3.20 x_{0} + x_{1}^{3} - 1.20 x_{1} - 5.20 \sin{\left(2.60 x_{0} - 0.326 \sin{\left(x_{2} \right)} \right)} - \cos{\left(x_{0} x_{1} \right)} + \cos{\left(x_{0}^{3} + 3.20 x_{0} + x_{1}^{3} - 1.20 x_{1} + \cos{\left(x_{0} x_{1} \right)} \right)} \end{dmath*} \end{minipage} & $30$ & $1.12 \cdot 10^{-15}$ & $1.09$ \\
+        """
+        true_latex_table_str = (
+            TRUE_PREAMBLE
+            + "\n"
+            + self.create_true_latex(middle_part, include_score=True)
+        )
+        self.assertEqual(latex_table_str, true_latex_table_str)

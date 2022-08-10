@@ -29,6 +29,7 @@ from .julia_helpers import (
     import_error_string,
 )
 from .export_numpy import CallableEquation
+from .export_latex import generate_single_table, generate_multiple_tables, to_latex
 from .deprecated import make_deprecated_kwargs_for_pysr_regressor
 
 
@@ -1875,7 +1876,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             return [eq["sympy_format"] for eq in best_equation]
         return best_equation["sympy_format"]
 
-    def latex(self, index=None):
+    def latex(self, index=None, precision=3):
         """
         Return latex representation of the equation(s) chosen by `model_selection`.
 
@@ -1887,6 +1888,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             the `model_selection` parameter. If there are multiple output
             features, then pass a list of indices with the order the same
             as the output feature.
+        precision : int, default=3
+            The number of significant figures shown in the LaTeX
+            representation.
 
         Returns
         -------
@@ -1896,8 +1900,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.refresh()
         sympy_representation = self.sympy(index=index)
         if self.nout_ > 1:
-            return [sympy.latex(s) for s in sympy_representation]
-        return sympy.latex(sympy_representation)
+            output = []
+            for s in sympy_representation:
+                latex = to_latex(s, prec=precision)
+                output.append(latex)
+            return output
+        return to_latex(sympy_representation, prec=precision)
 
     def jax(self, index=None):
         """
@@ -2146,6 +2154,60 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if self.nout_ > 1:
             return ret_outputs
         return ret_outputs[0]
+
+    def latex_table(
+        self,
+        indices=None,
+        precision=3,
+        columns=["equation", "complexity", "loss", "score"],
+    ):
+        """Create a LaTeX/booktabs table for all, or some, of the equations.
+
+        Parameters
+        ----------
+        indices : list[int] | list[list[int]], default=None
+            If you wish to select a particular subset of equations from
+            `self.equations_`, give the row numbers here. By default,
+            all equations will be used. If there are multiple output
+            features, then pass a list of lists.
+        precision : int, default=3
+            The number of significant figures shown in the LaTeX
+            representations.
+        columns : list[str], default=["equation", "complexity", "loss", "score"]
+            Which columns to include in the table.
+
+        Returns
+        -------
+        latex_table_str : str
+            A string that will render a table in LaTeX of the equations.
+        """
+        self.refresh()
+
+        if self.nout_ > 1:
+            if indices is not None:
+                assert isinstance(indices, list)
+                assert isinstance(indices[0], list)
+                assert isinstance(len(indices), self.nout_)
+
+            generator_fnc = generate_multiple_tables
+        else:
+            if indices is not None:
+                assert isinstance(indices, list)
+                assert isinstance(indices[0], int)
+
+            generator_fnc = generate_single_table
+
+        table_string = generator_fnc(
+            self.equations_, indices=indices, precision=precision, columns=columns
+        )
+        preamble_string = [
+            r"\usepackage{breqn}",
+            r"\usepackage{booktabs}",
+            "",
+            "...",
+            "",
+        ]
+        return "\n".join(preamble_string + [table_string])
 
 
 def idx_model_selection(equations: pd.DataFrame, model_selection: str) -> int:
