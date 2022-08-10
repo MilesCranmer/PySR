@@ -608,6 +608,18 @@ class TestMiscellaneous(unittest.TestCase):
         self.assertEqual(len(exception_messages), 0)
 
 
+TRUE_PREAMBLE = "\n".join(
+    [
+        r"\usepackage{breqn}",
+        r"\usepackage{booktabs}",
+        r"\usepackage{tabularx}",
+        "",
+        "...",
+        "",
+    ]
+)
+
+
 class TestLaTeXTable(unittest.TestCase):
     def setUp(self):
         equations = pd.DataFrame(
@@ -618,6 +630,7 @@ class TestLaTeXTable(unittest.TestCase):
             )
         )
         self.model = manually_create_model(equations)
+        self.maxDiff = None
 
     def create_true_latex(self, middle_part, include_score=False):
         if include_score:
@@ -657,7 +670,9 @@ class TestLaTeXTable(unittest.TestCase):
             $y = \cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ \\
             $y = x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.12 \cdot 10^{-15}$ \\
         """
-        true_latex_table_str = self.create_true_latex(middle_part)
+        true_latex_table_str = (
+            TRUE_PREAMBLE + "\n" + self.create_true_latex(middle_part)
+        )
         self.assertEqual(latex_table_str, true_latex_table_str)
 
     def test_other_precision(self):
@@ -669,7 +684,9 @@ class TestLaTeXTable(unittest.TestCase):
             $y = \cos{\left(x_{0} \right)}$ & $2$ & $0.023150$ \\
             $y = x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.1235 \cdot 10^{-15}$ \\
         """
-        true_latex_table_str = self.create_true_latex(middle_part)
+        true_latex_table_str = (
+            TRUE_PREAMBLE + "\n" + self.create_true_latex(middle_part)
+        )
         self.assertEqual(latex_table_str, true_latex_table_str)
 
     def test_include_score(self):
@@ -679,7 +696,11 @@ class TestLaTeXTable(unittest.TestCase):
             $y = \cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ & $3.82$ \\
             $y = x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.12 \cdot 10^{-15}$ & $5.11$ \\
         """
-        true_latex_table_str = self.create_true_latex(middle_part, include_score=True)
+        true_latex_table_str = (
+            TRUE_PREAMBLE
+            + "\n"
+            + self.create_true_latex(middle_part, include_score=True)
+        )
         self.assertEqual(latex_table_str, true_latex_table_str)
 
     def test_last_equation(self):
@@ -689,7 +710,9 @@ class TestLaTeXTable(unittest.TestCase):
         middle_part = r"""
             $y = x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.12 \cdot 10^{-15}$ \\
         """
-        true_latex_table_str = self.create_true_latex(middle_part)
+        true_latex_table_str = (
+            TRUE_PREAMBLE + "\n" + self.create_true_latex(middle_part)
+        )
         self.assertEqual(latex_table_str, true_latex_table_str)
 
     def test_multi_output(self):
@@ -723,6 +746,7 @@ class TestLaTeXTable(unittest.TestCase):
             self.create_true_latex(part, include_score=True)
             for part in [middle_part_1, middle_part_2]
         )
+        true_latex_table_str = TRUE_PREAMBLE + "\n" + true_latex_table_str
         latex_table_str = model.latex_table()
 
         self.assertEqual(latex_table_str, true_latex_table_str)
@@ -771,5 +795,9 @@ class TestLaTeXTable(unittest.TestCase):
         $y = \cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ & $3.82$ \\
         \begin{minipage}{0.8\linewidth} \vspace{-1em} \begin{dmath*} y = x_{0}^{5} + x_{0}^{3} + 3.20 x_{0} + x_{1}^{3} - 1.20 x_{1} - 5.20 \sin{\left(2.60 x_{0} - 0.326 \sin{\left(x_{2} \right)} \right)} - \cos{\left(x_{0} x_{1} \right)} + \cos{\left(x_{0}^{3} + 3.20 x_{0} + x_{1}^{3} - 1.20 x_{1} + \cos{\left(x_{0} x_{1} \right)} \right)} \end{dmath*} \end{minipage} & $30$ & $1.12 \cdot 10^{-15}$ & $1.09$ \\
         """
-        true_latex_table_str = self.create_true_latex(middle_part, include_score=True)
+        true_latex_table_str = (
+            TRUE_PREAMBLE
+            + "\n"
+            + self.create_true_latex(middle_part, include_score=True)
+        )
         self.assertEqual(latex_table_str, true_latex_table_str)

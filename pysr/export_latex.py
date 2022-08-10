@@ -6,9 +6,6 @@ from typing import List
 import warnings
 
 
-raised_long_equation_warning = False
-
-
 class PreciseLatexPrinter(LatexPrinter):
     """Modified SymPy printer with custom float precision."""
 
@@ -70,8 +67,6 @@ def generate_single_table(
     """Generate a booktabs-style LaTeX table for a single set of equations."""
     assert isinstance(equations, pd.DataFrame)
 
-    global raised_long_equation_warning
-
     latex_top, latex_bottom = generate_table_environment(columns)
     latex_table_content = []
 
@@ -101,11 +96,6 @@ def generate_single_table(
                         "$" + output_variable_name + " = " + latex_equation + "$"
                     )
                 else:
-                    if not raised_long_equation_warning:
-                        warnings.warn(
-                            "Please add \\usepackage{breqn} to your LaTeX preamble."
-                        )
-                        raised_long_equation_warning = True
 
                     broken_latex_equation = " ".join(
                         [

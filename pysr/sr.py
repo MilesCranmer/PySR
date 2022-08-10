@@ -2197,9 +2197,18 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
             generator_fnc = generate_single_table
 
-        return generator_fnc(
+        table_string = generator_fnc(
             self.equations_, indices=indices, precision=precision, columns=columns
         )
+        preamble_string = [
+            r"\usepackage{breqn}",
+            r"\usepackage{booktabs}",
+            r"\usepackage{tabularx}",
+            "",
+            "...",
+            "",
+        ]
+        return "\n".join(preamble_string + [table_string])
 
 
 def idx_model_selection(equations: pd.DataFrame, model_selection: str) -> int:
