@@ -288,10 +288,10 @@ class TestPipeline(unittest.TestCase):
     def test_load_model(self):
         """See if we can load a ran model from the equation file."""
         csv_file_data = """
-        Complexity|MSE|Equation
-        1|0.19951081|1.9762075
-        3|0.12717344|(f0 + 1.4724599)
-        4|0.104823045|pow_abs(2.2683423, cos(f3))"""
+        Complexity,Loss,Equation
+        1,0.19951081,"1.9762075"
+        3,0.12717344,"(f0 + 1.4724599)"
+        4,0.104823045,"pow_abs(2.2683423, cos(f3))\""""
         # Strip the indents:
         csv_file_data = "\n".join([l.strip() for l in csv_file_data.split("\n")])
 
@@ -379,7 +379,7 @@ class TestBest(unittest.TestCase):
         self.model.selection_mask_ = None
         self.model.feature_names_in_ = np.array(["x0", "x1"], dtype=object)
         equations["complexity loss equation".split(" ")].to_csv(
-            "equation_file.csv.bkup", sep="|"
+            "equation_file.csv.bkup"
         )
 
         self.model.refresh()
