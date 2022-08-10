@@ -2157,7 +2157,7 @@ def idx_model_selection(equations: pd.DataFrame, model_selection: str) -> int:
         chosen_idx = equations["loss"].idxmin()
     elif model_selection == "best":
         threshold = 1.5 * equations["loss"].min()
-        filtered_equations = equations.query(f"loss < {threshold}")
+        filtered_equations = equations.query(f"loss <= {threshold}")
         chosen_idx = filtered_equations["score"].idxmax()
     elif model_selection == "score":
         chosen_idx = equations["score"].idxmax()
