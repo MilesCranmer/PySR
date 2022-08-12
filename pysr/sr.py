@@ -1058,7 +1058,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             else:
                 # Special cases such as when binary_operators is a string
                 if parameter in ["binary_operators", "unary_operators"] and isinstance(
-                        parameter_value, str
+                    parameter_value, str
                 ):
                     parameter_value = [parameter_value]
                 elif parameter == "batch_size" and parameter_value < 1:
