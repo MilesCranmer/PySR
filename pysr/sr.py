@@ -612,82 +612,82 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     """
 
     def __init__(
-            self,
-            model_selection="best",
-            *,
-            binary_operators=None,
-            unary_operators=None,
-            niterations=40,
-            populations=15,
-            population_size=33,
-            max_evals=None,
-            maxsize=20,
-            maxdepth=None,
-            warmup_maxsize_by=0.0,
-            timeout_in_seconds=None,
-            constraints=None,
-            nested_constraints=None,
-            loss="L2DistLoss()",
-            complexity_of_operators=None,
-            complexity_of_constants=1,
-            complexity_of_variables=1,
-            parsimony=0.0032,
-            use_frequency=True,
-            use_frequency_in_tournament=True,
-            alpha=0.1,
-            annealing=False,
-            early_stop_condition=None,
-            ncyclesperiteration=550,
-            fraction_replaced=0.000364,
-            fraction_replaced_hof=0.035,
-            weight_add_node=0.79,
-            weight_insert_node=5.1,
-            weight_delete_node=1.7,
-            weight_do_nothing=0.21,
-            weight_mutate_constant=0.048,
-            weight_mutate_operator=0.47,
-            weight_randomize=0.00023,
-            weight_simplify=0.0020,
-            crossover_probability=0.066,
-            skip_mutation_failures=True,
-            migration=True,
-            hof_migration=True,
-            topn=12,
-            should_optimize_constants=True,
-            optimizer_algorithm="BFGS",
-            optimizer_nrestarts=2,
-            optimize_probability=0.14,
-            optimizer_iterations=8,
-            perturbation_factor=0.076,
-            tournament_selection_n=10,
-            tournament_selection_p=0.86,
-            procs=cpu_count(),
-            multithreading=None,
-            cluster_manager=None,
-            batching=False,
-            batch_size=50,
-            fast_cycle=False,
-            precision=32,
-            random_state=None,
-            deterministic=False,
-            warm_start=False,
-            verbosity=1e9,
-            update_verbosity=None,
-            progress=True,
-            equation_file=None,
-            temp_equation_file=False,
-            tempdir=None,
-            delete_tempfiles=True,
-            julia_project=None,
-            update=True,
-            output_jax_format=False,
-            output_torch_format=False,
-            extra_sympy_mappings=None,
-            extra_torch_mappings=None,
-            extra_jax_mappings=None,
-            denoise=False,
-            select_k_features=None,
-            **kwargs,
+        self,
+        model_selection="best",
+        *,
+        binary_operators=None,
+        unary_operators=None,
+        niterations=40,
+        populations=15,
+        population_size=33,
+        max_evals=None,
+        maxsize=20,
+        maxdepth=None,
+        warmup_maxsize_by=0.0,
+        timeout_in_seconds=None,
+        constraints=None,
+        nested_constraints=None,
+        loss="L2DistLoss()",
+        complexity_of_operators=None,
+        complexity_of_constants=1,
+        complexity_of_variables=1,
+        parsimony=0.0032,
+        use_frequency=True,
+        use_frequency_in_tournament=True,
+        alpha=0.1,
+        annealing=False,
+        early_stop_condition=None,
+        ncyclesperiteration=550,
+        fraction_replaced=0.000364,
+        fraction_replaced_hof=0.035,
+        weight_add_node=0.79,
+        weight_insert_node=5.1,
+        weight_delete_node=1.7,
+        weight_do_nothing=0.21,
+        weight_mutate_constant=0.048,
+        weight_mutate_operator=0.47,
+        weight_randomize=0.00023,
+        weight_simplify=0.0020,
+        crossover_probability=0.066,
+        skip_mutation_failures=True,
+        migration=True,
+        hof_migration=True,
+        topn=12,
+        should_optimize_constants=True,
+        optimizer_algorithm="BFGS",
+        optimizer_nrestarts=2,
+        optimize_probability=0.14,
+        optimizer_iterations=8,
+        perturbation_factor=0.076,
+        tournament_selection_n=10,
+        tournament_selection_p=0.86,
+        procs=cpu_count(),
+        multithreading=None,
+        cluster_manager=None,
+        batching=False,
+        batch_size=50,
+        fast_cycle=False,
+        precision=32,
+        random_state=None,
+        deterministic=False,
+        warm_start=False,
+        verbosity=1e9,
+        update_verbosity=None,
+        progress=True,
+        equation_file=None,
+        temp_equation_file=False,
+        tempdir=None,
+        delete_tempfiles=True,
+        julia_project=None,
+        update=True,
+        output_jax_format=False,
+        output_torch_format=False,
+        extra_sympy_mappings=None,
+        extra_torch_mappings=None,
+        extra_jax_mappings=None,
+        denoise=False,
+        select_k_features=None,
+        **kwargs,
     ):
 
         # Hyperparameters
@@ -973,7 +973,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self.equation_file_ = self.tempdir_ / "hall_of_fame.csv"
         elif self.equation_file is None:
             if self.warm_start and (
-                    hasattr(self, "equation_file_") and self.equation_file_
+                hasattr(self, "equation_file_") and self.equation_file_
             ):
                 pass
             else:
@@ -1014,9 +1014,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             raise ValueError("PySR requires a maxsize of at least 7")
 
         if self.deterministic and not (
-                self.multithreading in [False, None]
-                and self.procs == 0
-                and self.random_state is not None
+            self.multithreading in [False, None]
+            and self.procs == 0
+            and self.random_state is not None
         ):
             raise ValueError(
                 "To ensure deterministic searches, you must set `random_state` to a seed, "
@@ -1024,7 +1024,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             )
 
         if self.random_state is not None and (
-                not self.deterministic or self.procs != 0
+            not self.deterministic or self.procs != 0
         ):
             warnings.warn(
                 "Note: Setting `random_state` without also setting `deterministic` "
@@ -1057,8 +1057,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 parameter_value = default_value
             else:
                 # Special cases such as when binary_operators is a string
-                if parameter in ["binary_operators",
-                                 "unary_operators"] and isinstance(
+                if parameter in ["binary_operators", "unary_operators"] and isinstance(
                         parameter_value, str
                 ):
                     parameter_value = [parameter_value]
@@ -1077,14 +1076,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             packed_modified_params[parameter] = parameter_value
 
         assert (
-                len(packed_modified_params["binary_operators"])
-                + len(packed_modified_params["unary_operators"])
-                > 0
+            len(packed_modified_params["binary_operators"])
+            + len(packed_modified_params["unary_operators"])
+            > 0
         )
         return packed_modified_params
 
-    def _validate_and_set_fit_params(self, X, y, Xresampled, weights,
-                                     variable_names):
+    def _validate_and_set_fit_params(self, X, y, Xresampled, weights, variable_names):
         """
         Validates the parameters passed to the :term`fit` method.
 
@@ -1169,7 +1167,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         return X, y, Xresampled, weights, variable_names
 
     def _pre_transform_training_data(
-            self, X, y, Xresampled, variable_names, random_state
+        self, X, y, Xresampled, variable_names, random_state
     ):
         """
         Transforms the training data before fitting the symbolic regressor.
@@ -1231,8 +1229,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             # Re-perform data validation and feature name updating
             X, y = self._validate_data(X=X, y=y, reset=True, multi_output=True)
             # Update feature names with selected variable names
-            self.feature_names_in_ = _check_feature_names_in(self,
-                                                             variable_names)
+            self.feature_names_in_ = _check_feature_names_in(self, variable_names)
             print(f"Using features {self.feature_names_in_}")
 
         # Denoising transformation
@@ -1241,8 +1238,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 y = np.stack(
                     [
                         _denoise(
-                            X, y[:, i], Xresampled=Xresampled,
-                            random_state=random_state
+                            X, y[:, i], Xresampled=Xresampled, random_state=random_state
                         )[1]
                         for i in range(self.nout_)
                     ],
@@ -1251,8 +1247,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 if Xresampled is not None:
                     X = Xresampled
             else:
-                X, y = _denoise(X, y, Xresampled=Xresampled,
-                                random_state=random_state)
+                X, y = _denoise(X, y, Xresampled=Xresampled, random_state=random_state)
 
         return X, y, variable_names
 
@@ -1322,8 +1317,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             julia_project, is_shared = _get_julia_project(self.julia_project)
             Main.eval("using Pkg")
             io = "devnull" if update_verbosity == 0 else "stderr"
-            io_arg = f"io={io}" if is_julia_version_greater_eq(Main,
-                                                               "1.6") else ""
+            io_arg = f"io={io}" if is_julia_version_greater_eq(Main, "1.6") else ""
 
             Main.eval(
                 f'Pkg.activate("{_escape_filename(julia_project)}", shared = Bool({int(is_shared)}), {io_arg})'
@@ -1404,10 +1398,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/OptionsStruct.jl
         options = Main.Options(
-            binary_operators=Main.eval(
-                str(tuple(binary_operators)).replace("'", "")),
-            unary_operators=Main.eval(
-                str(tuple(unary_operators)).replace("'", "")),
+            binary_operators=Main.eval(str(tuple(binary_operators)).replace("'", "")),
+            unary_operators=Main.eval(str(tuple(unary_operators)).replace("'", "")),
             bin_constraints=bin_constraints,
             una_constraints=una_constraints,
             complexity_of_operators=complexity_of_operators,
@@ -1419,8 +1411,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             hofFile=_escape_filename(self.equation_file_),
             npopulations=int(self.populations),
             batching=self.batching,
-            batchSize=int(
-                min([batch_size, len(X)]) if self.batching else len(X)),
+            batchSize=int(min([batch_size, len(X)]) if self.batching else len(X)),
             mutationWeights=mutation_weights,
             probPickFirst=self.tournament_selection_p,
             ns=self.tournament_selection_n,
@@ -1459,8 +1450,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         )
 
         # Convert data to desired precision
-        np_dtype = {16: np.float16, 32: np.float32, 64: np.float64}[
-            self.precision]
+        np_dtype = {16: np.float16, 32: np.float32, 64: np.float64}[self.precision]
 
         # This converts the data into a Julia array:
         Main.X = np.array(X, dtype=np_dtype).T
@@ -1504,12 +1494,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         return self
 
     def fit(
-            self,
-            X,
-            y,
-            Xresampled=None,
-            weights=None,
-            variable_names=None,
+        self,
+        X,
+        y,
+        Xresampled=None,
+        weights=None,
+        variable_names=None,
     ):
         """
         Search for equations to fit the dataset and store them in `self.equations_`.
@@ -1838,8 +1828,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
                     all_outputs.append(df)
             else:
-                all_outputs = [
-                    pd.read_csv(str(self.equation_file_) + ".bkup", sep="|")]
+                all_outputs = [pd.read_csv(str(self.equation_file_) + ".bkup", sep="|")]
                 all_outputs[-1].rename(
                     columns={
                         "Complexity": "complexity",
@@ -1868,7 +1857,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             ],
         )
         if (
-                not hasattr(self, "equation_file_contents_")
+            not hasattr(self, "equation_file_contents_")
         ) or self.equation_file_contents_ is None:
             self.equation_file_contents_ = self._read_equation_file()
 
@@ -1909,8 +1898,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             if self.output_torch_format:
                 torch_format = []
             local_sympy_mappings = {
-                **(
-                    self.extra_sympy_mappings if self.extra_sympy_mappings else {}),
+                **(self.extra_sympy_mappings if self.extra_sympy_mappings else {}),
                 **sympy_mappings,
             }
 
@@ -1925,8 +1913,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 # Numpy:
                 lambda_format.append(
                     CallableEquation(
-                        sympy_symbols, eqn, self.selection_mask_,
-                        self.feature_names_in_
+                        sympy_symbols, eqn, self.selection_mask_, self.feature_names_in_
                     )
                 )
 
@@ -1969,7 +1956,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     if curMSE > 0.0:
                         # TODO Move this to more obvious function/file.
                         cur_score = -np.log(curMSE / lastMSE) / (
-                                curComplexity - lastComplexity
+                            curComplexity - lastComplexity
                         )
                     else:
                         cur_score = np.inf
@@ -2064,8 +2051,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 def _denoise(X, y, Xresampled=None, random_state=None):
     """Denoise the dataset using a Gaussian process"""
     from sklearn.gaussian_process import GaussianProcessRegressor
-    from sklearn.gaussian_process.kernels import RBF, WhiteKernel, \
-        ConstantKernel
+    from sklearn.gaussian_process.kernels import RBF, WhiteKernel, ConstantKernel
 
     gp_kernel = RBF(np.ones(X.shape[1])) + WhiteKernel(1e-1) + ConstantKernel()
     gpr = GaussianProcessRegressor(
