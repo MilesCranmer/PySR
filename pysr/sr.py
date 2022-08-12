@@ -1989,7 +1989,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             return ret_outputs
         return ret_outputs[0]
 
-    def plot(self, ax, threshold=0.05, fontsize=10):
+    def plot(self, ax=None, threshold=0.05, fontsize=10):
         """Create a plot of the best equations.
 
         Parameters
@@ -2003,6 +2003,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         assert threshold > 0, "Invalid threshold"
         assert threshold < 1, "Invalid threshold"
+
+        if ax is None:
+            import matplotlib.pyplot as plt
+            ax = plt.gca()
 
         scores = self.equations_["score"]
         max_score = np.max(scores)
