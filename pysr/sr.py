@@ -12,8 +12,7 @@ from datetime import datetime
 import warnings
 from multiprocessing import cpu_count
 from sklearn.base import BaseEstimator, RegressorMixin, MultiOutputMixin
-from sklearn.utils import check_array, check_consistent_length, \
-    check_random_state
+from sklearn.utils import check_array, check_consistent_length, check_random_state
 from sklearn.utils.validation import (
     _check_feature_names_in,
     check_is_fitted,
@@ -30,6 +29,7 @@ from .julia_helpers import (
 from .export_numpy import CallableEquation
 from .deprecated import make_deprecated_kwargs_for_pysr_regressor
 
+
 Main = None  # TODO: Rename to more descriptive name like "julia_runtime"
 
 already_ran = False
@@ -38,8 +38,8 @@ sympy_mappings = {
     "div": lambda x, y: x / y,
     "mult": lambda x, y: x * y,
     "sqrt_abs": lambda x: sympy.sqrt(abs(x)),
-    "square": lambda x: x ** 2,
-    "cube": lambda x: x ** 3,
+    "square": lambda x: x**2,
+    "cube": lambda x: x**3,
     "plus": lambda x, y: x + y,
     "sub": lambda x, y: x - y,
     "neg": lambda x: -x,
@@ -104,8 +104,7 @@ def _process_constraints(binary_operators, unary_operators, constraints):
             # Make sure the complex expression is in the left side.
             if constraints[op][0] == -1:
                 continue
-            if constraints[op][1] == -1 or constraints[op][0] < constraints[op][
-                1]:
+            if constraints[op][1] == -1 or constraints[op][0] < constraints[op][1]:
                 constraints[op][0], constraints[op][1] = (
                     constraints[op][1],
                     constraints[op][0],
@@ -124,8 +123,7 @@ def _maybe_create_inline_operators(binary_operators, unary_operators):
             if is_user_defined_operator:
                 Main.eval(op)
                 # Cut off from the first non-alphanumeric char:
-                first_non_char = \
-                [j for j, char in enumerate(op) if char == "("][0]
+                first_non_char = [j for j, char in enumerate(op) if char == "("][0]
                 function_name = op[:first_non_char]
                 # Assert that function_name only contains
                 # alphabetical characters, numbers,
@@ -141,11 +139,11 @@ def _maybe_create_inline_operators(binary_operators, unary_operators):
 
 
 def _check_assertions(
-        X,
-        use_custom_variable_names,
-        variable_names,
-        weights,
-        y,
+    X,
+    use_custom_variable_names,
+    variable_names,
+    weights,
+    y,
 ):
     # Check for potential errors before they happen
     assert len(X.shape) == 2
