@@ -1989,16 +1989,20 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             return ret_outputs
         return ret_outputs[0]
 
-    def plot(self, ax=None, threshold=0.05, fontsize=10):
+    def plot_eqn_histogram(self, ax=None, threshold=0.05, fontsize=10, **plt_kwargs):
         """Create a plot of the best equations.
 
         Parameters
          ----------
-        threshold : float
+        ax : Axes, default=None
+             The axes to draw to
+        threshold : float, default=0.05
              The plotting threshold. Plots only equations that with a score
              higher than threshold*max_score
-        ax : Axes
-             The axes to draw to
+        fontsize: float, default=10
+             Font size for plotting
+        plt_kwargs : dict, default=None
+            Dictionary of extra arguments to pass for plotting
         """
 
         assert threshold > 0, "Invalid threshold"
@@ -2022,13 +2026,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # do the plot:
         for i, score in enumerate(scores_plot):
             ax.hist(i * 5, bins=1, weights=[score],
-                    edgecolor='black', label=names_plot[i])
+                    edgecolor='black', label=names_plot[i], **plt_kwargs)
 
         ax.set_xticks(5 * np.arange(len(scores_plot)))
         ax.set_xticklabels(complexities_plot);
 
         # label on the axis:
-        ax.set_xlabel('Complexity ', fontsize=10);
+        ax.set_xlabel('Complexity ', fontsize=fontsize);
         ax.set_ylabel(r'Score = $\delta$ Accuracy / $\delta$ Complexity',
                       fontsize=fontsize);
 
