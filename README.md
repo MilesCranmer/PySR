@@ -106,6 +106,7 @@ Now, let's create a PySR model and train it.
 PySR's main interface is in the style of scikit-learn:
 ```python
 from pysr import PySRRegressor
+
 model = PySRRegressor(
     model_selection="best",  # Result is mix of simplicity+accuracy
     niterations=40,
