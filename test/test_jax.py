@@ -34,13 +34,13 @@ class TestJAX(unittest.TestCase):
         equations = pd.DataFrame(
             {
                 "Equation": ["1.0", "cos(x1)", "square(cos(x1))"],
-                "MSE": [1.0, 0.1, 1e-5],
+                "Loss": [1.0, 0.1, 1e-5],
                 "Complexity": [1, 2, 3],
             }
         )
 
-        equations["Complexity MSE Equation".split(" ")].to_csv(
-            "equation_file.csv.bkup", sep="|"
+        equations["Complexity Loss Equation".split(" ")].to_csv(
+            "equation_file.csv.bkup"
         )
 
         model.refresh(checkpoint_file="equation_file.csv")
@@ -49,7 +49,7 @@ class TestJAX(unittest.TestCase):
         np.testing.assert_almost_equal(
             np.array(jformat["callable"](jnp.array(X), jformat["parameters"])),
             np.square(np.cos(X.values[:, 1])),  # Select feature 1
-            decimal=4,
+            decimal=3,
         )
 
     def test_pipeline(self):
@@ -61,13 +61,13 @@ class TestJAX(unittest.TestCase):
         equations = pd.DataFrame(
             {
                 "Equation": ["1.0", "cos(x1)", "square(cos(x1))"],
-                "MSE": [1.0, 0.1, 1e-5],
+                "Loss": [1.0, 0.1, 1e-5],
                 "Complexity": [1, 2, 3],
             }
         )
 
-        equations["Complexity MSE Equation".split(" ")].to_csv(
-            "equation_file.csv.bkup", sep="|"
+        equations["Complexity Loss Equation".split(" ")].to_csv(
+            "equation_file.csv.bkup"
         )
 
         model.refresh(checkpoint_file="equation_file.csv")
@@ -76,7 +76,7 @@ class TestJAX(unittest.TestCase):
         np.testing.assert_almost_equal(
             np.array(jformat["callable"](jnp.array(X), jformat["parameters"])),
             np.square(np.cos(X[:, 1])),  # Select feature 1
-            decimal=4,
+            decimal=3,
         )
 
     def test_feature_selection_custom_operators(self):
@@ -110,5 +110,5 @@ class TestJAX(unittest.TestCase):
         np_output = np_prediction(X.values)
         jax_output = jax_prediction(X.values)
 
-        np.testing.assert_almost_equal(y.values, np_output, decimal=4)
-        np.testing.assert_almost_equal(y.values, jax_output, decimal=4)
+        np.testing.assert_almost_equal(y.values, np_output, decimal=3)
+        np.testing.assert_almost_equal(y.values, jax_output, decimal=3)

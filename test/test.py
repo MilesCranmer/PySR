@@ -5,13 +5,20 @@ import unittest
 import numpy as np
 from sklearn import model_selection
 from pysr import PySRRegressor
-from pysr.sr import run_feature_selection, _handle_feature_selection
+from pysr.sr import (
+    run_feature_selection,
+    _handle_feature_selection,
+    _csv_filename_to_pkl_filename,
+    idx_model_selection,
+)
+from pysr.export_latex import to_latex
 from sklearn.utils.estimator_checks import check_estimator
 import sympy
 import pandas as pd
 import warnings
 import pickle as pkl
 import tempfile
+from pathlib import Path
 
 DEFAULT_PARAMS = inspect.signature(PySRRegressor.__init__).parameters
 DEFAULT_NITERATIONS = DEFAULT_PARAMS["niterations"].default
@@ -135,7 +142,7 @@ class TestPipeline(unittest.TestCase):
         # These tests are flaky, so don't fail test:
         try:
             np.testing.assert_almost_equal(
-                model.predict(X.copy())[:, 0], X[:, 0] ** 2, decimal=4
+                model.predict(X.copy())[:, 0], X[:, 0] ** 2, decimal=3
             )
         except AssertionError:
             print("Error in test_multioutput_weighted_with_callable_temp_equation")
@@ -144,7 +151,7 @@ class TestPipeline(unittest.TestCase):
 
         try:
             np.testing.assert_almost_equal(
-                model.predict(X.copy())[:, 1], X[:, 1] ** 2, decimal=4
+                model.predict(X.copy())[:, 1], X[:, 1] ** 2, decimal=3
             )
         except AssertionError:
             print("Error in test_multioutput_weighted_with_callable_temp_equation")
@@ -280,20 +287,116 @@ class TestPipeline(unittest.TestCase):
         model.fit(X.values, y.values, Xresampled=Xresampled.values)
         self.assertLess(np.average((model.predict(X.values) - y.values) ** 2), 1e-4)
 
+    def test_load_model(self):
+        """See if we can load a ran model from the equation file."""
+        csv_file_data = """
+        Complexity,Loss,Equation
+        1,0.19951081,"1.9762075"
+        3,0.12717344,"(f0 + 1.4724599)"
+        4,0.104823045,"pow_abs(2.2683423, cos(f3))\""""
+        # Strip the indents:
+        csv_file_data = "\n".join([l.strip() for l in csv_file_data.split("\n")])
+
+        for from_backup in [False, True]:
+            rand_dir = Path(tempfile.mkdtemp())
+            equation_filename = str(rand_dir / "equation.csv")
+            with open(equation_filename + (".bkup" if from_backup else ""), "w") as f:
+                f.write(csv_file_data)
+            model = PySRRegressor.from_file(
+                equation_filename,
+                n_features_in=5,
+                feature_names_in=["f0", "f1", "f2", "f3", "f4"],
+                binary_operators=["+", "*", "/", "-", "^"],
+                unary_operators=["cos"],
+            )
+            X = self.rstate.rand(100, 5)
+            y_truth = 2.2683423 ** np.cos(X[:, 3])
+            y_test = model.predict(X, 2)
+
+            np.testing.assert_allclose(y_truth, y_test)
+
+    def test_load_model_simple(self):
+        # Test that we can simply load a model from its equation file.
+        y = self.X[:, [0, 1]] ** 2
+        model = PySRRegressor(
+            # Test that passing a single operator works:
+            unary_operators="sq(x) = x^2",
+            binary_operators="plus",
+            extra_sympy_mappings={"sq": lambda x: x**2},
+            **self.default_test_kwargs,
+            procs=0,
+            denoise=True,
+            early_stop_condition="stop_if(loss, complexity) = loss < 0.05 && complexity == 2",
+        )
+        rand_dir = Path(tempfile.mkdtemp())
+        equation_file = rand_dir / "equations.csv"
+        model.set_params(temp_equation_file=False)
+        model.set_params(equation_file=equation_file)
+        model.fit(self.X, y)
+
+        # lambda functions are removed from the pickling, so we need
+        # to pass it during the loading:
+        model2 = PySRRegressor.from_file(
+            model.equation_file_, extra_sympy_mappings={"sq": lambda x: x**2}
+        )
+
+        np.testing.assert_allclose(model.predict(self.X), model2.predict(self.X))
+
+        # Try again, but using only the pickle file:
+        for file_to_delete in [str(equation_file), str(equation_file) + ".bkup"]:
+            if os.path.exists(file_to_delete):
+                os.remove(file_to_delete)
+
+        pickle_file = rand_dir / "equations.pkl"
+        model3 = PySRRegressor.from_file(
+            model.equation_file_, extra_sympy_mappings={"sq": lambda x: x**2}
+        )
+        np.testing.assert_allclose(model.predict(self.X), model3.predict(self.X))
+
+
+def manually_create_model(equations, feature_names=None):
+    if feature_names is None:
+        feature_names = ["x0", "x1"]
+
+    model = PySRRegressor(
+        progress=False,
+        niterations=1,
+        extra_sympy_mappings={},
+        output_jax_format=False,
+        model_selection="accuracy",
+        equation_file="equation_file.csv",
+    )
+
+    # Set up internal parameters as if it had been fitted:
+    if isinstance(equations, list):
+        # Multi-output.
+        model.equation_file_ = "equation_file.csv"
+        model.nout_ = len(equations)
+        model.selection_mask_ = None
+        model.feature_names_in_ = np.array(feature_names, dtype=object)
+        for i in range(model.nout_):
+            equations[i]["complexity loss equation".split(" ")].to_csv(
+                f"equation_file.csv.out{i+1}.bkup"
+            )
+    else:
+        model.equation_file_ = "equation_file.csv"
+        model.nout_ = 1
+        model.selection_mask_ = None
+        model.feature_names_in_ = np.array(feature_names, dtype=object)
+        equations["complexity loss equation".split(" ")].to_csv(
+            "equation_file.csv.bkup"
+        )
+
+    model.refresh()
+
+    return model
+
 
 class TestBest(unittest.TestCase):
     def setUp(self):
         self.rstate = np.random.RandomState(0)
         self.X = self.rstate.randn(10, 2)
         self.y = np.cos(self.X[:, 0]) ** 2
-        self.model = PySRRegressor(
-            progress=False,
-            niterations=1,
-            extra_sympy_mappings={},
-            output_jax_format=False,
-            model_selection="accuracy",
-            equation_file="equation_file.csv",
-        )
         equations = pd.DataFrame(
             {
                 "equation": ["1.0", "cos(x0)", "square(cos(x0))"],
@@ -301,17 +404,7 @@ class TestBest(unittest.TestCase):
                 "complexity": [1, 2, 3],
             }
         )
-
-        # Set up internal parameters as if it had been fitted:
-        self.model.equation_file_ = "equation_file.csv"
-        self.model.nout_ = 1
-        self.model.selection_mask_ = None
-        self.model.feature_names_in_ = np.array(["x0", "x1"], dtype=object)
-        equations["complexity loss equation".split(" ")].to_csv(
-            "equation_file.csv.bkup", sep="|"
-        )
-
-        self.model.refresh()
+        self.model = manually_create_model(equations)
         self.equations_ = self.model.equations_
 
     def test_best(self):
@@ -330,7 +423,21 @@ class TestBest(unittest.TestCase):
         X = self.X
         y = self.y
         for f in [self.model.predict, self.equations_.iloc[-1]["lambda_format"]]:
-            np.testing.assert_almost_equal(f(X), y, decimal=4)
+            np.testing.assert_almost_equal(f(X), y, decimal=3)
+
+    def test_all_selection_strategies(self):
+        equations = pd.DataFrame(
+            dict(
+                loss=[1.0, 0.1, 0.01, 0.001 * 1.4, 0.001],
+                score=[0.5, 1.0, 0.5, 0.5, 0.3],
+            )
+        )
+        idx_accuracy = idx_model_selection(equations, "accuracy")
+        self.assertEqual(idx_accuracy, 4)
+        idx_best = idx_model_selection(equations, "best")
+        self.assertEqual(idx_best, 3)
+        idx_score = idx_model_selection(equations, "score")
+        self.assertEqual(idx_score, 1)
 
 
 class TestFeatureSelection(unittest.TestCase):
@@ -363,6 +470,20 @@ class TestFeatureSelection(unittest.TestCase):
 
 class TestMiscellaneous(unittest.TestCase):
     """Test miscellaneous functions."""
+
+    def test_csv_to_pkl_conversion(self):
+        """Test that csv filename to pkl filename works as expected."""
+        tmpdir = Path(tempfile.mkdtemp())
+        equation_file = tmpdir / "equations.389479384.28378374.csv"
+        expected_pkl_file = tmpdir / "equations.389479384.28378374.pkl"
+
+        # First, test inputting the paths:
+        test_pkl_file = _csv_filename_to_pkl_filename(equation_file)
+        self.assertEqual(test_pkl_file, str(expected_pkl_file))
+
+        # Next, test inputting the strings.
+        test_pkl_file = _csv_filename_to_pkl_filename(str(equation_file))
+        self.assertEqual(test_pkl_file, str(expected_pkl_file))
 
     def test_deprecation(self):
         """Ensure that deprecation works as expected.
@@ -485,3 +606,197 @@ class TestMiscellaneous(unittest.TestCase):
                 print("\n".join([(" " * 4) + row for row in error_message.split("\n")]))
         # If any checks failed don't let the test pass.
         self.assertEqual(len(exception_messages), 0)
+
+
+TRUE_PREAMBLE = "\n".join(
+    [
+        r"\usepackage{breqn}",
+        r"\usepackage{booktabs}",
+        "",
+        "...",
+        "",
+    ]
+)
+
+
+class TestLaTeXTable(unittest.TestCase):
+    def setUp(self):
+        equations = pd.DataFrame(
+            dict(
+                equation=["x0", "cos(x0)", "x0 + x1 - cos(x1 * x0)"],
+                loss=[1.052, 0.02315, 1.12347e-15],
+                complexity=[1, 2, 8],
+            )
+        )
+        self.model = manually_create_model(equations)
+        self.maxDiff = None
+
+    def create_true_latex(self, middle_part, include_score=False):
+        if include_score:
+            true_latex_table_str = r"""
+                \begin{table}[h]
+                \begin{center}
+                \begin{tabular}{@{}cccc@{}}
+                \toprule
+                Equation & Complexity & Loss & Score \\
+                \midrule"""
+        else:
+            true_latex_table_str = r"""
+                \begin{table}[h]
+                \begin{center}
+                \begin{tabular}{@{}ccc@{}}
+                \toprule
+                Equation & Complexity & Loss \\
+                \midrule"""
+        true_latex_table_str += middle_part
+        true_latex_table_str += r"""\bottomrule
+            \end{tabular}
+            \end{center}
+            \end{table}
+        """
+        # First, remove empty lines:
+        true_latex_table_str = "\n".join(
+            [line.strip() for line in true_latex_table_str.split("\n") if len(line) > 0]
+        )
+        return true_latex_table_str.strip()
+
+    def test_simple_table(self):
+        latex_table_str = self.model.latex_table(
+            columns=["equation", "complexity", "loss"]
+        )
+        middle_part = r"""
+            $y = x_{0}$ & $1$ & $1.05$ \\
+            $y = \cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ \\
+            $y = x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.12 \cdot 10^{-15}$ \\
+        """
+        true_latex_table_str = (
+            TRUE_PREAMBLE + "\n" + self.create_true_latex(middle_part)
+        )
+        self.assertEqual(latex_table_str, true_latex_table_str)
+
+    def test_other_precision(self):
+        latex_table_str = self.model.latex_table(
+            precision=5, columns=["equation", "complexity", "loss"]
+        )
+        middle_part = r"""
+            $y = x_{0}$ & $1$ & $1.0520$ \\
+            $y = \cos{\left(x_{0} \right)}$ & $2$ & $0.023150$ \\
+            $y = x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.1235 \cdot 10^{-15}$ \\
+        """
+        true_latex_table_str = (
+            TRUE_PREAMBLE + "\n" + self.create_true_latex(middle_part)
+        )
+        self.assertEqual(latex_table_str, true_latex_table_str)
+
+    def test_include_score(self):
+        latex_table_str = self.model.latex_table()
+        middle_part = r"""
+            $y = x_{0}$ & $1$ & $1.05$ & $0.0$ \\
+            $y = \cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ & $3.82$ \\
+            $y = x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.12 \cdot 10^{-15}$ & $5.11$ \\
+        """
+        true_latex_table_str = (
+            TRUE_PREAMBLE
+            + "\n"
+            + self.create_true_latex(middle_part, include_score=True)
+        )
+        self.assertEqual(latex_table_str, true_latex_table_str)
+
+    def test_last_equation(self):
+        latex_table_str = self.model.latex_table(
+            indices=[2], columns=["equation", "complexity", "loss"]
+        )
+        middle_part = r"""
+            $y = x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.12 \cdot 10^{-15}$ \\
+        """
+        true_latex_table_str = (
+            TRUE_PREAMBLE + "\n" + self.create_true_latex(middle_part)
+        )
+        self.assertEqual(latex_table_str, true_latex_table_str)
+
+    def test_multi_output(self):
+        equations1 = pd.DataFrame(
+            dict(
+                equation=["x0", "cos(x0)", "x0 + x1 - cos(x1 * x0)"],
+                loss=[1.052, 0.02315, 1.12347e-15],
+                complexity=[1, 2, 8],
+            )
+        )
+        equations2 = pd.DataFrame(
+            dict(
+                equation=["x1", "cos(x1)", "x0 * x0 * x1"],
+                loss=[1.32, 0.052, 2e-15],
+                complexity=[1, 2, 5],
+            )
+        )
+        equations = [equations1, equations2]
+        model = manually_create_model(equations)
+        middle_part_1 = r"""
+            $y_{0} = x_{0}$ & $1$ & $1.05$ & $0.0$ \\
+            $y_{0} = \cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ & $3.82$ \\
+            $y_{0} = x_{0} + x_{1} - \cos{\left(x_{0} x_{1} \right)}$ & $8$ & $1.12 \cdot 10^{-15}$ & $5.11$ \\
+        """
+        middle_part_2 = r"""
+            $y_{1} = x_{1}$ & $1$ & $1.32$ & $0.0$ \\
+            $y_{1} = \cos{\left(x_{1} \right)}$ & $2$ & $0.0520$ & $3.23$ \\
+            $y_{1} = x_{0}^{2} x_{1}$ & $5$ & $2.00 \cdot 10^{-15}$ & $10.3$ \\
+        """
+        true_latex_table_str = "\n\n".join(
+            self.create_true_latex(part, include_score=True)
+            for part in [middle_part_1, middle_part_2]
+        )
+        true_latex_table_str = TRUE_PREAMBLE + "\n" + true_latex_table_str
+        latex_table_str = model.latex_table()
+
+        self.assertEqual(latex_table_str, true_latex_table_str)
+
+    def test_latex_float_precision(self):
+        """Test that we can print latex expressions with custom precision"""
+        expr = sympy.Float(4583.4485748, dps=50)
+        self.assertEqual(to_latex(expr, prec=6), r"4583.45")
+        self.assertEqual(to_latex(expr, prec=5), r"4583.4")
+        self.assertEqual(to_latex(expr, prec=4), r"4583.")
+        self.assertEqual(to_latex(expr, prec=3), r"4.58 \cdot 10^{3}")
+        self.assertEqual(to_latex(expr, prec=2), r"4.6 \cdot 10^{3}")
+
+        # Multiple numbers:
+        x = sympy.Symbol("x")
+        expr = x * 3232.324857384 - 1.4857485e-10
+        self.assertEqual(
+            to_latex(expr, prec=2), "3.2 \cdot 10^{3} x - 1.5 \cdot 10^{-10}"
+        )
+        self.assertEqual(
+            to_latex(expr, prec=3), "3.23 \cdot 10^{3} x - 1.49 \cdot 10^{-10}"
+        )
+        self.assertEqual(
+            to_latex(expr, prec=8), "3232.3249 x - 1.4857485 \cdot 10^{-10}"
+        )
+
+    def test_latex_break_long_equation(self):
+        """Test that we can break a long equation inside the table"""
+        long_equation = """
+        - cos(x1 * x0) + 3.2 * x0 - 1.2 * x1 + x1 * x1 * x1 + x0 * x0 * x0
+        + 5.2 * sin(0.3256 * sin(x2) - 2.6 * x0) + x0 * x0 * x0 * x0 * x0
+        + cos(cos(x1 * x0) + 3.2 * x0 - 1.2 * x1 + x1 * x1 * x1 + x0 * x0 * x0)
+        """
+        long_equation = "".join(long_equation.split("\n")).strip()
+        equations = pd.DataFrame(
+            dict(
+                equation=["x0", "cos(x0)", long_equation],
+                loss=[1.052, 0.02315, 1.12347e-15],
+                complexity=[1, 2, 30],
+            )
+        )
+        model = manually_create_model(equations)
+        latex_table_str = model.latex_table()
+        middle_part = r"""
+        $y = x_{0}$ & $1$ & $1.05$ & $0.0$ \\
+        $y = \cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ & $3.82$ \\
+        \begin{minipage}{0.8\linewidth} \vspace{-1em} \begin{dmath*} y = x_{0}^{5} + x_{0}^{3} + 3.20 x_{0} + x_{1}^{3} - 1.20 x_{1} - 5.20 \sin{\left(2.60 x_{0} - 0.326 \sin{\left(x_{2} \right)} \right)} - \cos{\left(x_{0} x_{1} \right)} + \cos{\left(x_{0}^{3} + 3.20 x_{0} + x_{1}^{3} - 1.20 x_{1} + \cos{\left(x_{0} x_{1} \right)} \right)} \end{dmath*} \end{minipage} & $30$ & $1.12 \cdot 10^{-15}$ & $1.09$ \\
+        """
+        true_latex_table_str = (
+            TRUE_PREAMBLE
+            + "\n"
+            + self.create_true_latex(middle_part, include_score=True)
+        )
+        self.assertEqual(latex_table_str, true_latex_table_str)
