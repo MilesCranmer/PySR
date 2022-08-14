@@ -115,7 +115,9 @@ def _process_constraints(binary_operators, unary_operators, constraints):
     return constraints
 
 
-def _maybe_create_inline_operators(binary_operators, unary_operators):
+def _maybe_create_inline_operators(
+    binary_operators, unary_operators, extra_sympy_mappings
+):
     global Main
     binary_operators = binary_operators.copy()
     unary_operators = unary_operators.copy()
@@ -136,6 +138,14 @@ def _maybe_create_inline_operators(binary_operators, unary_operators):
                         f"Invalid function name {function_name}. "
                         "Only alphanumeric characters, numbers, "
                         "and underscores are allowed."
+                    )
+                if not function_name in extra_sympy_mappings:
+                    raise ValueError(
+                        f"Custom function {function_name} is not defined in :param`extra_sympy_mappings`. "
+                        "You can define it with, "
+                        "e.g., `model.set_params(extra_sympy_mappings={'inv': lambda x: 1/x})`, where "
+                        "`lambda x: 1/x` is a valid SymPy function defining the operator. "
+                        "You can also define these at initialization time."
                     )
                 op_list[i] = function_name
     return binary_operators, unary_operators
@@ -1488,7 +1498,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # TODO(mcranmer): These functions should be part of this class.
         binary_operators, unary_operators = _maybe_create_inline_operators(
-            binary_operators=binary_operators, unary_operators=unary_operators
+            binary_operators=binary_operators,
+            unary_operators=unary_operators,
+            extra_sympy_mappings=self.extra_sympy_mappings,
         )
         constraints = _process_constraints(
             binary_operators=binary_operators,
@@ -1848,8 +1860,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             raise ValueError(
                 "Failed to evaluate the expression. "
                 "If you are using a custom operator, make sure to define it in :param`extra_sympy_mappings`, "
-                "e.g., `model.set_params(extra_sympy_mappings={'inv': lambda x: 1 / x})`. You can then "
-                "run `model.refresh()` to re-load the expressions."
+                "e.g., `model.set_params(extra_sympy_mappings={'inv': lambda x: 1/x})`, where "
+                "`lambda x: 1/x` is a valid SymPy function defining the operator. "
+                "You can then run `model.refresh()` to re-load the expressions."
             ) from error
 
     def sympy(self, index=None):
