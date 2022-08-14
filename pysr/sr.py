@@ -139,7 +139,7 @@ def _maybe_create_inline_operators(
                         "Only alphanumeric characters, numbers, "
                         "and underscores are allowed."
                     )
-                if (extra_sympy_mappings is not None) and (
+                if (extra_sympy_mappings is None) or (
                     not function_name in extra_sympy_mappings
                 ):
                     raise ValueError(
