@@ -139,7 +139,9 @@ def _maybe_create_inline_operators(
                         "Only alphanumeric characters, numbers, "
                         "and underscores are allowed."
                     )
-                if not function_name in extra_sympy_mappings:
+                if (extra_sympy_mappings is not None) and (
+                    not function_name in extra_sympy_mappings
+                ):
                     raise ValueError(
                         f"Custom function {function_name} is not defined in :param`extra_sympy_mappings`. "
                         "You can define it with, "
