@@ -538,6 +538,14 @@ class TestMiscellaneous(unittest.TestCase):
         with self.assertRaises(ValueError):
             model.fit(X, y)
 
+    def test_extra_sympy_mappings_undefined(self):
+        """extra_sympy_mappings=None errors for custom operators"""
+        model = PySRRegressor(unary_operators=["square2(x) = x^2"])
+        X = np.random.randn(100, 2)
+        y = np.random.randn(100)
+        with self.assertRaises(ValueError):
+            model.fit(X, y)
+
     def test_pickle_with_temp_equation_file(self):
         """If we have a temporary equation file, unpickle the estimator."""
         model = PySRRegressor(
