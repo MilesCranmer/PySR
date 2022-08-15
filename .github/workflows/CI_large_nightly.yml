@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        julia-version: ['1.5.0', '1.6.1', '1.7.1']
+        julia-version: ['1.5.0', '1.6.1', '1.7.1', '1.8.0-rc4']
         python-version: ['3.7', '3.8', '3.9', '3.10']
         os: [ubuntu-latest, macos-latest, windows-latest]
     
