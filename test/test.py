@@ -546,6 +546,13 @@ class TestMiscellaneous(unittest.TestCase):
         with self.assertRaises(ValueError):
             model.fit(X, y)
 
+    def test_sympy_function_fails_as_variable(self):
+        model = PySRRegressor()
+        X = np.random.randn(100, 2)
+        y = np.random.randn(100)
+        with self.assertRaises(ValueError):
+            model.fit(X, y, variable_names=["x1", "N"])
+
     def test_pickle_with_temp_equation_file(self):
         """If we have a temporary equation file, unpickle the estimator."""
         model = PySRRegressor(

@@ -169,6 +169,12 @@ def _check_assertions(
         assert X.shape[0] == weights.shape[0]
     if use_custom_variable_names:
         assert len(variable_names) == X.shape[1]
+        # Check none of the variable names are function names:
+        for var_name in variable_names:
+            if var_name in sympy_mappings or var_name in sympy.__dict__.keys():
+                raise ValueError(
+                    f"Variable name {var_name} is already a function name."
+                )
 
 
 def best(*args, **kwargs):  # pragma: no cover
