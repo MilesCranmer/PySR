@@ -246,7 +246,7 @@ model = PySRRegressor(
     # "SymbolicRegression.jl" repo, for custom modifications.
     update=False,
     # ^ Don't update Julia packages
-    extra_sympy_mappings={"cos2": lambda x: sympy.cos(x)^2},
+    extra_sympy_mappings={"cos2": lambda x: sympy.cos(x)**2},
     extra_torch_mappings={sympy.cos: torch.cos},
     # ^ Not needed as cos already defined, but this
     # is how you define custom torch operators.
