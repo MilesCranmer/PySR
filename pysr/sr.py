@@ -1,3 +1,4 @@
+"""Defines the PySRRegressor scikit-learn interface."""
 import copy
 import os
 import sys
@@ -879,7 +880,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
     def __repr__(self):
         """
-        Prints all current equations fitted by the model.
+        Print all current equations fitted by the model.
 
         The string `>>>>` denotes which equation is selected by the
         `model_selection`.
@@ -926,7 +927,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
     def __getstate__(self):
         """
-        Handles pickle serialization for PySRRegressor.
+        Handle pickle serialization for PySRRegressor.
 
         The Scikit-learn standard requires estimators to be serializable via
         `pickle.dumps()`. However, `PyCall.jlwrap` does not support pickle
@@ -988,9 +989,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         return pickled_state
 
     def _checkpoint(self):
-        """Saves the model's current state to a checkpoint file.
+        """Save the model's current state to a checkpoint file.
 
-        This should only be used internally by PySRRegressor."""
+        This should only be used internally by PySRRegressor.
+        """
         # Save model state:
         self.show_pickle_warnings_ = False
         with open(_csv_filename_to_pkl_filename(self.equation_file_), "wb") as f:
@@ -1051,7 +1053,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
     def _setup_equation_file(self):
         """
-        Sets the full pathname of the equation file, using :param`tempdir` and
+        Set the full pathname of the equation file.
+        
+        This is performed using :param`tempdir` and
         :param`equation_file`.
         """
         # Cast tempdir string as a Path object
@@ -1072,7 +1076,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
     def _validate_and_set_init_params(self):
         """
-        Ensures parameters passed at initialization are valid.
+        Ensure parameters passed at initialization are valid.
 
         Also returns a dictionary of parameters to update from their
         values given at initialization.
@@ -1171,7 +1175,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
     def _validate_and_set_fit_params(self, X, y, Xresampled, weights, variable_names):
         """
-        Validates the parameters passed to the :term`fit` method.
+        Validate the parameters passed to the :term`fit` method.
 
         This method also sets the `nout_` attribute.
 
@@ -1257,7 +1261,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self, X, y, Xresampled, variable_names, random_state
     ):
         """
-        Transforms the training data before fitting the symbolic regressor.
+        Transform the training data before fitting the symbolic regressor.
 
         This method also updates/sets the `selection_mask_` attribute.
 
@@ -1712,8 +1716,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
     def refresh(self, checkpoint_file=None):
         """
-        Updates self.equations_ with any new options passed, such as
-        :param`extra_sympy_mappings`.
+        Update self.equations_ with any new options passed.
+        
+        For example, updating :param`extra_sympy_mappings`
+        will require a `.refresh()` to update the equations.
 
         Parameters
         ----------
@@ -1916,7 +1922,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         return best_equation["torch_format"]
 
     def _read_equation_file(self):
-        """Read the hall of fame file created by SymbolicRegression.jl"""
+        """Read the hall of fame file created by `SymbolicRegression.jl`."""
         try:
             if self.nout_ > 1:
                 all_outputs = []
@@ -1957,8 +1963,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         return all_outputs
 
     def get_hof(self):
-        """Get the equations from a hall of fame file. If no arguments
-        entered, the ones used previously from a call to PySR will be used."""
+        """Get the equations from a hall of fame file.
+
+        If no arguments entered, the ones used
+        previously from a call to PySR will be used.
+        """
         check_is_fitted(
             self,
             attributes=[
@@ -2159,10 +2168,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
 
 def idx_model_selection(equations: pd.DataFrame, model_selection: str) -> int:
-    """
-    Return the index of the selected expression, given a dataframe of
-    equations and a model selection.
-    """
+    """Select an expression and return its index."""
     if model_selection == "accuracy":
         chosen_idx = equations["loss"].idxmin()
     elif model_selection == "best":
@@ -2179,7 +2185,7 @@ def idx_model_selection(equations: pd.DataFrame, model_selection: str) -> int:
 
 
 def _denoise(X, y, Xresampled=None, random_state=None):
-    """Denoise the dataset using a Gaussian process"""
+    """Denoise the dataset using a Gaussian process."""
     from sklearn.gaussian_process import GaussianProcessRegressor
     from sklearn.gaussian_process.kernels import RBF, WhiteKernel, ConstantKernel
 
@@ -2208,7 +2214,9 @@ def _handle_feature_selection(X, select_k_features, y, variable_names):
 
 def run_feature_selection(X, y, select_k_features, random_state=None):
     """
-    Use a gradient boosting tree regressor as a proxy for finding
+    Find most important features.
+
+    Uses a gradient boosting tree regressor as a proxy for finding
     the k most important features in X, returning indices for those
     features as output.
     """
