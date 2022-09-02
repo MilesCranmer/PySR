@@ -28,7 +28,7 @@ If you've finished a project with PySR, please submit a PR to showcase your work
 
 <div align="center">
 
-### Test status
+## Test status
 
 | **Linux** | **Windows** | **macOS (intel)** |
 |---|---|---|
