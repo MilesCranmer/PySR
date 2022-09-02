@@ -222,6 +222,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     a given dataset subject to a particular loss and set of
     constraints.
 
+    Most default parameters have been tuned over several example equations,
+    but you should adjust `niterations`, `binary_operators`, `unary_operators`
+    to your requirements. You can view more detailed explanations of the options
+    on the [options page](https://astroautomata.com/PySR/#/options) of the
+    documentation.
+
     Parameters
     ----------
     model_selection : str, default="best"
@@ -512,14 +518,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Contents of the equation file output by the Julia backend.
     show_pickle_warnings_ : bool
         Whether to show warnings about what attributes can be pickled.
-
-    Notes
-    -----
-    Most default parameters have been tuned over several example equations,
-    but you should adjust `niterations`, `binary_operators`, `unary_operators`
-    to your requirements. You can view more detailed explanations of the options
-    on the [options page](https://astroautomata.com/PySR/#/options) of the
-    documentation.
 
     Examples
     --------
