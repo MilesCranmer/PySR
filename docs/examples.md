@@ -1,4 +1,4 @@
-# Examples
+# Toy Examples with Code
 
 ### Preamble
 
