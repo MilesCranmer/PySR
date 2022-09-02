@@ -3,7 +3,17 @@ theme:
   name: material
   palette:
     # Light mode:
-    - scheme: pysr
+    - media: "(prefers-color-scheme: light)"
+      scheme: pysr
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to light mode
+
   logo: assets/pysr_logo_reduced.svg
   icon:
     repo: fontawesome/brands/github-alt
@@ -34,7 +44,7 @@ plugins:
       default_handler: python
       handlers:
         python:
-          paths: [pysr]
+          # paths: [pysr]
           options:
             # https://mkdocstrings.github.io/python/usage/#finding-modules
             docstring_style: numpy
@@ -42,6 +52,7 @@ plugins:
             # docstring_options
             # separate_signature: True
             show_bases: false
+            heading_level: 2
 
 markdown_extensions:
   - toc:
