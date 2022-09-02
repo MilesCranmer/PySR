@@ -144,7 +144,7 @@ def _maybe_create_inline_operators(
                     not function_name in extra_sympy_mappings
                 ):
                     raise ValueError(
-                        f"Custom function {function_name} is not defined in :param`extra_sympy_mappings`. "
+                        f"Custom function {function_name} is not defined in `extra_sympy_mappings`. "
                         "You can define it with, "
                         "e.g., `model.set_params(extra_sympy_mappings={'inv': lambda x: 1/x})`, where "
                         "`lambda x: 1/x` is a valid SymPy function defining the operator. "
@@ -246,7 +246,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     binary_operators : list[str], default=["+", "-", "*", "/"]
         List of strings giving the binary operators in Julia's Base.
     unary_operators : list[str], default=None
-        Same as :param`binary_operators` but for operators taking a
+        Same as `binary_operators` but for operators taking a
         single scalar.
     niterations : int, default=40
         Number of iterations of the algorithm to run. The best
@@ -262,8 +262,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     maxsize : int, default=20
         Max complexity of an equation.
     maxdepth : int, default=None
-        Max depth of an equation. You can use both :param`maxsize` and
-        :param`maxdepth`. :param`maxdepth` is by default not used.
+        Max depth of an equation. You can use both `maxsize` and
+        `maxdepth`. `maxdepth` is by default not used.
     warmup_maxsize_by : float, default=0.0
         Whether to slowly increase max size from a small number up to
         the maxsize (if greater than 0).  If greater than 0, says the
@@ -331,7 +331,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         rather than just the simulated annealing.
     alpha : float, default=0.1
         Initial temperature for simulated annealing
-        (requires :param`annealing` to be `True`).
+        (requires `annealing` to be `True`).
     annealing : bool, default=False
         Whether to use annealing.
     early_stop_condition : { float | str }, default=None
@@ -430,8 +430,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     deterministic : bool, default=False
         Make a PySR search give the same result every run.
         To use this, you must turn off parallelism
-        (with :param`procs`=0, :param`multithreading`=False),
-        and set :param`random_state` to a fixed seed.
+        (with `procs`=0, `multithreading`=False),
+        and set `random_state` to a fixed seed.
     warm_start : bool, default=False
         Tells fit to continue from where the last call to fit finished.
         If false, each call to fit will be fresh, overwriting previous results.
@@ -439,14 +439,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         What verbosity level to use. 0 means minimal print statements.
     update_verbosity : int, default=None
         What verbosity level to use for package updates.
-        Will take value of :param`verbosity` if not given.
+        Will take value of `verbosity` if not given.
     progress : bool, default=True
         Whether to use a progress bar instead of printing to stdout.
     equation_file : str, default=None
         Where to save the files (.csv extension).
     temp_equation_file : bool, default=False
         Whether to put the hall of fame file in the temp directory.
-        Deletion is then controlled with the :param`delete_tempfiles`
+        Deletion is then controlled with the `delete_tempfiles`
         parameter.
     tempdir : str, default=None
         directory for the temporary files.
@@ -467,19 +467,19 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Whether to create a 'torch_format' column in the output,
         containing a torch module with trainable parameters.
     extra_sympy_mappings : dict[str, Callable], default=None
-        Provides mappings between custom :param`binary_operators` or
-        :param`unary_operators` defined in julia strings, to those same
+        Provides mappings between custom `binary_operators` or
+        `unary_operators` defined in julia strings, to those same
         operators defined in sympy.
         E.G if `unary_operators=["inv(x)=1/x"]`, then for the fitted
-        model to be export to sympy, :param`extra_sympy_mappings`
+        model to be export to sympy, `extra_sympy_mappings`
         would be `{"inv": lambda x: 1/x}`.
     extra_jax_mappings : dict[Callable, str], default=None
-        Similar to :param`extra_sympy_mappings` but for model export
+        Similar to `extra_sympy_mappings` but for model export
         to jax. The dictionary maps sympy functions to jax functions.
         For example: `extra_jax_mappings={sympy.sin: "jnp.sin"}` maps
         the `sympy.sin` function to the equivalent jax expression `jnp.sin`.
     extra_torch_mappings : dict[Callable, Callable], default=None
-        The same as :param`extra_jax_mappings` but for model export
+        The same as `extra_jax_mappings` but for model export
         to pytorch. Note that the dictionary keys should be callable
         pytorch expressions.
         For example: `extra_torch_mappings={sympy.sin: torch.sin}`
@@ -507,7 +507,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Number of output dimensions.
     selection_mask_ : list[int] of length `select_k_features`
         List of indices for input features that are selected when
-        :param`select_k_features` is set.
+        `select_k_features` is set.
     tempdir_ : Path
         Path to the temporary equations directory.
     equation_file_ : str
@@ -998,7 +998,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         ----------
         index : int | list[int], default=None
             If you wish to select a particular equation from `self.equations_`,
-            give the row number here. This overrides the :param`model_selection`
+            give the row number here. This overrides the `model_selection`
             parameter. If there are multiple output features, then pass
             a list of indices with the order the same as the output feature.
 
@@ -1037,8 +1037,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         """
         Set the full pathname of the equation file.
         
-        This is performed using :param`tempdir` and
-        :param`equation_file`.
+        This is performed using `tempdir` and
+        `equation_file`.
         """
         # Cast tempdir string as a Path object
         self.tempdir_ = Path(tempfile.mkdtemp(dir=self.tempdir))
@@ -1136,8 +1136,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     parameter_value = [parameter_value]
                 elif parameter == "batch_size" and parameter_value < 1:
                     warnings.warn(
-                        "Given :param`batch_size` must be greater than or equal to one. "
-                        ":param`batch_size` has been increased to equal one."
+                        "Given `batch_size` must be greater than or equal to one. "
+                        "`batch_size` has been increased to equal one."
                     )
                     parameter_value = 1
                 elif parameter == "progress" and not buffer_available:
@@ -1192,7 +1192,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             if variable_names:
                 variable_names = None
                 warnings.warn(
-                    ":param`variable_names` has been reset to `None` as `X` is a DataFrame. "
+                    "`variable_names` has been reset to `None` as `X` is a DataFrame. "
                     "Using DataFrame column names instead."
                 )
 
@@ -1259,16 +1259,16 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         -------
         X_transformed : ndarray of shape (n_samples, n_features)
             Transformed training data. n_samples will be equal to
-            :param`Xresampled.shape[0]` if :param`self.denoise` is `True`,
-            and :param`Xresampled is not None`, otherwise it will be
-            equal to :param`X.shape[0]`. n_features will be equal to
-            :param`self.select_k_features` if `self.select_k_features is not None`,
-            otherwise it will be equal to :param`X.shape[1]`
+            `Xresampled.shape[0]` if `self.denoise` is `True`,
+            and `Xresampled is not None`, otherwise it will be
+            equal to `X.shape[0]`. n_features will be equal to
+            `self.select_k_features` if `self.select_k_features is not None`,
+            otherwise it will be equal to `X.shape[1]`
         y_transformed : ndarray of shape (n_samples,) or (n_samples, n_outputs)
             Transformed target data. n_samples will be equal to
-            :param`Xresampled.shape[0]` if :param`self.denoise` is `True`,
-            and :param`Xresampled is not None`, otherwise it will be
-            equal to :param`X.shape[0]`.
+            `Xresampled.shape[0]` if `self.denoise` is `True`,
+            and `Xresampled is not None`, otherwise it will be
+            equal to `X.shape[0]`.
         variable_names_transformed : list[str] of length n_features
             Names of each variable in the transformed dataset,
             `X_transformed`.
@@ -1579,7 +1579,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             in arbitrary ways.
         variable_names : list[str], default=None
             A list of names for the variables, rather than "x0", "x1", etc.
-            If :param`X` is a pandas dataframe, the column names will be used
+            If `X` is a pandas dataframe, the column names will be used
             instead of `variable_names`. Cannot contain spaces or special
             characters. Avoid variable names which are also
             function names in `sympy`, such as "N".
@@ -1679,7 +1679,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         """
         Update self.equations_ with any new options passed.
         
-        For example, updating :param`extra_sympy_mappings`
+        For example, updating `extra_sympy_mappings`
         will require a `.refresh()` to update the equations.
 
         Parameters
@@ -1761,7 +1761,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         except Exception as error:
             raise ValueError(
                 "Failed to evaluate the expression. "
-                "If you are using a custom operator, make sure to define it in :param`extra_sympy_mappings`, "
+                "If you are using a custom operator, make sure to define it in `extra_sympy_mappings`, "
                 "e.g., `model.set_params(extra_sympy_mappings={'inv': lambda x: 1/x})`, where "
                 "`lambda x: 1/x` is a valid SymPy function defining the operator. "
                 "You can then run `model.refresh()` to re-load the expressions."
