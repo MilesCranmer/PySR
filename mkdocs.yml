@@ -4,7 +4,7 @@ theme:
   palette:
     # Light mode:
     - scheme: pysr
-  logo: assets/pysr_logo.svg
+  logo: assets/pysr_logo_reduced.svg
   icon:
     repo: fontawesome/brands/github-alt
 
