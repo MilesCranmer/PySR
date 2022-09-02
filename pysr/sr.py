@@ -492,33 +492,24 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     ----------
     equations_ : { pandas.DataFrame | list[pandas.DataFrame] }
         Processed DataFrame containing the results of model fitting.
-
     n_features_in_ : int
         Number of features seen during :term:`fit`.
-
     feature_names_in_ : ndarray of shape (`n_features_in_`,)
         Names of features seen during :term:`fit`. Defined only when `X`
         has feature names that are all strings.
-
     nout_ : int
         Number of output dimensions.
-
     selection_mask_ : list[int] of length `select_k_features`
         List of indices for input features that are selected when
         :param`select_k_features` is set.
-
     tempdir_ : Path
         Path to the temporary equations directory.
-
     equation_file_ : str
         Output equation file name produced by the julia backend.
-
     raw_julia_state_ : tuple[list[PyCall.jlwrap], PyCall.jlwrap]
         The state for the julia SymbolicRegression.jl backend post fitting.
-
     equation_file_contents_ : list[pandas.DataFrame]
         Contents of the equation file output by the Julia backend.
-
     show_pickle_warnings_ : bool
         Whether to show warnings about what attributes can be pickled.
 
