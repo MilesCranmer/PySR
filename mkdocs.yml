@@ -8,6 +8,15 @@ theme:
   icon:
     repo: fontawesome/brands/github-alt
 
+nav:
+  - index.md
+  - options.md
+  - operators.md
+  - examples.md
+  - Reference:
+    - api.md
+    - api-advanced.md
+
 extra:
   homepage: https://astroautomata.com/PySR
 
@@ -29,9 +38,12 @@ plugins:
             docstring_style: numpy
             merge_init_into_class: True
             # docstring_options
-            separate_signature: True
+            # separate_signature: True
+            show_bases: false
 
 markdown_extensions:
+  - toc:
+      permalink: true
   - attr_list
   - md_in_html
   - pymdownx.highlight:
