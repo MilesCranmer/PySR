@@ -56,6 +56,7 @@ renderer:
       contents:
         - pysr.sr.install
         - pysr.sr.PySRRegressor.__init__
+        - pysr.sr.PySRRegressor.from_file
         - pysr.sr.PySRRegressor.fit
         - pysr.sr.PySRRegressor.predict
         - pysr.sr.PySRRegressor.__repr__
@@ -64,6 +65,7 @@ renderer:
         - pysr.sr.PySRRegressor.get_best
         - pysr.sr.PySRRegressor.sympy
         - pysr.sr.PySRRegressor.latex
+        - pysr.sr.PySRRegressor.latex_table
         - pysr.sr.PySRRegressor.jax
         - pysr.sr.PySRRegressor.pytorch
         - pysr.sr.PySRRegressor.refresh
