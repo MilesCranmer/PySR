@@ -1,4 +1,4 @@
-# Advanced Reference
+# Internal Reference
 
 ## Julia Interface
 ::: pysr.julia_helpers
@@ -6,6 +6,7 @@
         members:
             - init_julia
             - install
+        heading_level: 3
 
 ## Exporting to LaTeX
 
@@ -16,6 +17,7 @@
             - generate_single_table
             - generate_multiple_tables
             - generate_table_environment
+        heading_level: 3
 
 ## Exporting to JAX
 
@@ -24,6 +26,7 @@
         members:
             - sympy2jax
             - sympy2jaxtext
+        heading_level: 3
 
 ## Exporting to PyTorch
 
@@ -31,3 +34,4 @@
     options:
         members:
             - sympy2torch
+        heading_level: 3

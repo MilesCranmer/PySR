@@ -1,4 +1,4 @@
-# PySRRegressor Reference
+# API Reference
 
 ::: pysr.PySRRegressor
     options:
@@ -12,5 +12,5 @@
             - jax
             - latex_table
             - refresh
-
-<h2>pysr.install</h2>
+        show_root_members_full_path: true
+        heading_level: 2
