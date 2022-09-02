@@ -214,7 +214,7 @@ VALID_OPTIMIZER_ALGORITHMS = ["NelderMead", "BFGS"]
 
 class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     """
-    High-performance symbolic regression.
+    High-performance symbolic regression algorithm.
 
     This is the scikit-learn interface for SymbolicRegression.jl.
     This model will automatically search for equations which fit
