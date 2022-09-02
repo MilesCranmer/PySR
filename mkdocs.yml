@@ -12,7 +12,9 @@ nav:
   - index.md
   - options.md
   - operators.md
-  - examples.md
+  - Examples:
+    - examples.md
+    - papers.md
   - Reference:
     - api.md
     - api-advanced.md
