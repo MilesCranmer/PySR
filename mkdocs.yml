@@ -30,3 +30,12 @@ plugins:
             merge_init_into_class: True
             # docstring_options
             separate_signature: True
+
+markdown_extensions:
+  - attr_list
+  - md_in_html
+  - pymdownx.highlight:
+      anchor_linenums: True
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
