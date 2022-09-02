@@ -483,8 +483,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
          whether to run feature selection in Python using random forests,
          before passing to the symbolic regression code. None means no
          feature selection; an int means select that many features.
-
-    kwargs : dict, default=None
+    **kwargs : dict, default=None
         Supports deprecated keyword arguments. Other arguments will
         result in an error.
 
