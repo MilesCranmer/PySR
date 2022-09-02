@@ -23,5 +23,10 @@ plugins:
       default_handler: python
       handlers:
         python:
+          paths: [pysr]
           options:
+            # https://mkdocstrings.github.io/python/usage/#finding-modules
             docstring_style: numpy
+            merge_init_into_class: True
+            # docstring_options
+            separate_signature: True
