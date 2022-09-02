@@ -1,4 +1,4 @@
-"""Defines the PySRRegressor scikit-learn interface."""
+"""Define the PySRRegressor scikit-learn interface."""
 import copy
 import os
 import sys
@@ -777,32 +777,25 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         equation_file : str
             Path to a pickle file containing a saved model, or a csv file
             containing equations.
-
         binary_operators : list[str]
             The same binary operators used when creating the model.
             Not needed if loading from a pickle file.
-
         unary_operators : list[str]
             The same unary operators used when creating the model.
             Not needed if loading from a pickle file.
-
         n_features_in : int
             Number of features passed to the model.
             Not needed if loading from a pickle file.
-
         feature_names_in : list[str]
             Names of the features passed to the model.
             Not needed if loading from a pickle file.
-
         selection_mask : list[bool]
             If using select_k_features, you must pass `model.selection_mask_` here.
             Not needed if loading from a pickle file.
-
         nout : int, default=1
             Number of outputs of the model.
             Not needed if loading from a pickle file.
-
-        pysr_kwargs : dict
+        **pysr_kwargs : dict
             Any other keyword arguments to initialize the PySRRegressor object.
             These will overwrite those stored in the pickle file.
             Not needed if loading from a pickle file.
@@ -1174,18 +1167,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         ----------
         X : {ndarray | pandas.DataFrame} of shape (n_samples, n_features)
             Training data.
-
         y : {ndarray | pandas.DataFrame} of shape (n_samples,) or (n_samples, n_targets)
             Target values. Will be cast to X's dtype if necessary.
-
         Xresampled : {ndarray | pandas.DataFrame} of shape
                         (n_resampled, n_features), default=None
             Resampled training data used for denoising.
-
         weights : {ndarray | pandas.DataFrame} of the same shape as y
             Each element is how to weight the mean-square-error loss
             for that particular element of y.
-
         variable_names : list[str] of length n_features
             Names of each variable in the training dataset, `X`.
 
@@ -1193,13 +1182,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         -------
         X_validated : ndarray of shape (n_samples, n_features)
             Validated training data.
-
         y_validated : ndarray of shape (n_samples,) or (n_samples, n_targets)
             Validated target data.
-
         Xresampled : ndarray of shape (n_resampled, n_features)
             Validated resampled training data used for denoising.
-
         variable_names_validated : list[str] of length n_features
             Validated list of variable names for each feature in `X`.
 
@@ -1260,17 +1246,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         ----------
         X : {ndarray | pandas.DataFrame} of shape (n_samples, n_features)
             Training data.
-
         y : {ndarray | pandas.DataFrame} of shape (n_samples,) or (n_samples, n_targets)
             Target values. Will be cast to X's dtype if necessary.
-
         Xresampled : {ndarray | pandas.DataFrame} of shape
                         (n_resampled, n_features), default=None
             Resampled training data used for denoising.
-
         variable_names : list[str] of length n_features
             Names of each variable in the training dataset, `X`.
-
         random_state : int, Numpy RandomState instance or None, default=None
             Pass an int for reproducible results across multiple function calls.
             See :term:`Glossary <random_state>`.
@@ -1284,13 +1266,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             equal to :param`X.shape[0]`. n_features will be equal to
             :param`self.select_k_features` if `self.select_k_features is not None`,
             otherwise it will be equal to :param`X.shape[1]`
-
         y_transformed : ndarray of shape (n_samples,) or (n_samples, n_outputs)
             Transformed target data. n_samples will be equal to
             :param`Xresampled.shape[0]` if :param`self.denoise` is `True`,
             and :param`Xresampled is not None`, otherwise it will be
             equal to :param`X.shape[0]`.
-
         variable_names_transformed : list[str] of length n_features
             Names of each variable in the transformed dataset,
             `X_transformed`.
@@ -1341,17 +1321,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         ----------
         X : {ndarray | pandas.DataFrame} of shape (n_samples, n_features)
             Training data.
-
         y : {ndarray | pandas.DataFrame} of shape (n_samples,) or (n_samples, n_targets)
             Target values. Will be cast to X's dtype if necessary.
-
         mutated_params : dict[str, Any]
             Dictionary of mutated versions of some parameters passed in __init__.
-
         weights : {ndarray | pandas.DataFrame} of the same shape as y
             Each element is how to weight the mean-square-error loss
             for that particular element of y.
-
         seed : int
             Random seed for julia backend process.
 
@@ -1592,21 +1568,17 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         ----------
         X : {ndarray | pandas.DataFrame} of shape (n_samples, n_features)
             Training data.
-
         y : {ndarray | pandas.DataFrame} of shape (n_samples,) or (n_samples, n_targets)
             Target values. Will be cast to X's dtype if necessary.
-
         Xresampled : {ndarray | pandas.DataFrame} of shape
                         (n_resampled, n_features), default=None
             Resampled training data to generate a denoised data on. This
             will be used as the training data, rather than `X`.
-
         weights : {ndarray | pandas.DataFrame} of the same shape as y, default=None
             Each element is how to weight the mean-square-error loss
             for that particular element of `y`. Alternatively,
             if a custom `loss` was set, it will can be used
             in arbitrary ways.
-
         variable_names : list[str], default=None
             A list of names for the variables, rather than "x0", "x1", etc.
             If :param`X` is a pandas dataframe, the column names will be used
