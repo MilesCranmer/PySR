@@ -34,9 +34,10 @@ Sergiy Verstyuk<sup>1</sup>, Michael R. Douglas.<sup>1</sup><br><sup>1</sup>Harv
 
 import yaml
 from textwrap import dedent
+from pathlib import Path
 
 data_file = "papers.yml"
-papers_header = "papers_header.md"
+papers_header = Path("headers") / "papers_header.md"
 output_file = "papers.md"
 
 # Load YAML file:
