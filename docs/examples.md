@@ -1,16 +1,15 @@
 # Toy Examples with Code
 
-### Preamble
+## Preamble
 
 ```python
 import numpy as np
 from pysr import *
 ```
 
-
 ## 1. Simple search
 
-Here's a simple example where we 
+Here's a simple example where we
 find the expression `2 cos(x3) + x0^2 - 2`.
 
 ```python
@@ -40,6 +39,7 @@ print(model)
 
 Here, we do the same thing, but with multiple expressions at once,
 each requiring a different feature.
+
 ```python
 X = 2 * np.random.randn(100, 5)
 y = 1 / X[:, [0, 1, 2]]
@@ -60,22 +60,26 @@ function:
 model.set_params(extra_sympy_mappings={"inv": lambda x: 1/x})
 model.sympy()
 ```
+
 If you look at the lists of expressions before and after, you will
 see that the sympy format now has replaced `inv` with `1/`.
 We can again look at the equation chosen:
+
 ```python
 print(model)
 ```
 
 For now, let's consider the expressions for output 0.
 We can see the LaTeX version of this with:
+
 ```python
 model.latex()[0]
 ```
+
 or output 1 with `model.latex()[1]`.
 
-
 Let's plot the prediction against the truth:
+
 ```python
 from matplotlib import pyplot as plt
 plt.scatter(y[:, 0], model(X)[:, 0])
@@ -83,9 +87,10 @@ plt.xlabel('Truth')
 plt.ylabel('Prediction')
 plt.show()
 ```
+
 Which gives us:
 
-![](https://github.com/MilesCranmer/PySR/raw/master/docs/images/example_plot.png)
+![Truth vs Prediction](images/example_plot.png)
 
 ## 5. Feature selection
 
@@ -104,12 +109,14 @@ the most important 5 features.
 
 Here is an example. Let's say we have 30 input features and 300 data points, but only 2
 of those features are actually used:
+
 ```python
 X = np.random.randn(300, 30)
 y = X[:, 3]**2 - X[:, 19]**2 + 1.5
 ```
 
 Let's create a model with the feature selection argument set up:
+
 ```python
 model = PySRRegressor(
     binary_operators=["+", "-", "*", "/"],
@@ -117,15 +124,19 @@ model = PySRRegressor(
     select_k_features=5,
 )
 ```
+
 Now let's fit this:
+
 ```python
 model.fit(X, y)
 ```
 
 Before the Julia backend is launched, you can see the string:
-```
+
+```text
 Using features ['x3', 'x5', 'x7', 'x19', 'x21']
 ```
+
 which indicates that the feature selection (powered by a gradient-boosting tree)
 has successfully selected the relevant two features.
 
@@ -152,6 +163,7 @@ set the parameter `denoise=True`. This will fit a Gaussian process (containing a
 to the input dataset, and predict new targets (which are assumed to be denoised) from that Gaussian process.
 
 For example:
+
 ```python
 X = np.random.randn(100, 5)
 noise = np.random.randn(100) * 0.1
@@ -159,6 +171,7 @@ y = np.exp(X[:, 0]) + X[:, 1] + X[:, 2] + noise
 ```
 
 Let's create and fit a model with the denoising argument set up:
+
 ```python
 model = PySRRegressor(
     binary_operators=["+", "-", "*", "/"],
@@ -168,9 +181,10 @@ model = PySRRegressor(
 model.fit(X, y)
 print(model)
 ```
+
 If all goes well, you should find that it predicts the correct input equation, without the noise term!
 
 ## 7. Additional features
 
 For the many other features available in PySR, please
-read the [Options section](options.md). 
+read the [Options section](options.md).

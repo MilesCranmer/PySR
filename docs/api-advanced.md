@@ -1,6 +1,7 @@
 # Internal Reference
 
 ## Julia Interface
+
 ::: pysr.julia_helpers
     options:
         members:

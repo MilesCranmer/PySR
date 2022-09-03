@@ -1,3 +1,4 @@
+"""This script generates the papers.md file from the papers.yml file."""
 import yaml
 from pathlib import Path
 

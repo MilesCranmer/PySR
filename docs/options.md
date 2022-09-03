@@ -43,8 +43,9 @@ the equation selection with the arrow shown in the `pick` column.
 
 ## Operators
 
-A list of operators can be found on the operators page.
+A list of operators can be found on the [operators page](operators.md).
 One can define custom operators in Julia by passing a string:
+
 ```python
 PySRRegressor(niterations=100,
     binary_operators=["mult", "plus", "special(x, y) = x^2 + y"],
@@ -107,6 +108,7 @@ on each core.
 Here, we assign weights to each row of data
 using inverse uncertainty squared. We also use 10 processes for the search
 instead of the default.
+
 ```python
 sigma = ...
 weights = 1/sigma**2
@@ -126,8 +128,8 @@ One can warm up the maxsize from a small number to encourage
 PySR to start simple, by using the `warmupMaxsize` argument.
 This specifies that maxsize increases every `warmupMaxsize`.
 
-
 ## Batching
+
 One can turn on mini-batching, with the `batching` flag,
 and control the batch size with `batch_size`. This will make
 evolution faster for large datasets. Equations are still evaluated
@@ -151,11 +153,11 @@ There is a "maxsize" parameter to PySR, but there is also an operator-level
 constraints={'pow': (-1, 1), 'mult': (3, 3), 'cos': 5}
 ```
 
-What this says is that: a power law x^y can have an expression of arbitrary (-1) complexity in the x, but only complexity 1 (e.g., a constant or variable) in the y. So (x0 + 3)^5.5 is allowed, but 5.5^(x0 + 3) is not.
+What this says is that: a power law $x^y$ can have an expression of arbitrary (-1) complexity in the x, but only complexity 1 (e.g., a constant or variable) in the y. So $(x_0 + 3)^{5.5}$ is allowed, but $5.5^{x_0 + 3}$ is not.
 I find this helps a lot for getting more interpretable equations.
 The other terms say that each multiplication can only have sub-expressions
-of up to complexity 3 (e.g., 5.0 + x2) in each side, and cosine can only operate on
-expressions of complexity 5 (e.g., 5.0 + x2 exp(x3)).
+of up to complexity 3 (e.g., $5.0 + x_2$) in each side, and cosine can only operate on
+expressions of complexity 5 (e.g., $5.0 + x_2 exp(x_3)$).
 
 ## Custom complexity
 
@@ -182,11 +184,11 @@ You can optionally pass a pandas dataframe to the callable function,
 if you called `.fit` on a pandas dataframe as well.
 
 There are also some helper functions for doing this quickly.
+
 - `model.latex()` will generate a TeX formatted output of your equation.
 - `model.sympy()` will return the SymPy representation.
 - `model.jax()` will return a callable JAX function combined with parameters (see below)
 - `model.pytorch()` will return a PyTorch model (see below).
-
 
 ## Exporting to numpy, pytorch, and jax
 
@@ -214,21 +216,25 @@ a PyTorch module which runs the equation, using PyTorch functions,
 over `X` (as a PyTorch tensor). This is differentiable, and the
 parameters of this PyTorch module correspond to the learned parameters
 in the equation, and are trainable.
+
 ```python
 torch_model = model.pytorch()
 torch_model(X)
 ```
+
 **Warning: If you are using custom operators, you must define `extra_torch_mappings` or `extra_jax_mappings` (both are `dict` of callables) to provide an equivalent definition of the functions.** (At any time you can set these parameters or any others with `model.set_params`.)
 
 For JAX, you can equivalently call `model.jax()`
 This will return a dictionary containing a `'callable'` (a JAX function),
 and `'parameters'` (a list of parameters in the equation).
 You can execute this function with:
+
 ```python
 jax_model = model.jax()
 jax_model['callable'](X, jax_model['parameters'])
 ```
-Since the parameter list is a jax array, this therefore lets you also 
+
+Since the parameter list is a jax array, this therefore lets you also
 train the parameters within JAX (and is differentiable).
 
 ## `loss`
@@ -243,29 +249,40 @@ page for SymbolicRegression.jl.
 Here are some additional examples:
 
 abs(x-y) loss
+
 ```python
 PySRRegressor(..., loss="f(x, y) = abs(x - y)^1.5")
 ```
+
 Note that the function name doesn't matter:
+
 ```python
 PySRRegressor(..., loss="loss(x, y) = abs(x * y)")
 ```
+
 With weights:
+
 ```python
 model = PySRRegressor(..., loss="myloss(x, y, w) = w * abs(x - y)") 
 model.fit(..., weights=weights)
 ```
+
 Weights can be used in arbitrary ways:
+
 ```python
 model = PySRRegressor(..., weights=weights, loss="myloss(x, y, w) = abs(x - y)^2/w^2")
 model.fit(..., weights=weights)
 ```
+
 Built-in loss (faster) (see [losses](https://astroautomata.com/SymbolicRegression.jl/dev/losses/)).
 This one computes the L3 norm:
+
 ```python
 PySRRegressor(..., loss="LPDistLoss{3}()")
 ```
+
 Can also uses these losses for weighted (weighted-average):
+
 ```python
 model = PySRRegressor(..., weights=weights, loss="LPDistLoss{3}()")
 model.fit(..., weights=weights)
@@ -278,9 +295,11 @@ when you call `model.fit`, once before the search starts,
 and again after the search finishes. The filename will
 have the same base name as the input file, but with a `.pkl` extension.
 You can load the saved model state with:
+
 ```python
 model = PySRRegressor.from_file(pickle_filename)
 ```
+
 If you have a long-running job and would like to load the model
 before completion, you can also do this. In this case, the model
 loading will use the `csv` file to load the equations, since the
