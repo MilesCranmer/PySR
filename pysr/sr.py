@@ -334,7 +334,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         (requires `annealing` to be `True`).
     annealing : bool, default=False
         Whether to use annealing.
-    early_stop_condition : { float | str }, default=None
+    early_stop_condition : float | str, default=None
         Stop the search early if this loss is reached. You may also
         pass a string containing a Julia function which
         takes a loss and complexity as input, for example:
@@ -496,7 +496,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
     Attributes
     ----------
-    equations_ : { pandas.DataFrame | list[pandas.DataFrame] }
+    equations_ : pandas.DataFrame | list[pandas.DataFrame]
         Processed DataFrame containing the results of model fitting.
     n_features_in_ : int
         Number of features seen during :term:`fit`.
@@ -1163,14 +1163,16 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        X : {ndarray | pandas.DataFrame} of shape (n_samples, n_features)
-            Training data.
-        y : {ndarray | pandas.DataFrame} of shape (n_samples,) or (n_samples, n_targets)
-            Target values. Will be cast to X's dtype if necessary.
-        Xresampled : {ndarray | pandas.DataFrame} of shape
+        X : ndarray | pandas.DataFrame
+            Training data of shape `(n_samples, n_features)`.
+        y : ndarray | pandas.DataFrame}
+            Target values of shape `(n_samples,)` or `(n_samples, n_targets)`.
+            Will be cast to `X`'s dtype if necessary.
+        Xresampled : ndarray | pandas.DataFrame of shape
                         (n_resampled, n_features), default=None
             Resampled training data used for denoising.
-        weights : {ndarray | pandas.DataFrame} of the same shape as y
+        weights : ndarray | pandas.DataFrame
+            Weight array of the same shape as `y`.
             Each element is how to weight the mean-square-error loss
             for that particular element of y.
         variable_names : list[str] of length n_features
@@ -1242,15 +1244,17 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        X : {ndarray | pandas.DataFrame} of shape (n_samples, n_features)
-            Training data.
-        y : {ndarray | pandas.DataFrame} of shape (n_samples,) or (n_samples, n_targets)
-            Target values. Will be cast to X's dtype if necessary.
-        Xresampled : {ndarray | pandas.DataFrame} of shape
-                        (n_resampled, n_features), default=None
-            Resampled training data used for denoising.
-        variable_names : list[str] of length n_features
+        X : ndarray | pandas.DataFrame
+            Training data of shape (n_samples, n_features).
+        y : ndarray | pandas.DataFrame
+            Target values of shape (n_samples,) or (n_samples, n_targets).
+            Will be cast to X's dtype if necessary.
+        Xresampled : ndarray | pandas.DataFrame, default=None
+            Resampled training data, of shape `(n_resampled, n_features)`,
+            used for denoising.
+        variable_names : list[str]
             Names of each variable in the training dataset, `X`.
+            Of length `n_features`.
         random_state : int, Numpy RandomState instance or None, default=None
             Pass an int for reproducible results across multiple function calls.
             See :term:`Glossary <random_state>`.
@@ -1317,13 +1321,15 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        X : {ndarray | pandas.DataFrame} of shape (n_samples, n_features)
-            Training data.
-        y : {ndarray | pandas.DataFrame} of shape (n_samples,) or (n_samples, n_targets)
-            Target values. Will be cast to X's dtype if necessary.
+        X : ndarray | pandas.DataFrame
+            Training data of shape `(n_samples, n_features)`.
+        y : ndarray | pandas.DataFrame
+            Target values of shape `(n_samples,)` or `(n_samples, n_targets)`.
+            Will be cast to `X`'s dtype if necessary.
         mutated_params : dict[str, Any]
             Dictionary of mutated versions of some parameters passed in __init__.
-        weights : {ndarray | pandas.DataFrame} of the same shape as y
+        weights : ndarray | pandas.DataFrame
+            Weight array of the same shape as `y`.
             Each element is how to weight the mean-square-error loss
             for that particular element of y.
         seed : int
@@ -1564,15 +1570,17 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        X : {ndarray | pandas.DataFrame} of shape (n_samples, n_features)
-            Training data.
-        y : {ndarray | pandas.DataFrame} of shape (n_samples,) or (n_samples, n_targets)
-            Target values. Will be cast to X's dtype if necessary.
-        Xresampled : {ndarray | pandas.DataFrame} of shape
-                        (n_resampled, n_features), default=None
-            Resampled training data to generate a denoised data on. This
+        X : ndarray | pandas.DataFrame
+            Training data of shape (n_samples, n_features).
+        y : ndarray | pandas.DataFrame
+            Target values of shape (n_samples,) or (n_samples, n_targets).
+            Will be cast to X's dtype if necessary.
+        Xresampled : ndarray | pandas.DataFrame, default=None
+            Resampled training data, of shape (n_resampled, n_features),
+            to generate a denoised data on. This
             will be used as the training data, rather than `X`.
-        weights : {ndarray | pandas.DataFrame} of the same shape as y, default=None
+        weights : ndarray | pandas.DataFrame, default=None
+            Weight array of the same shape as `y`.
             Each element is how to weight the mean-square-error loss
             for that particular element of `y`. Alternatively,
             if a custom `loss` was set, it will can be used
@@ -1702,8 +1710,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        X : {ndarray | pandas.DataFrame} of shape (n_samples, n_features)
-            Training data.
+        X : ndarray | pandas.DataFrame
+            Training data of shape `(n_samples, n_features)`.
 
         index : int | list[int], default=None
             If you want to compute the output of an expression using a
