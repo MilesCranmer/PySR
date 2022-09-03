@@ -25,21 +25,10 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: 3.9
-      - name: "Set up npm"
-        uses: actions/setup-node@v2
-        with:
-          node-version: '14'
       - name: "Install packages for docs building"
-        run: |
-          npm install -g docsify
-          pip install pydoc-markdown==4.5.0 pyyaml
+        run: pip install mkdocs-material mkdocs-autorefs 'mkdocstrings[python]'
       - name: "Build API docs"
-        run: |
-          cat README.md | grep -v 'pysr_logo.svg' > docs/README.md
-          pydoc-markdown --build --site-dir build -vv
-          cp docs/build/content/docs/api*.md docs/
-          for f in docs/api*.md; do mv "$f" "$f.bkup" && cat "$f.bkup" | sed '1,4d' > "$f" && rm "$f.bkup"; done
-          cd docs && python generate_papers.py && cd ..
+        run: cd docs && ./gen_docs.sh
       - name: "Deploy documentation"
         uses: JamesIves/github-pages-deploy-action@v4.2.3
         with:
