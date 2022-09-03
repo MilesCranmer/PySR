@@ -2,21 +2,22 @@
 
 Some configurable features and options in `PySR` which you
 may find useful include:
-- `model_selection`
-- `binary_operators`, `unary_operators`
-- `niterations`
-- `ncyclesperiteration`
-- `procs`
-- `populations`
-- `weights`
-- `maxsize`, `maxdepth`
-- `batching`, `batch_size`
-- `variable_names` (or pandas input)
-- Constraining operator complexity
-- LaTeX, SymPy
-- Callable exports: numpy, pytorch, jax
-- `loss`
-- Model loading
+
+- [`model_selection`](#model-selection)
+- [`binary_operators`, `unary_operators`](#operators)
+- [`niterations`](#iterations)
+- [`ncyclesperiteration`](#cycles-per-iteration)
+- [`procs`](#processors)
+- [`populations`](#populations)
+- [`weights`](#weighted-data)
+- [`maxsize`, `maxdepth`](#max-size)
+- [`batching`, `batch_size`](#batching)
+- [`variable_names`](#variable-names)
+- [Constraining use of operators](#constraining-use-of-operators)
+- [LaTeX and SymPy](#latex-and-sympy)
+- [Exporting to numpy, pytorch, and jax](#exporting-to-numpy-pytorch-and-jax)
+- [`loss`](#loss)
+- [Model loading](#model-loading)
 
 These are described below
 
@@ -139,7 +140,7 @@ You can pass a list of strings naming each column of `X` with
 and the columns will be used as variable names. Make sure only
 alphabetical characters and `_` are used in these names.
 
-## Constraining operator complexity
+## Constraining use of operators
 
 One can limit the complexity of specific operators with the `constraints` parameter.
 There is a "maxsize" parameter to PySR, but there is also an operator-level
@@ -155,7 +156,7 @@ The other terms say that each multiplication can only have sub-expressions
 of up to complexity 3 (e.g., 5.0 + x2) in each side, and cosine can only operate on
 expressions of complexity 5 (e.g., 5.0 + x2 exp(x3)).
 
-## LaTeX, SymPy
+## LaTeX and SymPy
 
 After running `model.fit(...)`, you can look at
 `model.equations` which is a pandas dataframe.
@@ -171,7 +172,7 @@ There are also some helper functions for doing this quickly.
 - `model.pytorch()` will return a PyTorch model (see below).
 
 
-## Callable exports: numpy, pytorch, jax
+## Exporting to numpy, pytorch, and jax
 
 By default, the dataframe of equations will contain columns
 with the identifier `lambda_format`.
