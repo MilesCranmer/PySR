@@ -30,7 +30,4 @@ jobs:
       - name: "Build API docs"
         run: cd docs && ./gen_docs.sh
       - name: "Deploy documentation"
-        uses: JamesIves/github-pages-deploy-action@v4.2.3
-        with:
-          branch: gh-pages
-          folder: docs
+        run: mkdocs gh-deploy --force
