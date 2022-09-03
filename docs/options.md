@@ -14,6 +14,7 @@ may find useful include:
 - [`batching`, `batch_size`](#batching)
 - [`variable_names`](#variable-names)
 - [Constraining use of operators](#constraining-use-of-operators)
+- [Custom complexities](#custom-complexity)
 - [LaTeX and SymPy](#latex-and-sympy)
 - [Exporting to numpy, pytorch, and jax](#exporting-to-numpy-pytorch-and-jax)
 - [`loss`](#loss)
@@ -155,6 +156,21 @@ I find this helps a lot for getting more interpretable equations.
 The other terms say that each multiplication can only have sub-expressions
 of up to complexity 3 (e.g., 5.0 + x2) in each side, and cosine can only operate on
 expressions of complexity 5 (e.g., 5.0 + x2 exp(x3)).
+
+## Custom complexity
+
+By default, all operators, constants, and instances of variables
+have a complexity of 1. The sum of the complexities of all terms
+is the total complexity of an expression.
+You may change this by configuring the options:
+
+- `complexity_of_operators` - pass a dictionary of `<str>: <int>` pairs
+  to change the complexity of each operator. If an operator is not
+  specified, it will have the default complexity of 1.
+- `complexity_of_constants` - supplying an integer will make all constants
+  have that complexity.
+- `complexity_of_variables` - supplying an integer will make all variables
+  have that complexity.
 
 ## LaTeX and SymPy
 
