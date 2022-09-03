@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/MilesCranmer/PySR/master/docs/images/pysr_logo.svg" width="200" />
+<img src="https://raw.githubusercontent.com/MilesCranmer/PySR/master/docs/assets/pysr_logo.svg" width="200" />
     
 # PySR: High-Performance Symbolic Regression in Python
 
