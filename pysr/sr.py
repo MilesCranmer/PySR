@@ -230,57 +230,65 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
     Parameters
     ----------
-    model_selection : str, default="best"
+    model_selection : str
         Model selection criterion when selecting a final expression from
         the list of best expression at each complexity.
-        Can be 'accuracy', 'best', or 'score'.
-
-        - `"accuracy"` selects the candidate model with the lowest loss
-          (highest accuracy).
-        - `"score"` selects the candidate model with the highest score.
-          Score is defined as the negated derivative of the log-loss with
-          respect to complexity - if an expression has a much better
-          loss at a slightly higher complexity, it is preferred.
-        - `"best"` selects the candidate model with the highest score
-          among expressions with a loss better than at least 1.5x the
-          most accurate model.
-    binary_operators : list[str], default=["+", "-", "*", "/"]
+        Can be `'accuracy'`, `'best'`, or `'score'`. Default is `'best'`.
+        `'accuracy'` selects the candidate model with the lowest loss
+        (highest accuracy).
+        `'score'` selects the candidate model with the highest score.
+        Score is defined as the negated derivative of the log-loss with
+        respect to complexity - if an expression has a much better
+        loss at a slightly higher complexity, it is preferred.
+        `'best'` selects the candidate model with the highest score
+        among expressions with a loss better than at least 1.5x the
+        most accurate model.
+    binary_operators : list[str]
         List of strings for binary operators used in the search.
         See the [operators page](https://astroautomata.com/PySR/operators/)
         for more details.
-    unary_operators : list[str], default=None
+        Default is `["+", "-", "*", "/"]`.
+    unary_operators : list[str]
         Operators which only take a single scalar as input.
         For example, `"cos"` or `"exp"`.
-    niterations : int, default=40
+        Default is `None`.
+    niterations : int
         Number of iterations of the algorithm to run. The best
         equations are printed and migrate between populations at the
         end of each iteration.
-    populations : int, default=15
+        Default is `40`.
+    populations : int
         Number of populations running.
-    population_size : int, default=33
+        Default is `15`.
+    population_size : int
         Number of individuals in each population.
-    max_evals : int, default=None
+        Default is `33`.
+    max_evals : int
         Limits the total number of evaluations of expressions to
-        this number.
-    maxsize : int, default=20
-        Max complexity of an equation.
-    maxdepth : int, default=None
+        this number.  Default is `None`.
+    maxsize : int
+        Max complexity of an equation.  Default is `20`.
+    maxdepth : int
         Max depth of an equation. You can use both `maxsize` and
         `maxdepth`. `maxdepth` is by default not used.
-    warmup_maxsize_by : float, default=0.0
+        Default is `None`.
+    warmup_maxsize_by : float
         Whether to slowly increase max size from a small number up to
         the maxsize (if greater than 0).  If greater than 0, says the
         fraction of training time at which the current maxsize will
         reach the user-passed maxsize.
-    timeout_in_seconds : float, default=None
+        Default is `0.0`.
+    timeout_in_seconds : float
         Make the search return early once this many seconds have passed.
-    constraints : dict[str, int | tuple[int,int]], default=None
+        Default is `None`.
+    constraints : dict[str, int | tuple[int,int]]
         Dictionary of int (unary) or 2-tuples (binary), this enforces
         maxsize constraints on the individual arguments of operators.
         E.g., `'pow': (-1, 1)` says that power laws can have any
         complexity left argument, but only 1 complexity in the right
         argument. Use this to force more interpretable solutions.
-    nested_constraints : dict[str, dict], default=None
+        Default is `None`.
+    nested_constraints : dict[str, dict]
         Specifies how many times a combination of operators can be
         nested. For example, `{"sin": {"cos": 0}}, "cos": {"cos": 2}}`
         specifies that `cos` may never appear within a `sin`, but `sin`
@@ -296,7 +304,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         operators, you only need to provide a single number: both
         arguments are treated the same way, and the max of each
         argument is constrained.
-    loss : str, default="L2DistLoss()"
+        Default is `None`.
+    loss : str
         String of Julia code specifying the loss function. Can either
         be a loss from LossFunctions.jl, or your own loss written as a
         function. Examples of custom written losses include:
@@ -311,7 +320,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         `L1HingeLoss()`, `SmoothedL1HingeLoss(γ)`,
         `ModifiedHuberLoss()`, `L2MarginLoss()`, `ExpLoss()`,
         `SigmoidLoss()`, `DWDMarginLoss(q)`.
-    complexity_of_operators : dict[str, float], default=None
+        Default is `"L2DistLoss()"`.
+    complexity_of_operators : dict[str, float]
         If you would like to use a complexity other than 1 for an
         operator, specify the complexity here. For example,
         `{"sin": 2, "+": 1}` would give a complexity of 2 for each use
@@ -319,184 +329,231 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         the `+` operator (which is the default). You may specify real
         numbers for a complexity, and the total complexity of a tree
         will be rounded to the nearest integer after computing.
-    complexity_of_constants : float, default=1
-        Complexity of constants.
-    complexity_of_variables : float, default=1
-        Complexity of variables.
-    parsimony : float, default=0.0032
+        Default is `None`.
+    complexity_of_constants : float
+        Complexity of constants. Default is `1`.
+    complexity_of_variables : float
+        Complexity of variables. Default is `1`.
+    parsimony : float
         Multiplicative factor for how much to punish complexity.
-    use_frequency : bool, default=True
+        Default is `0.0032`.
+    use_frequency : bool
         Whether to measure the frequency of complexities, and use that
         instead of parsimony to explore equation space. Will naturally
         find equations of all complexities.
-    use_frequency_in_tournament : bool, default=True
+        Default is `True`.
+    use_frequency_in_tournament : bool
         Whether to use the frequency mentioned above in the tournament,
         rather than just the simulated annealing.
-    alpha : float, default=0.1
+        Default is `True`.
+    alpha : float
         Initial temperature for simulated annealing
         (requires `annealing` to be `True`).
-    annealing : bool, default=False
-        Whether to use annealing.
-    early_stop_condition : float | str, default=None
+        Default is `0.1`.
+    annealing : bool
+        Whether to use annealing.  Default is `False`.
+    early_stop_condition : float | str
         Stop the search early if this loss is reached. You may also
         pass a string containing a Julia function which
         takes a loss and complexity as input, for example:
         `"f(loss, complexity) = (loss < 0.1) && (complexity < 10)"`.
-    ncyclesperiteration : int, default=550
+        Default is `None`.
+    ncyclesperiteration : int
         Number of total mutations to run, per 10 samples of the
         population, per iteration.
-    fraction_replaced : float, default=0.000364
+        Default is `550`.
+    fraction_replaced : float
         How much of population to replace with migrating equations from
         other populations.
-    fraction_replaced_hof : float, default=0.035
+        Default is `0.000364`.
+    fraction_replaced_hof : float
         How much of population to replace with migrating equations from
-        hall of fame.
-    weight_add_node : float, default=0.79
+        hall of fame. Default is `0.035`.
+    weight_add_node : float
         Relative likelihood for mutation to add a node.
-    weight_insert_node : float, default=5.1
+        Default is `0.79`.
+    weight_insert_node : float
         Relative likelihood for mutation to insert a node.
-    weight_delete_node : float, default=1.7
+        Default is `5.1`.
+    weight_delete_node : float
         Relative likelihood for mutation to delete a node.
-    weight_do_nothing : float, default=0.21
+        Default is `1.7`.
+    weight_do_nothing : float
         Relative likelihood for mutation to leave the individual.
-    weight_mutate_constant : float, default=0.048
+        Default is `0.21`.
+    weight_mutate_constant : float
         Relative likelihood for mutation to change the constant slightly
         in a random direction.
-    weight_mutate_operator : float, default=0.47
+        Default is `0.048`.
+    weight_mutate_operator : float
         Relative likelihood for mutation to swap an operator.
-    weight_randomize : float, default=0.00023
+        Default is `0.47`.
+    weight_randomize : float
         Relative likelihood for mutation to completely delete and then
         randomly generate the equation
-    weight_simplify : float, default=0.0020
+        Default is `0.00023`.
+    weight_simplify : float
         Relative likelihood for mutation to simplify constant parts by evaluation
-    crossover_probability : float, default=0.066
+        Default is `0.0020`.
+    crossover_probability : float
         Absolute probability of crossover-type genetic operation, instead of a mutation.
-    skip_mutation_failures : bool, default=True
+        Default is `0.066`.
+    skip_mutation_failures : bool
         Whether to skip mutation and crossover failures, rather than
         simply re-sampling the current member.
-    migration : bool, default=True
-        Whether to migrate.
-    hof_migration : bool, default=True
-        Whether to have the hall of fame migrate.
-    topn : int, default=12
+        Default is `True`.
+    migration : bool
+        Whether to migrate.  Default is `True`.
+    hof_migration : bool
+        Whether to have the hall of fame migrate.  Default is `True`.
+    topn : int
         How many top individuals migrate from each population.
-    should_optimize_constants : bool, default=True
+        Default is `12`.
+    should_optimize_constants : bool
         Whether to numerically optimize constants (Nelder-Mead/Newton)
-        at the end of each iteration.
-    optimizer_algorithm : str, default="BFGS"
+        at the end of each iteration. Default is `True`.
+    optimizer_algorithm : str
         Optimization scheme to use for optimizing constants. Can currently
         be `NelderMead` or `BFGS`.
-    optimizer_nrestarts : int, default=2
+        Default is `"BFGS"`.
+    optimizer_nrestarts : int
         Number of time to restart the constants optimization process with
         different initial conditions.
-    optimize_probability : float, default=0.14
+        Default is `2`.
+    optimize_probability : float
         Probability of optimizing the constants during a single iteration of
         the evolutionary algorithm.
-    optimizer_iterations : int, default=8
+        Default is `0.14`.
+    optimizer_iterations : int
         Number of iterations that the constants optimizer can take.
-    perturbation_factor : float, default=0.076
+        Default is `8`.
+    perturbation_factor : float
         Constants are perturbed by a max factor of
         (perturbation_factor*T + 1). Either multiplied by this or
         divided by this.
-    tournament_selection_n : int, default=10
+        Default is `0.076`.
+    tournament_selection_n : int
         Number of expressions to consider in each tournament.
-    tournament_selection_p : float, default=0.86
+        Default is `10`.
+    tournament_selection_p : float
         Probability of selecting the best expression in each
         tournament. The probability will decay as p*(1-p)^n for other
         expressions, sorted by loss.
-    procs : int, default=multiprocessing.cpu_count()
+        Default is `0.86`.
+    procs : int
         Number of processes (=number of populations running).
-    multithreading : bool, default=True
+        Default is `cpu_count()`.
+    multithreading : bool
         Use multithreading instead of distributed backend.
-        Using procs=0 will turn off both.
-    cluster_manager : str, default=None
+        Using procs=0 will turn off both. Default is `True`.
+    cluster_manager : str
         For distributed computing, this sets the job queue system. Set
         to one of "slurm", "pbs", "lsf", "sge", "qrsh", "scyld", or
         "htc". If set to one of these, PySR will run in distributed
         mode, and use `procs` to figure out how many processes to launch.
-    batching : bool, default=False
+        Default is `None`.
+    batching : bool
         Whether to compare population members on small batches during
         evolution. Still uses full dataset for comparing against hall
-        of fame.
-    batch_size : int, default=50
-        The amount of data to use if doing batching.
-    fast_cycle : bool, default=False (experimental)
+        of fame. Default is `False`.
+    batch_size : int
+        The amount of data to use if doing batching. Default is `50`.
+    fast_cycle : bool
         Batch over population subsamples. This is a slightly different
         algorithm than regularized evolution, but does cycles 15%
         faster. May be algorithmically less efficient.
-    precision : int, default=32
-        What precision to use for the data. By default this is 32
-        (float32), but you can select 64 or 16 as well.
-    random_state : int, Numpy RandomState instance or None, default=None
+        Default is `False`.
+    precision : int
+        What precision to use for the data. By default this is `32`
+        (float32), but you can select `64` or `16` as well, giving
+        you 64 or 16 bits of floating point precision, respectively.
+        Default is `32`.
+    random_state : int, Numpy RandomState instance or None
         Pass an int for reproducible results across multiple function calls.
         See :term:`Glossary <random_state>`.
-    deterministic : bool, default=False
+        Default is `None`.
+    deterministic : bool
         Make a PySR search give the same result every run.
         To use this, you must turn off parallelism
         (with `procs`=0, `multithreading`=False),
         and set `random_state` to a fixed seed.
-    warm_start : bool, default=False
+        Default is `False`.
+    warm_start : bool
         Tells fit to continue from where the last call to fit finished.
         If false, each call to fit will be fresh, overwriting previous results.
-    verbosity : int, default=1e9
+        Default is `False`.
+    verbosity : int
         What verbosity level to use. 0 means minimal print statements.
-    update_verbosity : int, default=None
+        Default is `1e9`.
+    update_verbosity : int
         What verbosity level to use for package updates.
         Will take value of `verbosity` if not given.
-    progress : bool, default=True
+        Default is `None`.
+    progress : bool
         Whether to use a progress bar instead of printing to stdout.
-    equation_file : str, default=None
+        Default is `True`.
+    equation_file : str
         Where to save the files (.csv extension).
-    temp_equation_file : bool, default=False
+        Default is `None`.
+    temp_equation_file : bool
         Whether to put the hall of fame file in the temp directory.
         Deletion is then controlled with the `delete_tempfiles`
         parameter.
-    tempdir : str, default=None
-        directory for the temporary files.
-    delete_tempfiles : bool, default=True
+        Default is `False`.
+    tempdir : str
+        directory for the temporary files. Default is `None`.
+    delete_tempfiles : bool
         Whether to delete the temporary files after finishing.
-    julia_project : str, default=None
+        Default is `True`.
+    julia_project : str
         A Julia environment location containing a Project.toml
         (and potentially the source code for SymbolicRegression.jl).
         Default gives the Python package directory, where a
         Project.toml file should be present from the install.
-    update: bool, default=True
+    update: bool
         Whether to automatically update Julia packages.
-    output_jax_format : bool, default=False
+        Default is `True`.
+    output_jax_format : bool
         Whether to create a 'jax_format' column in the output,
         containing jax-callable functions and the default parameters in
         a jax array.
-    output_torch_format : bool, default=False
+        Default is `False`.
+    output_torch_format : bool
         Whether to create a 'torch_format' column in the output,
         containing a torch module with trainable parameters.
-    extra_sympy_mappings : dict[str, Callable], default=None
+        Default is `False`.
+    extra_sympy_mappings : dict[str, Callable]
         Provides mappings between custom `binary_operators` or
         `unary_operators` defined in julia strings, to those same
         operators defined in sympy.
         E.G if `unary_operators=["inv(x)=1/x"]`, then for the fitted
         model to be export to sympy, `extra_sympy_mappings`
         would be `{"inv": lambda x: 1/x}`.
-    extra_jax_mappings : dict[Callable, str], default=None
+        Default is `None`.
+    extra_jax_mappings : dict[Callable, str]
         Similar to `extra_sympy_mappings` but for model export
         to jax. The dictionary maps sympy functions to jax functions.
         For example: `extra_jax_mappings={sympy.sin: "jnp.sin"}` maps
         the `sympy.sin` function to the equivalent jax expression `jnp.sin`.
-    extra_torch_mappings : dict[Callable, Callable], default=None
+        Default is `None`.
+    extra_torch_mappings : dict[Callable, Callable]
         The same as `extra_jax_mappings` but for model export
         to pytorch. Note that the dictionary keys should be callable
         pytorch expressions.
-        For example: `extra_torch_mappings={sympy.sin: torch.sin}`
-    denoise : bool, default=False
+        For example: `extra_torch_mappings={sympy.sin: torch.sin}`.
+        Default is `None`.
+    denoise : bool
         Whether to use a Gaussian Process to denoise the data before
         inputting to PySR. Can help PySR fit noisy data.
-    select_k_features : int, default=None
+        Default is `False`.
+    select_k_features : int
          whether to run feature selection in Python using random forests,
          before passing to the symbolic regression code. None means no
          feature selection; an int means select that many features.
-    **kwargs : dict, default=None
+         Default is `None`.
+    **kwargs : dict
         Supports deprecated keyword arguments. Other arguments will
         result in an error.
-
     Attributes
     ----------
     equations_ : pandas.DataFrame | list[pandas.DataFrame]
@@ -793,9 +850,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         selection_mask : list[bool]
             If using select_k_features, you must pass `model.selection_mask_` here.
             Not needed if loading from a pickle file.
-        nout : int, default=1
+        nout : int
             Number of outputs of the model.
             Not needed if loading from a pickle file.
+            Default is `1`.
         **pysr_kwargs : dict
             Any other keyword arguments to initialize the PySRRegressor object.
             These will overwrite those stored in the pickle file.
@@ -999,7 +1057,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        index : int | list[int], default=None
+        index : int | list[int]
             If you wish to select a particular equation from `self.equations_`,
             give the row number here. This overrides the `model_selection`
             parameter. If there are multiple output features, then pass
@@ -1171,9 +1229,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         y : ndarray | pandas.DataFrame}
             Target values of shape `(n_samples,)` or `(n_samples, n_targets)`.
             Will be cast to `X`'s dtype if necessary.
-        Xresampled : ndarray | pandas.DataFrame of shape
-                        (n_resampled, n_features), default=None
-            Resampled training data used for denoising.
+        Xresampled : ndarray | pandas.DataFrame
+            Resampled training data used for denoising,
+            of shape `(n_resampled, n_features)`.
         weights : ndarray | pandas.DataFrame
             Weight array of the same shape as `y`.
             Each element is how to weight the mean-square-error loss
@@ -1252,15 +1310,15 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         y : ndarray | pandas.DataFrame
             Target values of shape (n_samples,) or (n_samples, n_targets).
             Will be cast to X's dtype if necessary.
-        Xresampled : ndarray | pandas.DataFrame, default=None
+        Xresampled : ndarray | pandas.DataFrame
             Resampled training data, of shape `(n_resampled, n_features)`,
             used for denoising.
         variable_names : list[str]
             Names of each variable in the training dataset, `X`.
             Of length `n_features`.
-        random_state : int, Numpy RandomState instance or None, default=None
+        random_state : int | np.RandomState
             Pass an int for reproducible results across multiple function calls.
-            See :term:`Glossary <random_state>`.
+            See :term:`Glossary <random_state>`. Default is `None`.
 
         Returns
         -------
@@ -1578,17 +1636,17 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         y : ndarray | pandas.DataFrame
             Target values of shape (n_samples,) or (n_samples, n_targets).
             Will be cast to X's dtype if necessary.
-        Xresampled : ndarray | pandas.DataFrame, default=None
+        Xresampled : ndarray | pandas.DataFrame
             Resampled training data, of shape (n_resampled, n_features),
             to generate a denoised data on. This
             will be used as the training data, rather than `X`.
-        weights : ndarray | pandas.DataFrame, default=None
+        weights : ndarray | pandas.DataFrame
             Weight array of the same shape as `y`.
             Each element is how to weight the mean-square-error loss
             for that particular element of `y`. Alternatively,
             if a custom `loss` was set, it will can be used
             in arbitrary ways.
-        variable_names : list[str], default=None
+        variable_names : list[str]
             A list of names for the variables, rather than "x0", "x1", etc.
             If `X` is a pandas dataframe, the column names will be used
             instead of `variable_names`. Cannot contain spaces or special
@@ -1695,8 +1753,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        checkpoint_file : str, default=None
+        checkpoint_file : str
             Path to checkpoint hall of fame file to be loaded.
+            The default will use the set `equation_file_`.
         """
         if checkpoint_file:
             self.equation_file_ = checkpoint_file
@@ -1716,7 +1775,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         X : ndarray | pandas.DataFrame
             Training data of shape `(n_samples, n_features)`.
 
-        index : int | list[int], default=None
+        index : int | list[int]
             If you want to compute the output of an expression using a
             particular row of `self.equations_`, you may specify the index here.
             For multiple output equations, you must pass a list of indices
@@ -1784,7 +1843,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        index : int | list[int], default=None
+        index : int | list[int]
             If you wish to select a particular equation from
             `self.equations_`, give the index number here. This overrides
             the `model_selection` parameter. If there are multiple output
@@ -1808,15 +1867,16 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        index : int | list[int], default=None
+        index : int | list[int]
             If you wish to select a particular equation from
             `self.equations_`, give the index number here. This overrides
             the `model_selection` parameter. If there are multiple output
             features, then pass a list of indices with the order the same
             as the output feature.
-        precision : int, default=3
+        precision : int
             The number of significant figures shown in the LaTeX
             representation.
+            Default is `3`.
 
         Returns
         -------
@@ -1843,7 +1903,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        index : int | list[int], default=None
+        index : int | list[int]
             If you wish to select a particular equation from
             `self.equations_`, give the index number here. This overrides
             the `model_selection` parameter. If there are multiple output
@@ -1874,7 +1934,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        index : int | list[int], default=None
+        index : int | list[int]
             If you wish to select a particular equation from
             `self.equations_`, give the index number here. This overrides
             the `model_selection` parameter. If there are multiple output
@@ -2094,16 +2154,18 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        indices : list[int] | list[list[int]], default=None
+        indices : list[int] | list[list[int]]
             If you wish to select a particular subset of equations from
             `self.equations_`, give the row numbers here. By default,
             all equations will be used. If there are multiple output
             features, then pass a list of lists.
-        precision : int, default=3
+        precision : int
             The number of significant figures shown in the LaTeX
             representations.
-        columns : list[str], default=["equation", "complexity", "loss", "score"]
+            Default is `3`.
+        columns : list[str]
             Which columns to include in the table.
+            Default is `["equation", "complexity", "loss", "score"]`.
 
         Returns
         -------
