@@ -245,10 +245,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
           among expressions with a loss better than at least 1.5x the
           most accurate model.
     binary_operators : list[str], default=["+", "-", "*", "/"]
-        List of strings giving the binary operators in Julia's Base.
+        List of strings for binary operators used in the search.
+        See the [operators page](https://astroautomata.com/PySR/operators/)
+        for more details.
     unary_operators : list[str], default=None
-        Same as `binary_operators` but for operators taking a
-        single scalar.
+        Operators which only take a single scalar as input.
+        For example, `"cos"` or `"exp"`.
     niterations : int, default=40
         Number of iterations of the algorithm to run. The best
         equations are printed and migrate between populations at the
