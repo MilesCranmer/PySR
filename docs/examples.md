@@ -28,8 +28,9 @@ Here, we define a custom operator and use it to find an expression:
 X = 2 * np.random.randn(100, 5)
 y = 1 / X[:, 0]
 model = PySRRegressor(
-    binary_operators=["plus", "mult"],
+    binary_operators=["+", "*"],
     unary_operators=["inv(x) = 1/x"],
+    extra_sympy_mappings={"inv": lambda x: 1/x},
 )
 model.fit(X, y)
 print(model)
@@ -44,30 +45,14 @@ each requiring a different feature.
 X = 2 * np.random.randn(100, 5)
 y = 1 / X[:, [0, 1, 2]]
 model = PySRRegressor(
-    binary_operators=["plus", "mult"],
+    binary_operators=["+", "*"],
     unary_operators=["inv(x) = 1/x"],
+    extra_sympy_mappings={"inv": lambda x: 1/x},
 )
 model.fit(X, y)
 ```
 
 ## 4. Plotting an expression
-
-Here, let's use the same equations, but get a format we can actually
-use and test. We can add this option after a search via the `set_params`
-function:
-
-```python
-model.set_params(extra_sympy_mappings={"inv": lambda x: 1/x})
-model.sympy()
-```
-
-If you look at the lists of expressions before and after, you will
-see that the sympy format now has replaced `inv` with `1/`.
-We can again look at the equation chosen:
-
-```python
-print(model)
-```
 
 For now, let's consider the expressions for output 0.
 We can see the LaTeX version of this with:
@@ -82,7 +67,7 @@ Let's plot the prediction against the truth:
 
 ```python
 from matplotlib import pyplot as plt
-plt.scatter(y[:, 0], model(X)[:, 0])
+plt.scatter(y[:, 0], model.predict(X)[:, 0])
 plt.xlabel('Truth')
 plt.ylabel('Prediction')
 plt.show()
@@ -91,6 +76,10 @@ plt.show()
 Which gives us:
 
 ![Truth vs Prediction](images/example_plot.png)
+
+We may also plot the output of a particular expression
+by passing the index of the expression to `predict` (or
+`sympy` or `latex` as well)
 
 ## 5. Feature selection
 
