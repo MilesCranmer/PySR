@@ -234,6 +234,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Model selection criterion when selecting a final expression from
         the list of best expression at each complexity.
         Can be 'accuracy', 'best', or 'score'.
+
         - `"accuracy"` selects the candidate model with the lowest loss
           (highest accuracy).
         - `"score"` selects the candidate model with the highest score.
