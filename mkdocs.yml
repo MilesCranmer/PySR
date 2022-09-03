@@ -17,6 +17,7 @@ theme:
   logo: assets/pysr_logo_reduced.svg
   icon:
     repo: fontawesome/brands/github-alt
+  favicon: assets/favicon.png
 
 nav:
   - index.md
