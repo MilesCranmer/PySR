@@ -13,6 +13,10 @@ theme:
       toggle:
         icon: material/toggle-switch-off-outline
         name: Switch to light mode
+    
+
+  features:
+    - navigation.expand
 
   logo: assets/pysr_logo_reduced.svg
   icon:
