@@ -1036,7 +1036,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     def _setup_equation_file(self):
         """
         Set the full pathname of the equation file.
-        
+
         This is performed using `tempdir` and
         `equation_file`.
         """
@@ -1678,7 +1678,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     def refresh(self, checkpoint_file=None):
         """
         Update self.equations_ with any new options passed.
-        
+
         For example, updating `extra_sympy_mappings`
         will require a `.refresh()` to update the equations.
 
