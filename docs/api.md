@@ -1,4 +1,4 @@
-# API Reference
+# PySRRegressor Reference
 
 ::: pysr.PySRRegressor
     options:
