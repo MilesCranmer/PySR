@@ -3,21 +3,21 @@
 Some configurable features and options in `PySR` which you
 may find useful include:
 
-- [`model_selection`](#model-selection)
-- [`binary_operators`, `unary_operators`](#operators)
-- [`niterations`](#iterations)
-- [`ncyclesperiteration`](#cycles-per-iteration)
-- [`procs`](#processors)
-- [`populations`](#populations)
-- [`weights`](#weighted-data)
-- [`maxsize`, `maxdepth`](#max-size)
-- [`batching`, `batch_size`](#batching)
-- [`variable_names`](#variable-names)
+- [Selecting from the accuracy-complexity curve](#model-selection)
+- [Operators](#operators)
+- [Number of outer search iterations](#iterations)
+- [Number of inner search iterations](#cycles-per-iteration)
+- [Multi-processing](#processors)
+- [Populations](#populations)
+- [Data weighting](#weighted-data)
+- [Max complexity and depth](#max-size)
+- [Mini-batching](#batching)
+- [Variable names](#variable-names)
 - [Constraining use of operators](#constraining-use-of-operators)
 - [Custom complexities](#custom-complexity)
 - [LaTeX and SymPy](#latex-and-sympy)
 - [Exporting to numpy, pytorch, and jax](#exporting-to-numpy-pytorch-and-jax)
-- [`loss`](#loss)
+- [Loss functions](#loss)
 - [Model loading](#model-loading)
 
 These are described below
@@ -34,7 +34,7 @@ It also prints the equations to stdout.
 ## Model selection
 
 By default, `PySRRegressor` uses `model_selection='best'`
-which selects an equation from `PySRRegressor.equations` using
+which selects an equation from `PySRRegressor.equations_` using
 a combination of accuracy and complexity.
 You can also select `model_selection='accuracy'`.
 
