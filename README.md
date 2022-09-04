@@ -2,8 +2,8 @@
 
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/MilesCranmer/PySR/master/docs/assets/pysr_logo.svg" width="200" />
-    
+https://user-images.githubusercontent.com/7593028/188328887-1b6cda72-2f41-439e-ae23-75dd3489bc24.mp4
+
 # PySR: High-Performance Symbolic Regression in Python
 
 </div>
