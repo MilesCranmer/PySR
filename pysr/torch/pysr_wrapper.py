@@ -49,7 +49,7 @@ def _create_pysr_wrapper(*args, **kwargs):
             if self.record:
                 self._is_recording = True
             for _, module in self.named_modules():
-                if isinstance(module, PySRWrapper):
+                if isinstance(module, _PySRWrapper):
                     if module.record:
                         module._is_recording = True
 
@@ -57,7 +57,7 @@ def _create_pysr_wrapper(*args, **kwargs):
             """Stop recording observations of all PySRWrapper modules."""
             self._is_recording = False
             for _, module in self.named_modules():
-                if isinstance(module, PySRWrapper):
+                if isinstance(module, _PySRWrapper):
                     module._is_recording = False
 
         def distill(
