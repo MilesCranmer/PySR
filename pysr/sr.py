@@ -1454,9 +1454,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             try:
                 if self.update:
                     Main.eval(f"Pkg.resolve({io_arg})")
-                    Main.eval(f"Pkg.instantiate({io_arg})")
-                else:
-                    Main.eval(f"Pkg.instantiate({io_arg})")
             except (JuliaError, RuntimeError) as e:
                 raise ImportError(import_error_string(julia_project)) from e
             Main.eval("using SymbolicRegression")
