@@ -1771,7 +1771,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         ----------
         X : ndarray | pandas.DataFrame
             Training data of shape `(n_samples, n_features)`.
-
         index : int | list[int]
             If you want to compute the output of an expression using a
             particular row of `self.equations_`, you may specify the index here.
