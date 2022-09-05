@@ -110,13 +110,12 @@ def _add_sr_to_julia_project(Main, io_arg):
         url="https://github.com/MilesCranmer/SymbolicRegression.jl",
         rev="v" + __symbolic_regression_jl_version__,
     )
-    Main.eval(f"Pkg.add(sr_spec, {io_arg})")
     Main.clustermanagers_spec = Main.PackageSpec(
         name="ClusterManagers",
         url="https://github.com/JuliaParallel/ClusterManagers.jl",
         rev="14e7302f068794099344d5d93f71979aaf4fbeb3",
     )
-    Main.eval(f"Pkg.add(clustermanagers_spec, {io_arg})")
+    Main.eval(f"Pkg.add([sr_spec, clustermanagers_spec], {io_arg})")
 
 
 def _escape_filename(filename):
