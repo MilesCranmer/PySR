@@ -1447,15 +1447,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             )
             from julia.api import JuliaError
 
-            if is_shared:
-                # Install SymbolicRegression.jl:
-                _add_sr_to_julia_project(Main, io_arg)
-
-            try:
-                if self.update:
+            if self.update:
+                try:
+                    if is_shared:
+                        _add_sr_to_julia_project(Main, io_arg)
                     Main.eval(f"Pkg.resolve({io_arg})")
-            except (JuliaError, RuntimeError) as e:
-                raise ImportError(import_error_string(julia_project)) from e
+                except (JuliaError, RuntimeError) as e:
+                    raise ImportError(import_error_string(julia_project)) from e
             Main.eval("using SymbolicRegression")
 
             Main.plus = Main.eval("(+)")
