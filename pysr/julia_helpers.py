@@ -24,7 +24,7 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
     if is_shared:
         # is_shared is only true if the julia_project arg was None, see _get_julia_project
         Main = init_julia(None)
-    else
+    else:
         Main = init_julia(julia_project)
 
     Main.eval("using Pkg")
