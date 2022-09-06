@@ -84,7 +84,7 @@ def is_julia_version_greater_eq(Main, version="1.6"):
     return Main.eval(f'VERSION >= v"{version}"')
 
 
-def check_for_conflicting_libraries(): # pragma: no cover
+def check_for_conflicting_libraries():  # pragma: no cover
     """Check whether there are conflicting modules, and display warnings."""
     # See https://github.com/pytorch/pytorch/issues/78829: importing
     # pytorch before running `pysr.fit` causes a segfault.
