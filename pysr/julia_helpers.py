@@ -1,4 +1,5 @@
 """Functions for initializing the Julia environment and installing deps."""
+import sys
 import warnings
 from pathlib import Path
 import os
@@ -83,8 +84,24 @@ def is_julia_version_greater_eq(Main, version="1.6"):
     return Main.eval(f'VERSION >= v"{version}"')
 
 
+def check_for_conflicting_libraries(): # pragma: no cover
+    """Check whether there are conflicting modules, and display warnings."""
+    # See https://github.com/pytorch/pytorch/issues/78829: importing
+    # pytorch before running `pysr.fit` causes a segfault.
+    torch_is_loaded = "torch" in sys.modules
+    if torch_is_loaded:
+        warnings.warn(
+            "`torch` was loaded before the Julia instance started. "
+            "This may cause a segfault when running `PySRRegressor.fit`. "
+            "To avoid this, please run `pysr.julia_helpers.init_julia()` *before* "
+            "importing `torch`. "
+            "For updates, see https://github.com/pytorch/pytorch/issues/78829"
+        )
+
+
 def init_julia(julia_project=None):
     """Initialize julia binary, turning off compiled modules if needed."""
+    check_for_conflicting_libraries()
     from julia.core import JuliaInfo, UnsupportedPythonError
 
     julia_project, is_shared = _get_julia_project(julia_project)
