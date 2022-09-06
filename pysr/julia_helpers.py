@@ -6,6 +6,8 @@ import os
 
 from .version import __version__, __symbolic_regression_jl_version__
 
+julia_initialized = False
+
 
 def install(julia_project=None, quiet=False):  # pragma: no cover
     """
@@ -101,7 +103,11 @@ def check_for_conflicting_libraries():  # pragma: no cover
 
 def init_julia(julia_project=None):
     """Initialize julia binary, turning off compiled modules if needed."""
-    check_for_conflicting_libraries()
+    global julia_initialized
+
+    if not julia_initialized:
+        check_for_conflicting_libraries()
+
     from julia.core import JuliaInfo, UnsupportedPythonError
 
     julia_project, is_shared = _get_julia_project(julia_project)
@@ -135,6 +141,7 @@ def init_julia(julia_project=None):
 
         Main = _Main
 
+    julia_initialized = True
     return Main
 
 
