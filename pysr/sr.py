@@ -1430,7 +1430,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             if multithreading:
                 os.environ["JULIA_NUM_THREADS"] = str(self.procs)
 
-            Main = init_julia()
+            Main = init_julia(self.julia_project)
 
         if cluster_manager is not None:
             Main.eval(f"import ClusterManagers: addprocs_{cluster_manager}")

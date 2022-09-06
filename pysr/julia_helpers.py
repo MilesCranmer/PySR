@@ -12,13 +12,17 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
 
     Also updates the local Julia registry.
     """
+
+    # Set JULIA_PROJECT so that we install in the pysr environment
+    julia_project, is_shared = _get_julia_project(julia_project)
+    os.environ["JULIA_PROJECT"] = "@" + julia_project if is_shared else julia_project
+
     import julia
 
     julia.install(quiet=quiet)
 
-    julia_project, is_shared = _get_julia_project(julia_project)
 
-    Main = init_julia()
+    Main = init_julia(julia_project)
     Main.eval("using Pkg")
 
     io = "devnull" if quiet else "stderr"
@@ -72,9 +76,12 @@ def is_julia_version_greater_eq(Main, version="1.6"):
     return Main.eval(f'VERSION >= v"{version}"')
 
 
-def init_julia():
+def init_julia(julia_project=None):
     """Initialize julia binary, turning off compiled modules if needed."""
     from julia.core import JuliaInfo, UnsupportedPythonError
+
+    julia_project, is_shared = _get_julia_project(julia_project)
+    os.environ["JULIA_PROJECT"] = "@" + julia_project if is_shared else julia_project
 
     try:
         info = JuliaInfo.load(julia="julia")
