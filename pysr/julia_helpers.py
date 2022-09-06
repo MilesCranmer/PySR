@@ -12,17 +12,20 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
 
     Also updates the local Julia registry.
     """
-
     # Set JULIA_PROJECT so that we install in the pysr environment
     julia_project, is_shared = _get_julia_project(julia_project)
-    os.environ["JULIA_PROJECT"] = "@" + str(julia_project) if is_shared else str(julia_project)
+    if is_shared:
+        os.environ["JULIA_PROJECT"] = "@" + str(julia_project)
+    else:
+        os.environ["JULIA_PROJECT"] = str(julia_project)
 
     import julia
 
     julia.install(quiet=quiet)
 
     if is_shared:
-        # is_shared is only true if the julia_project arg was None, see _get_julia_project
+        # is_shared is only true if the julia_project arg was None
+        # See _get_julia_project
         Main = init_julia(None)
     else:
         Main = init_julia(julia_project)
@@ -85,7 +88,10 @@ def init_julia(julia_project=None):
     from julia.core import JuliaInfo, UnsupportedPythonError
 
     julia_project, is_shared = _get_julia_project(julia_project)
-    os.environ["JULIA_PROJECT"] = "@" + str(julia_project) if is_shared else str(julia_project)
+    if is_shared:
+        os.environ["JULIA_PROJECT"] = "@" + str(julia_project)
+    else:
+        os.environ["JULIA_PROJECT"] = str(julia_project)
 
     try:
         info = JuliaInfo.load(julia="julia")
