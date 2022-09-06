@@ -12,13 +12,24 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
 
     Also updates the local Julia registry.
     """
+    # Set JULIA_PROJECT so that we install in the pysr environment
+    julia_project, is_shared = _get_julia_project(julia_project)
+    if is_shared:
+        os.environ["JULIA_PROJECT"] = "@" + str(julia_project)
+    else:
+        os.environ["JULIA_PROJECT"] = str(julia_project)
+
     import julia
 
     julia.install(quiet=quiet)
 
-    julia_project, is_shared = _get_julia_project(julia_project)
+    if is_shared:
+        # is_shared is only true if the julia_project arg was None
+        # See _get_julia_project
+        Main = init_julia(None)
+    else:
+        Main = init_julia(julia_project)
 
-    Main = init_julia()
     Main.eval("using Pkg")
 
     io = "devnull" if quiet else "stderr"
@@ -72,9 +83,15 @@ def is_julia_version_greater_eq(Main, version="1.6"):
     return Main.eval(f'VERSION >= v"{version}"')
 
 
-def init_julia():
+def init_julia(julia_project=None):
     """Initialize julia binary, turning off compiled modules if needed."""
     from julia.core import JuliaInfo, UnsupportedPythonError
+
+    julia_project, is_shared = _get_julia_project(julia_project)
+    if is_shared:
+        os.environ["JULIA_PROJECT"] = "@" + str(julia_project)
+    else:
+        os.environ["JULIA_PROJECT"] = str(julia_project)
 
     try:
         info = JuliaInfo.load(julia="julia")
@@ -110,13 +127,12 @@ def _add_sr_to_julia_project(Main, io_arg):
         url="https://github.com/MilesCranmer/SymbolicRegression.jl",
         rev="v" + __symbolic_regression_jl_version__,
     )
-    Main.eval(f"Pkg.add(sr_spec, {io_arg})")
     Main.clustermanagers_spec = Main.PackageSpec(
         name="ClusterManagers",
         url="https://github.com/JuliaParallel/ClusterManagers.jl",
         rev="14e7302f068794099344d5d93f71979aaf4fbeb3",
     )
-    Main.eval(f"Pkg.add(clustermanagers_spec, {io_arg})")
+    Main.eval(f"Pkg.add([sr_spec, clustermanagers_spec], {io_arg})")
 
 
 def _escape_filename(filename):
