@@ -28,6 +28,12 @@ def load_juliainfo():
     return juliainfo
 
 
+def reset_juliainfo():
+    """Reset juliainfo to None."""
+    global juliainfo
+    juliainfo = None
+
+
 def _set_julia_project_env(julia_project, is_shared):
     if is_shared:
         if is_julia_version_greater_eq(version=(1, 7, 0)):
@@ -78,6 +84,9 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
             "It is recommended to restart Python after installing PySR's dependencies,"
             " so that the Julia environment is properly initialized."
         )
+
+    # Ensure that the JuliaInfo is reset:
+    reset_juliainfo()
 
 
 def import_error_string(julia_project=None):
