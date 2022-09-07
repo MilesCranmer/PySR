@@ -23,7 +23,7 @@ PySR is built on an extremely optimized pure-Julia backend, and uses regularized
 (pronounced like *py* as in python, and then *sur* as in surface)
 
 If you find PySR useful, please cite it using the citation information given in [CITATION.md](https://github.com/MilesCranmer/PySR/blob/master/CITATION.md).
-If you've finished a project with PySR, please submit a PR to showcase your work on the [Research Showcase page](https://astroautomata.com/PySR/#/papers)!
+If you've finished a project with PySR, please submit a PR to showcase your work on the [Research Showcase page](https://astroautomata.com/PySR/papers)!
 
 
 <div align="center">
@@ -175,9 +175,9 @@ model = PySRRegressor.from_file("hall_of_fame.2022-08-10_100832.281.pkl")
 
 There are several other useful features such as denoising (e.g., `denoising=True`),
 feature selection (e.g., `select_k_features=3`).
-For examples of these and other features, see the [examples page](https://astroautomata.com/PySR/#/examples).
-For a detailed look at more options, see the [options page](https://astroautomata.com/PySR/#/options).
-You can also see the full API at [this page](https://astroautomata.com/PySR/#/api).
+For examples of these and other features, see the [examples page](https://astroautomata.com/PySR/examples).
+For a detailed look at more options, see the [options page](https://astroautomata.com/PySR/options).
+You can also see the full API at [this page](https://astroautomata.com/PySR/api).
 
 ## Detailed Example
 

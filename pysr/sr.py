@@ -225,7 +225,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     Most default parameters have been tuned over several example equations,
     but you should adjust `niterations`, `binary_operators`, `unary_operators`
     to your requirements. You can view more detailed explanations of the options
-    on the [options page](https://astroautomata.com/PySR/#/options) of the
+    on the [options page](https://astroautomata.com/PySR/options) of the
     documentation.
 
     Parameters
@@ -1683,7 +1683,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if X.shape[0] > 10000 and not self.batching:
             warnings.warn(
                 "Note: you are running with more than 10,000 datapoints. "
-                "You should consider turning on batching (https://astroautomata.com/PySR/#/options?id=batching). "
+                "You should consider turning on batching (https://astroautomata.com/PySR/options/#batching). "
                 "You should also reconsider if you need that many datapoints. "
                 "Unless you have a large amount of noise (in which case you "
                 "should smooth your dataset first), generally < 10,000 datapoints "
