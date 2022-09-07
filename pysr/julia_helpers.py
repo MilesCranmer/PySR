@@ -6,7 +6,39 @@ import os
 
 from .version import __version__, __symbolic_regression_jl_version__
 
+juliainfo = None
 julia_initialized = False
+
+
+def load_juliainfo():
+    """Execute julia.core.JuliaInfo.load(), and store as juliainfo."""
+    global juliainfo
+
+    if juliainfo is None:
+        from julia.core import JuliaInfo
+
+        try:
+            juliainfo = JuliaInfo.load(julia="julia")
+        except FileNotFoundError:
+            env_path = os.environ["PATH"]
+            raise FileNotFoundError(
+                f"Julia is not installed in your PATH. Please install Julia and add it to your PATH.\n\nCurrent PATH: {env_path}",
+            )
+
+        if not juliainfo.is_pycall_built():
+            raise ImportError(import_error_string())
+
+    return juliainfo
+
+
+def _set_julia_project_env(julia_project, is_shared):
+    juliainfo = load_juliainfo()
+
+    if is_shared:
+        if is_julia_version_greater_eq(juliainfo, (1, 7, 0)):
+            os.environ["JULIA_PROJECT"] = "@" + str(julia_project)
+    else:
+        os.environ["JULIA_PROJECT"] = str(julia_project)
 
 
 def install(julia_project=None, quiet=False):  # pragma: no cover
@@ -15,14 +47,11 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
 
     Also updates the local Julia registry.
     """
+    import julia
+
     # Set JULIA_PROJECT so that we install in the pysr environment
     julia_project, is_shared = _get_julia_project(julia_project)
-    if is_shared:
-        os.environ["JULIA_PROJECT"] = "@" + str(julia_project)
-    else:
-        os.environ["JULIA_PROJECT"] = str(julia_project)
-
-    import julia
+    _set_julia_project_env(julia_project, is_shared)
 
     julia.install(quiet=quiet)
 
@@ -36,7 +65,8 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
     Main.eval("using Pkg")
 
     io = "devnull" if quiet else "stderr"
-    io_arg = f"io={io}" if is_julia_version_greater_eq(Main, "1.6") else ""
+    juliainfo = load_juliainfo()
+    io_arg = f"io={io}" if is_julia_version_greater_eq(juliainfo, (1, 6, 0)) else ""
 
     # Can't pass IO to Julia call as it evaluates to PyObject, so just directly
     # use Main.eval:
@@ -81,9 +111,14 @@ def _get_julia_project(julia_project):
     return julia_project, is_shared
 
 
-def is_julia_version_greater_eq(Main, version="1.6"):
+def is_julia_version_greater_eq(juliainfo, version=(1, 6, 0)):
     """Check if Julia version is greater than specified version."""
-    return Main.eval(f'VERSION >= v"{version}"')
+    current_version = (
+        juliainfo.version_major,
+        juliainfo.version_minor,
+        juliainfo.version_patch,
+    )
+    return current_version >= version
 
 
 def check_for_conflicting_libraries():  # pragma: no cover
@@ -104,28 +139,14 @@ def check_for_conflicting_libraries():  # pragma: no cover
 def init_julia(julia_project=None):
     """Initialize julia binary, turning off compiled modules if needed."""
     global julia_initialized
+    from julia.core import UnsupportedPythonError
 
     if not julia_initialized:
         check_for_conflicting_libraries()
 
-    from julia.core import JuliaInfo, UnsupportedPythonError
-
+    juliainfo = load_juliainfo()
     julia_project, is_shared = _get_julia_project(julia_project)
-    if is_shared:
-        os.environ["JULIA_PROJECT"] = "@" + str(julia_project)
-    else:
-        os.environ["JULIA_PROJECT"] = str(julia_project)
-
-    try:
-        info = JuliaInfo.load(julia="julia")
-    except FileNotFoundError:
-        env_path = os.environ["PATH"]
-        raise FileNotFoundError(
-            f"Julia is not installed in your PATH. Please install Julia and add it to your PATH.\n\nCurrent PATH: {env_path}",
-        )
-
-    if not info.is_pycall_built():
-        raise ImportError(import_error_string())
+    _set_julia_project_env(julia_project, is_shared)
 
     Main = None
     try:
