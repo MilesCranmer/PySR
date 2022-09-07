@@ -1440,7 +1440,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             julia_project, is_shared = _get_julia_project(self.julia_project)
             Main.eval("using Pkg")
             io = "devnull" if update_verbosity == 0 else "stderr"
-            io_arg = f"io={io}" if is_julia_version_greater_eq(Main, (1, 6, 0)) else ""
+            io_arg = f"io={io}" if is_julia_version_greater_eq(version=(1, 6, 0)) else ""
 
             Main.eval(
                 f'Pkg.activate("{_escape_filename(julia_project)}", shared = Bool({int(is_shared)}), {io_arg})'

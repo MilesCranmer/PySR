@@ -32,10 +32,8 @@ def load_juliainfo():
 
 
 def _set_julia_project_env(julia_project, is_shared):
-    juliainfo = load_juliainfo()
-
     if is_shared:
-        if is_julia_version_greater_eq(juliainfo, (1, 7, 0)):
+        if is_julia_version_greater_eq(version=(1, 7, 0)):
             os.environ["JULIA_PROJECT"] = "@" + str(julia_project)
     else:
         os.environ["JULIA_PROJECT"] = str(julia_project)
@@ -65,8 +63,7 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
     Main.eval("using Pkg")
 
     io = "devnull" if quiet else "stderr"
-    juliainfo = load_juliainfo()
-    io_arg = f"io={io}" if is_julia_version_greater_eq(juliainfo, (1, 6, 0)) else ""
+    io_arg = f"io={io}" if is_julia_version_greater_eq(version=(1, 6, 0)) else ""
 
     # Can't pass IO to Julia call as it evaluates to PyObject, so just directly
     # use Main.eval:
@@ -111,8 +108,10 @@ def _get_julia_project(julia_project):
     return julia_project, is_shared
 
 
-def is_julia_version_greater_eq(juliainfo, version=(1, 6, 0)):
+def is_julia_version_greater_eq(juliainfo=None, version=(1, 6, 0)):
     """Check if Julia version is greater than specified version."""
+    if juliainfo is None:
+        juliainfo = load_juliainfo()
     current_version = (
         juliainfo.version_major,
         juliainfo.version_minor,
