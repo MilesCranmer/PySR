@@ -25,9 +25,6 @@ def load_juliainfo():
                 f"Julia is not installed in your PATH. Please install Julia and add it to your PATH.\n\nCurrent PATH: {env_path}",
             )
 
-        if not juliainfo.is_pycall_built():
-            raise ImportError(import_error_string())
-
     return juliainfo
 
 
@@ -144,6 +141,8 @@ def init_julia(julia_project=None):
         check_for_conflicting_libraries()
 
     juliainfo = load_juliainfo()
+    if not juliainfo.is_pycall_built():
+        raise ImportError(import_error_string())
     julia_project, is_shared = _get_julia_project(julia_project)
     _set_julia_project_env(julia_project, is_shared)
 
