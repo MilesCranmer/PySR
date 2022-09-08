@@ -23,11 +23,11 @@ from sklearn.utils.validation import (
 
 from .julia_helpers import (
     init_julia,
-    _get_julia_project,
+    _process_julia_project,
     is_julia_version_greater_eq,
     _escape_filename,
     _add_sr_to_julia_project,
-    import_error_string,
+    _import_error_string,
 )
 from .export_numpy import CallableEquation
 from .export_latex import generate_single_table, generate_multiple_tables, to_latex
@@ -1437,10 +1437,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             cluster_manager = Main.eval(f"addprocs_{cluster_manager}")
 
         if not already_ran:
-            julia_project, is_shared = _get_julia_project(self.julia_project)
+            julia_project, is_shared = _process_julia_project(self.julia_project)
             Main.eval("using Pkg")
             io = "devnull" if update_verbosity == 0 else "stderr"
-            io_arg = f"io={io}" if is_julia_version_greater_eq(Main, "1.6") else ""
+            io_arg = (
+                f"io={io}" if is_julia_version_greater_eq(version=(1, 6, 0)) else ""
+            )
 
             Main.eval(
                 f'Pkg.activate("{_escape_filename(julia_project)}", shared = Bool({int(is_shared)}), {io_arg})'
@@ -1453,7 +1455,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                         _add_sr_to_julia_project(Main, io_arg)
                     Main.eval(f"Pkg.resolve({io_arg})")
                 except (JuliaError, RuntimeError) as e:
-                    raise ImportError(import_error_string(julia_project)) from e
+                    raise ImportError(_import_error_string(julia_project)) from e
             Main.eval("using SymbolicRegression")
 
             Main.plus = Main.eval("(+)")
