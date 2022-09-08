@@ -126,7 +126,7 @@ def _process_julia_project(julia_project):
 def is_julia_version_greater_eq(juliainfo=None, version=(1, 6, 0)):
     """Check if Julia version is greater than specified version."""
     if juliainfo is None:
-        juliainfo = load_juliainfo()
+        juliainfo = _load_juliainfo()
     current_version = (
         juliainfo.version_major,
         juliainfo.version_minor,
@@ -206,7 +206,7 @@ def _add_sr_to_julia_project(Main, io_arg):
 
 
 def _escape_filename(filename):
-    """Turns a file into a string representation with correctly escaped backslashes"""
+    """Turn a path into a string with correctly escaped backslashes."""
     str_repr = str(filename)
     str_repr = str_repr.replace("\\", "\\\\")
     return str_repr
