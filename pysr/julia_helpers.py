@@ -1,5 +1,6 @@
 """Functions for initializing the Julia environment and installing deps."""
 import sys
+import subprocess
 import warnings
 from pathlib import Path
 import os
@@ -28,16 +29,27 @@ def load_juliainfo():
     return juliainfo
 
 
-def reset_juliainfo():
-    """Reset juliainfo to None."""
-    global juliainfo
-    juliainfo = None
+def _get_julia_env_dir():
+    # Have to manually get env dir:
+    try:
+        julia_env_dir_str = subprocess.run(
+            ["julia", "-e using Pkg; print(Pkg.envdir())"], capture_output=True
+        ).stdout.decode()
+    except FileNotFoundError:
+        env_path = os.environ["PATH"]
+        raise FileNotFoundError(
+            f"Julia is not installed in your PATH. Please install Julia and add it to your PATH.\n\nCurrent PATH: {env_path}",
+        )
+    return Path(julia_env_dir_str)
 
 
 def _set_julia_project_env(julia_project, is_shared):
     if is_shared:
         if is_julia_version_greater_eq(version=(1, 7, 0)):
             os.environ["JULIA_PROJECT"] = "@" + str(julia_project)
+        else:
+            julia_env_dir = _get_julia_env_dir()
+            os.environ["JULIA_PROJECT"] = str(julia_env_dir / julia_project)
     else:
         os.environ["JULIA_PROJECT"] = str(julia_project)
 
@@ -84,9 +96,6 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
             "It is recommended to restart Python after installing PySR's dependencies,"
             " so that the Julia environment is properly initialized."
         )
-
-    # Ensure that the JuliaInfo is reset:
-    reset_juliainfo()
 
 
 def import_error_string(julia_project=None):
@@ -144,16 +153,25 @@ def check_for_conflicting_libraries():  # pragma: no cover
 def init_julia(julia_project=None):
     """Initialize julia binary, turning off compiled modules if needed."""
     global julia_initialized
-    from julia.core import UnsupportedPythonError
 
     if not julia_initialized:
         check_for_conflicting_libraries()
 
-    juliainfo = load_juliainfo()
-    if not juliainfo.is_pycall_built():
-        raise ImportError(import_error_string())
+    from julia.core import JuliaInfo, UnsupportedPythonError
+
     julia_project, is_shared = _get_julia_project(julia_project)
     _set_julia_project_env(julia_project, is_shared)
+
+    try:
+        info = JuliaInfo.load(julia="julia")
+    except FileNotFoundError:
+        env_path = os.environ["PATH"]
+        raise FileNotFoundError(
+            f"Julia is not installed in your PATH. Please install Julia and add it to your PATH.\n\nCurrent PATH: {env_path}",
+        )
+
+    if not info.is_pycall_built():
+        raise ImportError(import_error_string())
 
     Main = None
     try:
