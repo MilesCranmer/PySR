@@ -27,7 +27,7 @@ from .julia_helpers import (
     is_julia_version_greater_eq,
     _escape_filename,
     _add_sr_to_julia_project,
-    import_error_string,
+    _import_error_string,
 )
 from .export_numpy import CallableEquation
 from .export_latex import generate_single_table, generate_multiple_tables, to_latex
@@ -1455,7 +1455,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                         _add_sr_to_julia_project(Main, io_arg)
                     Main.eval(f"Pkg.resolve({io_arg})")
                 except (JuliaError, RuntimeError) as e:
-                    raise ImportError(import_error_string(julia_project)) from e
+                    raise ImportError(_import_error_string(julia_project)) from e
             Main.eval("using SymbolicRegression")
 
             Main.plus = Main.eval("(+)")
