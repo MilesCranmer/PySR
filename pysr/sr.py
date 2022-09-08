@@ -878,6 +878,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             assert n_features_in is None
             with open(pkl_filename, "rb") as f:
                 model = pkl.load(f)
+            # Change equation_file_ to be in the same dir as the pickle file
+            base_dir = os.path.dirname(pkl_filename)
+            base_equation_file = os.path.basename(model.equation_file_)
+            model.equation_file_ = os.path.join(base_dir, base_equation_file)
+
             # Update any parameters if necessary, such as
             # extra_sympy_mappings:
             model.set_params(**pysr_kwargs)
