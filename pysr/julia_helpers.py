@@ -11,7 +11,7 @@ juliainfo = None
 julia_initialized = False
 
 
-def load_juliainfo():
+def _load_juliainfo():
     """Execute julia.core.JuliaInfo.load(), and store as juliainfo."""
     global juliainfo
 
@@ -63,14 +63,14 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
     import julia
 
     # Set JULIA_PROJECT so that we install in the pysr environment
-    julia_project, is_shared = _get_julia_project(julia_project)
+    julia_project, is_shared = _process_julia_project(julia_project)
     _set_julia_project_env(julia_project, is_shared)
 
     julia.install(quiet=quiet)
 
     if is_shared:
         # is_shared is only true if the julia_project arg was None
-        # See _get_julia_project
+        # See _process_julia_project
         Main = init_julia(None)
     else:
         Main = init_julia(julia_project)
@@ -98,7 +98,7 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
         )
 
 
-def import_error_string(julia_project=None):
+def _import_error_string(julia_project=None):
     s = """
     Required dependencies are not installed or built.  Run the following code in the Python REPL:
 
@@ -113,7 +113,7 @@ def import_error_string(julia_project=None):
     return s
 
 
-def _get_julia_project(julia_project):
+def _process_julia_project(julia_project):
     if julia_project is None:
         is_shared = True
         julia_project = f"pysr-{__version__}"
@@ -135,7 +135,7 @@ def is_julia_version_greater_eq(juliainfo=None, version=(1, 6, 0)):
     return current_version >= version
 
 
-def check_for_conflicting_libraries():  # pragma: no cover
+def _check_for_conflicting_libraries():  # pragma: no cover
     """Check whether there are conflicting modules, and display warnings."""
     # See https://github.com/pytorch/pytorch/issues/78829: importing
     # pytorch before running `pysr.fit` causes a segfault.
@@ -155,11 +155,11 @@ def init_julia(julia_project=None):
     global julia_initialized
 
     if not julia_initialized:
-        check_for_conflicting_libraries()
+        _check_for_conflicting_libraries()
 
     from julia.core import JuliaInfo, UnsupportedPythonError
 
-    julia_project, is_shared = _get_julia_project(julia_project)
+    julia_project, is_shared = _process_julia_project(julia_project)
     _set_julia_project_env(julia_project, is_shared)
 
     try:
@@ -171,7 +171,7 @@ def init_julia(julia_project=None):
         )
 
     if not info.is_pycall_built():
-        raise ImportError(import_error_string())
+        raise ImportError(_import_error_string())
 
     Main = None
     try:

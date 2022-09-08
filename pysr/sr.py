@@ -23,7 +23,7 @@ from sklearn.utils.validation import (
 
 from .julia_helpers import (
     init_julia,
-    _get_julia_project,
+    _process_julia_project,
     is_julia_version_greater_eq,
     _escape_filename,
     _add_sr_to_julia_project,
@@ -1437,7 +1437,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             cluster_manager = Main.eval(f"addprocs_{cluster_manager}")
 
         if not already_ran:
-            julia_project, is_shared = _get_julia_project(self.julia_project)
+            julia_project, is_shared = _process_julia_project(self.julia_project)
             Main.eval("using Pkg")
             io = "devnull" if update_verbosity == 0 else "stderr"
             io_arg = (
