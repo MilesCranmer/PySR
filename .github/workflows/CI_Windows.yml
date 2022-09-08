@@ -26,7 +26,7 @@ jobs:
         shell: bash
     strategy:
       matrix:
-        julia-version: ['1.7.1']
+        julia-version: ['1.6', '1.7.1']
         python-version: ['3.9']
         os: [windows-2019]
     
