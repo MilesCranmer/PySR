@@ -186,6 +186,7 @@ if you called `.fit` on a pandas dataframe as well.
 There are also some helper functions for doing this quickly.
 
 - `model.latex()` will generate a TeX formatted output of your equation.
+  - `model.latex_table(indices=[2, 5, 8])` will generate a formatted LaTeX table including all the specified equations.
 - `model.sympy()` will return the SymPy representation.
 - `model.jax()` will return a callable JAX function combined with parameters (see below)
 - `model.pytorch()` will return a PyTorch model (see below).
