@@ -90,7 +90,7 @@ class TestPipeline(unittest.TestCase):
             precision=64,
         )
         model.fit(self.X, y)
-        self.assertIn("1.23456789", model.equations_.iloc[-1]["equation"])
+        self.assertIn("1.23456789", model.get_best()["equation"])
 
         from pysr.sr import Main
 
