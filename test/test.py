@@ -82,6 +82,21 @@ class TestPipeline(unittest.TestCase):
         print(model.equations_)
         self.assertLessEqual(model.equations_.iloc[-1]["loss"], 1e-4)
 
+    def test_high_precision_search(self):
+        y = 1.23456789 * self.X[:, 0]
+        model = PySRRegressor(
+            **self.default_test_kwargs,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-25 && complexity == 3",
+            precision=64,
+        )
+        model.fit(self.X, y)
+        self.assertIn("1.23456789", model.equations_.iloc[-1]["equation"])
+
+        from pysr.sr import Main
+        # We should have that the model state is now a Float64 hof:
+        Main.test_state = model.raw_julia_state_
+        self.assertTrue(Main.eval("typeof(test_state[2]).parameters[1] == Float64"))
+
     def test_multioutput_custom_operator_quiet_custom_complexity(self):
         y = self.X[:, [0, 1]] ** 2
         model = PySRRegressor(
