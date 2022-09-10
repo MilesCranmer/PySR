@@ -88,9 +88,15 @@ class TestPipeline(unittest.TestCase):
             **self.default_test_kwargs,
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-25 && complexity == 3",
             precision=64,
+            parsimony=0.01,
         )
         model.fit(self.X, y)
-        self.assertIn("1.23456789", model.get_best()["equation"])
+        self.assertTrue(
+            any(
+                "1.23456789" in row["equation"]
+                for _, row in model.equations_.iterrows()
+            )
+        )
 
         from pysr.sr import Main
 
