@@ -48,7 +48,7 @@ sympy_mappings = {
     "plus": lambda x, y: x + y,
     "sub": lambda x, y: x - y,
     "neg": lambda x: -x,
-    "pow": lambda x, y: x ** y,
+    "pow": lambda x, y: x**y,
     "pow_abs": lambda x, y: abs(x) ** y,
     "cos": sympy.cos,
     "sin": sympy.sin,

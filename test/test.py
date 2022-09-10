@@ -93,6 +93,7 @@ class TestPipeline(unittest.TestCase):
         self.assertIn("1.23456789", model.equations_.iloc[-1]["equation"])
 
         from pysr.sr import Main
+
         # We should have that the model state is now a Float64 hof:
         Main.test_state = model.raw_julia_state_
         self.assertTrue(Main.eval("typeof(test_state[2]).parameters[1] == Float64"))
@@ -199,6 +200,7 @@ class TestPipeline(unittest.TestCase):
         )
         # Check that the the julia state is saved:
         from pysr.sr import Main
+
         # We should have that the model state is now a Float32 hof:
         Main.test_state = regressor.raw_julia_state_
         self.assertTrue(Main.eval("typeof(test_state[2]).parameters[1] == Float32"))
