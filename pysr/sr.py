@@ -341,7 +341,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Complexity of variables. Default is `1`.
     parsimony : float
         Multiplicative factor for how much to punish complexity.
-        Default is `0.0032`.
+        Default is `0.0`.
     use_frequency : bool
         Whether to measure the frequency of complexities, and use that
         instead of parsimony to explore equation space. Will naturally
@@ -645,7 +645,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         complexity_of_operators=None,
         complexity_of_constants=1,
         complexity_of_variables=1,
-        parsimony=0.0032,
+        parsimony=0.0,
         use_frequency=True,
         use_frequency_in_tournament=True,
         alpha=0.1,
