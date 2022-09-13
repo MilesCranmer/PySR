@@ -8,11 +8,9 @@ PySR gives you access to everything in SymbolicRegression.jl, but there are some
 Generally you can do this as follows:
 
 1. Clone a copy of the backend:
-
 ```
 git clone https://github.com/MilesCranmer/SymbolicRegression.jl
 ```
-
 2. Edit the source code in `src/` to your requirements:
     -  The documentation for the backend is given [here](https://astroautomata.com/SymbolicRegression.jl/dev/). 
     - Throughout the package, you will often see template functions which typically use a symbol `T` (such as in the string `where {T<:Real}`). Here, `T` is simply the datatype of the input data and stored constants, such as `Float32` or `Float64`. Writing functions in this way lets us write functions generic to types, while still having access to the specific type specified at compilation time.
