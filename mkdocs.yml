@@ -33,6 +33,7 @@ nav:
   - Reference:
     - api.md
     - api-advanced.md
+  - backend.md
 
 extra:
   homepage: https://astroautomata.com/PySR
