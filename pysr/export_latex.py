@@ -26,7 +26,20 @@ def to_latex(expr, prec=3, full_prec=True, **settings):
     return printer.doprint(expr)
 
 
-def generate_table_environment(columns=["equation", "complexity", "loss"]):
+"""Translates model evaluation metrics to corresponding symbols for tabular neatness."""
+"""TODO: Exception for invalid metrics."""
+def metric_to_symbol(metric):
+    symbol_dict = {
+        "best": "*",
+        "score": "!",
+        "accuracy": "\#",
+    }
+    if symbol_dict[metric]:
+        return symbol_dict[metric]
+    else:
+        return None
+
+def generate_table_environment(columns=["equation", "complexity", "loss", "score"]):
     margins = "c" * len(columns)
     column_map = {
         "complexity": "Complexity",
@@ -34,6 +47,12 @@ def generate_table_environment(columns=["equation", "complexity", "loss"]):
         "equation": "Equation",
         "score": "Score",
     }
+
+    if "index" in columns:
+        column_map['index'] = "Index"
+    if "chosen" in columns:
+        column_map['chosen'] = "\\hphantom"
+
     columns = [column_map[col] for col in columns]
     top_pieces = [
         r"\begin{table}[h]",
@@ -58,6 +77,8 @@ def generate_table_environment(columns=["equation", "complexity", "loss"]):
 
 def generate_single_table(
     equations: pd.DataFrame,
+    options: dict(),
+    table_idx: int,
     indices: List[int] = None,
     precision: int = 3,
     columns=["equation", "complexity", "loss", "score"],
@@ -74,6 +95,17 @@ def generate_single_table(
         indices = range(len(equations))
 
     for i in indices:
+        symbols = dict()
+        if len(options) > 0:
+            """Check whether the ith equation is one or multiple of best', 'score', and/or 'accuracy'"""
+            for metric in options:
+                if i == options[metric][table_idx]:
+                    symbols[metric] = metric_to_symbol(metric)
+        if "index" in columns:
+            index = to_latex(
+                sympy.sympify(i),
+                prec=precision,
+            )
         latex_equation = to_latex(
             equations.iloc[i]["sympy_format"],
             prec=precision,
@@ -90,7 +122,24 @@ def generate_single_table(
 
         row_pieces = []
         for col in columns:
-            if col == "equation":
+            if col == "chosen":
+                piece = ""
+                footnote = ""
+                if len(symbols) > 0:
+                    for metric in symbols:
+                        piece += symbols[metric]
+                        footnote += "\\textbf{" + symbols[metric] + "}" + ": " + metric + " "
+                    row_pieces.append("$" + piece + "$")
+                    """Add symbol key to table footnote"""
+                    bottom = latex_bottom.partition('bottomrule')
+                    latex_bottom = bottom[0] + bottom[1] + " " + footnote + bottom[2]
+                    print(latex_bottom)
+                else:
+                    piece = "\\hphantom"
+                    row_pieces.append(piece)
+            elif col == "index":
+                row_pieces.append("$" + index + "$")
+            elif col == "equation":
                 if len(latex_equation) < max_equation_length:
                     row_pieces.append(
                         "$" + output_variable_name + " = " + latex_equation + "$"
@@ -131,6 +180,7 @@ def generate_multiple_tables(
     precision: int = 3,
     columns=["equation", "complexity", "loss", "score"],
     output_variable_names: str = None,
+    options=None,
 ):
     """Generate multiple latex tables for a list of equation sets."""
     # TODO: Let user specify custom output variable
@@ -138,7 +188,9 @@ def generate_multiple_tables(
     latex_tables = [
         generate_single_table(
             equations[i],
-            (None if not indices else indices[i]),
+            options=options,
+            table_idx=i,
+            indices=(None if not indices else indices[i]),
             precision=precision,
             columns=columns,
             output_variable_name=(
