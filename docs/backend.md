@@ -22,7 +22,8 @@ git clone https://github.com/MilesCranmer/SymbolicRegression.jl
         - [`src/CheckConstraints.jl`](https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/CheckConstraints.jl), particularly the function `check_constraints`. This function checks whether a given expression satisfies constraints, such as having a complexity lower than `maxsize`, and whether it contains any forbidden nestings of functions.
         - [`src/Options.jl`](https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/Options.jl), as well as the struct definition in [`src/OptionsStruct.jl`](https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/OptionsStruct.jl). This file specifies all the options used in the search: an instance of `Options` is typically available throughout every function in `SymbolicRegression.jl`. If you add new functionality to the backend, and wish to make it parameterizable (including from PySR), you should specify it in the options.
         - For reference, the main loop itself is found in the `EquationSearch` function inside [`src/SymbolicRegression.jl`](https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/SymbolicRegression.jl).
-3. Specify the directory of `SymbolicRegression.jl` to PySR by setting `julia_project` in the `PySRRegressor` object. Note that it will automatically update your project by default; to turn this off, set `update=False`.
+3. Specify the directory of `SymbolicRegression.jl` to PySR by setting `julia_project` in the `PySRRegressor` object, and run `.fit` when you're ready. That's it! No compilation or build steps required.
+    - Note that it will automatically update your project by default; to turn this off, set `update=False`.
 
 If you get comfortable enough with the backend, you might consider using the Julia package directly: the API is given on the [SymbolicRegression.jl documentation](https://astroautomata.com/SymbolicRegression.jl/dev/).
 
