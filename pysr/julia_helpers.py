@@ -62,6 +62,7 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
     """
     import julia
 
+    _version_assertion()
     # Set JULIA_PROJECT so that we install in the pysr environment
     julia_project, is_shared = _process_julia_project(julia_project)
     _set_julia_project_env(julia_project, is_shared)
@@ -159,6 +160,7 @@ def init_julia(julia_project=None):
 
     from julia.core import JuliaInfo, UnsupportedPythonError
 
+    _version_assertion()
     julia_project, is_shared = _process_julia_project(julia_project)
     _set_julia_project_env(julia_project, is_shared)
 
@@ -210,3 +212,11 @@ def _escape_filename(filename):
     str_repr = str(filename)
     str_repr = str_repr.replace("\\", "\\\\")
     return str_repr
+
+
+def _version_assertion():
+    if not is_julia_version_greater_eq(version=(1, 6, 0)):
+        raise NotImplementedError(
+            "PySR requires Julia 1.6.0 or greater. "
+            "Please update your Julia installation."
+        )
