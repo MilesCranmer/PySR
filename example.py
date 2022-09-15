@@ -14,7 +14,7 @@ model = PySRRegressor(
         "exp",
         "sin",
         "inv(x) = 1/x",
-	# ^ Custom operator (julia syntax)
+        # ^ Custom operator (julia syntax)
     ],
     extra_sympy_mappings={"inv": lambda x: 1 / x},
     # ^ Define operator for SymPy as well
