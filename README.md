@@ -74,14 +74,11 @@ python interface.
 
 <div align="center">
 
-| pip (macOS, Linux, Windows) | conda (macOS - only Intel, Linux) |
+| pip <br> (works everywhere) | conda <br>(Linux and Intel-based macOS) |
 |---|---|
-| 1. Install Julia manually (see [downloads](https://julialang.org/downloads/))<br>2. `pip install pysr`<br>3. `python -c 'import pysr; pysr.install()'` | 1. `conda install -c conda-forge pysr`<br>2. `python -c 'import pysr; pysr.install()'`|
+| 1. [Install Julia](https://julialang.org/downloads/)<br>2. Then, run: `pip install pysr`<br>3. Finally, to install Julia packages:<br>`python -c 'import pysr; pysr.install()'` | `conda install -c conda-forge pysr` |
 
 </div>
-
-This last step will install and update the required Julia packages, including
-`PyCall.jl`.
 
 Common issues tend to be related to Python not finding Julia.
 To debug this, try running `python -c 'import os; print(os.environ["PATH"])'`.
