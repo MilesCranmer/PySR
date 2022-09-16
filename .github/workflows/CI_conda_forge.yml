@@ -33,7 +33,5 @@ jobs:
           activate-environment: test
       - name: "Install pysr-forge"
         run: conda activate test && mamba install pysr
-      - name: "Set up PySR's Julia dependencies"
-        run: conda activate test && python3 -c 'import pysr; pysr.install()'
       - name: "Run tests"
         run: conda activate test && python3 -m unittest test.test
