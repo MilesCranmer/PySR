@@ -76,7 +76,7 @@ python interface.
 
 | pip <br> (works everywhere) | conda <br>(Linux and Intel-based macOS) |
 |---|---|
-| 1. [Install Julia](https://julialang.org/downloads/)<br>2. Then, run: `pip install pysr`<br>3. Finally, to install Julia packages:<br>`python -c 'import pysr; pysr.install()'` | `conda install -c conda-forge pysr` |
+| 1. [Install Julia](https://julialang.org/downloads/)<br>2. Then, run: `pip install -U pysr`<br>3. Finally, to install Julia packages:<br>`python -c 'import pysr; pysr.install()'` | `conda install -c conda-forge pysr` |
 
 </div>
 
