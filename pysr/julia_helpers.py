@@ -64,17 +64,11 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
 
     _version_assertion()
     # Set JULIA_PROJECT so that we install in the pysr environment
-    julia_project, is_shared = _process_julia_project(julia_project)
-    _set_julia_project_env(julia_project, is_shared)
+    processed_julia_project, is_shared = _process_julia_project(julia_project)
+    _set_julia_project_env(processed_julia_project, is_shared)
 
     julia.install(quiet=quiet)
-
-    if is_shared:
-        # is_shared is only true if the julia_project arg was None
-        # See _process_julia_project
-        Main = init_julia(None)
-    else:
-        Main = init_julia(julia_project)
+    Main = init_julia(julia_project)
 
     Main.eval("using Pkg")
 
@@ -84,7 +78,7 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
     # Can't pass IO to Julia call as it evaluates to PyObject, so just directly
     # use Main.eval:
     Main.eval(
-        f'Pkg.activate("{_escape_filename(julia_project)}", shared = Bool({int(is_shared)}), {io_arg})'
+        f'Pkg.activate("{_escape_filename(processed_julia_project)}", shared = Bool({int(is_shared)}), {io_arg})'
     )
     if is_shared:
         # Install SymbolicRegression.jl:
@@ -117,14 +111,14 @@ def _import_error_string(julia_project=None):
 def _process_julia_project(julia_project):
     if julia_project is None:
         is_shared = True
-        julia_project = f"pysr-{__version__}"
+        processed_julia_project = f"pysr-{__version__}"
     elif julia_project[0] == "@":
         is_shared = True
-        julia_project = julia_project[1:]
+        processed_julia_project = julia_project[1:]
     else:
         is_shared = False
-        julia_project = Path(julia_project)
-    return julia_project, is_shared
+        processed_julia_project = Path(julia_project)
+    return processed_julia_project, is_shared
 
 
 def is_julia_version_greater_eq(juliainfo=None, version=(1, 6, 0)):
@@ -164,8 +158,8 @@ def init_julia(julia_project=None):
     from julia.core import JuliaInfo, UnsupportedPythonError
 
     _version_assertion()
-    julia_project, is_shared = _process_julia_project(julia_project)
-    _set_julia_project_env(julia_project, is_shared)
+    processed_julia_project, is_shared = _process_julia_project(julia_project)
+    _set_julia_project_env(processed_julia_project, is_shared)
 
     try:
         info = JuliaInfo.load(julia="julia")
