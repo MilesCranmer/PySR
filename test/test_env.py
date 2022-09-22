@@ -12,10 +12,10 @@ class TestJuliaProject(unittest.TestCase):
             # Create a temp depot to store julia packages (and our custom env)
             Main = julia_helpers.init_julia()
             Main.eval(
-                f'pushfirst!(DEPOT_PATH, "{julia_helpers._escape_filename(tmpdir)}")'
+                f'pushfirst!(DEPOT_PATH, "{julia_helpers._escape_filename(tmpdir.name)}")'
             )
             test_env_name = "@pysr_test_env"
-            julia_helpers.install(julia_project=test_env_name, quiet=True)
+            julia_helpers.install(julia_project=test_env_name)
             Main = julia_helpers.init_julia(julia_project=test_env_name)
             Main.eval("using SymbolicRegression")
             Main.eval("using Pkg")
