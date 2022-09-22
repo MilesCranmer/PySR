@@ -53,6 +53,7 @@ def _set_julia_project_env(julia_project, is_shared):
     else:
         os.environ["JULIA_PROJECT"] = str(julia_project)
 
+
 def _get_io_arg(quiet):
     io = "devnull" if quiet else "stderr"
     io_arg = f"io={io}" if is_julia_version_greater_eq(version=(1, 6, 0)) else ""
