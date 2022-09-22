@@ -53,6 +53,11 @@ def _set_julia_project_env(julia_project, is_shared):
     else:
         os.environ["JULIA_PROJECT"] = str(julia_project)
 
+def _get_io_arg(quiet):
+    io = "devnull" if quiet else "stderr"
+    io_arg = f"io={io}" if is_julia_version_greater_eq(version=(1, 6, 0)) else ""
+    return io_arg
+
 
 def install(julia_project=None, quiet=False):  # pragma: no cover
     """
@@ -68,18 +73,9 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
     _set_julia_project_env(processed_julia_project, is_shared)
 
     julia.install(quiet=quiet)
-    Main = init_julia(julia_project)
+    Main = init_julia(julia_project, quiet=quiet)
+    io_arg = _get_io_arg(quiet)
 
-    Main.eval("using Pkg")
-
-    io = "devnull" if quiet else "stderr"
-    io_arg = f"io={io}" if is_julia_version_greater_eq(version=(1, 6, 0)) else ""
-
-    # Can't pass IO to Julia call as it evaluates to PyObject, so just directly
-    # use Main.eval:
-    Main.eval(
-        f'Pkg.activate("{_escape_filename(processed_julia_project)}", shared = Bool({int(is_shared)}), {io_arg})'
-    )
     if is_shared:
         # Install SymbolicRegression.jl:
         _add_sr_to_julia_project(Main, io_arg)
@@ -148,7 +144,7 @@ def _check_for_conflicting_libraries():  # pragma: no cover
         )
 
 
-def init_julia(julia_project=None):
+def init_julia(julia_project=None, quiet=False):
     """Initialize julia binary, turning off compiled modules if needed."""
     global julia_initialized
 
@@ -185,6 +181,18 @@ def init_julia(julia_project=None):
         from julia import Main as _Main
 
         Main = _Main
+
+    if julia_initialized:
+        Main.eval("using Pkg")
+
+        io_arg = _get_io_arg(quiet)
+        # Can't pass IO to Julia call as it evaluates to PyObject, so just directly
+        # use Main.eval:
+        Main.eval(
+            f'Pkg.activate("{_escape_filename(processed_julia_project)}",'
+            f"shared = Bool({int(is_shared)}), "
+            f"{io_arg})"
+        )
 
     julia_initialized = True
     return Main
