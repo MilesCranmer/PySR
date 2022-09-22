@@ -11,5 +11,8 @@ class TestJuliaProject(unittest.TestCase):
         julia_helpers.install(julia_project=test_env_name, quiet=True)
         Main = julia_helpers.init_julia(julia_project=test_env_name)
         Main.eval("using SymbolicRegression")
-        # TODO: Test that we are actually in the correct env.
+        Main.eval("using Pkg")
+        cur_project_dir = Main.eval("splitdir(dirname(Base.active_project()))[1]")
+        potential_shared_project_dirs = Main.eval("Pkg.envdir.(DEPOT_PATH)")
+        self.assertIn(cur_project_dir, potential_shared_project_dirs)
         # TODO: Delete the env at the end.
