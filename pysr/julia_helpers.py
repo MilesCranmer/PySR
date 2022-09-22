@@ -118,6 +118,9 @@ def _process_julia_project(julia_project):
     if julia_project is None:
         is_shared = True
         julia_project = f"pysr-{__version__}"
+    elif julia_project[0] == "@":
+        is_shared = True
+        julia_project = julia_project[1:]
     else:
         is_shared = False
         julia_project = Path(julia_project)
