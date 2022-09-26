@@ -1,19 +1,23 @@
-"""Contains tests for creating and initializing custom Julia projects"""
+"""Contains tests for creating and initializing custom Julia projects."""
 
 import unittest
+import os
 from pysr import julia_helpers
 from tempfile import TemporaryDirectory
 
 
 class TestJuliaProject(unittest.TestCase):
+    """Various tests for working with Julia projects."""
+
     def test_custom_shared_env(self):
-        """Test that we can use PySR in a custom shared env"""
+        """Test that we can use PySR in a custom shared env."""
         with TemporaryDirectory() as tmpdir:
             # Create a temp depot to store julia packages (and our custom env)
             Main = julia_helpers.init_julia()
-            Main.eval(
-                f'pushfirst!(DEPOT_PATH, "{julia_helpers._escape_filename(tmpdir.name)}")'
-            )
+            if "JULIA_DEPOT_PATH" not in os.environ:
+                os.environ["JULIA_DEPOT_PATH"] = tmpdir
+            else:
+                os.environ["JULIA_DEPOT_PATH"] = f"{tmpdir}:{os.environ['JULIA_DEPOT_PATH']}"
             test_env_name = "@pysr_test_env"
             julia_helpers.install(julia_project=test_env_name)
             Main = julia_helpers.init_julia(julia_project=test_env_name)
