@@ -33,7 +33,9 @@ def _get_julia_env_dir():
     # Have to manually get env dir:
     try:
         julia_env_dir_str = subprocess.run(
-            ["julia", "-e using Pkg; print(Pkg.envdir())"], capture_output=True
+            ["julia", "-e using Pkg; print(Pkg.envdir())"],
+            capture_output=True,
+            env=os.environ,
         ).stdout.decode()
     except FileNotFoundError:
         env_path = os.environ["PATH"]
