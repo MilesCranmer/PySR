@@ -19,7 +19,9 @@ class TestJuliaProject(unittest.TestCase):
                 os.environ["JULIA_DEPOT_PATH"] = tmpdir
             else:
                 old_env = os.environ["JULIA_DEPOT_PATH"]
-                os.environ["JULIA_DEPOT_PATH"] = f"{tmpdir}:{os.environ['JULIA_DEPOT_PATH']}"
+                os.environ[
+                    "JULIA_DEPOT_PATH"
+                ] = f"{tmpdir}:{os.environ['JULIA_DEPOT_PATH']}"
             test_env_name = "@pysr_test_env"
             julia_helpers.install(julia_project=test_env_name)
             Main = julia_helpers.init_julia(julia_project=test_env_name)
