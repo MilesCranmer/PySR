@@ -21,8 +21,12 @@ class TestJuliaProject(unittest.TestCase):
                 os.environ["JULIA_DEPOT_PATH"] = tmpdir
             else:
                 old_env = os.environ["JULIA_DEPOT_PATH"]
-                os.environ["JULIA_DEPOT_PATH"] = f"{tmpdir}:{os.environ['JULIA_DEPOT_PATH']}"
-            Main.eval(f'pushfirst!(DEPOT_PATH, "{julia_helpers._escape_filename(tmpdir)}")')
+                os.environ[
+                    "JULIA_DEPOT_PATH"
+                ] = f"{tmpdir}:{os.environ['JULIA_DEPOT_PATH']}"
+            Main.eval(
+                f'pushfirst!(DEPOT_PATH, "{julia_helpers._escape_filename(tmpdir)}")'
+            )
             test_env_name = "@pysr_test_env"
             julia_helpers.install(julia_project=test_env_name)
             Main = julia_helpers.init_julia(julia_project=test_env_name)
@@ -30,7 +34,7 @@ class TestJuliaProject(unittest.TestCase):
             # Try to use env:
             Main.eval("using SymbolicRegression")
             Main.eval("using Pkg")
-            
+
             # Assert we actually loaded it:
             cur_project_dir = Main.eval("splitdir(dirname(Base.active_project()))[1]")
             potential_shared_project_dirs = Main.eval("Pkg.envdir(DEPOT_PATH[1])")
