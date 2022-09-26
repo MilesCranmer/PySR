@@ -63,3 +63,5 @@ jobs:
         run: pip install torch # (optional import)
       - name: "Run Torch tests"
         run: python -m unittest test.test_torch
+      - name: "Run custom env tests"
+        run: python -m unittest test.test_env

@@ -9,4 +9,5 @@ dependencies:
   - scikit-learn
   - setuptools
   - pyjulia
-  - openlibm<0.8.0
+  - openlibm
+  - openspecfun

@@ -33,7 +33,9 @@ def _get_julia_env_dir():
     # Have to manually get env dir:
     try:
         julia_env_dir_str = subprocess.run(
-            ["julia", "-e using Pkg; print(Pkg.envdir())"], capture_output=True
+            ["julia", "-e using Pkg; print(Pkg.envdir())"],
+            capture_output=True,
+            env=os.environ,
         ).stdout.decode()
     except FileNotFoundError:
         env_path = os.environ["PATH"]
@@ -54,6 +56,12 @@ def _set_julia_project_env(julia_project, is_shared):
         os.environ["JULIA_PROJECT"] = str(julia_project)
 
 
+def _get_io_arg(quiet):
+    io = "devnull" if quiet else "stderr"
+    io_arg = f"io={io}" if is_julia_version_greater_eq(version=(1, 6, 0)) else ""
+    return io_arg
+
+
 def install(julia_project=None, quiet=False):  # pragma: no cover
     """
     Install PyCall.jl and all required dependencies for SymbolicRegression.jl.
@@ -64,28 +72,13 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
 
     _version_assertion()
     # Set JULIA_PROJECT so that we install in the pysr environment
-    julia_project, is_shared = _process_julia_project(julia_project)
-    _set_julia_project_env(julia_project, is_shared)
+    processed_julia_project, is_shared = _process_julia_project(julia_project)
+    _set_julia_project_env(processed_julia_project, is_shared)
 
     julia.install(quiet=quiet)
+    Main = init_julia(julia_project, quiet=quiet)
+    io_arg = _get_io_arg(quiet)
 
-    if is_shared:
-        # is_shared is only true if the julia_project arg was None
-        # See _process_julia_project
-        Main = init_julia(None)
-    else:
-        Main = init_julia(julia_project)
-
-    Main.eval("using Pkg")
-
-    io = "devnull" if quiet else "stderr"
-    io_arg = f"io={io}" if is_julia_version_greater_eq(version=(1, 6, 0)) else ""
-
-    # Can't pass IO to Julia call as it evaluates to PyObject, so just directly
-    # use Main.eval:
-    Main.eval(
-        f'Pkg.activate("{_escape_filename(julia_project)}", shared = Bool({int(is_shared)}), {io_arg})'
-    )
     if is_shared:
         # Install SymbolicRegression.jl:
         _add_sr_to_julia_project(Main, io_arg)
@@ -117,11 +110,14 @@ def _import_error_string(julia_project=None):
 def _process_julia_project(julia_project):
     if julia_project is None:
         is_shared = True
-        julia_project = f"pysr-{__version__}"
+        processed_julia_project = f"pysr-{__version__}"
+    elif julia_project[0] == "@":
+        is_shared = True
+        processed_julia_project = julia_project[1:]
     else:
         is_shared = False
-        julia_project = Path(julia_project)
-    return julia_project, is_shared
+        processed_julia_project = Path(julia_project)
+    return processed_julia_project, is_shared
 
 
 def is_julia_version_greater_eq(juliainfo=None, version=(1, 6, 0)):
@@ -151,7 +147,7 @@ def _check_for_conflicting_libraries():  # pragma: no cover
         )
 
 
-def init_julia(julia_project=None):
+def init_julia(julia_project=None, quiet=False):
     """Initialize julia binary, turning off compiled modules if needed."""
     global julia_initialized
 
@@ -161,8 +157,8 @@ def init_julia(julia_project=None):
     from julia.core import JuliaInfo, UnsupportedPythonError
 
     _version_assertion()
-    julia_project, is_shared = _process_julia_project(julia_project)
-    _set_julia_project_env(julia_project, is_shared)
+    processed_julia_project, is_shared = _process_julia_project(julia_project)
+    _set_julia_project_env(processed_julia_project, is_shared)
 
     try:
         info = JuliaInfo.load(julia="julia")
@@ -189,11 +185,24 @@ def init_julia(julia_project=None):
 
         Main = _Main
 
+    if julia_initialized:
+        Main.eval("using Pkg")
+
+        io_arg = _get_io_arg(quiet)
+        # Can't pass IO to Julia call as it evaluates to PyObject, so just directly
+        # use Main.eval:
+        Main.eval(
+            f'Pkg.activate("{_escape_filename(processed_julia_project)}",'
+            f"shared = Bool({int(is_shared)}), "
+            f"{io_arg})"
+        )
+
     julia_initialized = True
     return Main
 
 
 def _add_sr_to_julia_project(Main, io_arg):
+    Main.eval("using Pkg")
     Main.sr_spec = Main.PackageSpec(
         name="SymbolicRegression",
         url="https://github.com/MilesCranmer/SymbolicRegression.jl",

@@ -69,6 +69,8 @@ jobs:
         run: pip install torch # (optional import)
       - name: "Run Torch tests"
         run: coverage run --append --source=pysr --omit='*/feynman_problems.py' -m unittest test.test_torch
+      - name: "Run custom env tests"
+        run: coverage run --append --source=pysr --omit='*/feynman_problems.py' -m unittest test.test_env
       - name: Coveralls
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -121,6 +123,8 @@ jobs:
         run: python3 -m pip install coverage coveralls
       - name: "Run tests"
         run: coverage run --append --source=pysr --omit='*/feynman_problems.py' -m unittest test.test
+      - name: "Run custom env tests"
+        run: coverage run --append --source=pysr --omit='*/feynman_problems.py' -m unittest test.test_env
       - name: Coveralls
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

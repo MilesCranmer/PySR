@@ -34,4 +34,4 @@ jobs:
       - name: "Install pysr-forge"
         run: conda activate test && mamba install pysr
       - name: "Run tests"
-        run: conda activate test && python3 -m unittest test.test
+        run: conda activate test && python3 -m unittest test.test && python3 -m unittest test.test_env
