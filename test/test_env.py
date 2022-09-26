@@ -15,8 +15,10 @@ class TestJuliaProject(unittest.TestCase):
             # Create a temp depot to store julia packages (and our custom env)
             Main = julia_helpers.init_julia()
             if "JULIA_DEPOT_PATH" not in os.environ:
+                old_env = None
                 os.environ["JULIA_DEPOT_PATH"] = tmpdir
             else:
+                old_env = os.environ["JULIA_DEPOT_PATH"]
                 os.environ["JULIA_DEPOT_PATH"] = f"{tmpdir}:{os.environ['JULIA_DEPOT_PATH']}"
             test_env_name = "@pysr_test_env"
             julia_helpers.install(julia_project=test_env_name)
@@ -27,3 +29,7 @@ class TestJuliaProject(unittest.TestCase):
             potential_shared_project_dirs = Main.eval("Pkg.envdir(DEPOT_PATH[1])")
             self.assertEqual(cur_project_dir, potential_shared_project_dirs)
             Main.eval("pop!(DEPOT_PATH)")
+            if old_env is None:
+                del os.environ["JULIA_DEPOT_PATH"]
+            else:
+                os.environ["JULIA_DEPOT_PATH"] = old_env
