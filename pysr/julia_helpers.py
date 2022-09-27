@@ -83,6 +83,7 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
         # Install SymbolicRegression.jl:
         _add_sr_to_julia_project(Main, io_arg)
 
+    Main.eval("using Pkg")
     Main.eval(f"Pkg.instantiate({io_arg})")
     Main.eval(f"Pkg.precompile({io_arg})")
     if not quiet:
