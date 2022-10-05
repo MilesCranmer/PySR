@@ -9,7 +9,7 @@ https://user-images.githubusercontent.com/7593028/188328887-1b6cda72-2f41-439e-a
 </div>
 
 
-PySR is built on an extremely optimized pure-Julia backend, and uses regularized evolution, simulated annealing, and gradient-free optimization to search for equations that fit your data.
+PySR uses evolutionary algorithms to search for symbolic expressions which optimize a particular objective.
 
 <div align="center">
 
@@ -39,8 +39,7 @@ If you've finished a project with PySR, please submit a PR to showcase your work
 
 </div>
 
-Check out [SymbolicRegression.jl](https://github.com/MilesCranmer/SymbolicRegression.jl) for
-the pure-Julia backend of this package.
+PySR is built on an extremely optimized pure-Julia backend: [SymbolicRegression.jl](https://github.com/MilesCranmer/SymbolicRegression.jl).
 
 Symbolic regression is a very interpretable machine learning algorithm
 for low-dimensional problems: these tools search equation space
