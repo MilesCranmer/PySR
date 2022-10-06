@@ -574,10 +574,7 @@ class TestMiscellaneous(unittest.TestCase):
         y = np.random.randn(100)
         with self.assertRaises(ValueError) as cm:
             model.fit(X, y, variable_names=["x1", "N"])
-        self.assertIn(
-            "Variable name",
-            str(cm.exception)
-        )
+        self.assertIn("Variable name", str(cm.exception))
 
     def test_bad_variable_names_fail(self):
         model = PySRRegressor()
@@ -586,17 +583,11 @@ class TestMiscellaneous(unittest.TestCase):
 
         with self.assertRaises(ValueError) as cm:
             model.fit(X, y, variable_names=["Tr(Tij)"])
-        self.assertIn(
-            "Invalid variable name",
-            str(cm.exception)
-        )
+        self.assertIn("Invalid variable name", str(cm.exception))
 
         with self.assertRaises(ValueError) as cm:
             model.fit(X, y, variable_names=["f{c}"])
-        self.assertIn(
-            "Invalid variable name",
-            str(cm.exception)
-        )
+        self.assertIn("Invalid variable name", str(cm.exception))
 
     def test_pickle_with_temp_equation_file(self):
         """If we have a temporary equation file, unpickle the estimator."""
