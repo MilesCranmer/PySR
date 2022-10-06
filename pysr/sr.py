@@ -181,6 +181,13 @@ def _check_assertions(
                 raise ValueError(
                     f"Variable name {var_name} is already a function name."
                 )
+            # Check if alphanumeric only:
+            if not re.match(r"^[a-zA-Z0-9_]+$", var_name):
+                raise ValueError(
+                    f"Invalid variable name {var_name}. "
+                    "Only alphanumeric characters, numbers, "
+                    "and underscores are allowed."
+                )
 
 
 def best(*args, **kwargs):  # pragma: no cover
