@@ -22,11 +22,13 @@ jobs:
         python-version: ['3.9']
         os: ['ubuntu-latest', 'macos-latest']
         use-mamba: [true, false]
+        use-miniforge: [true, false]
     
     steps:
       - uses: actions/checkout@v2
-      - name: "Set up Conda"
+      - name: "Set up miniforge"
         uses: conda-incubator/setup-miniconda@v2
+        if: ${{ matrix.use-miniforge }}
         with:
           miniforge-variant: Mambaforge
           miniforge-version: latest
@@ -34,11 +36,20 @@ jobs:
           python-version: ${{ matrix.python-version }}
           activate-environment: test
           use-mamba: ${{ matrix.use-mamba }}
+      - name: "Set up conda"
+        uses: conda-incubator/setup-miniconda@v2
+        if: ${{ !matrix.use-miniforge }}
+        with:
+          miniconda-version: latest
+          auto-activate-base: true
+          python-version: ${{ matrix.python-version }}
+          activate-environment: test
+          use-mamba: ${{ matrix.use-mamba }}
       - name: "Install pysr with mamba"
-        run: conda activate test && mamba install pysr
+        run: conda activate test && mamba install -c conda-forge pysr
         if: ${{ matrix.use-mamba }}
       - name: "Install pysr with conda"
-        run: conda activate test && conda install pysr
+        run: conda activate test && conda install -c conda-forge pysr
         if: ${{ !matrix.use-mamba }}
       - name: "Run tests"
         run: conda activate test && python3 -m unittest test.test && python3 -m unittest test.test_env
