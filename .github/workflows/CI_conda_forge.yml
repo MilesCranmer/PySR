@@ -30,6 +30,6 @@ jobs:
           auto-activate-base: true
           activate-environment: ""
       - name: "Install pysr with conda"
-        run: conda create -n test -c conda-forge python=${{ matrix.python-version }} pysr
+        run: conda create -n test -c conda-forge python=${{ matrix.python-version }} pysr=0.11.2
       - name: "Run tests"
-        run: conda activate test && python3 -m unittest test.test && python3 -m unittest test.test_env
+        run: conda activate test && python -m unittest test.test && python -m unittest test.test_env
