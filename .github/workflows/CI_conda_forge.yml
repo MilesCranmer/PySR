@@ -27,10 +27,9 @@ jobs:
       - name: "Set up conda"
         uses: conda-incubator/setup-miniconda@v2
         with:
-          python-version: ${{ matrix.python-version }}
           auto-activate-base: true
           activate-environment: ""
       - name: "Install pysr with conda"
-        run: conda create -n test -c conda-forge pysr
+        run: conda create -n test -c conda-forge python=${{ matrix.python-version }} pysr
       - name: "Run tests"
         run: conda activate test && python3 -m unittest test.test && python3 -m unittest test.test_env
