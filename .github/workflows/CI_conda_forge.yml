@@ -21,22 +21,11 @@ jobs:
       matrix:
         python-version: ['3.9']
         os: ['ubuntu-latest', 'macos-latest']
-        use-miniforge: [true, false]
     
     steps:
       - uses: actions/checkout@v2
-      - name: "Set up miniforge"
-        uses: conda-incubator/setup-miniconda@v2
-        if: ${{ matrix.use-miniforge }}
-        with:
-          miniforge-variant: Mambaforge
-          miniforge-version: latest
-          auto-activate-base: true
-          python-version: ${{ matrix.python-version }}
-          activate-environment: test
       - name: "Set up conda"
         uses: conda-incubator/setup-miniconda@v2
-        if: ${{ !matrix.use-miniforge }}
         with:
           miniconda-version: latest
           auto-activate-base: true
