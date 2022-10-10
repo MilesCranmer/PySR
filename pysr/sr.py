@@ -523,8 +523,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Default gives the Python package directory, where a
         Project.toml file should be present from the install.
     update: bool
-        Whether to automatically update Julia packages.
-        Default is `True`.
+        Whether to automatically update Julia packages when `fit` is called.
+        You should make sure that PySR is up-to-date itself first, as
+        the packaged Julia packages may not necessarily include all
+        updated dependencies.
+        Default is `False`.
     output_jax_format : bool
         Whether to create a 'jax_format' column in the output,
         containing jax-callable functions and the default parameters in
@@ -700,7 +703,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         tempdir=None,
         delete_tempfiles=True,
         julia_project=None,
-        update=True,
+        update=False,
         output_jax_format=False,
         output_torch_format=False,
         extra_sympy_mappings=None,
@@ -1473,7 +1476,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     Main.eval(f"Pkg.resolve({io_arg})")
                 except (JuliaError, RuntimeError) as e:
                     raise ImportError(_import_error_string(julia_project)) from e
-            Main.eval("using SymbolicRegression")
+            try:
+                Main.eval("using SymbolicRegression")
+            except (JuliaError, RuntimeError) as e:
+                raise ImportError(_import_error_string(julia_project)) from e
 
             Main.plus = Main.eval("(+)")
             Main.sub = Main.eval("(-)")
