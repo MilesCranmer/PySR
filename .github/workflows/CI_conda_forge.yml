@@ -40,4 +40,4 @@ jobs:
         run: conda activate test && conda install pysr
         if: ${{ !matrix.use-mamba }}
       - name: "Run tests"
-        run: conda activate test && python3 -m unittest test.test && python3 -m unittest test.test_env
+        run: conda activate test && python3 -m unittest test.test
