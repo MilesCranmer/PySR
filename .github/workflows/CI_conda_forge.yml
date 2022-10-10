@@ -1,6 +1,6 @@
 name: conda-forge
 
-# This CI tries the conda-forge version of PYSR
+# This CI tries the conda-forge version of PySR
 
 on:
   schedule:
@@ -21,15 +21,23 @@ jobs:
       matrix:
         python-version: ['3.9']
         os: ['ubuntu-latest', 'macos-latest']
+        use-mamba: [true, false]
     
     steps:
       - uses: actions/checkout@v2
-      - name: "Set up conda"
+      - name: "Set up Conda"
         uses: conda-incubator/setup-miniconda@v2
         with:
+          miniforge-variant: Mambaforge
+          miniforge-version: latest
           auto-activate-base: true
-          activate-environment: ""
+          python-version: ${{ matrix.python-version }}
+          activate-environment: test
+      - name: "Install pysr with mamba"
+        run: conda activate test && mamba install pysr
+        if: ${{ matrix.use-mamba }}
       - name: "Install pysr with conda"
-        run: conda create -n test -c conda-forge python=${{ matrix.python-version }} pysr=0.11.3
+        run: conda activate test && conda install pysr
+        if: ${{ !matrix.use-mamba }}
       - name: "Run tests"
-        run: conda activate test && python -m unittest test.test && python -m unittest test.test_env
+        run: conda activate test && python3 -m unittest test.test && python3 -m unittest test.test_env
