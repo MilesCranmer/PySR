@@ -523,7 +523,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Default gives the Python package directory, where a
         Project.toml file should be present from the install.
     update: bool
-        Whether to automatically update Julia packages.
+        Whether to automatically update Julia packages when `fit` is called.
+        You should make sure that PySR is up-to-date itself first, as
+        the packaged Julia packages may not necessarily include all
+        updated dependencies.
         Default is `False`.
     output_jax_format : bool
         Whether to create a 'jax_format' column in the output,
