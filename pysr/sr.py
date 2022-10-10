@@ -524,7 +524,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Project.toml file should be present from the install.
     update: bool
         Whether to automatically update Julia packages.
-        Default is `True`.
+        Default is `False`.
     output_jax_format : bool
         Whether to create a 'jax_format' column in the output,
         containing jax-callable functions and the default parameters in
@@ -700,7 +700,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         tempdir=None,
         delete_tempfiles=True,
         julia_project=None,
-        update=True,
+        update=False,
         output_jax_format=False,
         output_torch_format=False,
         extra_sympy_mappings=None,
