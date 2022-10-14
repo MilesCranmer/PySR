@@ -273,6 +273,7 @@ def _load_backend(Main):
 
     _backend_version_assertion(Main)
 
+    # Load Julia package SymbolicRegression.jl
     from julia import SymbolicRegression
 
     return SymbolicRegression
