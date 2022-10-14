@@ -71,7 +71,7 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
     """
     import julia
 
-    _version_assertion()
+    _julia_version_assertion()
     # Set JULIA_PROJECT so that we install in the pysr environment
     processed_julia_project, is_shared = _process_julia_project(julia_project)
     _set_julia_project_env(processed_julia_project, is_shared)
@@ -158,7 +158,7 @@ def init_julia(julia_project=None, quiet=False):
 
     from julia.core import JuliaInfo, UnsupportedPythonError
 
-    _version_assertion()
+    _julia_version_assertion()
     processed_julia_project, is_shared = _process_julia_project(julia_project)
     _set_julia_project_env(processed_julia_project, is_shared)
 
@@ -225,11 +225,32 @@ def _escape_filename(filename):
     return str_repr
 
 
-def _version_assertion():
+def _julia_version_assertion():
     if not is_julia_version_greater_eq(version=(1, 6, 0)):
         raise NotImplementedError(
             "PySR requires Julia 1.6.0 or greater. "
             "Please update your Julia installation."
+        )
+
+
+def _backend_version_assertion(Main):
+    try:
+        backend_version = Main.eval("string(SymbolicRegression.PACKAGE_VERSION)")
+        expected_backend_version = __symbolic_regression_jl_version__
+        if backend_version != expected_backend_version:  # pragma: no cover
+            warnings.warn(
+                f"PySR backend (SymbolicRegression.jl) version {backend_version} "
+                "does not match expected version {expected_backend_version}. "
+                "Things may break. "
+                "Please update your PySR installation with "
+                "`python -c 'import pysr; pysr.install()'`."
+            )
+    except JuliaError:  # pragma: no cover
+        warnings.warn(
+            "You seem to have an outdated version of SymbolicRegression.jl. "
+            "Things may break. "
+            "Please update your PySR installation with "
+            "`python -c 'import pysr; pysr.install()'`."
         )
 
 
@@ -253,20 +274,4 @@ def _load_backend(Main, julia_project):
     except (JuliaError, RuntimeError) as e:
         raise ImportError(_import_error_string(julia_project)) from e
 
-    try:
-        backend_version = Main.eval("string(SymbolicRegression.PACKAGE_VERSION)")
-        expected_backend_version = __symbolic_regression_jl_version__
-        if backend_version != expected_backend_version:  # pragma: no cover
-            warnings.warn(
-                f"PySR backend (SymbolicRegression.jl) version {backend_version} "
-                "does not match expected version {expected_backend_version}. "
-                "Things may break. "
-                "Please update your PySR installation."
-            )
-    except JuliaError:  # pragma: no cover
-        warnings.warn(
-            "You seem to have an outdated version of SymbolicRegression.jl. "
-            "Things may break. "
-            "Please update your PySR installation with "
-            "`python -c 'import pysr; pysr.install()'`."
-        )
+    _backend_version_assertion(Main)
