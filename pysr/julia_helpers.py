@@ -4,6 +4,7 @@ import subprocess
 import warnings
 from pathlib import Path
 import os
+from julia.api import JuliaError
 
 from .version import __version__, __symbolic_regression_jl_version__
 
@@ -230,3 +231,24 @@ def _version_assertion():
             "PySR requires Julia 1.6.0 or greater. "
             "Please update your Julia installation."
         )
+
+
+def _load_cluster_manager(Main, cluster_manager):
+    Main.eval(f"import ClusterManagers: addprocs_{cluster_manager}")
+    return Main.eval(f"addprocs_{cluster_manager}")
+
+
+def _update_julia_project(Main, julia_project, is_shared, io_arg):
+    try:
+        if is_shared:
+            _add_sr_to_julia_project(Main, io_arg)
+        Main.eval(f"Pkg.resolve({io_arg})")
+    except (JuliaError, RuntimeError) as e:
+        raise ImportError(_import_error_string(julia_project)) from e
+
+
+def _load_backend(Main, julia_project):
+    try:
+        Main.eval("using SymbolicRegression")
+    except (JuliaError, RuntimeError) as e:
+        raise ImportError(_import_error_string(julia_project)) from e
