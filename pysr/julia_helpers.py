@@ -94,19 +94,15 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
         )
 
 
-def _import_error_string(julia_project=None):
-    s = """
+def _import_error():
+    raise ImportError(
+        """
     Required dependencies are not installed or built.  Run the following code in the Python REPL:
 
         >>> import pysr
         >>> pysr.install()
     """
-
-    if julia_project is not None:
-        s += f"""
-        Tried to activate project {julia_project} but failed."""
-
-    return s
+    )
 
 
 def _process_julia_project(julia_project):
@@ -171,7 +167,7 @@ def init_julia(julia_project=None, quiet=False):
         )
 
     if not info.is_pycall_built():
-        raise ImportError(_import_error_string())
+        _import_error()
 
     Main = None
     try:
@@ -259,19 +255,24 @@ def _load_cluster_manager(Main, cluster_manager):
     return Main.eval(f"addprocs_{cluster_manager}")
 
 
-def _update_julia_project(Main, julia_project, is_shared, io_arg):
+def _update_julia_project(Main, is_shared, io_arg):
     try:
         if is_shared:
             _add_sr_to_julia_project(Main, io_arg)
         Main.eval(f"Pkg.resolve({io_arg})")
     except (JuliaError, RuntimeError) as e:
-        raise ImportError(_import_error_string(julia_project)) from e
+        raise ImportError(_import_error()) from e
 
 
-def _load_backend(Main, julia_project):
+def _load_backend(Main):
     try:
+        # Load namespace, so that various internal operators work:
         Main.eval("using SymbolicRegression")
     except (JuliaError, RuntimeError) as e:
-        raise ImportError(_import_error_string(julia_project)) from e
+        raise ImportError(_import_error()) from e
 
     _backend_version_assertion(Main)
+
+    from julia import SymbolicRegression
+
+    return SymbolicRegression

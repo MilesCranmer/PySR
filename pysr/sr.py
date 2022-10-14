@@ -1467,18 +1467,17 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Main.eval(
                 f'Pkg.activate("{_escape_filename(julia_project)}", shared = Bool({int(is_shared)}), {io_arg})'
             )
-            from julia.api import JuliaError
 
             if self.update:
-                _update_julia_project(Main, julia_project, is_shared, io_arg)
+                _update_julia_project(Main, is_shared, io_arg)
 
-            _load_backend(Main, julia_project)
+        SymbolicRegression = _load_backend(Main)
 
-            Main.plus = Main.eval("(+)")
-            Main.sub = Main.eval("(-)")
-            Main.mult = Main.eval("(*)")
-            Main.pow = Main.eval("(^)")
-            Main.div = Main.eval("(/)")
+        Main.plus = Main.eval("(+)")
+        Main.sub = Main.eval("(-)")
+        Main.mult = Main.eval("(*)")
+        Main.pow = Main.eval("(^)")
+        Main.div = Main.eval("(/)")
 
         # TODO(mcranmer): These functions should be part of this class.
         binary_operators, unary_operators = _maybe_create_inline_operators(
@@ -1535,7 +1534,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/OptionsStruct.jl
-        options = Main.Options(
+        options = SymbolicRegression.Options(
             binary_operators=Main.eval(str(tuple(binary_operators)).replace("'", "")),
             unary_operators=Main.eval(str(tuple(unary_operators)).replace("'", "")),
             bin_constraints=bin_constraints,
@@ -1608,7 +1607,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/SymbolicRegression.jl
-        self.raw_julia_state_ = Main.EquationSearch(
+        self.raw_julia_state_ = SymbolicRegression.EquationSearch(
             Main.X,
             Main.y,
             weights=Main.weights,
