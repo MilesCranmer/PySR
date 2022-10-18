@@ -14,7 +14,8 @@ A clear and concise description of what the bug is.
 - OS: [e.g. macOS]
 - Julia version [Run `julia --version` in the terminal]
 - Python version [Run `python --version` in the terminal]
-- PySR version [e.g. 0.6.0]
+- Did you install with `pip` or `conda`?
+- PySR version [Run `python -c 'import pysr; print(pysr.__version__)']
 - Does the bug still appear with the latest version of PySR?
 
 **Configuration**
