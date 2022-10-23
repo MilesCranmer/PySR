@@ -26,18 +26,18 @@ jobs:
         shell: bash
     strategy:
       matrix:
-        julia-version: ['1.7.1']
+        julia-version: ['1.8.2']
         python-version: ['3.9']
         os: [macos-latest]
     
     steps:
-      - uses: actions/checkout@v1.0.0
+      - uses: actions/checkout@v1
       - name: "Set up Julia"
-        uses: julia-actions/setup-julia@v1.6.0
+        uses: julia-actions/setup-julia@v1
         with:
           version: ${{ matrix.julia-version }}
       - name: "Cache dependencies"
-        uses: actions/cache@v1 # Thanks FromFile.jl
+        uses: actions/cache@v3
         env:
           cache-name: cache-artifacts
         with:

@@ -28,7 +28,7 @@ jobs:
         shell: bash
     strategy:
       matrix:
-        julia-version: ['1.7.1']
+        julia-version: ['1.8.2']
         python-version: ['3.9.10']
         os: [ubuntu-latest]
         arch: ['linux/x86_64']
