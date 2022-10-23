@@ -4,6 +4,7 @@ import subprocess
 import warnings
 from pathlib import Path
 import os
+from julia.api import JuliaError
 
 from .version import __version__, __symbolic_regression_jl_version__
 
@@ -70,7 +71,7 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
     """
     import julia
 
-    _version_assertion()
+    _julia_version_assertion()
     # Set JULIA_PROJECT so that we install in the pysr environment
     processed_julia_project, is_shared = _process_julia_project(julia_project)
     _set_julia_project_env(processed_julia_project, is_shared)
@@ -93,19 +94,15 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
         )
 
 
-def _import_error_string(julia_project=None):
-    s = """
+def _import_error():
+    raise ImportError(
+        """
     Required dependencies are not installed or built.  Run the following code in the Python REPL:
 
         >>> import pysr
         >>> pysr.install()
     """
-
-    if julia_project is not None:
-        s += f"""
-        Tried to activate project {julia_project} but failed."""
-
-    return s
+    )
 
 
 def _process_julia_project(julia_project):
@@ -157,7 +154,7 @@ def init_julia(julia_project=None, quiet=False):
 
     from julia.core import JuliaInfo, UnsupportedPythonError
 
-    _version_assertion()
+    _julia_version_assertion()
     processed_julia_project, is_shared = _process_julia_project(julia_project)
     _set_julia_project_env(processed_julia_project, is_shared)
 
@@ -170,7 +167,7 @@ def init_julia(julia_project=None, quiet=False):
         )
 
     if not info.is_pycall_built():
-        raise ImportError(_import_error_string())
+        _import_error()
 
     Main = None
     try:
@@ -224,9 +221,59 @@ def _escape_filename(filename):
     return str_repr
 
 
-def _version_assertion():
+def _julia_version_assertion():
     if not is_julia_version_greater_eq(version=(1, 6, 0)):
         raise NotImplementedError(
             "PySR requires Julia 1.6.0 or greater. "
             "Please update your Julia installation."
         )
+
+
+def _backend_version_assertion(Main):
+    try:
+        backend_version = Main.eval("string(SymbolicRegression.PACKAGE_VERSION)")
+        expected_backend_version = __symbolic_regression_jl_version__
+        if backend_version != expected_backend_version:  # pragma: no cover
+            warnings.warn(
+                f"PySR backend (SymbolicRegression.jl) version {backend_version} "
+                "does not match expected version {expected_backend_version}. "
+                "Things may break. "
+                "Please update your PySR installation with "
+                "`python -c 'import pysr; pysr.install()'`."
+            )
+    except JuliaError:  # pragma: no cover
+        warnings.warn(
+            "You seem to have an outdated version of SymbolicRegression.jl. "
+            "Things may break. "
+            "Please update your PySR installation with "
+            "`python -c 'import pysr; pysr.install()'`."
+        )
+
+
+def _load_cluster_manager(Main, cluster_manager):
+    Main.eval(f"import ClusterManagers: addprocs_{cluster_manager}")
+    return Main.eval(f"addprocs_{cluster_manager}")
+
+
+def _update_julia_project(Main, is_shared, io_arg):
+    try:
+        if is_shared:
+            _add_sr_to_julia_project(Main, io_arg)
+        Main.eval(f"Pkg.resolve({io_arg})")
+    except (JuliaError, RuntimeError) as e:
+        raise ImportError(_import_error()) from e
+
+
+def _load_backend(Main):
+    try:
+        # Load namespace, so that various internal operators work:
+        Main.eval("using SymbolicRegression")
+    except (JuliaError, RuntimeError) as e:
+        raise ImportError(_import_error()) from e
+
+    _backend_version_assertion(Main)
+
+    # Load Julia package SymbolicRegression.jl
+    from julia import SymbolicRegression
+
+    return SymbolicRegression

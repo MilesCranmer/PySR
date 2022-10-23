@@ -26,8 +26,9 @@ from .julia_helpers import (
     _process_julia_project,
     is_julia_version_greater_eq,
     _escape_filename,
-    _add_sr_to_julia_project,
-    _import_error_string,
+    _load_cluster_manager,
+    _update_julia_project,
+    _load_backend,
 )
 from .export_numpy import CallableEquation
 from .export_latex import generate_single_table, generate_multiple_tables, to_latex
@@ -1453,8 +1454,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Main = init_julia(self.julia_project)
 
         if cluster_manager is not None:
-            Main.eval(f"import ClusterManagers: addprocs_{cluster_manager}")
-            cluster_manager = Main.eval(f"addprocs_{cluster_manager}")
+            cluster_manager = _load_cluster_manager(cluster_manager)
 
         if not already_ran:
             julia_project, is_shared = _process_julia_project(self.julia_project)
@@ -1467,25 +1467,17 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Main.eval(
                 f'Pkg.activate("{_escape_filename(julia_project)}", shared = Bool({int(is_shared)}), {io_arg})'
             )
-            from julia.api import JuliaError
 
             if self.update:
-                try:
-                    if is_shared:
-                        _add_sr_to_julia_project(Main, io_arg)
-                    Main.eval(f"Pkg.resolve({io_arg})")
-                except (JuliaError, RuntimeError) as e:
-                    raise ImportError(_import_error_string(julia_project)) from e
-            try:
-                Main.eval("using SymbolicRegression")
-            except (JuliaError, RuntimeError) as e:
-                raise ImportError(_import_error_string(julia_project)) from e
+                _update_julia_project(Main, is_shared, io_arg)
 
-            Main.plus = Main.eval("(+)")
-            Main.sub = Main.eval("(-)")
-            Main.mult = Main.eval("(*)")
-            Main.pow = Main.eval("(^)")
-            Main.div = Main.eval("(/)")
+        SymbolicRegression = _load_backend(Main)
+
+        Main.plus = Main.eval("(+)")
+        Main.sub = Main.eval("(-)")
+        Main.mult = Main.eval("(*)")
+        Main.pow = Main.eval("(^)")
+        Main.div = Main.eval("(/)")
 
         # TODO(mcranmer): These functions should be part of this class.
         binary_operators, unary_operators = _maybe_create_inline_operators(
@@ -1542,7 +1534,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/OptionsStruct.jl
-        options = Main.Options(
+        options = SymbolicRegression.Options(
             binary_operators=Main.eval(str(tuple(binary_operators)).replace("'", "")),
             unary_operators=Main.eval(str(tuple(unary_operators)).replace("'", "")),
             bin_constraints=bin_constraints,
@@ -1615,7 +1607,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/SymbolicRegression.jl
-        self.raw_julia_state_ = Main.EquationSearch(
+        self.raw_julia_state_ = SymbolicRegression.EquationSearch(
             Main.X,
             Main.y,
             weights=Main.weights,
