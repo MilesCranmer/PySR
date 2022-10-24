@@ -1611,16 +1611,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             None if parallelism in ["serial", "multithreading"] else int(self.procs)
         )
 
-        # Can't pass symbol to PyJulia, so need to eval a function:
-        Main.eval(
-            "call_sr(@nospecialize args...; @nospecialize kws...)"
-            " = SymbolicRegression.EquationSearch(args...;"
-            f"parallelism=:{parallelism}, kws...)"
-        )
-
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/SymbolicRegression.jl
-        self.raw_julia_state_ = Main.call_sr(
+        self.raw_julia_state_ = SymbolicRegression.EquationSearch(
             Main.X,
             Main.y,
             weights=Main.weights,
@@ -1628,6 +1621,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             varMap=self.feature_names_in_.tolist(),
             options=options,
             numprocs=cprocs,
+            parallelism=parallelism,
             saved_state=self.raw_julia_state_,
             addprocs_function=cluster_manager,
         )
