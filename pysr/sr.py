@@ -1518,25 +1518,22 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             str(self.early_stop_condition) if self.early_stop_condition else None
         )
 
-        mutation_weights = np.array(
-            [
-                self.weight_mutate_constant,
-                self.weight_mutate_operator,
-                self.weight_add_node,
-                self.weight_insert_node,
-                self.weight_delete_node,
-                self.weight_simplify,
-                self.weight_randomize,
-                self.weight_do_nothing,
-            ],
-            dtype=float,
+        mutation_weights = SymbolicRegression.MutationWeights(
+            mutate_constant=self.weight_mutate_constant,
+            mutate_operator=self.weight_mutate_operator,
+            add_node=self.weight_add_node,
+            insert_node=self.weight_insert_node,
+            delete_node=self.weight_delete_node,
+            simplify=self.weight_simplify,
+            randomize=self.weight_randomize,
+            do_nothing=self.weight_do_nothing,
         )
 
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/OptionsStruct.jl
         options = SymbolicRegression.Options(
-            binary_operators=Main.eval(str(tuple(binary_operators)).replace("'", "")),
-            unary_operators=Main.eval(str(tuple(unary_operators)).replace("'", "")),
+            binary_operators=Main.eval(str(binary_operators).replace("'", "")),
+            unary_operators=Main.eval(str(unary_operators).replace("'", "")),
             bin_constraints=bin_constraints,
             una_constraints=una_constraints,
             complexity_of_operators=complexity_of_operators,
@@ -1545,43 +1542,43 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             nested_constraints=nested_constraints,
             loss=custom_loss,
             maxsize=int(self.maxsize),
-            hofFile=_escape_filename(self.equation_file_),
+            output_file=_escape_filename(self.equation_file_),
             npopulations=int(self.populations),
             batching=self.batching,
-            batchSize=int(min([batch_size, len(X)]) if self.batching else len(X)),
-            mutationWeights=mutation_weights,
-            probPickFirst=self.tournament_selection_p,
-            ns=self.tournament_selection_n,
+            batch_size=int(min([batch_size, len(X)]) if self.batching else len(X)),
+            mutation_weights=mutation_weights,
+            tournament_selection_p=self.tournament_selection_p,
+            tournament_selection_n=self.tournament_selection_n,
             # These have the same name:
             parsimony=self.parsimony,
             alpha=self.alpha,
             maxdepth=maxdepth,
             fast_cycle=self.fast_cycle,
             migration=self.migration,
-            hofMigration=self.hof_migration,
-            fractionReplacedHof=self.fraction_replaced_hof,
-            shouldOptimizeConstants=self.should_optimize_constants,
-            warmupMaxsizeBy=self.warmup_maxsize_by,
-            useFrequency=self.use_frequency,
-            useFrequencyInTournament=self.use_frequency_in_tournament,
+            hof_migration=self.hof_migration,
+            fraction_replaced_hof=self.fraction_replaced_hof,
+            should_optimize_constants=self.should_optimize_constants,
+            warmup_maxsize_by=self.warmup_maxsize_by,
+            use_frequency=self.use_frequency,
+            use_frequency_in_tournament=self.use_frequency_in_tournament,
             npop=self.population_size,
-            ncyclesperiteration=self.ncyclesperiteration,
-            fractionReplaced=self.fraction_replaced,
+            ncycles_per_iteration=self.ncyclesperiteration,
+            fraction_replaced=self.fraction_replaced,
             topn=self.topn,
             verbosity=self.verbosity,
             optimizer_algorithm=self.optimizer_algorithm,
             optimizer_nrestarts=self.optimizer_nrestarts,
-            optimize_probability=self.optimize_probability,
+            optimizer_probability=self.optimize_probability,
             optimizer_iterations=self.optimizer_iterations,
-            perturbationFactor=self.perturbation_factor,
+            perturbation_factor=self.perturbation_factor,
             annealing=self.annealing,
-            stateReturn=True,  # Required for state saving.
+            return_state=True,  # Required for state saving.
             progress=progress,
             timeout_in_seconds=self.timeout_in_seconds,
-            crossoverProbability=self.crossover_probability,
+            crossover_probability=self.crossover_probability,
             skip_mutation_failures=self.skip_mutation_failures,
             max_evals=self.max_evals,
-            earlyStopCondition=early_stop_condition,
+            early_stop_condition=early_stop_condition,
             seed=seed,
             deterministic=self.deterministic,
         )
@@ -1603,19 +1600,34 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         else:
             Main.weights = None
 
-        cprocs = 0 if multithreading else self.procs
+        if self.procs == 0 and not multithreading:
+            parallelism = "serial"
+        elif multithreading:
+            parallelism = "multithreading"
+        else:
+            parallelism = "multiprocessing"
+
+        cprocs = (
+            None if parallelism in ["serial", "multithreading"] else int(self.procs)
+        )
+
+        # Can't pass symbol to PyJulia, so need to eval a function:
+        Main.eval(
+            "call_sr(@nospecialize args...; @nospecialize kws...)"
+            " = SymbolicRegression.EquationSearch(args...;"
+            f"parallelism=:{parallelism}, kws...)"
+        )
 
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/SymbolicRegression.jl
-        self.raw_julia_state_ = SymbolicRegression.EquationSearch(
+        self.raw_julia_state_ = Main.call_sr(
             Main.X,
             Main.y,
             weights=Main.weights,
             niterations=int(self.niterations),
             varMap=self.feature_names_in_.tolist(),
             options=options,
-            numprocs=int(cprocs),
-            multithreading=bool(multithreading),
+            numprocs=cprocs,
             saved_state=self.raw_julia_state_,
             addprocs_function=cluster_manager,
         )
