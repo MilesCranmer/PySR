@@ -1587,7 +1587,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             early_stop_condition=early_stop_condition,
             seed=seed,
             deterministic=self.deterministic,
-            extend_user_operators=False,
             define_helper_functions=False,
         )
 
