@@ -70,12 +70,13 @@ class TestPipeline(unittest.TestCase):
         print(model.equations_)
         self.assertLessEqual(model.get_best()["loss"], 1e-4)
 
-    def test_multiprocessing(self):
+    def test_multiprocessing_turbo(self):
         y = self.X[:, 0]
         model = PySRRegressor(
             **self.default_test_kwargs,
             procs=2,
             multithreading=False,
+            turbo=True,
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
         )
         model.fit(self.X, y)
@@ -108,6 +109,8 @@ class TestPipeline(unittest.TestCase):
             verbosity=0,
             **self.default_test_kwargs,
             procs=0,
+            # Test custom operators with turbo:
+            turbo=True,
             # Test custom operators with constraints:
             nested_constraints={"square_op": {"square_op": 3}},
             constraints={"square_op": 10},
