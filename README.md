@@ -245,10 +245,10 @@ model = PySRRegressor(
     update=False,
     # ^ Don't update Julia packages
     extra_sympy_mappings={"cos2": lambda x: sympy.cos(x)**2},
-    extra_torch_mappings={sympy.cos: torch.cos},
+    # extra_torch_mappings={sympy.cos: torch.cos},
     # ^ Not needed as cos already defined, but this
     # is how you define custom torch operators.
-    extra_jax_mappings={sympy.cos: "jnp.cos"},
+    # extra_jax_mappings={sympy.cos: "jnp.cos"},
     # ^ For JAX, one passes a string.
 )
 ```
