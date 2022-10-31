@@ -476,6 +476,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         algorithm than regularized evolution, but does cycles 15%
         faster. May be algorithmically less efficient.
         Default is `False`.
+    turbo: bool
+        Whether to use LoopVectorization.jl to speed up the search
+        evaluation. Certain user-defined operators may not be supported.
     precision : int
         What precision to use for the data. By default this is `32`
         (float32), but you can select `64` or `16` as well, giving
@@ -692,6 +695,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         batching=False,
         batch_size=50,
         fast_cycle=False,
+        turbo=False,
         precision=32,
         random_state=None,
         deterministic=False,
@@ -779,6 +783,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.batching = batching
         self.batch_size = batch_size
         self.fast_cycle = fast_cycle
+        self.turbo = turbo
         self.precision = precision
         self.random_state = random_state
         self.deterministic = deterministic
@@ -1554,6 +1559,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             alpha=self.alpha,
             maxdepth=maxdepth,
             fast_cycle=self.fast_cycle,
+            turbo=self.turbo,
             migration=self.migration,
             hof_migration=self.hof_migration,
             fraction_replaced_hof=self.fraction_replaced_hof,
