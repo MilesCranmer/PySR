@@ -237,6 +237,8 @@ model = PySRRegressor(
     # ^ Higher precision calculations.
     warm_start=True,
     # ^ Start from where left off.
+    turbo=True,
+    # ^ Faster evaluation (experimental)
     julia_project=None,
     # ^ Can set to the path of a folder containing the
     # "SymbolicRegression.jl" repo, for custom modifications.
