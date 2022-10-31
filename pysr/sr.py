@@ -477,8 +477,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         faster. May be algorithmically less efficient.
         Default is `False`.
     turbo: bool
-        Whether to use LoopVectorization.jl to speed up the search
-        evaluation. Certain user-defined operators may not be supported.
+        (Experimental) Whether to use LoopVectorization.jl to speed up the
+        search evaluation. Certain operators may not be supported.
+        Does not support 16-bit precision floats.
     precision : int
         What precision to use for the data. By default this is `32`
         (float32), but you can select `64` or `16` as well, giving
