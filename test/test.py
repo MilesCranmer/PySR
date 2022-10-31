@@ -109,6 +109,8 @@ class TestPipeline(unittest.TestCase):
             verbosity=0,
             **self.default_test_kwargs,
             procs=0,
+            # Test custom operators with turbo:
+            turbo=True,
             # Test custom operators with constraints:
             nested_constraints={"square_op": {"square_op": 3}},
             constraints={"square_op": 10},
