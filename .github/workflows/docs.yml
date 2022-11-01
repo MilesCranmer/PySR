@@ -27,6 +27,8 @@ jobs:
           python-version: 3.9
       - name: "Install packages for docs building"
         run: pip install mkdocs-material mkdocs-autorefs 'mkdocstrings[python]'
+      - name: "Install PySR"
+        run: pip install -e .
       - name: "Build API docs"
         run: cd docs && ./gen_docs.sh
       - name: "Deploy documentation"
