@@ -32,6 +32,8 @@ from .julia_helpers import (
 )
 from .export_numpy import CallableEquation
 from .export_latex import generate_single_table, generate_multiple_tables, to_latex
+from .export_jax_header import sympy2jax
+from .export_torch_header import sympy2torch
 from .deprecated import make_deprecated_kwargs_for_pysr_regressor
 
 
@@ -2100,7 +2102,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
                 # JAX:
                 if self.output_jax_format:
-                    from .export_jax import sympy2jax
 
                     func, params = sympy2jax(
                         eqn,
@@ -2114,7 +2115,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
                 # Torch:
                 if self.output_torch_format:
-                    from .export_torch import sympy2torch
 
                     module = sympy2torch(
                         eqn,

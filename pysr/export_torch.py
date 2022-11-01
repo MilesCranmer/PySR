@@ -8,7 +8,7 @@ import collections as co
 import functools as ft
 
 import sympy
-import torch as torch
+import torch
 
 
 def _reduce(fn):

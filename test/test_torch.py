@@ -60,7 +60,7 @@ class TestTorch(unittest.TestCase):
 
         model.refresh(checkpoint_file="equation_file.csv")
         tformat = model.pytorch()
-        self.assertEqual(str(tformat), "_SingleSymPyModule(expression=cos(x1)**2)")
+        self.assertEqual(str(tformat), "SingleSymPyModule(expression=cos(x1)**2)")
 
         np.testing.assert_almost_equal(
             tformat(torch.tensor(X.values)).detach().numpy(),
@@ -94,7 +94,7 @@ class TestTorch(unittest.TestCase):
         model.refresh(checkpoint_file="equation_file.csv")
 
         tformat = model.pytorch()
-        self.assertEqual(str(tformat), "_SingleSymPyModule(expression=cos(x1)**2)")
+        self.assertEqual(str(tformat), "SingleSymPyModule(expression=cos(x1)**2)")
 
         np.testing.assert_almost_equal(
             tformat(torch.tensor(X)).detach().numpy(),
@@ -152,7 +152,7 @@ class TestTorch(unittest.TestCase):
         # Will automatically use the set global state from get_hof.
 
         tformat = model.pytorch()
-        self.assertEqual(str(tformat), "_SingleSymPyModule(expression=sin(x1))")
+        self.assertEqual(str(tformat), "SingleSymPyModule(expression=sin(x1))")
         np.testing.assert_almost_equal(
             tformat(torch.tensor(X)).detach().numpy(),
             np.sin(X[:, 1]),
