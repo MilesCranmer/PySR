@@ -8,7 +8,7 @@ from jax.scipy import special as jsp
 MUL = 0
 ADD = 1
 
-_jnp_func_lookup = {
+JNP_FUNC_LOOKUP = {
     sympy.Mul: MUL,
     sympy.Add: ADD,
     sympy.div: "jnp.div",
@@ -54,23 +54,32 @@ _jnp_func_lookup = {
     sympy.core.numbers.One: "(lambda: 1.0)",
 }
 
+LEAF_TYPES = (sympy.Float, sympy.Rational, sympy.Integer, sympy.Symbol)
+
+
+def _is_leaf(expr):
+    return any(issubclass(expr.func, leaf_type) for leaf_type in LEAF_TYPES)
+
 
 def _sympy2jaxtext(expr, parameters, symbols_in, extra_jax_mappings=None):
-    if issubclass(expr.func, sympy.Float):
-        parameters.append(float(expr))
-        return f"parameters[{len(parameters) - 1}]"
-    elif issubclass(expr.func, sympy.Rational):
-        return f"{float(expr)}"
-    elif issubclass(expr.func, sympy.Integer):
-        return f"{int(expr)}"
-    elif issubclass(expr.func, sympy.Symbol):
-        return (
-            f"X[:, {[i for i in range(len(symbols_in)) if symbols_in[i] == expr][0]}]"
-        )
+    if _is_leaf(expr):
+        if issubclass(expr.func, sympy.Float):
+            parameters.append(float(expr))
+            out = f"parameters[{len(parameters) - 1}]"
+        elif issubclass(expr.func, sympy.Rational):
+            out = f"{float(expr)}"
+        elif issubclass(expr.func, sympy.Integer):
+            out = f"{int(expr)}"
+        elif issubclass(expr.func, sympy.Symbol):
+            out = f"X[:, {[i for i in range(len(symbols_in)) if symbols_in[i] == expr][0]}]"
+        else:
+            raise NotImplementedError
+        return out
+
     if extra_jax_mappings is None:
         extra_jax_mappings = {}
     try:
-        _func = {**_jnp_func_lookup, **extra_jax_mappings}[expr.func]
+        _func = {**JNP_FUNC_LOOKUP, **extra_jax_mappings}[expr.func]
     except KeyError:
         raise KeyError(
             f"Function {expr.func} was not found in JAX function mappings."
@@ -90,7 +99,6 @@ def _sympy2jaxtext(expr, parameters, symbols_in, extra_jax_mappings=None):
     return f'{_func}({", ".join(args)})'
 
 
-    
 def _sympy2jax(expression, symbols_in, selection=None, extra_jax_mappings=None):
     parameters = []
     functional_form_text = _sympy2jaxtext(
