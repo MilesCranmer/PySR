@@ -8,6 +8,5 @@ from .sr import (
     best_row,
 )
 from .julia_helpers import install
-from .feynman_problems import Problem, FeynmanProblem
 from .export_jax_header import sympy2jax
 from .export_torch_header import sympy2torch
