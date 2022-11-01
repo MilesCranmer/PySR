@@ -12,16 +12,16 @@
   - The Objective:
     - loss
     - model_selection
-    - Working with Complexities:
-      - parsimony
-      - constraints
-      - nested_constraints
-      - complexity_of_operators
-      - complexity_of_constants
-      - complexity_of_variables
-      - warmup_maxsize_by
-      - use_frequency
-      - use_frequency_in_tournament
+  - Working with Complexities:
+    - parsimony
+    - constraints
+    - nested_constraints
+    - complexity_of_operators
+    - complexity_of_constants
+    - complexity_of_variables
+    - warmup_maxsize_by
+    - use_frequency
+    - use_frequency_in_tournament
   - Mutations:
     - weight_add_node
     - weight_insert_node
