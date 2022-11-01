@@ -20,8 +20,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        julia-version: ['1.6.1', '1.7.1', '1.8.0', 'nightly']
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        julia-version: ['1.6.7', '1.7.3', '1.8.2']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
         os: [ubuntu-latest, macos-latest, windows-latest]
     
     steps:
@@ -41,4 +41,7 @@ jobs:
             python setup.py install
             python -c 'import pysr; pysr.install()'
       - name: "Run tests"
-        run: python -m unittest test.test && python -m unittest test.test_env
+        run: python -m unittest test.test
+      - name: "Run new env test"
+        run: python -m unittest test.test_env
+        if: ${{ !(matrix.os == 'windows-latest' && matrix.python-version == '3.7') }}
