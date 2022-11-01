@@ -40,7 +40,11 @@ def str_param_groups(param_groupings, params, cur_heading=2):
             f"  - **`{param_groupings}`**"
             + "\n\n"
             + clean_desc
-            + ("\n\n    " + f"*Default:* `{default_value.group(1)}`" if default_value else "")
+            + (
+                "\n\n    " + f"*Default:* `{default_value.group(1)}`"
+                if default_value
+                else ""
+            )
         )
     else:
         raise TypeError(f"Unexpected type {type(param_groupings)}")
