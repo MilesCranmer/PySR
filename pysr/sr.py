@@ -100,26 +100,23 @@ def pysr(X, y, weights=None, **kwargs):  # pragma: no cover
 
 def _process_constraints(binary_operators, unary_operators, constraints):
     constraints = constraints.copy()
+    default_constraint = -1
     for op in unary_operators:
-        if op not in constraints:
-            constraints[op] = -1
+        if op in constraints:
+            continue
+        constraints[op] = default_constraint
+
     for op in binary_operators:
-        if op not in constraints:
-            constraints[op] = (-1, -1)
+        if op in constraints:
+            continue
+        constraints[op] = (default_constraint,) * 2
+
+    for (op, constraint) in constraints.items():
         if op in ["plus", "sub", "+", "-"]:
-            if constraints[op][0] != constraints[op][1]:
+            if constraint[0] != constraint[1]:
                 raise NotImplementedError(
                     "You need equal constraints on both sides for - and +, "
                     "due to simplification strategies."
-                )
-        elif op in ["mult", "*"]:
-            # Make sure the complex expression is in the left side.
-            if constraints[op][0] == -1:
-                continue
-            if constraints[op][1] == -1 or constraints[op][0] < constraints[op][1]:
-                constraints[op][0], constraints[op][1] = (
-                    constraints[op][1],
-                    constraints[op][0],
                 )
     return constraints
 
