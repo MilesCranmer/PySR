@@ -30,15 +30,17 @@ def str_param_groups(param_groupings, params, cur_heading=2):
     elif isinstance(param_groupings, str):
         found_params.append(param_groupings)
 
-        clean_desc = re.sub(r"Default is .*", "", params[param_groupings].description)
         default_value = re.search(
             r"Default is `(.*)`", params[param_groupings].description
         )
+        clean_desc = re.sub(r"Default is .*", "", params[param_groupings].description)
+        # Prepend every line with 4 spaces:
+        clean_desc = "\n".join("    " + line for line in clean_desc.splitlines())
         return (
-            f"**`{param_groupings}`**"
+            f"  - **`{param_groupings}`**"
             + "\n\n"
             + clean_desc
-            + ("\n" + f"*Default:* `{default_value.group(1)}`" if default_value else "")
+            + ("\n\n    " + f"*Default:* `{default_value.group(1)}`" if default_value else "")
         )
     else:
         raise TypeError(f"Unexpected type {type(param_groupings)}")
