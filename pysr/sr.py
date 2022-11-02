@@ -35,6 +35,10 @@ from .export_latex import generate_single_table, generate_multiple_tables, to_la
 from .deprecated import make_deprecated_kwargs_for_pysr_regressor
 
 
+# To work with None as a default value in __init__, we also define
+# a separate definition to indicate a parameter is unchanged:
+NONE = "none"
+
 Main = None  # TODO: Rename to more descriptive name like "julia_runtime"
 
 already_ran = False
@@ -234,6 +238,29 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     This model will automatically search for equations which fit
     a given dataset subject to a particular loss and set of
     constraints.
+
+    You may pass parameters all at once to PySRRegressor's initialization,
+    or, to create more readable code, you may use the following API to
+    set parameters in a hierarchical fashion:
+    ```python
+    model = (
+        PySRRegressor()
+            .set_space(...)
+            .set_size(...)
+            .set_objective(...)
+            .set_constraints(...)
+            .set_mutations(...)
+            .set_optimizer(...)
+            .set_migration(...)
+            .set_preprocessing(...)
+            .set_parallelism(...)
+            .set_monitoring(...)
+            .set_env(...)
+            .set_export(...)
+    )
+    ```
+    Each of these functions contains documentation on the group of parameters
+    it sets.
 
     Most default parameters have been tuned over several example equations,
     but you should adjust `niterations`, `binary_operators`, `unary_operators`
@@ -836,6 +863,130 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     raise TypeError(
                         f"{k} is not a valid keyword argument for PySRRegressor."
                     )
+
+    def set_space(
+        self,
+        *,
+        binary_operators=NONE,
+        unary_operators=NONE,
+        maxsize=NONE,
+        maxdepth=NONE,
+    ):
+        """Set the search space for PySRRegressor.
+
+        This defines what operations are possible in expressions, as well
+        as the maximum size and depth of expressions.
+
+        Parameters
+        ----------
+        binary_operators : list[str]
+            List of strings for binary operators used in the search.
+            See the [operators page](https://astroautomata.com/PySR/operators/)
+            for more details.
+            Default is `["+", "-", "*", "/"]`.
+        unary_operators : list[str]
+            Operators which only take a single scalar as input.
+            For example, `"cos"` or `"exp"`.
+            Default is `None`.
+        maxsize : int
+            Max complexity of an equation.  Default is `20`.
+        maxdepth : int
+            Max depth of an equation. You can use both `maxsize` and
+            `maxdepth`. `maxdepth` is by default not used.
+            Default is `None`.
+        """
+        for k, v in locals().items():
+            if k == "self" or v == NONE:
+                continue
+            setattr(self, k, v)
+        return self
+
+    def set_size(
+        self,
+        *,
+        niterations=NONE,
+        populations=NONE,
+        population_size=NONE,
+        ncyclesperiteration=NONE,
+    ):
+        """Set the size of the search for PySRRegressor.
+
+        This defines how many iterations to run, how many populations to
+        use, and how many cycles to run per iteration. One "iteration" is
+        `(ncyclesperiteration * populations)` total mutations. Iterations
+        are separated by migration between populations.
+
+        Parameters
+        ----------
+        niterations : int
+            Number of iterations of the algorithm to run. The best
+            equations are printed and migrate between populations at the
+            end of each iteration.
+            Default is `40`.
+        populations : int
+            Number of populations running.
+            Default is `15`.
+        population_size : int
+            Number of individuals in each population.
+            Default is `33`.
+        ncyclesperiteration : int
+            Number of total mutations to run, per 10 samples of the
+            population, per iteration.
+            Default is `550`.
+        """
+        for k, v in locals().items():
+            if k == "self" or v == NONE:
+                continue
+            setattr(self, k, v)
+        return self
+
+    def set_objective(
+        self,
+        *,
+        loss=NONE,
+        model_selection=NONE,
+    ):
+        """Set the objective for PySRRegressor.
+
+        This defines how the algorithm will evaluate equations.
+
+        Parameters
+        ----------
+        loss : str
+            String of Julia code specifying the loss function. Can either
+            be a loss from LossFunctions.jl, or your own loss written as a
+            function. Examples of custom written losses include:
+            `myloss(x, y) = abs(x-y)` for non-weighted, or
+            `myloss(x, y, w) = w*abs(x-y)` for weighted.
+            The included losses include:
+            Regression: `LPDistLoss{P}()`, `L1DistLoss()`,
+            `L2DistLoss()` (mean square), `LogitDistLoss()`,
+            `HuberLoss(d)`, `L1EpsilonInsLoss(ϵ)`, `L2EpsilonInsLoss(ϵ)`,
+            `PeriodicLoss(c)`, `QuantileLoss(τ)`.
+            Classification: `ZeroOneLoss()`, `PerceptronLoss()`,
+            `L1HingeLoss()`, `SmoothedL1HingeLoss(γ)`,
+            `ModifiedHuberLoss()`, `L2MarginLoss()`, `ExpLoss()`,
+            `SigmoidLoss()`, `DWDMarginLoss(q)`.
+            Default is `"L2DistLoss()"`.
+        model_selection : str
+            Model selection criterion when selecting a final expression from
+            the list of best expression at each complexity.
+            Can be `'accuracy'`, `'best'`, or `'score'`. Default is `'best'`.
+            `'accuracy'` selects the candidate model with the lowest loss
+            (highest accuracy).
+            `'score'` selects the candidate model with the highest score.
+            Score is defined as the negated derivative of the log-loss with
+            respect to complexity - if an expression has a much better
+            loss at a slightly higher complexity, it is preferred.
+            `'best'` selects the candidate model with the highest score
+            among expressions with a loss better than at least 1.5x the
+            most accurate model.
+        """
+        for k, v in locals().items():
+            if k == "self" or v == NONE:
+                continue
+            setattr(self, k, v)
+        return self
 
     @classmethod
     def from_file(
