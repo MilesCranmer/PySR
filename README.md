@@ -179,6 +179,7 @@ You can also see the full API at [this page](https://astroautomata.com/PySR/api)
 
 The following code makes use of as many PySR features as possible.
 Note that is just a demonstration of features and you should not use this example as-is.
+For details on what each parameter does, check out the [API page](https://astroautomata.com/PySR/api/).
 
 ```python
 model = PySRRegressor(
