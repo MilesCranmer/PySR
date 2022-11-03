@@ -359,6 +359,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Whether to use the frequency mentioned above in the tournament,
         rather than just the simulated annealing.
         Default is `True`.
+    adaptive_parsimony_scaling : float
+        If the adaptive parsimony strategy (`use_frequency` and
+        `use_frequency_in_tournament`), this is how much to (exponentially)
+        weight the contribution. If you find that the search is only optimizing
+        the most complex expressions while the simpler expressions remain stagnant,
+        you should increase this value.
+        Default is `20.0`.
     alpha : float
         Initial temperature for simulated annealing
         (requires `annealing` to be `True`).
@@ -408,6 +415,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     weight_simplify : float
         Relative likelihood for mutation to simplify constant parts by evaluation
         Default is `0.0020`.
+    weight_optimize: float
+        Constant optimization can also be performed as a mutation, in addition to
+        the normal strategy controlled by `optimize_probability` which happens
+        every iteration. Using it as a mutation is useful if you want to use
+        a large `ncyclesperiteration`, and may not optimize very often.
+        Default is `0.0`.
     crossover_probability : float
         Absolute probability of crossover-type genetic operation, instead of a mutation.
         Default is `0.066`.
@@ -664,6 +677,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         parsimony=0.0032,
         use_frequency=True,
         use_frequency_in_tournament=True,
+        adaptive_parsimony_scaling=20.0,
         alpha=0.1,
         annealing=False,
         early_stop_condition=None,
@@ -678,6 +692,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         weight_mutate_operator=0.47,
         weight_randomize=0.00023,
         weight_simplify=0.0020,
+        weight_optimize=0.0,
         crossover_probability=0.066,
         skip_mutation_failures=True,
         migration=True,
@@ -748,6 +763,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.parsimony = parsimony
         self.use_frequency = use_frequency
         self.use_frequency_in_tournament = use_frequency_in_tournament
+        self.adaptive_parsimony_scaling = adaptive_parsimony_scaling
         self.alpha = alpha
         self.annealing = annealing
         # - Evolutionary search parameters
@@ -760,6 +776,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.weight_mutate_operator = weight_mutate_operator
         self.weight_randomize = weight_randomize
         self.weight_simplify = weight_simplify
+        self.weight_optimize = weight_optimize
         self.crossover_probability = crossover_probability
         self.skip_mutation_failures = skip_mutation_failures
         # -- Migration parameters
@@ -1534,6 +1551,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             simplify=self.weight_simplify,
             randomize=self.weight_randomize,
             do_nothing=self.weight_do_nothing,
+            optimize=self.weight_optimize,
         )
 
         # Call to Julia backend.
@@ -1569,6 +1587,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             warmup_maxsize_by=self.warmup_maxsize_by,
             use_frequency=self.use_frequency,
             use_frequency_in_tournament=self.use_frequency_in_tournament,
+            adaptive_parsimony_scaling=self.adaptive_parsimony_scaling,
             npop=self.population_size,
             ncycles_per_iteration=self.ncyclesperiteration,
             fraction_replaced=self.fraction_replaced,
