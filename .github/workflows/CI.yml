@@ -99,8 +99,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
           activate-environment: pysr-test
           environment-file: environment.yml
-      - name: "Echo conda dir"
-        run: echo $CONDA_PREFIX
+      - name: "Cache Julia"
+        uses: julia-actions/cache@v1
       - name: "Install PySR"
         run: |
             python3 -m pip install .
