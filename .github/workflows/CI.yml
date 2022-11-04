@@ -60,17 +60,17 @@ jobs:
       - name: "Install Coverage tool"
         run: pip install coverage coveralls
       - name: "Run tests"
-        run: coverage run --source=pysr --omit='*/test/*,*/feynman_problems.py' -m unittest pysr.test.test
+        run: coverage run --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test main
       - name: "Install JAX"
         run: pip install jax jaxlib # (optional import)
       - name: "Run JAX tests"
-        run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m unittest pysr.test.test_jax
+        run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test jax
       - name: "Install Torch"
         run: pip install torch # (optional import)
       - name: "Run Torch tests"
-        run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m unittest pysr.test.test_torch
+        run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test torch
       - name: "Run custom env tests"
-        run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m unittest pysr.test.test_env
+        run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test env
       - name: Coveralls
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -113,7 +113,7 @@ jobs:
           miniforge-version: latest
           auto-activate-base: true
           python-version: ${{ matrix.python-version }}
-          activate-environment: test
+          activate-environment: pysr-test
           environment-file: environment.yml
       - name: "Install PySR"
         run: |
@@ -122,9 +122,9 @@ jobs:
       - name: "Install Coverage tool"
         run: python3 -m pip install coverage coveralls
       - name: "Run tests"
-        run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m unittest pysr.test.test
+        run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test main
       - name: "Run custom env tests"
-        run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m unittest pysr.test.test_env
+        run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test env
       - name: Coveralls
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
