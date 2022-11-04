@@ -104,24 +104,13 @@ jobs:
         run: |
             python3 -m pip install .
             python3 -c 'import pysr; pysr.install()'
-      - name: "Install Coverage tool"
-        run: python3 -m pip install coverage coveralls
       - name: "Run tests"
-        run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test main
-      - name: "Run custom env tests"
-        run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test env
-      - name: Coveralls
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COVERALLS_FLAG_NAME: conda-test-${{ matrix.test-name }}
-          COVERALLS_PARALLEL: true
-        run: coveralls --service=github
+        run: cd /tmp && python -m pysr.test main
 
   coveralls:
     name: Indicate completion to coveralls.io
     needs: 
       - test
-      - conda_test
     runs-on: ubuntu-latest
     defaults:
       run:
