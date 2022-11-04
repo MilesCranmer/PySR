@@ -19,3 +19,6 @@ Manifest.toml
 workflow
 docs/index.md
 site
+**/.DS_Store
+**/*.code-workspace
+**/*.tar.gz
