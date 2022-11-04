@@ -32,12 +32,15 @@ jobs:
           miniforge-version: latest
           auto-activate-base: true
           python-version: ${{ matrix.python-version }}
-          activate-environment: test
+          activate-environment: pysr-test
       - name: "Install pysr with mamba"
-        run: conda activate test && mamba install pysr
+        run: conda activate pysr-test && mamba install pysr
         if: ${{ matrix.use-mamba }}
       - name: "Install pysr with conda"
-        run: conda activate test && conda install pysr
+        run: conda activate pysr-test && conda install pysr
         if: ${{ !matrix.use-mamba }}
       - name: "Run tests"
-        run: conda activate test && python3 -m unittest test.test
+        run: |
+          conda activate pysr-test
+          cd $(python -c 'import pysr; from pathlib import Path; print(Path(pysr.__file__).parent.parent)')
+          python -m unittest test.test
