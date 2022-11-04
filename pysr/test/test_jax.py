@@ -1,11 +1,10 @@
 import unittest
 import numpy as np
-from pysr import sympy2jax, PySRRegressor
 import pandas as pd
-from jax import numpy as jnp
-from jax import random
 import sympy
 from functools import partial
+
+from .. import sympy2jax, PySRRegressor
 
 
 class TestJAX(unittest.TestCase):
@@ -13,6 +12,9 @@ class TestJAX(unittest.TestCase):
         np.random.seed(0)
 
     def test_sympy2jax(self):
+        from jax import numpy as jnp
+        from jax import random
+
         x, y, z = sympy.symbols("x y z")
         cosx = 1.0 * sympy.cos(x) + y
         key = random.PRNGKey(0)
@@ -22,6 +24,8 @@ class TestJAX(unittest.TestCase):
         self.assertTrue(jnp.all(jnp.isclose(f(X, params), true)).item())
 
     def test_pipeline_pandas(self):
+        from jax import numpy as jnp
+
         X = pd.DataFrame(np.random.randn(100, 10))
         y = np.ones(X.shape[0])
         model = PySRRegressor(
@@ -53,6 +57,8 @@ class TestJAX(unittest.TestCase):
         )
 
     def test_pipeline(self):
+        from jax import numpy as jnp
+
         X = np.random.randn(100, 10)
         y = np.ones(X.shape[0])
         model = PySRRegressor(progress=False, max_evals=10000, output_jax_format=True)
@@ -112,3 +118,12 @@ class TestJAX(unittest.TestCase):
 
         np.testing.assert_almost_equal(y.values, np_output, decimal=3)
         np.testing.assert_almost_equal(y.values, jax_output, decimal=3)
+
+
+def runtests():
+    """Run all tests in test_jax.py."""
+    loader = unittest.TestLoader()
+    suite = unittest.TestSuite()
+    suite.addTests(loader.loadTestsFromTestCase(TestJAX))
+    runner = unittest.TextTestRunner()
+    return runner.run(suite)
