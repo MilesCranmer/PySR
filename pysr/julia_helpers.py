@@ -95,14 +95,12 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
 
 
 def _import_error():
-    raise ImportError(
-        """
+    return """
     Required dependencies are not installed or built.  Run the following code in the Python REPL:
 
         >>> import pysr
         >>> pysr.install()
     """
-    )
 
 
 def _process_julia_project(julia_project):
@@ -167,7 +165,7 @@ def init_julia(julia_project=None, quiet=False):
         )
 
     if not info.is_pycall_built():
-        _import_error()
+        raise ImportError(_import_error())
 
     Main = None
     try:
