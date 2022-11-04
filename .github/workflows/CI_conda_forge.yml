@@ -43,4 +43,4 @@ jobs:
         run: |
           conda activate pysr-test
           cd $(python -c 'import pysr; from pathlib import Path; print(Path(pysr.__file__).parent.parent)')
-          python -m unittest test.test
+          python -m unittest pysr.test.test

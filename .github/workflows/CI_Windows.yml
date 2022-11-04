@@ -58,10 +58,10 @@ jobs:
             python setup.py install
             python -c 'import pysr; pysr.install()'
       - name: "Run tests"
-        run: python -m unittest test.test
+        run: python -m unittest pysr.test.test
       - name: "Install Torch"
         run: pip install torch # (optional import)
       - name: "Run Torch tests"
-        run: python -m unittest test.test_torch
+        run: python -m unittest pysr.test.test_torch
       - name: "Run custom env tests"
-        run: python -m unittest test.test_env
+        run: python -m unittest pysr.test.test_env
