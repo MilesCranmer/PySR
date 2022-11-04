@@ -74,6 +74,8 @@ class TestPipeline(unittest.TestCase):
         y = self.X[:, 0]
         model = PySRRegressor(
             **self.default_test_kwargs,
+            # Turbo needs to work with unsafe operators:
+            unary_operators=["sqrt"],
             procs=2,
             multithreading=False,
             turbo=True,
