@@ -91,21 +91,6 @@ jobs:
     
     steps:
       - uses: actions/checkout@v3
-      - name: "Set up Julia"
-        uses: julia-actions/setup-julia@v1
-        with:
-          version: ${{ matrix.julia-version }}
-      - name: "Cache dependencies"
-        uses: actions/cache@v1 # Thanks FromFile.jl
-        env:
-          cache-name: cache-artifacts
-        with:
-          path: ~/.julia/artifacts
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
       - name: "Set up Conda"
         uses: conda-incubator/setup-miniconda@v2
         with:
