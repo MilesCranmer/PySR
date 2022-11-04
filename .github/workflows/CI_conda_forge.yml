@@ -24,7 +24,6 @@ jobs:
         use-mamba: [true, false]
     
     steps:
-      - uses: actions/checkout@v3
       - name: "Set up Conda"
         uses: conda-incubator/setup-miniconda@v2
         with:
@@ -40,7 +39,4 @@ jobs:
         run: conda activate pysr-test && conda install pysr
         if: ${{ !matrix.use-mamba }}
       - name: "Run tests"
-        run: |
-          conda activate pysr-test
-          cd $(python -c 'import pysr; from pathlib import Path; print(Path(pysr.__file__).parent.parent)')
-          python -m unittest pysr.test.test
+        run: python -m pysr.test main
