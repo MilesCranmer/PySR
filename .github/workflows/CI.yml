@@ -91,6 +91,23 @@ jobs:
     
     steps:
       - uses: actions/checkout@v3
+      - name: "Cache Julia"
+        uses: actions/cache@v1
+        env:
+          cache-name: cache-artifacts
+        with:
+          path: ~/.julia/artifacts
+          key: ${{ runner.os }}-julia-${{ env.cache-name }}-${{ hashFiles('pysr/version.py') }}
+          restore-keys: |
+            ${{ runner.os }}-julia-${{ env.cache-name }}-
+            ${{ runner.os }}-julia-
+      - name: "Cache conda"
+        uses: actions/cache@v2
+        env:
+          CACHE_NUMBER: 0
+        with:
+          path: ~/conda_pkgs_dir
+          key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
       - name: "Set up Conda"
         uses: conda-incubator/setup-miniconda@v2
         with:
@@ -100,6 +117,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
           activate-environment: pysr-test
           environment-file: environment.yml
+      - name: "Echo conda dir"
+        run: echo $CONDA_PREFIX
       - name: "Install PySR"
         run: |
             python3 -m pip install .
