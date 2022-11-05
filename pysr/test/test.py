@@ -4,14 +4,6 @@ import inspect
 import unittest
 import numpy as np
 from sklearn import model_selection
-from pysr import PySRRegressor
-from pysr.sr import (
-    run_feature_selection,
-    _handle_feature_selection,
-    _csv_filename_to_pkl_filename,
-    idx_model_selection,
-)
-from pysr.export_latex import to_latex
 from sklearn.utils.estimator_checks import check_estimator
 import sympy
 import pandas as pd
@@ -19,6 +11,15 @@ import warnings
 import pickle as pkl
 import tempfile
 from pathlib import Path
+
+from .. import PySRRegressor
+from ..sr import (
+    run_feature_selection,
+    _handle_feature_selection,
+    _csv_filename_to_pkl_filename,
+    idx_model_selection,
+)
+from ..export_latex import to_latex
 
 DEFAULT_PARAMS = inspect.signature(PySRRegressor.__init__).parameters
 DEFAULT_NITERATIONS = DEFAULT_PARAMS["niterations"].default
@@ -856,3 +857,21 @@ class TestLaTeXTable(unittest.TestCase):
             + self.create_true_latex(middle_part, include_score=True)
         )
         self.assertEqual(latex_table_str, true_latex_table_str)
+
+
+def runtests():
+    """Run all tests in test.py."""
+    suite = unittest.TestSuite()
+    loader = unittest.TestLoader()
+    test_cases = [
+        TestPipeline,
+        TestBest,
+        TestFeatureSelection,
+        TestMiscellaneous,
+        TestLaTeXTable,
+    ]
+    for test_case in test_cases:
+        tests = loader.loadTestsFromTestCase(test_case)
+        suite.addTests(tests)
+    runner = unittest.TextTestRunner()
+    return runner.run(suite)

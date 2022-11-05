@@ -31,4 +31,4 @@ jobs:
       - name: Build docker
         run: docker build -t pysr --build-arg ARCH=${{ matrix.arch }} --build-arg VERSION=${{ matrix.julia-version }} --build-arg PYVERSION=${{ matrix.python-version }} .
       - name: Test docker
-        run: docker run --platform=${{ matrix.arch }} --rm pysr /bin/bash -c 'python3 -m unittest test.test && python3 -m unittest test.test_env'
+        run: docker run --platform=${{ matrix.arch }} --rm pysr /bin/bash -c 'python3 -m pysr.test main && python3 -m pysr.test env'

@@ -2,8 +2,9 @@
 
 import unittest
 import os
-from pysr import julia_helpers
 from tempfile import TemporaryDirectory
+
+from .. import julia_helpers
 
 
 class TestJuliaProject(unittest.TestCase):
@@ -46,3 +47,12 @@ class TestJuliaProject(unittest.TestCase):
                 del os.environ["JULIA_DEPOT_PATH"]
             else:
                 os.environ["JULIA_DEPOT_PATH"] = old_env
+
+
+def runtests():
+    """Run all tests in test_env.py."""
+    loader = unittest.TestLoader()
+    suite = unittest.TestSuite()
+    suite.addTests(loader.loadTestsFromTestCase(TestJuliaProject))
+    runner = unittest.TextTestRunner()
+    return runner.run(suite)
