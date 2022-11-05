@@ -66,7 +66,7 @@ jobs:
         run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test torch
       - name: "Run custom env tests"
         run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test env
-      - name: Coveralls
+      - name: "Coveralls"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COVERALLS_FLAG_NAME: test-${{ matrix.test-name }}
