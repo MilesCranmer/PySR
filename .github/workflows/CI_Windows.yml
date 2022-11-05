@@ -40,6 +40,7 @@ jobs:
         uses: julia-actions/cache@v1
         with:
           cache-name: ${{ matrix.os }}-test-${{ matrix.julia-version }}-${{ matrix.python-version }}
+          cache-packages: false
       - name: "Set up Python"
         uses: actions/setup-python@v4
         with:
