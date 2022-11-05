@@ -2317,6 +2317,7 @@ def _csv_filename_to_pkl_filename(csv_filename) -> str:
     assert str(csv_filename).endswith(".csv")
 
     dirname = str(os.path.dirname(csv_filename))
+
     basename = str(os.path.basename(csv_filename))
     base = str(os.path.splitext(basename)[0])
 
