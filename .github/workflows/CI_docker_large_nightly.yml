@@ -11,13 +11,14 @@ on:
 jobs:
   test:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     defaults:
       run:
         shell: bash
     strategy:
       fail-fast: false
       matrix:
-        julia-version: ['1.8.0-rc1-buster']
+        julia-version: ['1.8.2']
         python-version: ['3.9.10']
         os: [ubuntu-latest]
         arch: ['linux/x86_64', 'linux/amd64']
