@@ -270,6 +270,7 @@ docker run -it --rm -v "$PWD:/data" pysr ipython
 ```
 which will link the current directory to the container's `/data` directory
 and then launch ipython.
-If you have issues building (for example, on Apple Silicon),
+
+If you have issues building for your system's architecture,
 you can emulate another architecture by including `--platform linux/amd64`,
 before the `build` and `run` commands.
