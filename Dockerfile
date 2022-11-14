@@ -1,20 +1,17 @@
 # This builds a dockerfile containing a working copy of PySR
 # with all pre-requisites installed.
 
-ARG ARCH=linux/amd64
-ARG VERSION=latest
-ARG PKGVERSION=0.9.5
+ARG JLVERSION=latest
 
-FROM --platform=$ARCH julia:$VERSION
+FROM julia:$JLVERSION
 
 # metainformation
-LABEL org.opencontainers.image.version = $PKGVERSION
 LABEL org.opencontainers.image.authors = "Miles Cranmer"
 LABEL org.opencontainers.image.source = "https://github.com/MilesCranmer/PySR"
 LABEL org.opencontainers.image.licenses = "Apache License 2.0"
 
 # Need to use ARG after FROM, otherwise it won't get passed through.
-ARG PYVERSION=3.9.10
+ARG PYVERSION=3.10.8
 
 RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     make build-essential libssl-dev zlib1g-dev \
@@ -46,6 +43,9 @@ RUN pip3 install -r /pysr/requirements.txt
 ADD ./setup.py /pysr/setup.py
 ADD ./pysr/ /pysr/pysr/
 RUN pip3 install .
+
+# Load version information from the package:
+LABEL org.opencontainers.image.version = $(python -c "import pysr; print(pysr.__version__)")
 
 # Install Julia pre-requisites:
 RUN python3 -c 'import pysr; pysr.install()'

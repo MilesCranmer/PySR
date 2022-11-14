@@ -15,7 +15,7 @@ PySR uses evolutionary algorithms to search for symbolic expressions which optim
 
 | **Docs** | **colab** | **pip** | **conda** | **Stats** |
 |---|---|---|---|---|
-|[![Documentation](https://github.com/MilesCranmer/PySR/actions/workflows/docs.yml/badge.svg)](https://astroautomata.com/PySR/)|[![Colab](https://img.shields.io/badge/colab-notebook-yellow)](https://colab.research.google.com/github/MilesCranmer/PySR/blob/master/examples/pysr_demo.ipynb)|[![PyPI version](https://badge.fury.io/py/pysr.svg)](https://badge.fury.io/py/pysr)|[![Conda Version](https://img.shields.io/conda/vn/conda-forge/pysr.svg)](https://anaconda.org/conda-forge/pysr)|pip: [![Downloads](https://pepy.tech/badge/pysr)](https://badge.fury.io/py/pysr)<br>conda: [![Anaconda-Server Badge](https://anaconda.org/conda-forge/pysr/badges/downloads.svg)](https://anaconda.org/conda-forge/pysr)|
+|[![Documentation](https://github.com/MilesCranmer/PySR/actions/workflows/docs.yml/badge.svg)](https://astroautomata.com/PySR/)|[![Colab](https://img.shields.io/badge/colab-notebook-yellow)](https://colab.research.google.com/github/MilesCranmer/PySR/blob/master/examples/pysr_demo.ipynb)|[![PyPI version](https://badge.fury.io/py/pysr.svg)](https://badge.fury.io/py/pysr)|[![Conda Version](https://img.shields.io/conda/vn/conda-forge/pysr.svg)](https://anaconda.org/conda-forge/pysr)|<div align="center">pip: [![Downloads](https://pepy.tech/badge/pysr)](https://badge.fury.io/py/pysr)<br>conda: [![Anaconda-Server Badge](https://anaconda.org/conda-forge/pysr/badges/downloads.svg)](https://anaconda.org/conda-forge/pysr)</div>|
 
 </div>
 
@@ -261,13 +261,18 @@ You can also test out PySR in Docker, without
 installing it locally, by running the following command in
 the root directory of this repo:
 ```bash
-docker build --pull --rm -f "Dockerfile" -t pysr "."
+docker build -t pysr "."
 ```
-This builds an image called `pysr`. If you have issues building (for example, on Apple Silicon),
-you can emulate an architecture that works by including: `--platform linux/amd64`.
+This builds an image called `pysr` for your system's architecture,
+which also contains IPython.
+
 You can then run this with:
 ```bash
 docker run -it --rm -v "$PWD:/data" pysr ipython
 ```
 which will link the current directory to the container's `/data` directory
 and then launch ipython.
+
+If you have issues building for your system's architecture,
+you can emulate another architecture by including `--platform linux/amd64`,
+before the `build` and `run` commands.
