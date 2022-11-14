@@ -261,9 +261,11 @@ You can also test out PySR in Docker, without
 installing it locally, by running the following command in
 the root directory of this repo:
 ```bash
-docker build --pull --rm -f "Dockerfile" -t pysr "."
+docker build -t pysr "."
 ```
-This builds an image called `pysr`.
+This builds an image called `pysr` for your system's architecture,
+which also contains IPython.
+
 You can then run this with:
 ```bash
 docker run -it --rm -v "$PWD:/data" pysr ipython
