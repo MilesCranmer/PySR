@@ -19,9 +19,9 @@ jobs:
       fail-fast: false
       matrix:
         julia-version: ['1.8.2']
-        python-version: ['3.9.10']
+        python-version: ['3.10.8']
         os: [ubuntu-latest]
-        arch: ['linux/x86_64', 'linux/amd64']
+        arch: ['linux/x86_64', 'linux/amd64', 'linux/arm64']
     
     steps:
       - uses: actions/checkout@v3
@@ -30,6 +30,6 @@ jobs:
         with:
           platforms: all
       - name: Build docker
-        run: docker build -t pysr --build-arg ARCH=${{ matrix.arch }} --build-arg VERSION=${{ matrix.julia-version }} --build-arg PYVERSION=${{ matrix.python-version }} .
+        run: docker build --platform=${{ matrix.arch }} -t pysr --build-arg JLVERSION=${{ matrix.julia-version }} .
       - name: Test docker
         run: docker run --platform=${{ matrix.arch }} --rm pysr /bin/bash -c 'python3 -m pysr.test main && python3 -m pysr.test env'
