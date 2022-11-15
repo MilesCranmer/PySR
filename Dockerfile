@@ -16,6 +16,17 @@ ARG JLVERSION=1.8.2
 ENV PYVERSION $PYVERSION
 ENV JLVERSION $JLVERSION
 
+# Install build tools
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    git \
+    software-properties-common \
+    wget \
+    && apt-get clean \  
+    && rm -rf /var/lib/apt/lists/*
+
+
 # arm64:
 # https://julialang-s3.julialang.org/bin/linux/aarch64/1.8/julia-1.8.2-linux-aarch64.tar.gz
 # amd64:
