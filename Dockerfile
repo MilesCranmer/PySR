@@ -24,15 +24,18 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
 WORKDIR /pysr
 
 # Install PyEnv to switch Python to dynamically linked version:
-RUN curl https://pyenv.run | bash
-ENV PATH="/root/.pyenv/bin:$PATH"
-
-# ENV PYVERSION=${PYVERSION}
-RUN PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install ${PYVERSION}
-ENV PATH="/root/.pyenv/versions/$PYVERSION/bin:$PATH"
+ENV PYVERSION ${PYVERSION}
+ENV PYENV_ROOT /root/.pyenv
+ENV PATH "${PYENV_ROOT}/shims:${PYENV_ROOT}/bin:$PATH"
+RUN set -ex \
+    && curl https://pyenv.run | bash \
+    && pyenv update \
+    && PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install ${PYVERSION} \
+    && pyenv global ${PYVERSION} \
+    && pyenv rehash
 
 # Install IPython and other useful libraries:
-RUN pip install ipython jupyter matplotlib
+RUN pip install ipython matplotlib
 
 # Caches install (https://stackoverflow.com/questions/25305788/how-to-avoid-reinstalling-packages-when-building-docker-image-for-python-project)
 ADD ./requirements.txt /pysr/requirements.txt
