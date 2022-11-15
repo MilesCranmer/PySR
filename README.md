@@ -73,9 +73,9 @@ python interface.
 
 <div align="center">
 
-| pip - **recommended** <br> (works everywhere) | conda <br>(Linux and Intel-based macOS) |
-|---|---|
-| 1. [Install Julia](https://julialang.org/downloads/)<br>2. Then, run: `pip install -U pysr`<br>3. Finally, to install Julia packages:<br>`python -c 'import pysr; pysr.install()'` | `conda install -c conda-forge pysr` |
+| pip - **recommended** <br> (works everywhere) | conda <br>(Linux and Intel-based macOS) | docker <br>(if all else fails) |
+|---|---|---|
+| 1. [Install Julia](https://julialang.org/downloads/)<br>2. Then, run: `pip install -U pysr`<br>3. Finally, to install Julia packages:<br>`python -c 'import pysr; pysr.install()'` | `conda install -c conda-forge pysr` | 1. Clone this repo.<br>2. `docker build -t pysr .`<br>Run with:<br>`docker run -it --rm pysr ipython`
 
 </div>
 
@@ -261,7 +261,7 @@ You can also test out PySR in Docker, without
 installing it locally, by running the following command in
 the root directory of this repo:
 ```bash
-docker build -t pysr "."
+docker build -t pysr .
 ```
 This builds an image called `pysr` for your system's architecture,
 which also contains IPython.
