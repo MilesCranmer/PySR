@@ -13,38 +13,32 @@ LABEL org.opencontainers.image.licenses = "Apache License 2.0"
 # Need to use ARG after FROM, otherwise it won't get passed through.
 ARG JLVERSION=1.8.2
 
-RUN apt-get update && apt-get install -yq \
-        expect \
-        build-essential \
-        curl \
-        git \
-        libssl-dev \
-        libffi-dev \
-        libxml2 \
-        libxml2-dev \
-        libxslt1.1 \
-        libxslt-dev \
-        libz-dev \
-        nano \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+ENV PYVERSION $PYVERSION
+ENV JLVERSION $JLVERSION
 
-# Install juliaup:
-RUN curl -fsSL https://install.julialang.org -o install-julia.sh && \
-    # Fix for docker buildx https://github.com/rust-lang/rustup/issues/2700
-    sed -i 's#/proc/self/exe#$(which head)#g' install-julia.sh && \
-    sed -i 's#/proc/cpuinfo#/proc/cpuinfo 2> /dev/null || echo ''#g' install-julia.sh && \
-    sed -i 's#get_architecture || return 1#RETVAL=$(gcc -dumpmachine | sed "s/-/-unknown-/") #g' install-julia.sh && \
-    # Fix for non-interactivity https://github.com/JuliaLang/juliaup/issues/253
-    echo '#!/usr/bin/expect\nspawn ./install-julia.sh\nexpect "Cancel installation"\nsend -- "\\r"\nexpect eof' >> install-julia.exp && \
-    chmod +x install-julia.sh && \
-    chmod +x install-julia.exp && \
-    ./install-julia.exp && \
-    rm install-julia.sh && \
-    rm install-julia.exp
+# arm64:
+# https://julialang-s3.julialang.org/bin/linux/aarch64/1.8/julia-1.8.2-linux-aarch64.tar.gz
+# amd64:
+# https://julialang-s3.julialang.org/bin/linux/x64/1.8/julia-1.8.2-linux-x86_64.tar.gz
 
-ENV JULIAUP_ROOT /root/.julia/juliaup
-ENV PATH "${JULIAUP_ROOT}/bin:${PATH}"
-RUN juliaup add $JLVERSION && juliaup default $JLVERSION && juliaup update
+RUN export JULIA_VER=$(echo $JLVERSION | cut -d '.' -f -2) && \
+    export ARCH=$(arch | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/') && \
+    if [ "$ARCH" = "amd64" ]; then \
+        export BASE_URL="https://julialang-s3.julialang.org/bin/linux/x64/$JULIA_VER" && \
+        export FULL_URL=$BASE_URL/julia-$JLVERSION-linux-x86_64.tar.gz; \
+    elif [ "$ARCH" = "arm64" ]; then \
+        export BASE_URL="https://julialang-s3.julialang.org/bin/linux/aarch64/$JULIA_VER"; \
+        export FULL_URL=$BASE_URL/julia-$JLVERSION-linux-aarch64.tar.gz; \
+    else \
+        echo "Download link for architecture ${ARCH} not found. Please add the corresponding Julia download URL to this Dockerfile." && \
+        exit 1; \
+    fi && \
+    wget -nv $FULL_URL -O julia.tar.gz && \
+    tar -xzf julia.tar.gz && \
+    rm julia.tar.gz && \
+    mv julia-$JLVERSION /opt/julia && \
+    ln -s /opt/julia/bin/julia /usr/local/bin/julia && \
+    echo "HELLo"
 
 # Install IPython and other useful libraries:
 RUN pip install ipython matplotlib
