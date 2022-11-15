@@ -13,16 +13,34 @@ LABEL org.opencontainers.image.licenses = "Apache License 2.0"
 # Need to use ARG after FROM, otherwise it won't get passed through.
 ARG JLVERSION=1.8.2
 
-RUN apt-get update && apt-get install -y expect && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -yq \
+        expect \
+        build-essential \
+        curl \
+        git \
+        libssl-dev \
+        libffi-dev \
+        libxml2 \
+        libxml2-dev \
+        libxslt1.1 \
+        libxslt-dev \
+        libz-dev \
+        nano \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install juliaup:
-RUN curl -fsSL https://install.julialang.org -o /tmp/install-julia.sh && \
-    echo '#!/usr/bin/expect\nspawn /tmp/install-julia.sh\nexpect "Cancel installation"\nsend -- "\\r"\nexpect eof' >> /tmp/install-julia.exp && \
-    chmod +x /tmp/install-julia.sh && \
-    chmod +x /tmp/install-julia.exp && \
-    /tmp/install-julia.exp && \
-    rm /tmp/install-julia.sh && \
-    rm /tmp/install-julia.exp
+RUN curl -fsSL https://install.julialang.org -o install-julia.sh && \
+    # Fix for docker buildx https://github.com/rust-lang/rustup/issues/2700
+    sed -i 's#/proc/self/exe#$(which head)#g' install-julia.sh && \
+    sed -i 's#/proc/cpuinfo#/proc/cpuinfo 2> /dev/null || echo ''#g' install-julia.sh && \
+    sed -i 's#get_architecture || return 1#RETVAL=$(gcc -dumpmachine | sed "s/-/-unknown-/") #g' install-julia.sh && \
+    # Fix for non-interactivity https://github.com/JuliaLang/juliaup/issues/253
+    echo '#!/usr/bin/expect\nspawn ./install-julia.sh\nexpect "Cancel installation"\nsend -- "\\r"\nexpect eof' >> install-julia.exp && \
+    chmod +x install-julia.sh && \
+    chmod +x install-julia.exp && \
+    ./install-julia.exp && \
+    rm install-julia.sh && \
+    rm install-julia.exp
 
 ENV JULIAUP_ROOT /root/.julia/juliaup
 ENV PATH "${JULIAUP_ROOT}/bin:${PATH}"
