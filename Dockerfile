@@ -1,9 +1,9 @@
 # This builds a dockerfile containing a working copy of PySR
 # with all pre-requisites installed.
 
-ARG JLVERSION=latest
+ARG PYVERSION=3.10.8
 
-FROM julia:$JLVERSION
+FROM python:$PYVERSION
 
 # metainformation
 LABEL org.opencontainers.image.authors = "Miles Cranmer"
@@ -11,31 +11,27 @@ LABEL org.opencontainers.image.source = "https://github.com/MilesCranmer/PySR"
 LABEL org.opencontainers.image.licenses = "Apache License 2.0"
 
 # Need to use ARG after FROM, otherwise it won't get passed through.
-ARG PYVERSION=3.10.8
+ARG JLVERSION=1.8.2
 
-RUN apt-get update && apt-get upgrade -y && apt-get install -y \
-    make build-essential libssl-dev zlib1g-dev \
-    libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm \
-    libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev \
-    vim git tmux \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y expect && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /pysr
+# Install juliaup:
+RUN curl -fsSL https://install.julialang.org -o /tmp/install-julia.sh && \
+    echo '#!/usr/bin/expect\nspawn /tmp/install-julia.sh\nexpect "Cancel installation"\nsend -- "\\r"\nexpect eof' >> /tmp/install-julia.exp && \
+    chmod +x /tmp/install-julia.sh && \
+    chmod +x /tmp/install-julia.exp && \
+    /tmp/install-julia.exp && \
+    rm /tmp/install-julia.sh && \
+    rm /tmp/install-julia.exp
 
-# Install PyEnv to switch Python to dynamically linked version:
-ENV PYVERSION ${PYVERSION}
-ENV PYENV_ROOT /root/.pyenv
-ENV PATH "${PYENV_ROOT}/shims:${PYENV_ROOT}/bin:$PATH"
-RUN set -ex \
-    && curl https://pyenv.run | bash \
-    && pyenv update \
-    && PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install ${PYVERSION} \
-    && pyenv global ${PYVERSION} \
-    && pyenv rehash
+ENV JULIAUP_ROOT /root/.julia/juliaup
+ENV PATH "${JULIAUP_ROOT}/bin:${PATH}"
+RUN juliaup add $JLVERSION && juliaup default $JLVERSION && juliaup update
 
 # Install IPython and other useful libraries:
 RUN pip install ipython matplotlib
+
+WORKDIR /pysr
 
 # Caches install (https://stackoverflow.com/questions/25305788/how-to-avoid-reinstalling-packages-when-building-docker-image-for-python-project)
 ADD ./requirements.txt /pysr/requirements.txt
@@ -53,4 +49,4 @@ LABEL org.opencontainers.image.version = $(python -c "import pysr; print(pysr.__
 # Install Julia pre-requisites:
 RUN python3 -c 'import pysr; pysr.install()'
 
-CMD ["bash"]
+CMD ["ipython"]
