@@ -20,7 +20,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        arch: [linux/amd64, linux/arm64]
+        arch: [linux/amd64]
         python-version: [3.10.8]
         julia-version: [1.8.2]
     steps:
