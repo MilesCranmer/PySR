@@ -66,9 +66,6 @@ ADD ./setup.py /pysr/setup.py
 ADD ./pysr/ /pysr/pysr/
 RUN pip3 install .
 
-# Load version information from the package:
-LABEL org.opencontainers.image.version = $(python -c "import pysr; print(pysr.__version__)")
-
 # Install Julia pre-requisites:
 RUN python3 -c 'import pysr; pysr.install()'
 
