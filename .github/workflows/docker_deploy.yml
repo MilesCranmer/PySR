@@ -61,6 +61,8 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=mcranmer/pysr:buildcache
+          cache-to: type=registry,ref=mcranmer/pysr:buildcache,mode=max
           build-args: |
             PYVERSION=${{ matrix.python-version }}
             JLVERSION=${{ matrix.julia-version }}
