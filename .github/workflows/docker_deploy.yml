@@ -57,9 +57,6 @@ jobs:
         with:
           context: .
           platforms: ${{ matrix.arch }}
-          push: ${{ github.event_name != 'pull_request' }}
+          push: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            PYVERSION=${{ matrix.python-version }}
-            JLVERSION=${{ matrix.julia-version }}
