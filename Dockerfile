@@ -37,8 +37,7 @@ RUN export JULIA_VER=$(echo $JLVERSION | cut -d '.' -f -2) && \
     tar -xzf julia.tar.gz && \
     rm julia.tar.gz && \
     mv julia-$JLVERSION /opt/julia && \
-    ln -s /opt/julia/bin/julia /usr/local/bin/julia && \
-    echo "HELLo"
+    ln -s /opt/julia/bin/julia /usr/local/bin/julia
 
 # Install IPython and other useful libraries:
 RUN pip install ipython matplotlib
