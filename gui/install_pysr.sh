@@ -9,6 +9,6 @@ fi
 
 # Need to install PySR in separate python instance:
 if [ ! -d "/home/user/.julia/environments/pysr-0.11.9" ]; then
-    export PATH="$PATH:/home/user/julia/bin/"
+    export PATH="$HOME/.local/bin:$PATH"
     python -c 'import pysr; pysr.install()'
 fi
