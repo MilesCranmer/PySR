@@ -171,6 +171,7 @@ def init_julia(julia_project=None, quiet=False, julia_kwargs=None):
         raise ImportError(_import_error())
 
     from julia.core import Julia
+
     Main = None
     try:
         jl = Julia(**julia_kwargs)
