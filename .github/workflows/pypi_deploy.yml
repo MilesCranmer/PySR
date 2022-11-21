@@ -20,6 +20,7 @@ jobs:
       - name: "Build package"
         run: python setup.py sdist bdist_wheel
       - name: "Publish distribution 📦 to Test PyPI"
+        if: startsWith(github.ref, 'refs/tags')
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.TEST_PYPI_API_TOKEN }}
