@@ -1495,20 +1495,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if cluster_manager is not None:
             cluster_manager = _load_cluster_manager(cluster_manager)
 
-        if not already_ran:
-            julia_project, is_shared = _process_julia_project(self.julia_project)
-            Main.eval("using Pkg")
+        if self.update:
+            _, is_shared = _process_julia_project(self.julia_project)
             io = "devnull" if update_verbosity == 0 else "stderr"
             io_arg = (
                 f"io={io}" if is_julia_version_greater_eq(version=(1, 6, 0)) else ""
             )
-
-            Main.eval(
-                f'Pkg.activate("{_escape_filename(julia_project)}", shared = Bool({int(is_shared)}), {io_arg})'
-            )
-
-            if self.update:
-                _update_julia_project(Main, is_shared, io_arg)
+            _update_julia_project(Main, is_shared, io_arg)
 
         SymbolicRegression = _load_backend(Main)
 

@@ -11,6 +11,7 @@ from .version import __version__, __symbolic_regression_jl_version__
 juliainfo = None
 julia_initialized = False
 julia_kwargs_at_initialization = None
+julia_activated_env = None
 
 
 def _load_juliainfo():
@@ -148,12 +149,13 @@ def init_julia(julia_project=None, quiet=False, julia_kwargs=None):
     """Initialize julia binary, turning off compiled modules if needed."""
     global julia_initialized
     global julia_kwargs_at_initialization
+    global julia_activated_env
 
     if not julia_initialized:
         _check_for_conflicting_libraries()
 
     if julia_kwargs is None:
-        julia_kwargs = {}
+        julia_kwargs = {"optimize": 3}
 
     from julia.core import JuliaInfo, UnsupportedPythonError
 
@@ -188,6 +190,9 @@ def init_julia(julia_project=None, quiet=False, julia_kwargs=None):
 
         Main = _Main
 
+    if julia_activated_env is None:
+        julia_activated_env = processed_julia_project
+
     if julia_initialized and julia_kwargs_at_initialization is not None:
         # Check if the kwargs are the same as the previous initialization
         init_set = set(julia_kwargs_at_initialization.items())
@@ -202,7 +207,7 @@ def init_julia(julia_project=None, quiet=False, julia_kwargs=None):
                 + " will be ignored."
             )
 
-    if julia_initialized:
+    if julia_initialized and julia_activated_env != processed_julia_project:
         Main.eval("using Pkg")
 
         io_arg = _get_io_arg(quiet)
@@ -213,6 +218,8 @@ def init_julia(julia_project=None, quiet=False, julia_kwargs=None):
             f"shared = Bool({int(is_shared)}), "
             f"{io_arg})"
         )
+
+        julia_activated_env = processed_julia_project
 
     if not julia_initialized:
         julia_kwargs_at_initialization = julia_kwargs
@@ -281,6 +288,7 @@ def _update_julia_project(Main, is_shared, io_arg):
     try:
         if is_shared:
             _add_sr_to_julia_project(Main, io_arg)
+        Main.eval("using Pkg")
         Main.eval(f"Pkg.resolve({io_arg})")
     except (JuliaError, RuntimeError) as e:
         raise ImportError(_import_error()) from e
