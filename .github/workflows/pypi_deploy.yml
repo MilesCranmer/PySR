@@ -18,7 +18,7 @@ jobs:
       - name: "Install building tools"
         run: pip install wheel
       - name: "Build package"
-        run: python setup.py sdists bdist_wheel
+        run: python setup.py sdist bdist_wheel
       - name: "Publish distribution 📦 to Test PyPI"
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
