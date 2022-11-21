@@ -10,6 +10,7 @@ from .version import __version__, __symbolic_regression_jl_version__
 
 juliainfo = None
 julia_initialized = False
+julia_kwargs_at_initialization = None
 
 
 def _load_juliainfo():
@@ -146,6 +147,7 @@ def _check_for_conflicting_libraries():  # pragma: no cover
 def init_julia(julia_project=None, quiet=False, julia_kwargs=None):
     """Initialize julia binary, turning off compiled modules if needed."""
     global julia_initialized
+    global julia_kwargs_at_initialization
 
     if not julia_initialized:
         _check_for_conflicting_libraries()
@@ -180,10 +182,26 @@ def init_julia(julia_project=None, quiet=False, julia_kwargs=None):
         Main = _Main
     except UnsupportedPythonError:
         # Static python binary, so we turn off pre-compiled modules.
-        jl = Julia(compiled_modules=False, **julia_kwargs)
+        julia_kwargs = {**julia_kwargs, "compiled_modules": False}
+        jl = Julia(**julia_kwargs)
         from julia import Main as _Main
 
         Main = _Main
+
+    if julia_initialized and julia_kwargs_at_initialization is not None:
+        # Check if the kwargs are the same as the previous initialization
+        if julia_kwargs_at_initialization != julia_kwargs:
+            # Record different kwargs:
+            init_set = set(julia_kwargs_at_initialization.items())
+            new_set = set(julia_kwargs.items())
+            set_diff = new_set - init_set
+            # Remove the `compiled_modules` key, since it is not a user-specified kwarg:
+            set_diff = {k: v for k, v in set_diff if k != "compiled_modules"}
+            warnings.warn(
+                "Julia has already started. The new Julia options "
+                + str(set_diff)
+                + " will be ignored."
+            )
 
     if julia_initialized:
         Main.eval("using Pkg")
@@ -196,6 +214,9 @@ def init_julia(julia_project=None, quiet=False, julia_kwargs=None):
             f"shared = Bool({int(is_shared)}), "
             f"{io_arg})"
         )
+
+    if not julia_initialized:
+        julia_kwargs_at_initialization = julia_kwargs
 
     julia_initialized = True
     return Main

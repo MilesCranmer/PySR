@@ -1490,8 +1490,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         julia_kwargs = mutated_params["julia_kwargs"]
 
         # Start julia backend processes
-        if Main is None:
-            Main = init_julia(self.julia_project, julia_kwargs=julia_kwargs)
+        Main = init_julia(self.julia_project, julia_kwargs=julia_kwargs)
 
         if cluster_manager is not None:
             cluster_manager = _load_cluster_manager(cluster_manager)
