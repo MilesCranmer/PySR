@@ -238,7 +238,7 @@ def _backend_version_assertion(Main):
         if backend_version != expected_backend_version:  # pragma: no cover
             warnings.warn(
                 f"PySR backend (SymbolicRegression.jl) version {backend_version} "
-                "does not match expected version {expected_backend_version}. "
+                f"does not match expected version {expected_backend_version}. "
                 "Things may break. "
                 "Please update your PySR installation with "
                 "`python -c 'import pysr; pysr.install()'`."
