@@ -4,13 +4,6 @@ on:
     workflows: ["Linux", "macOS", "Windows"]
     types:
       - completed
-  # Also, run on new versions:
-  push:
-    branches:
-      - "**"
-    tags:
-      - "v*.*.*"
-
 
 jobs:
   pypi:
