@@ -1,7 +1,7 @@
 name: Deploy PyPI
 on:
   workflow_run:
-    workflows: ["Linux", "macOS", "Windows"]
+    workflows: ["Linux"]
     types:
       - completed
 
