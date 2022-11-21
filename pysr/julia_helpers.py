@@ -143,12 +143,15 @@ def _check_for_conflicting_libraries():  # pragma: no cover
         )
 
 
-def init_julia(julia_project=None, quiet=False):
+def init_julia(julia_project=None, quiet=False, julia_kwargs=None):
     """Initialize julia binary, turning off compiled modules if needed."""
     global julia_initialized
 
     if not julia_initialized:
         _check_for_conflicting_libraries()
+
+    if julia_kwargs is None:
+        julia_kwargs = {}
 
     from julia.core import JuliaInfo, UnsupportedPythonError
 
@@ -167,16 +170,16 @@ def init_julia(julia_project=None, quiet=False):
     if not info.is_pycall_built():
         raise ImportError(_import_error())
 
+    from julia.core import Julia
     Main = None
     try:
+        jl = Julia(**julia_kwargs)
         from julia import Main as _Main
 
         Main = _Main
     except UnsupportedPythonError:
         # Static python binary, so we turn off pre-compiled modules.
-        from julia.core import Julia
-
-        jl = Julia(compiled_modules=False)
+        jl = Julia(compiled_modules=False, **julia_kwargs)
         from julia import Main as _Main
 
         Main = _Main
