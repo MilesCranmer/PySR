@@ -3,12 +3,14 @@ name: Linux
 on:
   push:
     branches:
-      - '*'
+      - '**'
     paths:
       - 'test/**'
       - 'pysr/**'
       - '.github/workflows/CI.yml'
       - 'setup.py'
+    tags:
+      - 'v*.*.*'
   pull_request:
     branches:
       - '*'

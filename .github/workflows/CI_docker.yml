@@ -3,7 +3,7 @@ name: Docker
 on:
   push:
     branches:
-      - '*'
+      - '**'
     paths:
       - 'test/**'
       - 'pysr/**'
