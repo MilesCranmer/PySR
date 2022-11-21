@@ -197,11 +197,12 @@ def init_julia(julia_project=None, quiet=False, julia_kwargs=None):
             set_diff = new_set - init_set
             # Remove the `compiled_modules` key, since it is not a user-specified kwarg:
             set_diff = {k: v for k, v in set_diff if k != "compiled_modules"}
-            warnings.warn(
-                "Julia has already started. The new Julia options "
-                + str(set_diff)
-                + " will be ignored."
-            )
+            if len(set_diff) > 0:
+                warnings.warn(
+                    "Julia has already started. The new Julia options "
+                    + str(set_diff)
+                    + " will be ignored."
+                )
 
     if julia_initialized:
         Main.eval("using Pkg")
