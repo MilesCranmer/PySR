@@ -18,7 +18,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/MilesCranmer/pysr",
     install_requires=[
-        "julia>=0.5.7",
+        "julia>=0.5.7,<0.6",
         "numpy",
         "pandas",
         "sympy",
