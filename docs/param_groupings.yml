@@ -82,6 +82,7 @@
   - delete_tempfiles
   - julia_project
   - update
+  - julia_kwargs
 - Exporting the Results:
   - equation_file
   - output_jax_format
