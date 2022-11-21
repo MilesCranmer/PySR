@@ -17,13 +17,8 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/MilesCranmer/pysr",
-    install_requires=[
-        "julia>=0.5.7",
-        "numpy",
-        "pandas",
-        "sympy",
-        "scikit-learn >= 1.0.0",
-    ],
+    # Read from requirements.txt:
+    install_requires=open("requirements.txt").read().splitlines(),
     packages=setuptools.find_packages(),
     package_data={"pysr": ["../Project.toml", "../datasets/*"]},
     include_package_data=False,

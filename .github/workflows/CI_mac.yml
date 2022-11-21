@@ -3,12 +3,14 @@ name: macOS
 on:
   push:
     branches:
-      - '*'
+      - '**'
     paths:
       - 'test/**'
       - 'pysr/**'
       - '.github/workflows/CI_mac.yml'
       - 'setup.py'
+    tags:
+      - 'v*.*.*'
   pull_request:
     branches:
       - '*'

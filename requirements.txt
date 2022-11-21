@@ -2,4 +2,4 @@ sympy
 pandas
 numpy
 scikit_learn >= 1.0.0
-julia
+julia == 0.6.0
