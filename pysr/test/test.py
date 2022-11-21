@@ -12,6 +12,7 @@ import pickle as pkl
 import tempfile
 from pathlib import Path
 
+from .. import julia_helpers
 from .. import PySRRegressor
 from ..sr import (
     run_feature_selection,
@@ -565,6 +566,23 @@ class TestMiscellaneous(unittest.TestCase):
         y = np.random.randn(100)
         with self.assertRaises(ValueError):
             model.fit(X, y)
+
+    def test_changed_options_warning(self):
+        """Check that a warning is given if Julia options are changed."""
+        if julia_helpers.julia_kwargs_at_initialization is None:
+            julia_helpers.init_julia(julia_kwargs={"threads": 2, "optimize": 3})
+
+        cur_init = julia_helpers.julia_kwargs_at_initialization
+
+        threads_to_change = cur_init["threads"] + 1
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            with self.assertRaises(Exception) as context:
+                julia_helpers.init_julia(
+                    julia_kwargs={"threads": threads_to_change, "optimize": 3}
+                )
+            self.assertIn("Julia has already started", str(context.exception))
+            self.assertIn("threads", str(context.exception))
 
     def test_extra_sympy_mappings_undefined(self):
         """extra_sympy_mappings=None errors for custom operators"""
