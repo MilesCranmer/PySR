@@ -27,7 +27,7 @@ def create_sysimage():
 
     from julia import Main
 
-    cur_project_dir = Main.eval("splitdir(dirname(Base.active_project()))[1]")
+    cur_project_dir = Main.eval("dirname(Base.active_project())")
     from julia import PackageCompiler
 
     PackageCompiler.create_sysimage(
