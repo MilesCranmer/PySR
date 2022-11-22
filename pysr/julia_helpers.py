@@ -175,6 +175,7 @@ def init_julia(julia_project=None, quiet=False, julia_kwargs=None):
         raise ImportError(_import_error())
 
     from julia.core import Julia
+
     try:
         Julia(**julia_kwargs)
     except UnsupportedPythonError:
@@ -183,6 +184,7 @@ def init_julia(julia_project=None, quiet=False, julia_kwargs=None):
         Julia(**julia_kwargs)
 
     from julia import Main as _Main
+
     Main = _Main
 
     if julia_activated_env is None:
