@@ -175,20 +175,15 @@ def init_julia(julia_project=None, quiet=False, julia_kwargs=None):
         raise ImportError(_import_error())
 
     from julia.core import Julia
-
-    Main = None
     try:
-        jl = Julia(**julia_kwargs)
-        from julia import Main as _Main
-
-        Main = _Main
+        Julia(**julia_kwargs)
     except UnsupportedPythonError:
         # Static python binary, so we turn off pre-compiled modules.
         julia_kwargs = {**julia_kwargs, "compiled_modules": False}
-        jl = Julia(**julia_kwargs)
-        from julia import Main as _Main
+        Julia(**julia_kwargs)
 
-        Main = _Main
+    from julia import Main as _Main
+    Main = _Main
 
     if julia_activated_env is None:
         julia_activated_env = processed_julia_project
