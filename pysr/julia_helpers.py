@@ -252,10 +252,17 @@ def _add_sr_to_julia_project(Main, io_arg):
     )
     Main.clustermanagers_spec = Main.PackageSpec(
         name="ClusterManagers",
-        url="https://github.com/JuliaParallel/ClusterManagers.jl",
-        rev="14e7302f068794099344d5d93f71979aaf4fbeb3",
+        rev="v0.4.2",
     )
-    Main.eval(f"Pkg.add([sr_spec, clustermanagers_spec], {io_arg})")
+    Main.packagecompiler_spec = Main.PackageSpec(
+        name="PackageCompiler",
+        rev="v2.1.0",
+    )
+    Main.eval(
+        "Pkg.add(["
+        + ", ".join(["sr_spec", "clustermanagers_spec", "packagecompiler_spec"])
+        + f"], {io_arg})"
+    )
 
 
 def _escape_filename(filename):
