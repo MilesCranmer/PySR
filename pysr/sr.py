@@ -581,10 +581,15 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         inputting to PySR. Can help PySR fit noisy data.
         Default is `False`.
     select_k_features : int
-         whether to run feature selection in Python using random forests,
-         before passing to the symbolic regression code. None means no
-         feature selection; an int means select that many features.
-         Default is `None`.
+        Whether to run feature selection in Python using random forests,
+        before passing to the symbolic regression code. None means no
+        feature selection; an int means select that many features.
+        Default is `None`.
+    julia_kwargs : dict
+        Keyword arguments to pass to `julia.core.Julia(...)` to initialize
+        the Julia runtime. The default, when `None`, is to set `threads` equal
+        to `procs`, and `optimize` to 3.
+        Default is `None`.
     **kwargs : dict
         Supports deprecated keyword arguments. Other arguments will
         result in an error.
@@ -733,6 +738,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         extra_jax_mappings=None,
         denoise=False,
         select_k_features=None,
+        julia_kwargs=None,
         **kwargs,
     ):
 
@@ -827,6 +833,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # Pre-modelling transformation
         self.denoise = denoise
         self.select_k_features = select_k_features
+        self.julia_kwargs = julia_kwargs
 
         # Once all valid parameters have been assigned handle the
         # deprecated kwargs
@@ -1259,6 +1266,17 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             + len(packed_modified_params["unary_operators"])
             > 0
         )
+
+        julia_kwargs = {}
+        if self.julia_kwargs is not None:
+            for key, value in self.julia_kwargs.items():
+                julia_kwargs[key] = value
+        if "optimize" not in julia_kwargs:
+            julia_kwargs["optimize"] = 3
+        if "threads" not in julia_kwargs and packed_modified_params["multithreading"]:
+            julia_kwargs["threads"] = self.procs
+        packed_modified_params["julia_kwargs"] = julia_kwargs
+
         return packed_modified_params
 
     def _validate_and_set_fit_params(self, X, y, Xresampled, weights, variable_names):
@@ -1469,31 +1487,21 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         batch_size = mutated_params["batch_size"]
         update_verbosity = mutated_params["update_verbosity"]
         progress = mutated_params["progress"]
+        julia_kwargs = mutated_params["julia_kwargs"]
 
         # Start julia backend processes
-        if Main is None:
-            if multithreading:
-                os.environ["JULIA_NUM_THREADS"] = str(self.procs)
-
-            Main = init_julia(self.julia_project)
+        Main = init_julia(self.julia_project, julia_kwargs=julia_kwargs)
 
         if cluster_manager is not None:
             cluster_manager = _load_cluster_manager(cluster_manager)
 
-        if not already_ran:
-            julia_project, is_shared = _process_julia_project(self.julia_project)
-            Main.eval("using Pkg")
+        if self.update:
+            _, is_shared = _process_julia_project(self.julia_project)
             io = "devnull" if update_verbosity == 0 else "stderr"
             io_arg = (
                 f"io={io}" if is_julia_version_greater_eq(version=(1, 6, 0)) else ""
             )
-
-            Main.eval(
-                f'Pkg.activate("{_escape_filename(julia_project)}", shared = Bool({int(is_shared)}), {io_arg})'
-            )
-
-            if self.update:
-                _update_julia_project(Main, is_shared, io_arg)
+            _update_julia_project(Main, is_shared, io_arg)
 
         SymbolicRegression = _load_backend(Main)
 

@@ -10,6 +10,8 @@ from .version import __version__, __symbolic_regression_jl_version__
 
 juliainfo = None
 julia_initialized = False
+julia_kwargs_at_initialization = None
+julia_activated_env = None
 
 
 def _load_juliainfo():
@@ -143,12 +145,17 @@ def _check_for_conflicting_libraries():  # pragma: no cover
         )
 
 
-def init_julia(julia_project=None, quiet=False):
+def init_julia(julia_project=None, quiet=False, julia_kwargs=None):
     """Initialize julia binary, turning off compiled modules if needed."""
     global julia_initialized
+    global julia_kwargs_at_initialization
+    global julia_activated_env
 
     if not julia_initialized:
         _check_for_conflicting_libraries()
+
+    if julia_kwargs is None:
+        julia_kwargs = {"optimize": 3}
 
     from julia.core import JuliaInfo, UnsupportedPythonError
 
@@ -167,21 +174,37 @@ def init_julia(julia_project=None, quiet=False):
     if not info.is_pycall_built():
         raise ImportError(_import_error())
 
-    Main = None
-    try:
-        from julia import Main as _Main
+    from julia.core import Julia
 
-        Main = _Main
+    try:
+        Julia(**julia_kwargs)
     except UnsupportedPythonError:
         # Static python binary, so we turn off pre-compiled modules.
-        from julia.core import Julia
+        julia_kwargs = {**julia_kwargs, "compiled_modules": False}
+        Julia(**julia_kwargs)
 
-        jl = Julia(compiled_modules=False)
-        from julia import Main as _Main
+    from julia import Main as _Main
 
-        Main = _Main
+    Main = _Main
 
-    if julia_initialized:
+    if julia_activated_env is None:
+        julia_activated_env = processed_julia_project
+
+    if julia_initialized and julia_kwargs_at_initialization is not None:
+        # Check if the kwargs are the same as the previous initialization
+        init_set = set(julia_kwargs_at_initialization.items())
+        new_set = set(julia_kwargs.items())
+        set_diff = new_set - init_set
+        # Remove the `compiled_modules` key, since it is not a user-specified kwarg:
+        set_diff = {k: v for k, v in set_diff if k != "compiled_modules"}
+        if len(set_diff) > 0:
+            warnings.warn(
+                "Julia has already started. The new Julia options "
+                + str(set_diff)
+                + " will be ignored."
+            )
+
+    if julia_initialized and julia_activated_env != processed_julia_project:
         Main.eval("using Pkg")
 
         io_arg = _get_io_arg(quiet)
@@ -192,6 +215,11 @@ def init_julia(julia_project=None, quiet=False):
             f"shared = Bool({int(is_shared)}), "
             f"{io_arg})"
         )
+
+        julia_activated_env = processed_julia_project
+
+    if not julia_initialized:
+        julia_kwargs_at_initialization = julia_kwargs
 
     julia_initialized = True
     return Main
@@ -234,7 +262,7 @@ def _backend_version_assertion(Main):
         if backend_version != expected_backend_version:  # pragma: no cover
             warnings.warn(
                 f"PySR backend (SymbolicRegression.jl) version {backend_version} "
-                "does not match expected version {expected_backend_version}. "
+                f"does not match expected version {expected_backend_version}. "
                 "Things may break. "
                 "Please update your PySR installation with "
                 "`python -c 'import pysr; pysr.install()'`."
@@ -257,6 +285,7 @@ def _update_julia_project(Main, is_shared, io_arg):
     try:
         if is_shared:
             _add_sr_to_julia_project(Main, io_arg)
+        Main.eval("using Pkg")
         Main.eval(f"Pkg.resolve({io_arg})")
     except (JuliaError, RuntimeError) as e:
         raise ImportError(_import_error()) from e
