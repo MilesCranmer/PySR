@@ -32,6 +32,27 @@ def _load_juliainfo():
     return juliainfo
 
 
+def _get_julia_project_dir():
+    # Assumes it is in JULIA_PROJECT:
+    assert "JULIA_PROJECT" in os.environ and os.environ["JULIA_PROJECT"] != ""
+    try:
+        cmds = [
+            "julia",
+            "-e using Pkg; print(Pkg.project().path)",
+        ]
+        julia_project_dir_str = subprocess.run(
+            cmds,
+            capture_output=True,
+            env=os.environ,
+        ).stdout.decode()
+    except FileNotFoundError:
+        env_path = os.environ["PATH"]
+        raise FileNotFoundError(
+            f"Julia is not installed in your PATH. Please install Julia and add it to your PATH.\n\nCurrent PATH: {env_path}",
+        )
+    return Path(julia_project_dir_str).parent
+
+
 def _get_julia_env_dir():
     # Have to manually get env dir:
     try:
@@ -114,7 +135,7 @@ def _check_for_conflicting_libraries():  # pragma: no cover
         )
 
 
-def init_julia(julia_project=None, quiet=False, julia_kwargs=None, return_aux=False):
+def init_julia(julia_project=None, quiet=False, sysimage_name=None, julia_kwargs=None, return_aux=False):
     """Initialize julia binary, turning off compiled modules if needed."""
     global julia_initialized
     global julia_kwargs_at_initialization
@@ -123,16 +144,32 @@ def init_julia(julia_project=None, quiet=False, julia_kwargs=None, return_aux=Fa
     if not julia_initialized:
         _check_for_conflicting_libraries()
 
-    if julia_kwargs is None:
-        julia_kwargs = {"optimize": 3}
-
-    from julia.core import JuliaInfo, UnsupportedPythonError
-
     _julia_version_assertion()
     processed_julia_project, is_shared = _process_julia_project(julia_project)
     _set_julia_project_env(processed_julia_project, is_shared)
 
+    # TODO: Make checking optional.
+    # Check if sysimage exists:
+    if sysimage_name is None:
+        # TODO: Is there a faster way to get this dir?
+        expected_sysimage = _get_julia_project_dir() / "pysr.so"
+        print(f"Checking for sysimage at {expected_sysimage}")
+        # Check if this file exists:
+        if expected_sysimage.exists():
+            sysimage_name = str(expected_sysimage)
+
+    if julia_kwargs is None:
+        julia_kwargs = {"optimize": 3}
+
+    if sysimage_name is not None and "sysimage" not in julia_kwargs:
+        sysimage = str(sysimage_name)
+        print(f"Found existing sysimage at {sysimage}. Loading.")
+        julia_kwargs["sysimage"] = sysimage_name
+
+    from julia.core import JuliaInfo, UnsupportedPythonError
+
     try:
+        # TODO: Can we just get env info from this?
         info = JuliaInfo.load(julia="julia")
     except FileNotFoundError:
         env_path = os.environ["PATH"]

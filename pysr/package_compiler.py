@@ -92,12 +92,17 @@ def install(julia_project=None, quiet=False, precompile=None):  # pragma: no cov
         )
 
 
-def compile(sysimage_name="pysr.so", julia_project=None, quiet=False):
+def compile(
+    julia_project=None,
+    quiet=False,
+    sysimage_name="pysr.so",
+):
     """Create a PackageCompiler.jl sysimage for SymbolicRegression.jl."""
     Main = init_julia(julia_project=julia_project, quiet=quiet)
     cur_project_dir = Main.eval("dirname(Base.active_project())")
     sysimage_path = str(Path(cur_project_dir) / sysimage_name)
     from julia import PackageCompiler
-    from julia import SymbolicRegression
+
+    Main.eval("using SymbolicRegression")
 
     PackageCompiler.create_sysimage(["SymbolicRegression"], sysimage_path=sysimage_path)

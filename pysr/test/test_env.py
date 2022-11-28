@@ -5,6 +5,7 @@ import os
 from tempfile import TemporaryDirectory
 
 from .. import julia_helpers
+from .. import package_compiler
 
 
 class TestJuliaProject(unittest.TestCase):
@@ -29,7 +30,7 @@ class TestJuliaProject(unittest.TestCase):
                 f'pushfirst!(DEPOT_PATH, "{julia_helpers._escape_filename(tmpdir)}")'
             )
             test_env_name = "@pysr_test_env"
-            julia_helpers.install(julia_project=test_env_name)
+            package_compiler.install(julia_project=test_env_name)
             Main = julia_helpers.init_julia(julia_project=test_env_name)
 
             # Try to use env:
