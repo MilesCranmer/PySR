@@ -50,9 +50,7 @@ def _update_julia_project(Main, is_shared, io_arg):
         raise ImportError(_import_error()) from e
 
 
-def install(
-    julia_project=None, quiet=False, precompile=None, compile=False
-):  # pragma: no cover
+def install(julia_project=None, quiet=False, precompile=None):  # pragma: no cover
     """
     Install PyCall.jl and all required dependencies for SymbolicRegression.jl.
 
@@ -87,9 +85,6 @@ def install(
     if precompile:
         Main.eval(f"Pkg.precompile({io_arg})")
 
-    if compile:
-        create_sysimage(julia_project=julia_project, quiet=quiet)
-
     if not quiet:
         warnings.warn(
             "It is recommended to restart Python after installing PySR's dependencies,"
@@ -97,11 +92,12 @@ def install(
         )
 
 
-def create_sysimage(sysimage_name="pysr.so", julia_project=None, quiet=False):
+def compile(sysimage_name="pysr.so", julia_project=None, quiet=False):
     """Create a PackageCompiler.jl sysimage for SymbolicRegression.jl."""
     Main = init_julia(julia_project=julia_project, quiet=quiet)
     cur_project_dir = Main.eval("dirname(Base.active_project())")
     sysimage_path = str(Path(cur_project_dir) / sysimage_name)
     from julia import PackageCompiler
+    from julia import SymbolicRegression
 
     PackageCompiler.create_sysimage(["SymbolicRegression"], sysimage_path=sysimage_path)
