@@ -150,7 +150,7 @@ def init_julia(julia_project=None, quiet=False, sysimage_name=None, julia_kwargs
 
     # TODO: Make checking optional.
     # Check if sysimage exists:
-    if sysimage_name is None:
+    if sysimage_name is None and not julia_initialized:
         # TODO: Is there a faster way to get this dir?
         expected_sysimage = _get_julia_project_dir() / "pysr.so"
         print(f"Checking for sysimage at {expected_sysimage}")
@@ -161,7 +161,7 @@ def init_julia(julia_project=None, quiet=False, sysimage_name=None, julia_kwargs
     if julia_kwargs is None:
         julia_kwargs = {"optimize": 3}
 
-    if sysimage_name is not None and "sysimage" not in julia_kwargs:
+    if sysimage_name is not None and "sysimage" not in julia_kwargs and not julia_initialized:
         sysimage = str(sysimage_name)
         print(f"Found existing sysimage at {sysimage}. Loading.")
         julia_kwargs["sysimage"] = sysimage_name
