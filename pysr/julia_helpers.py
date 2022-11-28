@@ -160,7 +160,11 @@ def init_julia(julia_project=None, quiet=False, sysimage_name=None, julia_kwargs
     if julia_kwargs is None:
         julia_kwargs = {"optimize": 3}
 
-    if sysimage_name is not None and "sysimage" not in julia_kwargs and not julia_initialized:
+    if (
+        sysimage_name is not None
+        and "sysimage" not in julia_kwargs
+        and not julia_initialized
+    ):
         sysimage = str(sysimage_name)
         print(f"Found existing sysimage at {sysimage}. Loading.")
         julia_kwargs["sysimage"] = sysimage_name
