@@ -7,6 +7,7 @@ import os
 from julia.api import JuliaError
 
 from .version import __version__, __symbolic_regression_jl_version__
+from .package_compiler import create_sysimage
 
 juliainfo = None
 julia_initialized = False
@@ -65,7 +66,7 @@ def _get_io_arg(quiet):
     return io_arg
 
 
-def install(julia_project=None, quiet=False, precompile=None):  # pragma: no cover
+def install(julia_project=None, quiet=False, precompile=None, compile=False):  # pragma: no cover
     """
     Install PyCall.jl and all required dependencies for SymbolicRegression.jl.
 
@@ -97,9 +98,11 @@ def install(julia_project=None, quiet=False, precompile=None):  # pragma: no cov
 
     Main.eval("using Pkg")
     Main.eval(f"Pkg.instantiate({io_arg})")
-
     if precompile:
         Main.eval(f"Pkg.precompile({io_arg})")
+
+    if compile:
+        create_sysimage(julia_project=julia_project, quiet=quiet)
 
     if not quiet:
         warnings.warn(
