@@ -153,7 +153,6 @@ def init_julia(julia_project=None, quiet=False, sysimage_name=None, julia_kwargs
     if sysimage_name is None and not julia_initialized:
         # TODO: Is there a faster way to get this dir?
         expected_sysimage = _get_julia_project_dir() / "pysr.so"
-        print(f"Checking for sysimage at {expected_sysimage}")
         # Check if this file exists:
         if expected_sysimage.exists():
             sysimage_name = str(expected_sysimage)
