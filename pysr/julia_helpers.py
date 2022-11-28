@@ -7,7 +7,6 @@ import os
 from julia.api import JuliaError
 
 from .version import __version__, __symbolic_regression_jl_version__
-from .package_compiler import create_sysimage
 
 juliainfo = None
 julia_initialized = False
@@ -64,51 +63,6 @@ def _get_io_arg(quiet):
     io = "devnull" if quiet else "stderr"
     io_arg = f"io={io}" if is_julia_version_greater_eq(version=(1, 6, 0)) else ""
     return io_arg
-
-
-def install(julia_project=None, quiet=False, precompile=None, compile=False):  # pragma: no cover
-    """
-    Install PyCall.jl and all required dependencies for SymbolicRegression.jl.
-
-    Also updates the local Julia registry.
-    """
-    import julia
-
-    _julia_version_assertion()
-    # Set JULIA_PROJECT so that we install in the pysr environment
-    processed_julia_project, is_shared = _process_julia_project(julia_project)
-    _set_julia_project_env(processed_julia_project, is_shared)
-
-    if precompile == False:
-        os.environ["JULIA_PKG_PRECOMPILE_AUTO"] = "0"
-
-    julia.install(quiet=quiet)
-    Main, init_log = init_julia(julia_project, quiet=quiet, return_aux=True)
-    io_arg = _get_io_arg(quiet)
-
-    if precompile is None:
-        precompile = init_log["compiled_modules"]
-
-    if not precompile:
-        Main.eval('ENV["JULIA_PKG_PRECOMPILE_AUTO"] = 0')
-
-    if is_shared:
-        # Install SymbolicRegression.jl:
-        _add_sr_to_julia_project(Main, io_arg)
-
-    Main.eval("using Pkg")
-    Main.eval(f"Pkg.instantiate({io_arg})")
-    if precompile:
-        Main.eval(f"Pkg.precompile({io_arg})")
-
-    if compile:
-        create_sysimage(julia_project=julia_project, quiet=quiet)
-
-    if not quiet:
-        warnings.warn(
-            "It is recommended to restart Python after installing PySR's dependencies,"
-            " so that the Julia environment is properly initialized."
-        )
 
 
 def _import_error():
@@ -246,28 +200,6 @@ def init_julia(julia_project=None, quiet=False, julia_kwargs=None, return_aux=Fa
     return Main
 
 
-def _add_sr_to_julia_project(Main, io_arg):
-    Main.eval("using Pkg")
-    Main.sr_spec = Main.PackageSpec(
-        name="SymbolicRegression",
-        url="https://github.com/MilesCranmer/SymbolicRegression.jl",
-        rev="v" + __symbolic_regression_jl_version__,
-    )
-    Main.clustermanagers_spec = Main.PackageSpec(
-        name="ClusterManagers",
-        rev="v0.4.2",
-    )
-    Main.packagecompiler_spec = Main.PackageSpec(
-        name="PackageCompiler",
-        rev="v2.1.0",
-    )
-    Main.eval(
-        "Pkg.add(["
-        + ", ".join(["sr_spec", "clustermanagers_spec", "packagecompiler_spec"])
-        + f"], {io_arg})"
-    )
-
-
 def _escape_filename(filename):
     """Turn a path into a string with correctly escaped backslashes."""
     str_repr = str(filename)
@@ -307,16 +239,6 @@ def _backend_version_assertion(Main):
 def _load_cluster_manager(Main, cluster_manager):
     Main.eval(f"import ClusterManagers: addprocs_{cluster_manager}")
     return Main.eval(f"addprocs_{cluster_manager}")
-
-
-def _update_julia_project(Main, is_shared, io_arg):
-    try:
-        if is_shared:
-            _add_sr_to_julia_project(Main, io_arg)
-        Main.eval("using Pkg")
-        Main.eval(f"Pkg.resolve({io_arg})")
-    except (JuliaError, RuntimeError) as e:
-        raise ImportError(_import_error()) from e
 
 
 def _load_backend(Main):

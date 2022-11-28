@@ -21,13 +21,13 @@ from sklearn.utils.validation import (
     check_is_fitted,
 )
 
+from .package_compiler import _update_julia_project
 from .julia_helpers import (
     init_julia,
     _process_julia_project,
     is_julia_version_greater_eq,
     _escape_filename,
     _load_cluster_manager,
-    _update_julia_project,
     _load_backend,
 )
 from .export_numpy import CallableEquation
