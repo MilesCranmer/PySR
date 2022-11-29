@@ -121,9 +121,6 @@ def compile(
     sysimage_path = str(Path(cur_project_dir) / sysimage_name)
     from julia import PackageCompiler
 
-    Main.eval("using PyCall")
     Main.eval("using SymbolicRegression")
 
-    PackageCompiler.create_sysimage(
-        ["SymbolicRegression", "PyCall"], sysimage_path=sysimage_path
-    )
+    PackageCompiler.create_sysimage(sysimage_path=sysimage_path)
