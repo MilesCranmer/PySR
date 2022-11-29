@@ -147,7 +147,14 @@ def _check_for_conflicting_libraries():  # pragma: no cover
         )
 
 
-def init_julia(julia_project=None, quiet=False, sysimage_name=None, julia_kwargs=None, return_aux=False):
+def init_julia(
+    julia_project=None,
+    quiet=False,
+    use_sysimage=True,
+    sysimage_name=None,
+    julia_kwargs=None,
+    return_aux=False,
+):
     """Initialize julia binary, turning off compiled modules if needed."""
     global julia_initialized
     global julia_kwargs_at_initialization
@@ -162,7 +169,7 @@ def init_julia(julia_project=None, quiet=False, sysimage_name=None, julia_kwargs
 
     # TODO: Make checking optional.
     # Check if sysimage exists:
-    if sysimage_name is None and not julia_initialized:
+    if use_sysimage and sysimage_name is None and not julia_initialized:
         # TODO: Is there a faster way to get this dir?
         expected_sysimage = _get_julia_project_dir() / "pysr.so"
         # Check if this file exists:
