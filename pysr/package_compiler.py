@@ -3,6 +3,7 @@
 import os
 from pathlib import Path
 import warnings
+from multiprocessing import cpu_count
 
 import numpy as np
 from julia.api import JuliaError
@@ -108,10 +109,11 @@ def compile(
     Main = init_julia(
         julia_project=julia_project,
         quiet=quiet,
+        use_sysimage=False,
         julia_kwargs={
             "compiled_modules": False,
             "optimize": 3,
-            "threads": "auto",
+            "threads": cpu_count(),
             "compile": "all",
         },
     )
