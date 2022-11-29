@@ -38,7 +38,11 @@ def _get_julia_project_dir():
     try:
         cmds = [
             "julia",
-            "-e using Pkg; print(Pkg.project().path)",
+            "--compile=min",
+            "--startup-file=no",
+            "-O0",
+            "-g0",
+            "-e import Pkg: project; print(project().path)",
         ]
         julia_project_dir_str = subprocess.run(
             cmds,
@@ -56,8 +60,16 @@ def _get_julia_project_dir():
 def _get_julia_env_dir():
     # Have to manually get env dir:
     try:
+        cmds = [
+            "julia",
+            "--compile=min",
+            "--startup-file=no",
+            "-O0",
+            "-g0",
+            "-e import Pkg: envdir; print(envdir())",
+        ]
         julia_env_dir_str = subprocess.run(
-            ["julia", "-e using Pkg; print(Pkg.envdir())"],
+            cmds,
             capture_output=True,
             env=os.environ,
         ).stdout.decode()
