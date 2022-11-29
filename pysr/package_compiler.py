@@ -33,11 +33,18 @@ def _add_sr_to_julia_project(Main, io_arg):
         name="PackageCompiler",
         rev="v2.1.0",
     )
+    Main.pycall_spec = Main.PackageSpec(
+        name="PyCall",
+        rev="v1.94.1",
+    )
     Main.eval(
         "Pkg.add(["
-        + ", ".join(["sr_spec", "clustermanagers_spec", "packagecompiler_spec"])
+        + ", ".join(
+            ["sr_spec", "clustermanagers_spec", "packagecompiler_spec", "pycall_spec"]
+        )
         + f"], {io_arg})"
     )
+    Main.eval(f'Pkg.build("PyCall", {io_arg})')
 
 
 def _update_julia_project(Main, is_shared, io_arg):
@@ -98,11 +105,23 @@ def compile(
     sysimage_name="pysr.so",
 ):
     """Create a PackageCompiler.jl sysimage for SymbolicRegression.jl."""
-    Main = init_julia(julia_project=julia_project, quiet=quiet)
+    Main = init_julia(
+        julia_project=julia_project,
+        quiet=quiet,
+        julia_kwargs={
+            "compiled_modules": False,
+            "optimize": 3,
+            "threads": "auto",
+            "compile": "all",
+        },
+    )
     cur_project_dir = Main.eval("dirname(Base.active_project())")
     sysimage_path = str(Path(cur_project_dir) / sysimage_name)
     from julia import PackageCompiler
 
+    Main.eval("using PyCall")
     Main.eval("using SymbolicRegression")
 
-    PackageCompiler.create_sysimage(["SymbolicRegression"], sysimage_path=sysimage_path)
+    PackageCompiler.create_sysimage(
+        ["SymbolicRegression", "PyCall"], sysimage_path=sysimage_path
+    )
