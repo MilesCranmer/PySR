@@ -3,9 +3,10 @@
 
 ARG JLVERSION=1.8.2
 ARG PYVERSION=3.10.8
+ARG BASE_IMAGE=bullseye
 
-FROM julia:$JLVERSION AS jl
-FROM python:$PYVERSION
+FROM julia:${JLVERSION}-${BASE_IMAGE} AS jl
+FROM python:${PYVERSION}-${BASE_IMAGE}
 
 # Merge Julia image:
 COPY --from=jl /usr/local/julia /usr/local/julia
