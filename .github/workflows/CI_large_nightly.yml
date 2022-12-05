@@ -27,8 +27,8 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         experimental: [false]
         include:
-          os: [windows-latest]
-          experimental: [true]
+          - os: windows-latest
+            experimental: true
     
     steps:
       - uses: actions/checkout@v3
