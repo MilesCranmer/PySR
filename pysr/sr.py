@@ -29,6 +29,7 @@ from .julia_helpers import (
     _load_cluster_manager,
     _update_julia_project,
     _load_backend,
+    _create_randn_for_bigfloat,
 )
 from .export_numpy import CallableEquation
 from .export_latex import generate_single_table, generate_multiple_tables, to_latex
@@ -1619,22 +1620,48 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             define_helper_functions=False,
         )
 
-        # Convert data to desired precision
-        np_dtype = {16: np.float16, 32: np.float32, 64: np.float64}[self.precision]
+        if self.precision in {16, 32, 64}:
+            # Convert data to desired precision
+            np_dtype = {16: np.float16, 32: np.float32, 64: np.float64}[self.precision]
 
-        # This converts the data into a Julia array:
-        Main.X = np.array(X, dtype=np_dtype).T
-        if len(y.shape) == 1:
-            Main.y = np.array(y, dtype=np_dtype)
-        else:
-            Main.y = np.array(y, dtype=np_dtype).T
-        if weights is not None:
-            if len(weights.shape) == 1:
-                Main.weights = np.array(weights, dtype=np_dtype)
+            # This converts the data into a Julia array:
+            Main.X = np.array(X, dtype=np_dtype).T
+            if len(y.shape) == 1:
+                Main.y = np.array(y, dtype=np_dtype)
             else:
-                Main.weights = np.array(weights, dtype=np_dtype).T
+                Main.y = np.array(y, dtype=np_dtype).T
+            if weights is not None:
+                if len(np.array(weights).shape) == 1:
+                    Main.weights = np.array(weights, dtype=np_dtype)
+                else:
+                    Main.weights = np.array(weights, dtype=np_dtype).T
+            else:
+                Main.weights = None
         else:
-            Main.weights = None
+            # Assume BigFloat
+            assert self.precision > 0 and isinstance(self.precision, int)
+
+            if not (isinstance(X, np.ndarray) and isinstance(y, np.ndarray)):
+                raise ValueError("X and y must be NumPy arrays when using BigFloats.")
+
+            _create_randn_for_bigfloat(Main)
+            Main.setprecision(self.precision)
+            Main.X = X.T
+            # Convert to BigFloat:
+            if len(y.shape) == 1:
+                Main.y = y
+            else:
+                Main.y = y.T
+            Main.eval("X = BigFloat.(X)")
+            Main.eval("y = BigFloat.(y)")
+            if weights is not None:
+                if len(np.array(weights).shape) == 1:
+                    Main.weights = weights
+                else:
+                    Main.weights = weights.T
+                Main.eval("weights = BigFloat.(weights)")
+            else:
+                Main.weights = None
 
         if self.procs == 0 and not multithreading:
             parallelism = "serial"

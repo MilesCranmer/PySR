@@ -304,3 +304,19 @@ def _load_backend(Main):
     from julia import SymbolicRegression
 
     return SymbolicRegression
+
+
+def _create_randn_for_bigfloat(Main):
+    # Add randn method for BigFloat if it doesn't exist:
+    Main.eval("import Random: AbstractRNG")
+    if not Main.eval(
+        "hasmethod(randn, Tuple{AbstractRNG, Type{BigFloat}, Vararg{Integer}})"
+    ):
+        Main.eval(
+            "Base.randn(::Type{BigFloat}, args::Integer...)"
+            "= BigFloat.(randn(Float64, args...))"
+        )
+        Main.eval(
+            "Base.randn(rng::AbstractRNG, ::Type{BigFloat}, args::Integer...)"
+            "= BigFloat.(randn(rng, Float64, args...))"
+        )
