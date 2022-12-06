@@ -189,13 +189,15 @@ where $p_i$ is the $i$th prime number, and $x$ is the input feature.
 Let's see if we can discover this relationship between $x$ and $y$, using
 the [Primes.jl](https://github.com/JuliaMath/Primes.jl) package.
 
-First, let's manually initialize the Julia backend (here, with 8 threads)
+First, let's manually initialize the Julia backend
+(here, with 8 threads and `-O3`):
 
 ```python
 import pysr
-jl = pysr.julia_helpers.init_julia(julia_kwargs={"threads": 8})
+jl = pysr.julia_helpers.init_julia(julia_kwargs={"threads": 8, "optimize": 3})
 ```
-`jl` is the Julia runtime.
+
+`jl` stores the Julia runtime.
 
 Now, let's run some Julia code to add the Primes.jl
 package to the PySR environment:
