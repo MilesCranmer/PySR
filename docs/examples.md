@@ -173,7 +173,115 @@ print(model)
 
 If all goes well, you should find that it predicts the correct input equation, without the noise term!
 
-## 7. Additional features
+## 7. Julia packages and types
+
+PySR uses [SymbolicRegression.jl](https://github.com/MilesCranmer/SymbolicRegression.jl)
+as its search backend. This is a pure Julia package, and so can interface easily with any other
+Julia package.
+For some tasks, it may be necessary to load such a package.
+
+For example, let's consider an example where we wish to find the following relationship:
+
+$$ y = p_{3x + 1} - 5, $$
+
+where $p_i$ is the $i$th prime number, and $x$ is the input feature.
+
+Let's see if we can discover this relationship between $x$ and $y$, using
+the [Primes.jl](https://github.com/JuliaMath/Primes.jl) package.
+
+First, let's manually initialize the Julia backend (here, with 8 threads)
+
+```python
+import pysr
+jl = pysr.julia_helpers.init_julia(julia_kwargs={"threads": 8})
+```
+`jl` is the Julia runtime.
+
+Now, let's run some Julia code to add the Primes.jl
+package to the PySR environment:
+
+```python
+jl.eval("""
+import Pkg
+Pkg.add("Primes")
+""")
+```
+
+This imports the Julia package manager, and uses it to install
+`Primes.jl`. Now let's import `Primes.jl`:
+
+Now, let's import it
+
+```python
+jl.eval("import Primes")
+```
+
+Now, let's define a custom operator. We can then pass this
+to PySR later on.
+
+```python
+jl.eval("""
+function p(i::T) where T
+    if (0.5 < i < 1000)
+        return T(Primes.prime(round(Int, i)))
+    else
+        return T(NaN)
+    end
+end
+""")
+```
+
+We have created a custom operator `p`, which takes an arbitrary number as input.
+It then checks whether the input is between 0.5 and 1000.
+If out-of-bounds, it returns `NaN`.
+If in-bounds, it rounds it to the nearest integer, and returns the corresponding prime number, mapped to the same type as input.
+
+Now, let's generate some test data, using the first 100 primes.
+Since we are using PyJulia, we can pass data back and forth
+to our custom Julia operator:
+
+```python
+primes = {i: jl.p(i*1.0) for i in range(1, 999)}
+```
+
+And let's create a dataset:
+
+```python
+X = np.random.randint(0, 100, 100)[:, None]
+y = [primes[3*X[i, 0] + 1] - 5 for i in range(100)]
+```
+
+Finally, let's create a PySR model, and pass the custom operator. We also need to define the sympy equivalent, which we can leave as a placeholder for now:
+
+```python
+from pysr import PySRRegressor
+import sympy
+
+class sympy_p(sympy.Function):
+    pass
+
+model = PySRRegressor(
+    binary_operators=["+", "-", "*", "/"],
+    unary_operators=["p"],
+    niterations=1000,
+    extra_sympy_mappings={"p": sympy_p}
+)
+```
+
+We are all set to go! Let's see if we can find the true relation:
+
+```python
+model.fit(X, y)
+```
+
+if all works out, you should be able to see the true relation (note that the constant offset might not be exactly 1, since it is allowed to round to the nearest integer).
+You can get the sympy version of the last row with:
+
+```python
+model.sympy(index=-1)
+```
+
+## 8. Additional features
 
 For the many other features available in PySR, please
 read the [Options section](options.md).
