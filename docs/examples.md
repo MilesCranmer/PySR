@@ -247,6 +247,8 @@ primes = {i: jl.p(i*1.0) for i in range(1, 999)}
 And let's create a dataset:
 
 ```python
+import numpy as np
+
 X = np.random.randint(0, 100, 100)[:, None]
 y = [primes[3*X[i, 0] + 1] - 5 for i in range(100)]
 ```
