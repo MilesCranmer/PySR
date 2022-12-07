@@ -180,13 +180,13 @@ as its search backend. This is a pure Julia package, and so can interface easily
 Julia package.
 For some tasks, it may be necessary to load such a package.
 
-For example, let's consider an example where we wish to find the following relationship:
+For example, let's say we wish to discovery the following relationship:
 
 $$ y = p_{3x + 1} - 5, $$
 
 where $p_i$ is the $i$th prime number, and $x$ is the input feature.
 
-Let's see if we can discover this relationship between $x$ and $y$, using
+Let's see if we can discover this using
 the [Primes.jl](https://github.com/JuliaMath/Primes.jl) package.
 
 First, let's manually initialize the Julia backend
@@ -212,14 +212,11 @@ Pkg.add("Primes")
 This imports the Julia package manager, and uses it to install
 `Primes.jl`. Now let's import `Primes.jl`:
 
-Now, let's import it
-
 ```python
 jl.eval("import Primes")
 ```
 
-Now, let's define a custom operator. We can then pass this
-to PySR later on.
+Now, we define a custom operator:
 
 ```python
 jl.eval("""
@@ -233,20 +230,20 @@ end
 """)
 ```
 
-We have created a custom operator `p`, which takes an arbitrary number as input.
-It then checks whether the input is between 0.5 and 1000.
+We have created a a function `p`, which takes an arbitrary number as input.
+`p` first checks whether the input is between 0.5 and 1000.
 If out-of-bounds, it returns `NaN`.
-If in-bounds, it rounds it to the nearest integer, and returns the corresponding prime number, mapped to the same type as input.
+If in-bounds, it rounds it to the nearest integer, compures the corresponding prime number, and then
+converts it to the same type as input.
 
-Now, let's generate some test data, using the first 100 primes.
-Since we are using PyJulia, we can pass data back and forth
-to our custom Julia operator:
+Next, let's generate a list of primes for our test dataset.
+Since we are using PyJulia, we can just call `p` directly to do this:
 
 ```python
 primes = {i: jl.p(i*1.0) for i in range(1, 999)}
 ```
 
-And let's create a dataset:
+Next, let's use this list of primes to create a dataset of $x, y$ pairs:
 
 ```python
 import numpy as np
