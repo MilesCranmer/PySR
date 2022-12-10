@@ -2,4 +2,4 @@ sympy
 pandas
 numpy
 scikit_learn >= 1.0.0
-git+https://github.com/MilesCranmer/PyJulia@debug-windows#egg=julia
+git+https://github.com/MilesCranmer/PyJulia.git@debug-windows#egg=julia
