@@ -570,7 +570,7 @@ class TestMiscellaneous(unittest.TestCase):
     def test_changed_options_warning(self):
         """Check that a warning is given if Julia options are changed."""
         if julia_helpers.julia_kwargs_at_initialization is None:
-            julia_helpers.init_julia(julia_kwargs={"threads": 2, "optimize": 3})
+            julia_helpers.init_julia(julia_kwargs={"threads": 2, "optimize": 2})
 
         cur_init = julia_helpers.julia_kwargs_at_initialization
 
@@ -579,7 +579,7 @@ class TestMiscellaneous(unittest.TestCase):
             warnings.simplefilter("error")
             with self.assertRaises(Exception) as context:
                 julia_helpers.init_julia(
-                    julia_kwargs={"threads": threads_to_change, "optimize": 3}
+                    julia_kwargs={"threads": threads_to_change, "optimize": 2}
                 )
             self.assertIn("Julia has already started", str(context.exception))
             self.assertIn("threads", str(context.exception))

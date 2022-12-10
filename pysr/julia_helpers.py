@@ -155,7 +155,7 @@ def init_julia(julia_project=None, quiet=False, julia_kwargs=None):
         _check_for_conflicting_libraries()
 
     if julia_kwargs is None:
-        julia_kwargs = {"optimize": 3}
+        julia_kwargs = {"optimize": 2}
 
     from julia.core import JuliaInfo, UnsupportedPythonError
 

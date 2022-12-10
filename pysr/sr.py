@@ -588,7 +588,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     julia_kwargs : dict
         Keyword arguments to pass to `julia.core.Julia(...)` to initialize
         the Julia runtime. The default, when `None`, is to set `threads` equal
-        to `procs`, and `optimize` to 3.
+        to `procs`, and `optimize` to 2.
         Default is `None`.
     **kwargs : dict
         Supports deprecated keyword arguments. Other arguments will
@@ -1272,7 +1272,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             for key, value in self.julia_kwargs.items():
                 julia_kwargs[key] = value
         if "optimize" not in julia_kwargs:
-            julia_kwargs["optimize"] = 3
+            julia_kwargs["optimize"] = 2
         if "threads" not in julia_kwargs and packed_modified_params["multithreading"]:
             julia_kwargs["threads"] = self.procs
         packed_modified_params["julia_kwargs"] = julia_kwargs
