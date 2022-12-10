@@ -157,6 +157,9 @@ def init_julia(julia_project=None, quiet=False, julia_kwargs=None):
     if julia_kwargs is None:
         julia_kwargs = {"optimize": 3}
 
+    if "check_bounds" not in julia_kwargs and "JULIA_CHECK_BOUNDS" in os.environ:
+        julia_kwargs["check_bounds"] = os.environ["JULIA_CHECK_BOUNDS"]
+
     from julia.core import JuliaInfo, UnsupportedPythonError
 
     _julia_version_assertion()

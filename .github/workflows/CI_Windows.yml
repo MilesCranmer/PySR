@@ -57,9 +57,15 @@ jobs:
             python -c 'import pysr; pysr.install()'
       - name: "Run tests"
         run: python -m pysr.test main
+        env:
+          JULIA_CHECK_BOUNDS: yes
       - name: "Install Torch"
         run: pip install torch # (optional import)
       - name: "Run Torch tests"
         run: python -m pysr.test torch
+        env:
+          JULIA_CHECK_BOUNDS: yes
       - name: "Run custom env tests"
         run: python -m pysr.test env
+        env:
+          JULIA_CHECK_BOUNDS: yes
