@@ -183,7 +183,7 @@ def init_julia(julia_project=None, quiet=False, julia_kwargs=None):
         warnings.warn(
             "You are using a statically-linked Python binary. "
             "The first run of PySR will be slower, as all dependencies need to be compiled. "
-            "Switch to a dynamically-linked version of Python to have a faster startup time."
+            "Switch to a dynamically-linked version of Python (like pyenv) to have a faster startup time."
         )
         julia_kwargs = {**julia_kwargs, "compiled_modules": False}
         Julia(**julia_kwargs)
