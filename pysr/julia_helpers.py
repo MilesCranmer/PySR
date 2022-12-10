@@ -181,7 +181,9 @@ def init_julia(julia_project=None, quiet=False, julia_kwargs=None):
     except UnsupportedPythonError:
         # Static python binary, so we turn off pre-compiled modules.
         warnings.warn(
-            "You are using a statically-linked Python binary. The first run of PySR will be slower, as all dependencies need to be compiled. Switch to a dynamically-linked version of Python to have a faster startup time."
+            "You are using a statically-linked Python binary. "
+            "The first run of PySR will be slower, as all dependencies need to be compiled. "
+            "Switch to a dynamically-linked version of Python to have a faster startup time."
         )
         julia_kwargs = {**julia_kwargs, "compiled_modules": False}
         Julia(**julia_kwargs)
