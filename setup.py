@@ -17,8 +17,6 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/MilesCranmer/pysr",
-    # Read from requirements.txt:
-    install_requires=open("requirements.txt").read().splitlines(),
     packages=setuptools.find_packages(),
     package_data={"pysr": ["../Project.toml", "../datasets/*"]},
     include_package_data=False,
