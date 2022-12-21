@@ -55,9 +55,11 @@ jobs:
             pip install -r requirements.txt
             python setup.py install
             python -c 'import pysr; pysr.install()'
-            echo '4'
       - name: "Run tests"
-        run: python -m pysr.test main
+        run: |
+          for i in {0..4}; do
+            python -m pysr.test main-$i
+          done
       - name: "Install Torch"
         run: pip install torch # (optional import)
       - name: "Run Torch tests"
