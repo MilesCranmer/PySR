@@ -11,7 +11,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "test",
         nargs="*",
-        help="Test to run. One or more of 'main', 'env', 'jax', 'torch'.",
+        help="Test to run. One or more of 'main', 'main-*', 'env', 'jax', 'torch'.",
     )
 
     # Parse args:
@@ -25,11 +25,14 @@ if __name__ == "__main__":
 
     # Run tests:
     for test in tests:
-        if test in {"main", "env", "jax", "torch"}:
+        if test in {"env", "jax", "torch"} or test.startswith("main"):
             cur_dir = os.path.dirname(os.path.abspath(__file__))
             print(f"Running test from {cur_dir}")
             if test == "main":
                 runtests()
+            elif test.startswith("main-"):
+                idx = int(test.split("-")[1])
+                runtests(idx=idx)
             elif test == "env":
                 runtests_env()
             elif test == "jax":

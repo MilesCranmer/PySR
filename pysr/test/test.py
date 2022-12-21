@@ -26,6 +26,7 @@ DEFAULT_PARAMS = inspect.signature(PySRRegressor.__init__).parameters
 DEFAULT_NITERATIONS = DEFAULT_PARAMS["niterations"].default
 DEFAULT_POPULATIONS = DEFAULT_PARAMS["populations"].default
 DEFAULT_NCYCLES = DEFAULT_PARAMS["ncyclesperiteration"].default
+NSPLITS = 5
 
 
 class TestPipeline(unittest.TestCase):
@@ -877,8 +878,16 @@ class TestLaTeXTable(unittest.TestCase):
         self.assertEqual(latex_table_str, true_latex_table_str)
 
 
-def runtests():
-    """Run all tests in test.py."""
+def runtests(idx=None):
+    """Run all or a subset of tests in test.py.
+
+    Parameters
+    ----------
+    idx : int or None
+        Run the `idx`th part of the test suite. Each `idx` is one
+        `NSPLITS` of the total test suite.
+    """
+
     suite = unittest.TestSuite()
     loader = unittest.TestLoader()
     test_cases = [
@@ -889,7 +898,18 @@ def runtests():
         TestLaTeXTable,
     ]
     for test_case in test_cases:
-        tests = loader.loadTestsFromTestCase(test_case)
-        suite.addTests(tests)
+        test_case_names = loader.getTestCaseNames(test_case)
+
+        if idx is None:
+            start = 0
+            end = len(test_case_names)
+        else:
+            start = idx * len(test_case_names) // NSPLITS
+            end = (idx + 1) * len(test_case_names) // NSPLITS
+
+        for test_name in test_case_names[start:end]:
+            tests = loader.loadTestsFromName(test_name, test_case)
+            suite.addTests(tests)
+
     runner = unittest.TextTestRunner()
     return runner.run(suite)
