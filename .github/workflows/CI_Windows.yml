@@ -55,16 +55,12 @@ jobs:
             pip install -r requirements.txt
             python setup.py install
             python -c 'import pysr; pysr.install()'
-      - name: "Run part 1 of tests"
-        run: python -m pysr.test main-0
-      - name: "Run part 2 of tests"
-        run: python -m pysr.test main-1
-      - name: "Run part 3 of tests"
-        run: python -m pysr.test main-2
-      - name: "Run part 4 of tests"
-        run: python -m pysr.test main-3
-      - name: "Run part 5 of tests"
-        run: python -m pysr.test main-4
+      - name: "Run tests"
+        run: |
+          for i in {0..4}; do
+            echo "Running test part $i of 5"
+            python -m pysr.test --nsplits=5 main-$i
+          done
       - name: "Install Torch"
         run: pip install torch # (optional import)
       - name: "Run Torch tests"
