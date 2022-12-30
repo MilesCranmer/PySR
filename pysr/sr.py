@@ -1493,7 +1493,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Main = init_julia(self.julia_project, julia_kwargs=julia_kwargs)
 
         if cluster_manager is not None:
-            cluster_manager = _load_cluster_manager(cluster_manager)
+            cluster_manager = _load_cluster_manager(Main, cluster_manager)
 
         if self.update:
             _, is_shared = _process_julia_project(self.julia_project)
