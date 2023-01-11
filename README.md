@@ -137,7 +137,8 @@ Equations will be printed during training, and once you are satisfied, you may
 quit early by hitting 'q' and then \<enter\>.
 
 After the model has been fit, you can run `model.predict(X)`
-to see the predictions on a given dataset.
+to see the predictions on a given dataset using the automatically-selected expression,
+or, for example, `model.predict(X, 3)` to see the predictions of the 3rd equation.
 
 You may run:
 
