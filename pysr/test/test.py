@@ -838,13 +838,13 @@ class TestLaTeXTable(unittest.TestCase):
         x = sympy.Symbol("x")
         expr = x * 3232.324857384 - 1.4857485e-10
         self.assertEqual(
-            to_latex(expr, prec=2), "3.2 \cdot 10^{3} x - 1.5 \cdot 10^{-10}"
+            to_latex(expr, prec=2), r"3.2 \cdot 10^{3} x - 1.5 \cdot 10^{-10}"
         )
         self.assertEqual(
-            to_latex(expr, prec=3), "3.23 \cdot 10^{3} x - 1.49 \cdot 10^{-10}"
+            to_latex(expr, prec=3), r"3.23 \cdot 10^{3} x - 1.49 \cdot 10^{-10}"
         )
         self.assertEqual(
-            to_latex(expr, prec=8), "3232.3249 x - 1.4857485 \cdot 10^{-10}"
+            to_latex(expr, prec=8), r"3232.3249 x - 1.4857485 \cdot 10^{-10}"
         )
 
     def test_latex_break_long_equation(self):
