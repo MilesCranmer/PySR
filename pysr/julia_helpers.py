@@ -78,17 +78,15 @@ def install(julia_project=None, quiet=False, precompile=None):  # pragma: no cov
     processed_julia_project, is_shared = _process_julia_project(julia_project)
     _set_julia_project_env(processed_julia_project, is_shared)
 
-    if not precompile:
+    if precompile == False:
         os.environ["JULIA_PKG_PRECOMPILE_AUTO"] = "0"
 
     julia.install(quiet=quiet)
     Main, init_log = init_julia(julia_project, quiet=quiet, return_aux=True)
     io_arg = _get_io_arg(quiet)
 
-    if precompile is None and not init_log["compiled_modules"]:
-        precompile = False
-    else:
-        precompile = True
+    if precompile is None:
+        precompile = init_log["compiled_modules"]
 
     if not precompile:
         Main.eval('ENV["JULIA_PKG_PRECOMPILE_AUTO"] = 0')
@@ -100,10 +98,7 @@ def install(julia_project=None, quiet=False, precompile=None):  # pragma: no cov
     Main.eval("using Pkg")
     Main.eval(f"Pkg.instantiate({io_arg})")
 
-    if precompile and (
-        "JULIA_PKG_PRECOMPILE_AUTO" not in os.environ
-        or str(os.environ["JULIA_PKG_PRECOMPILE_AUTO"]) != "0"
-    ):
+    if precompile:
         Main.eval(f"Pkg.precompile({io_arg})")
 
     if not quiet:
