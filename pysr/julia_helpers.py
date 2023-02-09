@@ -65,7 +65,7 @@ def _get_io_arg(quiet):
     return io_arg
 
 
-def install(julia_project=None, quiet=False, precompile=True):  # pragma: no cover
+def install(julia_project=None, quiet=False, precompile=None):  # pragma: no cover
     """
     Install PyCall.jl and all required dependencies for SymbolicRegression.jl.
 
@@ -82,8 +82,11 @@ def install(julia_project=None, quiet=False, precompile=True):  # pragma: no cov
         os.environ["JULIA_PKG_PRECOMPILE_AUTO"] = "0"
 
     julia.install(quiet=quiet)
-    Main = init_julia(julia_project, quiet=quiet)
+    Main, init_log = init_julia(julia_project, quiet=quiet, return_aux=True)
     io_arg = _get_io_arg(quiet)
+
+    if precompile is None and not init_log["compiled_modules"]:
+        precompile = False
 
     if not precompile:
         Main.eval('ENV["JULIA_PKG_PRECOMPILE_AUTO"] = 0')
@@ -157,7 +160,7 @@ def _check_for_conflicting_libraries():  # pragma: no cover
         )
 
 
-def init_julia(julia_project=None, quiet=False, julia_kwargs=None):
+def init_julia(julia_project=None, quiet=False, julia_kwargs=None, return_aux=False):
     """Initialize julia binary, turning off compiled modules if needed."""
     global julia_initialized
     global julia_kwargs_at_initialization
@@ -194,6 +197,10 @@ def init_julia(julia_project=None, quiet=False, julia_kwargs=None):
         # Static python binary, so we turn off pre-compiled modules.
         julia_kwargs = {**julia_kwargs, "compiled_modules": False}
         Julia(**julia_kwargs)
+
+    using_compiled_modules = (not "compiled_modules" in julia_kwargs) or julia_kwargs[
+        "compiled_modules"
+    ]
 
     from julia import Main as _Main
 
@@ -234,6 +241,8 @@ def init_julia(julia_project=None, quiet=False, julia_kwargs=None):
         julia_kwargs_at_initialization = julia_kwargs
 
     julia_initialized = True
+    if return_aux:
+        return Main, {"compiled_modules": using_compiled_modules}
     return Main
 
 
