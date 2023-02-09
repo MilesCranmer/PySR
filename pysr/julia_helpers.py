@@ -87,6 +87,8 @@ def install(julia_project=None, quiet=False, precompile=None):  # pragma: no cov
 
     if precompile is None and not init_log["compiled_modules"]:
         precompile = False
+    else:
+        precompile = True
 
     if not precompile:
         Main.eval('ENV["JULIA_PKG_PRECOMPILE_AUTO"] = 0')
