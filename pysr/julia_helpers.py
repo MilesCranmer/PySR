@@ -65,7 +65,7 @@ def _get_io_arg(quiet):
     return io_arg
 
 
-def install(julia_project=None, quiet=False):  # pragma: no cover
+def install(julia_project=None, quiet=False, precompile=True):  # pragma: no cover
     """
     Install PyCall.jl and all required dependencies for SymbolicRegression.jl.
 
@@ -78,9 +78,15 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
     processed_julia_project, is_shared = _process_julia_project(julia_project)
     _set_julia_project_env(processed_julia_project, is_shared)
 
+    if not precompile:
+        os.environ["JULIA_PKG_PRECOMPILE_AUTO"] = "0"
+
     julia.install(quiet=quiet)
     Main = init_julia(julia_project, quiet=quiet)
     io_arg = _get_io_arg(quiet)
+
+    if not precompile:
+        Main.eval('ENV["JULIA_PKG_PRECOMPILE_AUTO"] = 0')
 
     if is_shared:
         # Install SymbolicRegression.jl:
@@ -88,7 +94,13 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
 
     Main.eval("using Pkg")
     Main.eval(f"Pkg.instantiate({io_arg})")
-    Main.eval(f"Pkg.precompile({io_arg})")
+
+    if precompile and (
+        "JULIA_PKG_PRECOMPILE_AUTO" not in os.environ
+        or str(os.environ["JULIA_PKG_PRECOMPILE_AUTO"]) != "0"
+    ):
+        Main.eval(f"Pkg.precompile({io_arg})")
+
     if not quiet:
         warnings.warn(
             "It is recommended to restart Python after installing PySR's dependencies,"
