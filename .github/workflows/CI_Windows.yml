@@ -29,7 +29,7 @@ jobs:
         shell: bash
     strategy:
       matrix:
-        julia-version: ['1.6', '1.8.2']
+        julia-version: ['1.8.2']
         python-version: ['3.9']
         os: [windows-latest]
     

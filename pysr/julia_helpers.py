@@ -65,7 +65,7 @@ def _get_io_arg(quiet):
     return io_arg
 
 
-def install(julia_project=None, quiet=False):  # pragma: no cover
+def install(julia_project=None, quiet=False, precompile=None):  # pragma: no cover
     """
     Install PyCall.jl and all required dependencies for SymbolicRegression.jl.
 
@@ -78,9 +78,18 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
     processed_julia_project, is_shared = _process_julia_project(julia_project)
     _set_julia_project_env(processed_julia_project, is_shared)
 
+    if precompile == False:
+        os.environ["JULIA_PKG_PRECOMPILE_AUTO"] = "0"
+
     julia.install(quiet=quiet)
-    Main = init_julia(julia_project, quiet=quiet)
+    Main, init_log = init_julia(julia_project, quiet=quiet, return_aux=True)
     io_arg = _get_io_arg(quiet)
+
+    if precompile is None:
+        precompile = init_log["compiled_modules"]
+
+    if not precompile:
+        Main.eval('ENV["JULIA_PKG_PRECOMPILE_AUTO"] = 0')
 
     if is_shared:
         # Install SymbolicRegression.jl:
@@ -88,7 +97,10 @@ def install(julia_project=None, quiet=False):  # pragma: no cover
 
     Main.eval("using Pkg")
     Main.eval(f"Pkg.instantiate({io_arg})")
-    Main.eval(f"Pkg.precompile({io_arg})")
+
+    if precompile:
+        Main.eval(f"Pkg.precompile({io_arg})")
+
     if not quiet:
         warnings.warn(
             "It is recommended to restart Python after installing PySR's dependencies,"
@@ -145,7 +157,7 @@ def _check_for_conflicting_libraries():  # pragma: no cover
         )
 
 
-def init_julia(julia_project=None, quiet=False, julia_kwargs=None):
+def init_julia(julia_project=None, quiet=False, julia_kwargs=None, return_aux=False):
     """Initialize julia binary, turning off compiled modules if needed."""
     global julia_initialized
     global julia_kwargs_at_initialization
@@ -182,6 +194,10 @@ def init_julia(julia_project=None, quiet=False, julia_kwargs=None):
         # Static python binary, so we turn off pre-compiled modules.
         julia_kwargs = {**julia_kwargs, "compiled_modules": False}
         Julia(**julia_kwargs)
+
+    using_compiled_modules = (not "compiled_modules" in julia_kwargs) or julia_kwargs[
+        "compiled_modules"
+    ]
 
     from julia import Main as _Main
 
@@ -222,6 +238,8 @@ def init_julia(julia_project=None, quiet=False, julia_kwargs=None):
         julia_kwargs_at_initialization = julia_kwargs
 
     julia_initialized = True
+    if return_aux:
+        return Main, {"compiled_modules": using_compiled_modules}
     return Main
 
 
