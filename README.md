@@ -87,8 +87,10 @@ If none of these folders contain your Julia binary, then you need to add Julia's
 
 # Introduction
 
-Let's create a PySR example. First, let's import
-numpy to generate some test data:
+You might wish to try the interactive tutorial [here](https://colab.research.google.com/github/MilesCranmer/PySR/blob/master/examples/pysr_demo.ipynb), which uses the notebook in `examples/pysr_demo.ipynb`.
+
+We also give a quick demo here which you can paste into a Python runtime.
+First, let's import numpy to generate some test data:
 
 ```python
 import numpy as np
