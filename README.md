@@ -87,32 +87,37 @@ If none of these folders contain your Julia binary, then you need to add Julia's
 
 # Introduction
 
-Let's create a PySR example. First, let's import
-numpy to generate some test data:
+You might wish to try the interactive tutorial [here](https://colab.research.google.com/github/MilesCranmer/PySR/blob/master/examples/pysr_demo.ipynb), which uses the notebook in `examples/pysr_demo.ipynb`.
+
+In practice, I highly recommend using IPython rather than Jupyter, as the printing is much nicer.
+Below is a quick demo here which you can paste into a Python runtime.
+First, let's import numpy to generate some test data:
+
 ```python
 import numpy as np
 
 X = 2 * np.random.randn(100, 5)
 y = 2.5382 * np.cos(X[:, 3]) + X[:, 0] ** 2 - 0.5
 ```
+
 We have created a dataset with 100 datapoints, with 5 features each.
 The relation we wish to model is $2.5382 \cos(x_3) + x_0^2 - 0.5$.
 
 Now, let's create a PySR model and train it.
 PySR's main interface is in the style of scikit-learn:
+
 ```python
 from pysr import PySRRegressor
 
 model = PySRRegressor(
-    model_selection="best",  # Result is mix of simplicity+accuracy
-    niterations=40,
+    niterations=40,  # < Increase me for better results
     binary_operators=["+", "*"],
     unary_operators=[
         "cos",
         "exp",
         "sin",
         "inv(x) = 1/x",
-	# ^ Custom operator (julia syntax)
+        # ^ Custom operator (julia syntax)
     ],
     extra_sympy_mappings={"inv": lambda x: 1 / x},
     # ^ Define operator for SymPy as well
@@ -120,25 +125,32 @@ model = PySRRegressor(
     # ^ Custom loss function (julia syntax)
 )
 ```
+
 This will set up the model for 40 iterations of the search code, which contains hundreds of thousands of mutations and equation evaluations.
 
 Let's train this model on our dataset:
+
 ```python
 model.fit(X, y)
 ```
+
 Internally, this launches a Julia process which will do a multithreaded search for equations to fit the dataset.
 
 Equations will be printed during training, and once you are satisfied, you may 
 quit early by hitting 'q' and then \<enter\>.
 
 After the model has been fit, you can run `model.predict(X)`
-to see the predictions on a given dataset.
+to see the predictions on a given dataset using the automatically-selected expression,
+or, for example, `model.predict(X, 3)` to see the predictions of the 3rd equation.
 
 You may run:
+
 ```python
 print(model)
 ```
+
 to print the learned equations:
+
 ```python
 PySRRegressor.equations_ = [
 	   pick     score                                           equation       loss  complexity
@@ -150,6 +162,7 @@ PySRRegressor.equations_ = [
 	5  >>>>       inf  (((cos(x3) + -0.19699033) * 2.5382123) + (x0 *...   0.000000          10
 ]
 ```
+
 This arrow in the `pick` column indicates which equation is currently selected by your
 `model_selection` strategy for prediction.
 (You may change `model_selection` after `.fit(X, y)` as well.)
@@ -165,6 +178,7 @@ This will cause problems if significant changes are made to the search parameter
 You will notice that PySR will save two files: `hall_of_fame...csv` and `hall_of_fame...pkl`.
 The csv file is a list of equations and their losses, and the pkl file is a saved state of the model.
 You may load the model from the `pkl` file with:
+
 ```python
 model = PySRRegressor.from_file("hall_of_fame.2022-08-10_100832.281.pkl")
 ``` 
@@ -254,22 +268,25 @@ model = PySRRegressor(
 )
 ```
 
-
 # Docker
 
 You can also test out PySR in Docker, without
 installing it locally, by running the following command in
 the root directory of this repo:
+
 ```bash
 docker build -t pysr .
 ```
+
 This builds an image called `pysr` for your system's architecture,
 which also contains IPython.
 
 You can then run this with:
+
 ```bash
 docker run -it --rm -v "$PWD:/data" pysr ipython
 ```
+
 which will link the current directory to the container's `/data` directory
 and then launch ipython.
 

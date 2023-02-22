@@ -1,0 +1,4 @@
+mkdocs-material
+mkdocs-autorefs
+mkdocstrings[python]
+docstring_parser

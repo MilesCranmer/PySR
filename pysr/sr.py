@@ -1493,7 +1493,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Main = init_julia(self.julia_project, julia_kwargs=julia_kwargs)
 
         if cluster_manager is not None:
-            cluster_manager = _load_cluster_manager(cluster_manager)
+            cluster_manager = _load_cluster_manager(Main, cluster_manager)
 
         if self.update:
             _, is_shared = _process_julia_project(self.julia_project)
@@ -1573,7 +1573,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             complexity_of_constants=self.complexity_of_constants,
             complexity_of_variables=self.complexity_of_variables,
             nested_constraints=nested_constraints,
-            loss=custom_loss,
+            elementwise_loss=custom_loss,
             maxsize=int(self.maxsize),
             output_file=_escape_filename(self.equation_file_),
             npopulations=int(self.populations),
@@ -2231,7 +2231,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             if indices is not None:
                 assert isinstance(indices, list)
                 assert isinstance(indices[0], list)
-                assert isinstance(len(indices), self.nout_)
+                assert len(indices) == self.nout_
 
             generator_fnc = generate_multiple_tables
         else:

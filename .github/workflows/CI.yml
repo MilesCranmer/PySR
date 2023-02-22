@@ -83,7 +83,6 @@ jobs:
         shell: bash -l {0}
     strategy:
       matrix:
-        julia-version: ['1.7.1']
         python-version: ['3.9']
         os: ['ubuntu-latest']
     
@@ -108,7 +107,7 @@ jobs:
       - name: "Cache Julia"
         uses: julia-actions/cache@v1
         with:
-          cache-name: ${{ matrix.os }}-conda-${{ matrix.julia-version }}-${{ matrix.python-version }}
+          cache-name: ${{ matrix.os }}-conda-${{ matrix.python-version }}
           cache-packages: false
       - name: "Install PySR"
         run: |

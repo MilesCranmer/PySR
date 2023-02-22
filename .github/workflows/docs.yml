@@ -27,7 +27,7 @@ jobs:
           python-version: 3.9
           cache: pip
       - name: "Install packages for docs building"
-        run: pip install mkdocs-material mkdocs-autorefs 'mkdocstrings[python]' docstring_parser
+        run: pip install -r docs/requirements.txt
       - name: "Install PySR"
         run: pip install -e .
       - name: "Build API docs"

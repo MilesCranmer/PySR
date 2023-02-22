@@ -249,8 +249,10 @@ Next, let's use this list of primes to create a dataset of $x, y$ pairs:
 import numpy as np
 
 X = np.random.randint(0, 100, 100)[:, None]
-y = [primes[3*X[i, 0] + 1] - 5 for i in range(100)]
+y = [primes[3*X[i, 0] + 1] - 5 + np.random.randn()*0.001 for i in range(100)]
 ```
+
+Note that we have also added a tiny bit of noise to the dataset.
 
 Finally, let's create a PySR model, and pass the custom operator. We also need to define the sympy equivalent, which we can leave as a placeholder for now:
 
@@ -264,7 +266,7 @@ class sympy_p(sympy.Function):
 model = PySRRegressor(
     binary_operators=["+", "-", "*", "/"],
     unary_operators=["p"],
-    niterations=1000,
+    niterations=100,
     extra_sympy_mappings={"p": sympy_p}
 )
 ```
@@ -276,10 +278,10 @@ model.fit(X, y)
 ```
 
 if all works out, you should be able to see the true relation (note that the constant offset might not be exactly 1, since it is allowed to round to the nearest integer).
-You can get the sympy version of the last row with:
+You can get the sympy version of the best equation with:
 
 ```python
-model.sympy(index=-1)
+model.sympy()
 ```
 
 ## 8. Additional features
