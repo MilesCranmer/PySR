@@ -75,7 +75,9 @@ def install(julia_project=None, quiet=False, precompile=None):  # pragma: no cov
         os.environ["JULIA_PKG_PRECOMPILE_AUTO"] = "0"
 
     julia.install(quiet=quiet)
-    Main, init_log = init_julia(julia_project, quiet=quiet, use_sysimage=False, return_aux=True)
+    Main, init_log = init_julia(
+        julia_project, quiet=quiet, use_sysimage=False, return_aux=True
+    )
     io_arg = _get_io_arg(quiet)
 
     if precompile is None:
