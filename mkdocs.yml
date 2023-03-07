@@ -27,6 +27,7 @@ nav:
   - index.md
   - options.md
   - operators.md
+  - tuning.md
   - Examples:
     - examples.md
     - papers.md
