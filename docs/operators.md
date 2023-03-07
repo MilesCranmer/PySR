@@ -8,7 +8,7 @@ of these and other valid operators are stated below.
 
 **Binary**
 
-`plus`, `sub`, `mult`, `pow`, `div`, `greater`, `mod`, `logical_or`,
+`+`, `-`, `*`, `/`, `^`, `greater`, `mod`, `logical_or`,
 `logical_and`
 
 **Unary**
