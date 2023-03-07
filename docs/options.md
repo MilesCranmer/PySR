@@ -20,7 +20,8 @@ may find useful include:
 - [Loss functions](#loss)
 - [Model loading](#model-loading)
 
-These are described below
+These are described below.
+Also check out the [tuning page](tuning.md) for workflow tips.
 
 The program will output a pandas DataFrame containing the equations
 to `PySRRegressor.equations` containing the loss value

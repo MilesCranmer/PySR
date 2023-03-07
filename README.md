@@ -188,6 +188,7 @@ feature selection (e.g., `select_k_features=3`).
 For examples of these and other features, see the [examples page](https://astroautomata.com/PySR/examples).
 For a detailed look at more options, see the [options page](https://astroautomata.com/PySR/options).
 You can also see the full API at [this page](https://astroautomata.com/PySR/api).
+There are also tips for tuning PySR on [this page](https://astroautomata.com/PySR/tuning).
 
 ## Detailed Example
 
