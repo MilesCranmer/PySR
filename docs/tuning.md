@@ -20,7 +20,7 @@ I run from IPython on the head node of a slurm cluster. Passing `cluster_manager
 10. Set `weight_optimize` to some larger value, maybe `0.001`. This is very important if `ncyclesperiteration` is large, so that optimization happens more frequently.
 11. Set `turbo` to `True`. This may or not work, if there's an error just turn it off (some operators are not SIMD-capable). If it does work, it should give you a nice 20% speedup.
 
-Since I am running in IPython, I can just hit "q<enter>" to stop the job, tweak the hyperparameters, and then start the search again.
+Since I am running in IPython, I can just hit `q` and then `<enter>` to stop the job, tweak the hyperparameters, and then start the search again.
 I can also use `warm_start=True` if I wish to continue where I left off (though note that changing some parameters, like `maxsize`, are incompatible with warm starts).
 
 Some things I try out to see if they help:
