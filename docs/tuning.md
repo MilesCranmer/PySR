@@ -21,6 +21,7 @@ I run from IPython on the head node of a slurm cluster. Passing `cluster_manager
 11. Set `turbo` to `True`. This may or not work, if there's an error just turn it off (some operators are not SIMD-capable). If it does work, it should give you a nice 20% speedup.
 
 Since I am running in IPython, I can just hit "q<enter>" to stop the job, tweak the hyperparameters, and then start the search again.
+I can also use `warm_start=True` if I wish to continue where I left off (though note that changing some parameters, like `maxsize`, are incompatible with warm starts).
 
 Some things I try out to see if they help:
 
@@ -37,4 +38,9 @@ For large datasets I usually just randomly sample ~1000 points or so. In case al
 
 If I find the equations get very complex and I'm not sure if they are numerically precise, I might set `precision=64`.
 
+Once a run is finished, I use the `PySRRegressor.from_file` function to load the saved search in a different process (requires the pickle file, and possibly also the `.csv` file if you quit early). I can then explore the equations, convert them to LaTeX, and plot their output.
+
+## More Tips
+
 You might also wish to explore the [discussions](https://github.com/MilesCranmer/PySR/discussions/) page for more tips, and to see if anyone else has had similar questions.
+Be sure to also read through the [reference](api.md).
