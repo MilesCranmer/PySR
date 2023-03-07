@@ -13,10 +13,10 @@ I run from IPython on the head node of a slurm cluster. Passing `cluster_manager
 3. Set `niterations` to some very large value, so it just runs for a week until my job finishes. If the equation looks good, I quit the job early.
 4. Increase `populations` to `3*num_cores`.
 5. Set `ncyclesperiteration` to maybe `5000` or so, until the head node occupation is under `10%`.
-6. Set `constraints` and `nested_constraints` as strict as possible. These can help quite a bit with exploration. 
+6. Set `constraints` and `nested_constraints` as strict as possible. These can help quite a bit with exploration. Typically, if I am using `pow`, I would set `constraints={"pow": (9, 1)}`, so that power laws can only have a variable or constant as their exponent. If I am using `sin` and `cos`, I also like to set `nested_constraints={"sin": {"sin": 0, "cos": 0}, "cos": {"sin": 0, "cos": 0}}`, so that sin and cos can't be nested (which seems to happen frequently).
 7. Set `maxsize` a bit larger than the final size you want. e.g., if you want a final equation of size `30`, you might set this to `35`, so that it has a bit of room to explore.
 8. Set `maxdepth` strictly, but leave a bit of room for exploration. e.g., if you want a final equation limited to a depth of `5`, you might set this to `6` or `7`, so that it has a bit of room to explore. 
-9. Set `parsimony` equal to about the minimum loss you would expect, divided by 5-10. e.g., if you expect the final equation to have a loss of `0.001`, you might set `parsimony=0.0001`.
+9.  Set `parsimony` equal to about the minimum loss you would expect, divided by 5-10. e.g., if you expect the final equation to have a loss of `0.001`, you might set `parsimony=0.0001`.
 10. Set `weight_optimize` to some larger value, maybe `0.001`. This is very important if `ncyclesperiteration` is large, so that optimization happens more frequently.
 11. Set `turbo` to `True`. This may or not work, if there's an error just turn it off (some operators are not SIMD-capable). If it does work, it should give you a nice 20% speedup.
 
