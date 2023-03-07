@@ -2,7 +2,7 @@
 
 I give a short guide below on how I like to tune PySR for my applications.
 
-First, my general tips would be to avoid using redundant operators, like how `pow` and `square` and `cube` are equivalent. The fewer operators the better; only use operators you need.
+First, my general tips would be to avoid using redundant operators, like how `pow` can do the same things as `square`, or how `-` (binary) and `neg` (unary) are equivalent. The fewer operators the better! Only use operators you need.
 
 When running PySR, I usually do the following:
 
