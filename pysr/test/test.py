@@ -72,8 +72,10 @@ class TestPipeline(unittest.TestCase):
         print(model.equations_)
         self.assertLessEqual(model.get_best()["loss"], 1e-4)
 
-    def test_multiprocessing_turbo(self):
+    def test_multiprocessing_turbo_custom_objective(self):
+        rstate = np.random.RandomState(0)
         y = self.X[:, 0]
+        y += rstate.randn(*y.shape) * 1e-4
         model = PySRRegressor(
             **self.default_test_kwargs,
             # Turbo needs to work with unsafe operators:
@@ -81,11 +83,21 @@ class TestPipeline(unittest.TestCase):
             procs=2,
             multithreading=False,
             turbo=True,
-            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-10 && complexity == 1",
+            full_objective="""
+            function my_objective(tree::Node{T}, dataset::Dataset{T}, options::Options) where T
+                prediction, flag = eval_tree_array(tree, dataset.X, options)
+                !flag && return T(Inf)
+                abs3(x) = abs(x) ^ 3
+                return sum(abs3, prediction .- dataset.y) / length(prediction)
+            end
+            """,
         )
         model.fit(self.X, y)
         print(model.equations_)
-        self.assertLessEqual(model.equations_.iloc[-1]["loss"], 1e-4)
+        best_loss = model.equations_.iloc[-1]["loss"]
+        self.assertLessEqual(best_loss, 1e-10)
+        self.assertGreaterEqual(best_loss, 0.0)
 
     def test_high_precision_search_custom_loss(self):
         y = 1.23456789 * self.X[:, 0]
