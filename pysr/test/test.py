@@ -87,11 +87,12 @@ class TestPipeline(unittest.TestCase):
         print(model.equations_)
         self.assertLessEqual(model.equations_.iloc[-1]["loss"], 1e-4)
 
-    def test_high_precision_search(self):
+    def test_high_precision_search_custom_loss(self):
         y = 1.23456789 * self.X[:, 0]
         model = PySRRegressor(
             **self.default_test_kwargs,
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 3",
+            loss="my_loss(prediction, target) = (prediction - target)^2",
             precision=64,
             parsimony=0.01,
             warm_start=True,
