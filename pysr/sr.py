@@ -341,7 +341,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         of loss function or regularizations. The default `full_objective`
         used in SymbolicRegression.jl is roughly equal to:
         ```julia
-        function eval_loss(tree, dataset::Dataset{T}, options) where T
+        function eval_loss(tree, dataset::Dataset{T}, options)::T where T
             prediction, flag = eval_tree_array(tree, dataset.X, options)
             if !flag
                 return T(Inf)
@@ -350,6 +350,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         end
         ```
         where the example elementwise loss is mean-squared error.
+        You may pass a function with the same arguments as this (note
+        that the name of the function doesn't matter). Here,
+        both `prediction` and `dataset.y` are 1D arrays of length `dataset.n`.
         Default is `None`.
     complexity_of_operators : dict[str, float]
         If you would like to use a complexity other than 1 for an
