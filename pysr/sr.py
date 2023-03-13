@@ -741,7 +741,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         julia_kwargs=None,
         **kwargs,
     ):
-
         # Hyperparameters
         # - Model search parameters
         self.model_selection = model_selection
@@ -2095,7 +2094,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         equation_file_contents = copy.deepcopy(self.equation_file_contents_)
 
         for output in equation_file_contents:
-
             scores = []
             lastMSE = None
             lastComplexity = 0
