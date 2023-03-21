@@ -2017,6 +2017,17 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
     def _read_equation_file(self):
         """Read the hall of fame file created by `SymbolicRegression.jl`."""
+        regexp_im = re.compile(r"\b(\d+\.\d+)im\b")
+        regexp_im_sci = re.compile(r"\b(\d+\.\d+)[eEfF]([+-]?\d+)im\b")
+        regexp_sci = re.compile(r"\b(\d+\.\d+)[eEfF]([+-]?\d+)\b")
+
+        def _replace_im(df):
+            df["equation"] = df["equation"].apply(lambda x: regexp_im.sub(r"\1j", x))
+            df["equation"] = df["equation"].apply(
+                lambda x: regexp_im_sci.sub(r"\1e\2j", x)
+            )
+            df["equation"] = df["equation"].apply(lambda x: regexp_sci.sub(r"\1e\2", x))
+
         try:
             if self.nout_ > 1:
                 all_outputs = []
@@ -2034,6 +2045,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                         },
                         inplace=True,
                     )
+                    _replace_im(df)
 
                     all_outputs.append(df)
             else:
@@ -2049,6 +2061,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     },
                     inplace=True,
                 )
+                _replace_im(all_outputs[-1])
+
         except FileNotFoundError:
             raise RuntimeError(
                 "Couldn't find equation file! The equation search likely exited "
