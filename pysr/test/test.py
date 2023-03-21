@@ -678,6 +678,9 @@ class TestMiscellaneous(unittest.TestCase):
         check_generator = check_estimator(model, generate_only=True)
         exception_messages = []
         for _, check in check_generator:
+            if check.func.__name__ == "check_complex_data":
+                # We can use complex data, so avoid this check.
+                continue
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
