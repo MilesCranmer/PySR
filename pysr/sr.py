@@ -498,6 +498,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         What precision to use for the data. By default this is `32`
         (float32), but you can select `64` or `16` as well, giving
         you 64 or 16 bits of floating point precision, respectively.
+        If you pass complex data, the corresponding complex precision
+        will be used (i.e., `64` for complex128, `32` for complex64).
         Default is `32`.
     random_state : int, Numpy RandomState instance or None
         Pass an int for reproducible results across multiple function calls.
@@ -1619,7 +1621,15 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         )
 
         # Convert data to desired precision
-        np_dtype = {16: np.float16, 32: np.float32, 64: np.float64}[self.precision]
+        test_X = np.array(X)
+        is_real = np.issubdtype(test_X.dtype, np.floating)
+        is_complex = np.issubdtype(test_X.dtype, np.complexfloating)
+        if is_real:
+            np_dtype = {16: np.float16, 32: np.float32, 64: np.float64}[self.precision]
+        elif is_complex:
+            np_dtype = {32: np.complex64, 64: np.complex128}[self.precision]
+        else:
+            np_dtype = None
 
         # This converts the data into a Julia array:
         Main.X = np.array(X, dtype=np_dtype).T
