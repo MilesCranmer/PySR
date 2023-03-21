@@ -8,15 +8,15 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-sympy = "^1.0.0"
-numpy = "^1.20.0"
-scikit-learn = "^1.0.0"
-pandas = "^1.0.0"
-julia = "^0.6.0"
+sympy = "^1"
+numpy = "^1.20"
+scikit-learn = "^1"
+pandas = "^1"
+julia = "^0.6"
 
 [tool.poetry.group.dev.dependencies]
-black = "^21.0.0"
-ipython = "^8.0.0"
+black = "^22"
+ipython = "^8"
 
 [build-system]
 requires = ["poetry-core"]
