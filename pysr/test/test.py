@@ -181,6 +181,20 @@ class TestPipeline(unittest.TestCase):
             print("Model equations: ", model.sympy()[1])
             print("True equation: x1^2")
 
+    def test_complex_equations_anonymous_stop(self):
+        X = self.rstate.randn(100, 3) + 1j * self.rstate.randn(100, 3)
+        y = (2 + 1j) * np.cos(X[:, 0] * (0.5 - 0.3j))
+        model = PySRRegressor(
+            binary_operators=["+", "-", "*"],
+            unary_operators=["cos"],
+            **self.default_test_kwargs,
+            early_stop_condition="(loss, complexity) -> loss <= 1e-4 && complexity <= 6",
+        )
+        model.fit(X, y)
+        test_y = model.predict(X)
+        self.assertTrue(np.issubdtype(test_y.dtype, np.complexfloating))
+        self.assertLessEqual(np.average(np.abs(test_y - y) ** 2), 1e-4)
+
     def test_empty_operators_single_input_warm_start(self):
         X = self.rstate.randn(100, 1)
         y = X[:, 0] + 3.0
