@@ -1,5 +1,6 @@
 """Define the PySRRegressor scikit-learn interface."""
 import copy
+from io import StringIO
 import os
 import sys
 import numpy as np
@@ -2023,7 +2024,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     cur_filename = str(self.equation_file_) + f".out{i}" + ".bkup"
                     if not os.path.exists(cur_filename):
                         cur_filename = str(self.equation_file_) + f".out{i}"
-                    df = pd.read_csv(cur_filename)
+                    with open(cur_filename, "r") as f:
+                        buf = f.read()
+                    buf = _preprocess_julia_floats(buf)
+                    df = pd.read_csv(StringIO(buf))
+
                     # Rename Complexity column to complexity:
                     df.rename(
                         columns={
@@ -2033,14 +2038,16 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                         },
                         inplace=True,
                     )
-                    df["equation"] = df["equation"].apply(_preprocess_julia_floats)
 
                     all_outputs.append(df)
             else:
                 filename = str(self.equation_file_) + ".bkup"
                 if not os.path.exists(filename):
                     filename = str(self.equation_file_)
-                all_outputs = [pd.read_csv(filename)]
+                with open(filename, "r") as f:
+                    buf = f.read()
+                buf = _preprocess_julia_floats(buf)
+                all_outputs = [pd.read_csv(StringIO(buf))]
                 all_outputs[-1].rename(
                     columns={
                         "Complexity": "complexity",
@@ -2048,9 +2055,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                         "Equation": "equation",
                     },
                     inplace=True,
-                )
-                all_outputs[-1]["equation"] = all_outputs[-1]["equation"].apply(
-                    _preprocess_julia_floats
                 )
 
         except FileNotFoundError:
