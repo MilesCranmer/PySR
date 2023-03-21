@@ -1622,14 +1622,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # Convert data to desired precision
         test_X = np.array(X)
-        is_real = np.issubdtype(test_X.dtype, np.floating)
         is_complex = np.issubdtype(test_X.dtype, np.complexfloating)
+        is_real = not is_complex
         if is_real:
             np_dtype = {16: np.float16, 32: np.float32, 64: np.float64}[self.precision]
-        elif is_complex:
-            np_dtype = {32: np.complex64, 64: np.complex128}[self.precision]
         else:
-            np_dtype = None
+            np_dtype = {32: np.complex64, 64: np.complex128}[self.precision]
 
         # This converts the data into a Julia array:
         Main.X = np.array(X, dtype=np_dtype).T
