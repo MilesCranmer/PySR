@@ -2020,13 +2020,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         regexp_im = re.compile(r"\b(\d+\.\d+)im\b")
         regexp_im_sci = re.compile(r"\b(\d+\.\d+)[eEfF]([+-]?\d+)im\b")
         regexp_sci = re.compile(r"\b(\d+\.\d+)[eEfF]([+-]?\d+)\b")
+        apply_regexp_im = lambda x: regexp_im.sub(r"\1j", x)
+        apply_regexp_im_sci = lambda x: regexp_im_sci.sub(r"\1e\2j", x)
+        apply_regexp_sci = lambda x: regexp_sci.sub(r"\1e\2", x)
 
         def _replace_im(df):
-            df["equation"] = df["equation"].apply(lambda x: regexp_im.sub(r"\1j", x))
             df["equation"] = df["equation"].apply(
-                lambda x: regexp_im_sci.sub(r"\1e\2j", x)
+                lambda x: apply_regexp_sci(apply_regexp_im_sci(apply_regexp_im(x)))
             )
-            df["equation"] = df["equation"].apply(lambda x: regexp_sci.sub(r"\1e\2", x))
 
         try:
             if self.nout_ > 1:
