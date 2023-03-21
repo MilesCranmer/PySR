@@ -498,6 +498,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         What precision to use for the data. By default this is `32`
         (float32), but you can select `64` or `16` as well, giving
         you 64 or 16 bits of floating point precision, respectively.
+        If you pass complex data, the corresponding complex precision
+        will be used (i.e., `64` for complex128, `32` for complex64).
         Default is `32`.
     random_state : int, Numpy RandomState instance or None
         Pass an int for reproducible results across multiple function calls.
@@ -1619,7 +1621,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         )
 
         # Convert data to desired precision
-        np_dtype = {16: np.float16, 32: np.float32, 64: np.float64}[self.precision]
+        test_X = np.array(X)
+        is_complex = np.issubdtype(test_X.dtype, np.complexfloating)
+        is_real = not is_complex
+        if is_real:
+            np_dtype = {16: np.float16, 32: np.float32, 64: np.float64}[self.precision]
+        else:
+            np_dtype = {32: np.complex64, 64: np.complex128}[self.precision]
 
         # This converts the data into a Julia array:
         Main.X = np.array(X, dtype=np_dtype).T
@@ -2007,6 +2015,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
     def _read_equation_file(self):
         """Read the hall of fame file created by `SymbolicRegression.jl`."""
+
         try:
             if self.nout_ > 1:
                 all_outputs = []
@@ -2024,6 +2033,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                         },
                         inplace=True,
                     )
+                    df["equation"] = df["equation"].apply(_preprocess_julia_floats)
 
                     all_outputs.append(df)
             else:
@@ -2039,6 +2049,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     },
                     inplace=True,
                 )
+                all_outputs[-1]["equation"] = all_outputs[-1]["equation"].apply(
+                    _preprocess_julia_floats
+                )
+
         except FileNotFoundError:
             raise RuntimeError(
                 "Couldn't find equation file! The equation search likely exited "
@@ -2329,3 +2343,16 @@ def _csv_filename_to_pkl_filename(csv_filename) -> str:
     pkl_basename = base + ".pkl"
 
     return os.path.join(dirname, pkl_basename)
+
+
+_regexp_im = re.compile(r"\b(\d+\.\d+)im\b")
+_regexp_im_sci = re.compile(r"\b(\d+\.\d+)[eEfF]([+-]?\d+)im\b")
+_regexp_sci = re.compile(r"\b(\d+\.\d+)[eEfF]([+-]?\d+)\b")
+
+_apply_regexp_im = lambda x: _regexp_im.sub(r"\1j", x)
+_apply_regexp_im_sci = lambda x: _regexp_im_sci.sub(r"\1e\2j", x)
+_apply_regexp_sci = lambda x: _regexp_sci.sub(r"\1e\2", x)
+
+
+def _preprocess_julia_floats(s: str) -> str:
+    return _apply_regexp_sci(_apply_regexp_im_sci(_apply_regexp_im(s)))

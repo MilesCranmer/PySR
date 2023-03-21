@@ -1,3 +1,4 @@
+from . import sklearn_monkeypatch
 from .version import __version__
 from .sr import (
     pysr,

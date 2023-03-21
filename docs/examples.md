@@ -284,7 +284,41 @@ You can get the sympy version of the best equation with:
 model.sympy()
 ```
 
-## 8. Additional features
+## 8. Complex numbers
+
+PySR can also search for complex-valued expressions. Simply pass
+data with a complex datatype (e.g., `np.complex128`),
+and PySR will automatically search for complex-valued expressions:
+
+```python
+import numpy as np
+
+X = np.random.randn(100, 1) + 1j * np.random.randn(100, 1)
+y = (1 + 2j) * np.cos(X[:, 0] * (0.5 - 0.2j))
+
+model = PySRRegressor(
+    binary_operators=["+", "-", "*"], unary_operators=["cos"], niterations=100,
+)
+
+model.fit(X, y)
+```
+
+You can see that all of the learned constants are now complex numbers.
+We can get the sympy version of the best equation with:
+
+```python
+model.sympy()
+```
+
+We can also make predictions normally, by passing complex data:
+
+```python
+model.predict(X, -1)
+```
+
+to make predictions with the most accurate expression.
+
+## 9. Additional features
 
 For the many other features available in PySR, please
 read the [Options section](options.md).
