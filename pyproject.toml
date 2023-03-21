@@ -15,7 +15,7 @@ pandas = "^1.0.0"
 julia = "^0.6.0"
 
 [tool.poetry.group.dev.dependencies]
-matplotlib = "^3.0.0"
+black = "^21.0.0"
 ipython = "^8.0.0"
 
 [build-system]
