@@ -244,7 +244,6 @@ class TestPipeline(unittest.TestCase):
         regressor.fit(self.X, y)
 
     def test_noisy(self):
-
         y = self.X[:, [0, 1]] ** 2 + self.rstate.randn(self.X.shape[0], 1) * 0.05
         model = PySRRegressor(
             # Test that passing a single operator works:
@@ -678,7 +677,7 @@ class TestMiscellaneous(unittest.TestCase):
 
         check_generator = check_estimator(model, generate_only=True)
         exception_messages = []
-        for (_, check) in check_generator:
+        for _, check in check_generator:
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
