@@ -2015,17 +2015,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
     def _read_equation_file(self):
         """Read the hall of fame file created by `SymbolicRegression.jl`."""
-        regexp_im = re.compile(r"\b(\d+\.\d+)im\b")
-        regexp_im_sci = re.compile(r"\b(\d+\.\d+)[eEfF]([+-]?\d+)im\b")
-        regexp_sci = re.compile(r"\b(\d+\.\d+)[eEfF]([+-]?\d+)\b")
-        apply_regexp_im = lambda x: regexp_im.sub(r"\1j", x)
-        apply_regexp_im_sci = lambda x: regexp_im_sci.sub(r"\1e\2j", x)
-        apply_regexp_sci = lambda x: regexp_sci.sub(r"\1e\2", x)
-
-        def _replace_im(df):
-            df["equation"] = df["equation"].apply(
-                lambda x: apply_regexp_sci(apply_regexp_im_sci(apply_regexp_im(x)))
-            )
 
         try:
             if self.nout_ > 1:
@@ -2044,7 +2033,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                         },
                         inplace=True,
                     )
-                    _replace_im(df)
+                    df["equation"] = df["equation"].apply(_preprocess_julia_floats)
 
                     all_outputs.append(df)
             else:
@@ -2060,7 +2049,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     },
                     inplace=True,
                 )
-                _replace_im(all_outputs[-1])
+                all_outputs[-1]["equation"] = all_outputs[-1]["equation"].apply(
+                    _preprocess_julia_floats
+                )
 
         except FileNotFoundError:
             raise RuntimeError(
@@ -2352,3 +2343,16 @@ def _csv_filename_to_pkl_filename(csv_filename) -> str:
     pkl_basename = base + ".pkl"
 
     return os.path.join(dirname, pkl_basename)
+
+
+_regexp_im = re.compile(r"\b(\d+\.\d+)im\b")
+_regexp_im_sci = re.compile(r"\b(\d+\.\d+)[eEfF]([+-]?\d+)im\b")
+_regexp_sci = re.compile(r"\b(\d+\.\d+)[eEfF]([+-]?\d+)\b")
+
+_apply_regexp_im = lambda x: _regexp_im.sub(r"\1j", x)
+_apply_regexp_im_sci = lambda x: _regexp_im_sci.sub(r"\1e\2j", x)
+_apply_regexp_sci = lambda x: _regexp_sci.sub(r"\1e\2", x)
+
+
+def _preprocess_julia_floats(s: str) -> str:
+    return _apply_regexp_sci(_apply_regexp_im_sci(_apply_regexp_im(s)))
