@@ -2355,4 +2355,8 @@ _apply_regexp_sci = lambda x: _regexp_sci.sub(r"\1e\2", x)
 
 
 def _preprocess_julia_floats(s: str) -> str:
-    return _apply_regexp_sci(_apply_regexp_im_sci(_apply_regexp_im(s)))
+    if isinstance(s, str):
+        s = _apply_regexp_im(s)
+        s = _apply_regexp_im_sci(s)
+        s = _apply_regexp_sci(s)
+    return s
