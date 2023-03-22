@@ -1,5 +1,6 @@
 """Define the PySRRegressor scikit-learn interface."""
 import copy
+from io import StringIO
 import os
 import sys
 import numpy as np
@@ -518,6 +519,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         What precision to use for the data. By default this is `32`
         (float32), but you can select `64` or `16` as well, giving
         you 64 or 16 bits of floating point precision, respectively.
+        If you pass complex data, the corresponding complex precision
+        will be used (i.e., `64` for complex128, `32` for complex64).
         Default is `32`.
     random_state : int, Numpy RandomState instance or None
         Pass an int for reproducible results across multiple function calls.
@@ -1647,7 +1650,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         )
 
         # Convert data to desired precision
-        np_dtype = {16: np.float16, 32: np.float32, 64: np.float64}[self.precision]
+        test_X = np.array(X)
+        is_complex = np.issubdtype(test_X.dtype, np.complexfloating)
+        is_real = not is_complex
+        if is_real:
+            np_dtype = {16: np.float16, 32: np.float32, 64: np.float64}[self.precision]
+        else:
+            np_dtype = {32: np.complex64, 64: np.complex128}[self.precision]
 
         # This converts the data into a Julia array:
         Main.X = np.array(X, dtype=np_dtype).T
@@ -1788,9 +1797,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             warnings.warn(
                 "Note: you are running with 10 features or more. "
                 "Genetic algorithms like used in PySR scale poorly with large numbers of features. "
-                "Consider using feature selection techniques to select the most important features "
-                "(you can do this automatically with the `select_k_features` parameter), "
-                "or, alternatively, doing a dimensionality reduction beforehand. "
+                "You should run PySR for more `niterations` to ensure it can find "
+                "the correct variables, "
+                "or, alternatively, do a dimensionality reduction beforehand. "
                 "For example, `X = PCA(n_components=6).fit_transform(X)`, "
                 "using scikit-learn's `PCA` class, "
                 "will reduce the number of features to 6 in an interpretable way, "
@@ -2035,6 +2044,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
     def _read_equation_file(self):
         """Read the hall of fame file created by `SymbolicRegression.jl`."""
+
         try:
             if self.nout_ > 1:
                 all_outputs = []
@@ -2042,7 +2052,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     cur_filename = str(self.equation_file_) + f".out{i}" + ".bkup"
                     if not os.path.exists(cur_filename):
                         cur_filename = str(self.equation_file_) + f".out{i}"
-                    df = pd.read_csv(cur_filename)
+                    with open(cur_filename, "r") as f:
+                        buf = f.read()
+                    buf = _preprocess_julia_floats(buf)
+                    df = pd.read_csv(StringIO(buf))
+
                     # Rename Complexity column to complexity:
                     df.rename(
                         columns={
@@ -2058,7 +2072,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 filename = str(self.equation_file_) + ".bkup"
                 if not os.path.exists(filename):
                     filename = str(self.equation_file_)
-                all_outputs = [pd.read_csv(filename)]
+                with open(filename, "r") as f:
+                    buf = f.read()
+                buf = _preprocess_julia_floats(buf)
+                all_outputs = [pd.read_csv(StringIO(buf))]
                 all_outputs[-1].rename(
                     columns={
                         "Complexity": "complexity",
@@ -2067,6 +2084,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     },
                     inplace=True,
                 )
+
         except FileNotFoundError:
             raise RuntimeError(
                 "Couldn't find equation file! The equation search likely exited "
@@ -2357,3 +2375,20 @@ def _csv_filename_to_pkl_filename(csv_filename) -> str:
     pkl_basename = base + ".pkl"
 
     return os.path.join(dirname, pkl_basename)
+
+
+_regexp_im = re.compile(r"\b(\d+\.\d+)im\b")
+_regexp_im_sci = re.compile(r"\b(\d+\.\d+)[eEfF]([+-]?\d+)im\b")
+_regexp_sci = re.compile(r"\b(\d+\.\d+)[eEfF]([+-]?\d+)\b")
+
+_apply_regexp_im = lambda x: _regexp_im.sub(r"\1j", x)
+_apply_regexp_im_sci = lambda x: _regexp_im_sci.sub(r"\1e\2j", x)
+_apply_regexp_sci = lambda x: _regexp_sci.sub(r"\1e\2", x)
+
+
+def _preprocess_julia_floats(s: str) -> str:
+    if isinstance(s, str):
+        s = _apply_regexp_im(s)
+        s = _apply_regexp_im_sci(s)
+        s = _apply_regexp_sci(s)
+    return s

@@ -8,7 +8,6 @@ https://user-images.githubusercontent.com/7593028/188328887-1b6cda72-2f41-439e-a
 
 </div>
 
-
 PySR uses evolutionary algorithms to search for symbolic expressions which optimize a particular objective.
 
 <div align="center">
@@ -19,12 +18,10 @@ PySR uses evolutionary algorithms to search for symbolic expressions which optim
 
 </div>
 
-
 (pronounced like *py* as in python, and then *sur* as in surface)
 
 If you find PySR useful, please cite it using the citation information given in [CITATION.md](https://github.com/MilesCranmer/PySR/blob/master/CITATION.md).
 If you've finished a project with PySR, please submit a PR to showcase your work on the [Research Showcase page](https://astroautomata.com/PySR/papers)!
-
 
 <div align="center">
 
@@ -33,9 +30,8 @@ If you've finished a project with PySR, please submit a PR to showcase your work
 | **Linux** | **Windows** | **macOS (intel)** |
 |---|---|---|
 |[![Linux](https://github.com/MilesCranmer/PySR/actions/workflows/CI.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI.yml)|[![Windows](https://github.com/MilesCranmer/PySR/actions/workflows/CI_Windows.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_Windows.yml)|[![macOS](https://github.com/MilesCranmer/PySR/actions/workflows/CI_mac.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_mac.yml)|
-| **Docker** | **Conda** | **Coverage** | 
+| **Docker** | **Conda** | **Coverage** |
 |[![Docker](https://github.com/MilesCranmer/PySR/actions/workflows/CI_docker.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_docker.yml)|[![conda-forge](https://github.com/MilesCranmer/PySR/actions/workflows/CI_conda_forge.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_conda_forge.yml)|[![Coverage Status](https://coveralls.io/repos/github/MilesCranmer/PySR/badge.svg?branch=master&service=github)](https://coveralls.io/github/MilesCranmer/PySR)|
-
 
 </div>
 
@@ -47,13 +43,12 @@ to find algebraic relations that approximate a dataset.
 
 One can also
 extend these approaches to higher-dimensional
-spaces by using a neural network as proxy, as explained in 
+spaces by using a neural network as proxy, as explained in
 [2006.11287](https://arxiv.org/abs/2006.11287), where we apply
 it to N-body problems. Here, one essentially uses
 symbolic regression to convert a neural net
 to an analytic equation. Thus, these tools simultaneously present
 an explicit and powerful way to interpret deep models.
-
 
 *Backstory:*
 
@@ -68,19 +63,18 @@ of this package is to have an open-source symbolic regression tool
 as efficient as eureqa, while also exposing a configurable
 python interface.
 
-
 # Installation
 
 <div align="center">
 
 | pip - **recommended** <br> (works everywhere) | conda <br>(Linux and Intel-based macOS) | docker <br>(if all else fails) |
 |---|---|---|
-| 1. [Install Julia](https://julialang.org/downloads/)<br>2. Then, run: `pip install -U pysr`<br>3. Finally, to install Julia packages:<br>`python -c 'import pysr; pysr.install()'` | `conda install -c conda-forge pysr` | 1. Clone this repo.<br>2. `docker build -t pysr .`<br>Run with:<br>`docker run -it --rm pysr ipython`
+| 1. [Install Julia](https://julialang.org/downloads/)<br>2. Then, run: `pip install -U pysr`<br>3. Finally, to install Julia packages:<br>`python3 -c 'import pysr; pysr.install()'` | `conda install -c conda-forge pysr` | 1. Clone this repo.<br>2. `docker build -t pysr .`<br>Run with:<br>`docker run -it --rm pysr ipython`
 
 </div>
 
 Common issues tend to be related to Python not finding Julia.
-To debug this, try running `python -c 'import os; print(os.environ["PATH"])'`.
+To debug this, try running `python3 -c 'import os; print(os.environ["PATH"])'`.
 If none of these folders contain your Julia binary, then you need to add Julia's `bin` folder to your `PATH` environment variable.
 
 **Running PySR on macOS with an M1 processor:** you should use the pip version, and make sure to get the Julia binary for ARM/M-series processors.
@@ -136,7 +130,7 @@ model.fit(X, y)
 
 Internally, this launches a Julia process which will do a multithreaded search for equations to fit the dataset.
 
-Equations will be printed during training, and once you are satisfied, you may 
+Equations will be printed during training, and once you are satisfied, you may
 quit early by hitting 'q' and then \<enter\>.
 
 After the model has been fit, you can run `model.predict(X)`
@@ -167,9 +161,9 @@ This arrow in the `pick` column indicates which equation is currently selected b
 `model_selection` strategy for prediction.
 (You may change `model_selection` after `.fit(X, y)` as well.)
 
-`model.equations_` is a pandas DataFrame containing all equations, including callable format 
+`model.equations_` is a pandas DataFrame containing all equations, including callable format
 (`lambda_format`),
-SymPy format (`sympy_format` - which you can also get with `model.sympy()`), and even JAX and PyTorch format 
+SymPy format (`sympy_format` - which you can also get with `model.sympy()`), and even JAX and PyTorch format
 (both of which are differentiable - which you can get with `model.jax()` and `model.pytorch()`).
 
 Note that `PySRRegressor` stores the state of the last search, and will restart from where you left off the next time you call `.fit()`, assuming you have set `warm_start=True`.
@@ -181,7 +175,7 @@ You may load the model from the `pkl` file with:
 
 ```python
 model = PySRRegressor.from_file("hall_of_fame.2022-08-10_100832.281.pkl")
-``` 
+```
 
 There are several other useful features such as denoising (e.g., `denoising=True`),
 feature selection (e.g., `select_k_features=3`).

@@ -194,6 +194,9 @@ def init_julia(julia_project=None, quiet=False, julia_kwargs=None, return_aux=Fa
         # Static python binary, so we turn off pre-compiled modules.
         julia_kwargs = {**julia_kwargs, "compiled_modules": False}
         Julia(**julia_kwargs)
+        warnings.warn(
+            "Your system's Python library is static (e.g., conda), so precompilation will be turned off. For a dynamic library, try `pyenv`."
+        )
 
     using_compiled_modules = (not "compiled_modules" in julia_kwargs) or julia_kwargs[
         "compiled_modules"
