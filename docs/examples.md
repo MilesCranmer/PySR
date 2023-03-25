@@ -318,7 +318,124 @@ model.predict(X, -1)
 
 to make predictions with the most accurate expression.
 
-## 9. Additional features
+## 9. Custom objectives
+
+You can also pass a custom objectives as a snippet of Julia code,
+which might include symbolic manipulations or custom functional forms.
+These do not even need to be differentiable! First, let's look at the
+default objective used (a simplified version, without weights
+and with mean square error), so that you can see how to write your own:
+
+```julia
+function default_objective(tree, dataset::Dataset{T,L}, options)::L where {T,L}
+    (prediction, completion) = eval_tree_array(tree, dataset.X, options)
+    if !completion
+        return L(Inf)
+    end
+
+    diffs = prediction .- dataset.y
+
+    return sum(diffs .^ 2) / length(diffs)
+end
+```
+
+Here, the `where {T,L}` syntax defines the function for arbitrary types `T` and `L`.
+If you have `precision=32` (default) and pass in regular floating point data,
+then both `T` and `L` will be equal to `Float32`. If you pass in complex data,
+then `T` will be `ComplexF32` and `L` will be `Float32` (since we need to return
+a real number from the loss function). But, you don't need to worry about this, just
+make sure to return a scalar number of type `L`.
+
+The `tree` argument is the current expression being evaluated. You can read
+about the `tree` fields [here](https://astroautomata.com/SymbolicRegression.jl/stable/types/).
+
+For example, let's fix a symbolic form of an expression,
+as a rational function. i.e., $P(X)/Q(X)$ for polynomials $P$ and $Q$.
+
+```python
+objective = """
+function my_custom_objective(tree, dataset::Dataset{T,L}, options) where {T,L}
+    # Require root node to be binary, so we can split it,
+    # otherwise return a large loss:
+    tree.degree != 2 && return L(Inf)
+
+    P = tree.l
+    Q = tree.r
+
+    # Evaluate numerator:
+    P_prediction, flag = eval_tree_array(P, dataset.X, options)
+    !flag && return L(Inf)
+
+    # Evaluate denominator:
+    Q_prediction, flag = eval_tree_array(Q, dataset.X, options)
+    !flag && return L(Inf)
+
+    # Impose functional form:
+    prediction = P_prediction ./ Q_prediction
+
+    diffs = prediction .- dataset.y
+
+    return sum(diffs .^ 2) / length(diffs)
+end
+"""
+
+model = PySRRegressor(
+    niterations=100,
+    binary_operators=["*", "+", "-"],
+    full_objective=objective,
+)
+```
+
+> **Warning**: When using a custom objective like this that performs symbolic
+> manipulations, many functionalities of PySR will not work, such as `.sympy()`,
+> `.predict()`, etc. This is because the SymPy parsing does not know about
+> how you are manipulating the expression, so you will need to do this yourself.
+
+Note how we did not pass `/` as a binary operator; it will just be implicit
+in the functional form.
+
+Let's generate an equation of the form $\frac{x_0^2 x_1 - 2}{x_2^2 + 1}$:
+
+```python
+X = np.random.randn(1000, 3)
+y = (X[:, 0]**2 * X[:, 1] - 2) / (X[:, 2]**2 + 1)
+```
+
+Finally, let's fit:
+
+```python
+model.fit(X, y)
+```
+
+> Note that the printed equation is not the same as the evaluated equation,
+> because the printing functionality does not know about the functional form.
+
+We can get the string format with:
+
+```python
+model.get_best().equation
+```
+
+(or, you could use `model.equations_.iloc[-1].equation`)
+
+For me, this equation was:
+
+```text
+(((2.3554819 + -0.3554746) - (x1 * (x0 * x0))) - (-1.0000019 - (x2 * x2)))
+```
+
+looking at the bracket structure of the equation, we can see that the outermost
+bracket is split at the `-` operator (note that we ignore the root operator in
+the evaluation, as we simply evaluated each argument and divided the result) into
+`((2.3554819 + -0.3554746) - (x1 * (x0 * x0)))` and
+`(-1.0000019 - (x2 * x2))`, meaning that our discovered equation is
+equal to:
+$\frac{x_0^2 x_1 - 2.0000073}{x_2^2 - 1.0000019}$, which
+is nearly the same as the true equation!
+
+
+
+## 10. Additional features
 
 For the many other features available in PySR, please
 read the [Options section](options.md).
