@@ -1247,7 +1247,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             )
 
         if self.loss is not None and self.full_objective is not None:
-            raise ValueError("You cannot set both `loss` and `objective`.")
+            raise ValueError("You cannot set both `loss` and `full_objective`.")
 
         # NotImplementedError - Values that could be supported at a later time
         if self.optimizer_algorithm not in VALID_OPTIMIZER_ALGORITHMS:
