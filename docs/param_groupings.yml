@@ -23,6 +23,7 @@
     - use_frequency
     - use_frequency_in_tournament
     - adaptive_parsimony_scaling
+    - should_simplify
   - Mutations:
     - weight_add_node
     - weight_insert_node
