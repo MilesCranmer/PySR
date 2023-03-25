@@ -456,6 +456,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     topn : int
         How many top individuals migrate from each population.
         Default is `12`.
+    should_simplify : bool
+        Whether to use algebraic simplification in the search. Note that only
+        a few simple rules are implemented. Default is `True`.
     should_optimize_constants : bool
         Whether to numerically optimize constants (Nelder-Mead/Newton)
         at the end of each iteration. Default is `True`.
@@ -727,6 +730,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         migration=True,
         hof_migration=True,
         topn=12,
+        should_simplify=None,
         should_optimize_constants=True,
         optimizer_algorithm="BFGS",
         optimizer_nrestarts=2,
@@ -780,6 +784,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.constraints = constraints
         self.nested_constraints = nested_constraints
         self.warmup_maxsize_by = warmup_maxsize_by
+        self.should_simplify = should_simplify
         # - Early exit conditions:
         self.max_evals = max_evals
         self.timeout_in_seconds = timeout_in_seconds
@@ -1621,6 +1626,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             migration=self.migration,
             hof_migration=self.hof_migration,
             fraction_replaced_hof=self.fraction_replaced_hof,
+            should_simplify=self.should_simplify,
             should_optimize_constants=self.should_optimize_constants,
             warmup_maxsize_by=self.warmup_maxsize_by,
             use_frequency=self.use_frequency,
