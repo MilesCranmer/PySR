@@ -11,6 +11,7 @@
     - ncyclesperiteration
   - The Objective:
     - loss
+    - full_objective
     - model_selection
   - Working with Complexities:
     - parsimony

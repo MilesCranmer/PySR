@@ -320,9 +320,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         argument is constrained.
         Default is `None`.
     loss : str
-        String of Julia code specifying the loss function. Can either
-        be a loss from LossFunctions.jl, or your own loss written as a
-        function. Examples of custom written losses include:
+        String of Julia code specifying an elementwise loss function.
+        Can either be a loss from LossFunctions.jl, or your own loss
+        written as a function. Examples of custom written losses include:
         `myloss(x, y) = abs(x-y)` for non-weighted, or
         `myloss(x, y, w) = w*abs(x-y)` for weighted.
         The included losses include:
@@ -335,6 +335,26 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         `ModifiedHuberLoss()`, `L2MarginLoss()`, `ExpLoss()`,
         `SigmoidLoss()`, `DWDMarginLoss(q)`.
         Default is `"L2DistLoss()"`.
+    full_objective : str
+        Alternatively, you can specify the full objective function as
+        a snippet of Julia code, including any sort of custom evaluation
+        (including symbolic manipulations beforehand), and any sort
+        of loss function or regularizations. The default `full_objective`
+        used in SymbolicRegression.jl is roughly equal to:
+        ```julia
+        function eval_loss(tree, dataset::Dataset{T}, options)::T where T
+            prediction, flag = eval_tree_array(tree, dataset.X, options)
+            if !flag
+                return T(Inf)
+            end
+            sum((prediction .- dataset.y) .^ 2) / dataset.n
+        end
+        ```
+        where the example elementwise loss is mean-squared error.
+        You may pass a function with the same arguments as this (note
+        that the name of the function doesn't matter). Here,
+        both `prediction` and `dataset.y` are 1D arrays of length `dataset.n`.
+        Default is `None`.
     complexity_of_operators : dict[str, float]
         If you would like to use a complexity other than 1 for an
         operator, specify the complexity here. For example,
@@ -681,7 +701,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         timeout_in_seconds=None,
         constraints=None,
         nested_constraints=None,
-        loss="L2DistLoss()",
+        loss=None,
+        full_objective=None,
         complexity_of_operators=None,
         complexity_of_constants=1,
         complexity_of_variables=1,
@@ -770,6 +791,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.early_stop_condition = early_stop_condition
         # - Loss parameters
         self.loss = loss
+        self.full_objective = full_objective
         self.complexity_of_operators = complexity_of_operators
         self.complexity_of_constants = complexity_of_constants
         self.complexity_of_variables = complexity_of_variables
@@ -1224,6 +1246,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 "to True and `procs` to 0 will result in non-deterministic searches. "
             )
 
+        if self.loss is not None and self.full_objective is not None:
+            raise ValueError("You cannot set both `loss` and `full_objective`.")
+
         # NotImplementedError - Values that could be supported at a later time
         if self.optimizer_algorithm not in VALID_OPTIMIZER_ALGORITHMS:
             raise NotImplementedError(
@@ -1553,6 +1578,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             complexity_of_operators = Main.eval(complexity_of_operators_str)
 
         custom_loss = Main.eval(self.loss)
+        custom_full_objective = Main.eval(self.full_objective)
+
         early_stop_condition = Main.eval(
             str(self.early_stop_condition) if self.early_stop_condition else None
         )
@@ -1581,6 +1608,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             complexity_of_variables=self.complexity_of_variables,
             nested_constraints=nested_constraints,
             elementwise_loss=custom_loss,
+            loss_function=custom_full_objective,
             maxsize=int(self.maxsize),
             output_file=_escape_filename(self.equation_file_),
             npopulations=int(self.populations),
