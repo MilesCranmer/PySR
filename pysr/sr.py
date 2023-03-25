@@ -345,7 +345,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         function eval_loss(tree, dataset::Dataset{T,L}, options)::L where {T,L}
             prediction, flag = eval_tree_array(tree, dataset.X, options)
             if !flag
-                return T(Inf)
+                return L(Inf)
             end
             return sum((prediction .- dataset.y) .^ 2) / dataset.n
         end
