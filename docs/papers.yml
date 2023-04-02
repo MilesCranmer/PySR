@@ -182,3 +182,17 @@ papers:
     abstract: "Ionized gas in the halo circumgalactic medium leaves an imprint on the cosmic microwave background via the thermal Sunyaev-Zeldovich (tSZ) effect. Feedback from active galactic nuclei (AGN) and supernovae can affect the measurements of the integrated tSZ flux of halos ($Y_{SZ}$) and cause its relation with the halo mass ($Y_{SZ}-M$) to deviate from the self-similar power-law prediction of the virial theorem. We perform a comprehensive study of such deviations using CAMELS, a suite of hydrodynamic simulations with extensive variations in feedback prescriptions. We use a combination of two machine learning tools (random forest and symbolic regression) to search for analogues of the $Y-M$ relation which are more robust to feedback processes for low masses ($M \\leq 10^{14} M_{\\odot}/h$); we find that simply replacing $Y \\rightarrow Y(1+M_\\ast/M_{\\text{gas}})$ in the relation makes it remarkably self-similar. This could serve as a robust multiwavelength mass proxy for low-mass clusters and galaxy groups. Our methodology can also be generally useful to improve the domain of validity of other astrophysical scaling relations. We also forecast that measurements of the Y-M relation could provide percent-level constraints on certain combinations of feedback parameters and/or rule out a major part of the parameter space of supernova and AGN feedback models used in current state-of-the-art hydrodynamic simulations. Our results can be useful for using upcoming SZ surveys (e.g. SO, CMB-S4) and galaxy surveys (e.g. DESI and Rubin) to constrain the nature of baryonic feedback. Finally, we find that the an alternative relation, $Y-M_{\\ast}$, provides complementary information on feedback than $Y-M$."
     image: Y_Mgal_Simba.png
     date: 2022-09-05
+  - title: Electron Transfer Rules of Minerals under Pressure informed by Machine Learning
+    authors:
+      - Yanzhang Li (1)
+      - Hongyu Wang (2)
+      - Yan Li (1)
+      - Xiangzhi Bai (2)
+      - Anhuai Lu (1)
+    affiliations:
+      1: Peking University
+      2: Beihang University
+    link: https://doi.org/10.1038/s41467-023-37384-1
+    abstract: "Electron transfer is the most elementary process in nature, but the existing electron transfer rules are seldom applied to high-pressure situations, such as in the deep Earth. Here we show a deep learning model to obtain the electronegativity of 96 elements under arbitrary pressure, and a regressed unified formula to quantify its relationship with pressure and electronic configuration. The relative work function of minerals is further predicted by electronegativity, presenting a decreasing trend with pressure because of pressure-induced electron delocalization. Using the work function as the case study of electronegativity, it reveals that the driving force behind directional electron transfer results from the enlarged work function difference between compounds with pressure. This well explains the deep high-conductivity anomalies, and helps discover the redox reactivity between widespread Fe(II)-bearing minerals and water during ongoing subduction. Our results give an insight into the fundamental physicochemical properties of elements and their compounds under pressure"
+    image: electronnegativity_introduction.jpg
+    date: 2023-03-31
