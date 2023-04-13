@@ -27,7 +27,7 @@ If you've finished a project with PySR, please submit a PR to showcase your work
 
 ### Test status
 
-| **Linux** | **Windows** | **macOS (intel)** |
+| **Linux** | **Windows** | **macOS** |
 |---|---|---|
 |[![Linux](https://github.com/MilesCranmer/PySR/actions/workflows/CI.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI.yml)|[![Windows](https://github.com/MilesCranmer/PySR/actions/workflows/CI_Windows.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_Windows.yml)|[![macOS](https://github.com/MilesCranmer/PySR/actions/workflows/CI_mac.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_mac.yml)|
 | **Docker** | **Conda** | **Coverage** |
