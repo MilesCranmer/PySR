@@ -65,15 +65,62 @@ of this package is to have an open-source symbolic regression tool
 as efficient as eureqa, while also exposing a configurable
 python interface.
 
-# Installation
+## Installation
 
-<div align="center">
+| [pip](#pip) | [conda](#conda) | [docker](#docker-build) |
+|:---:|:---:|:---:|
+| Everywhere (recommended) | Linux and Intel-based macOS | Everywhere (if all else fails) |
 
-| pip - **recommended** <br> (works everywhere) | conda <br>(Linux and Intel-based macOS) | docker <br>(if all else fails) |
-|---|---|---|
-| 1. [Install Julia](https://julialang.org/downloads/)<br>2. Then, run: `pip install -U pysr`<br>3. Finally, to install Julia packages:<br>`python3 -c 'import pysr; pysr.install()'` | `conda install -c conda-forge pysr` | 1. Clone this repo.<br>2. `docker build -t pysr .`<br>Run with:<br>`docker run -it --rm pysr ipython`
+---
 
-</div>
+### pip
+
+1. [Install Julia](https://julialang.org/downloads/)
+    - Alternatively, my personal preference is to use [juliaup](https://github.com/JuliaLang/juliaup#installation), which performs this automatically.
+2. Then, run:
+```bash
+pip install -U pysr
+```
+3. Finally, to install Julia dependencies:
+```bash
+python3 -c 'import pysr; pysr.install()'
+```
+
+---
+
+### conda
+
+The PySR build in conda includes all required dependencies, so you can install it by simply running:
+
+```bash
+conda install -c conda-forge pysr
+```
+
+in your desired environment. 
+
+However, note that the conda install does not support precompilation of Julia libraries, so the
+start time may be slightly slower as the JIT-compilation will be running.
+(Once the compilation finishes, there will not be a performance difference though.)
+
+---
+
+### docker build
+
+1. Clone this repo.
+2. In the repo, run the build command with:
+```bash
+docker build -t pysr .
+```
+3. You can then start the container with an IPython execution with:
+```bash
+docker run -it --rm pysr ipython
+```
+
+For more details, see the [docker section](#docker).
+
+---
+
+### Common issues
 
 Common issues tend to be related to Python not finding Julia.
 To debug this, try running `python3 -c 'import os; print(os.environ["PATH"])'`.
@@ -81,7 +128,7 @@ If none of these folders contain your Julia binary, then you need to add Julia's
 
 **Running PySR on macOS with an M1 processor:** you should use the pip version, and make sure to get the Julia binary for ARM/M-series processors.
 
-# Introduction
+## Introduction
 
 You might wish to try the interactive tutorial [here](https://colab.research.google.com/github/MilesCranmer/PySR/blob/master/examples/pysr_demo.ipynb), which uses the notebook in `examples/pysr_demo.ipynb`.
 
@@ -186,7 +233,7 @@ For a detailed look at more options, see the [options page](https://astroautomat
 You can also see the full API at [this page](https://astroautomata.com/PySR/api).
 There are also tips for tuning PySR on [this page](https://astroautomata.com/PySR/tuning).
 
-## Detailed Example
+### Detailed Example
 
 The following code makes use of as many PySR features as possible.
 Note that is just a demonstration of features and you should not use this example as-is.
@@ -265,7 +312,7 @@ model = PySRRegressor(
 )
 ```
 
-# Docker
+## Docker
 
 You can also test out PySR in Docker, without
 installing it locally, by running the following command in
