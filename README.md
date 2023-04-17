@@ -14,7 +14,7 @@ PySR uses evolutionary algorithms to search for symbolic expressions which optim
 
 | **Docs** | **Forums** | **colab demo** |
 |:---:|:---:|:---:|
-|[![Documentation](https://github.com/MilesCranmer/PySR/actions/workflows/docs.yml/badge.svg)](https://astroautomata.com/PySR/)|[![Discussions](https://img.shields.io/badge/discussions-github-informational)](https://github.com/MilesCranmer/PySR/discussions?discussions_q=sort%3Atop)|[![Colab](https://img.shields.io/badge/colab-notebook-yellow)](https://colab.research.google.com/github/MilesCranmer/PySR/blob/master/examples/pysr_demo.ipynb)|
+|[![Documentation](https://github.com/MilesCranmer/PySR/actions/workflows/docs.yml/badge.svg)](https://astroautomata.com/PySR/)|[![Discussions](https://img.shields.io/badge/discussions-github-informational)](https://github.com/MilesCranmer/PySR/discussions)|[![Colab](https://img.shields.io/badge/colab-notebook-yellow)](https://colab.research.google.com/github/MilesCranmer/PySR/blob/master/examples/pysr_demo.ipynb)|
 | **pip** | **conda** | **Stats** |
 |[![PyPI version](https://badge.fury.io/py/pysr.svg)](https://badge.fury.io/py/pysr)|[![Conda Version](https://img.shields.io/conda/vn/conda-forge/pysr.svg)](https://anaconda.org/conda-forge/pysr)|<div align="center">pip: [![Downloads](https://pepy.tech/badge/pysr)](https://badge.fury.io/py/pysr)<br>conda: [![Anaconda-Server Badge](https://anaconda.org/conda-forge/pysr/badges/downloads.svg)](https://anaconda.org/conda-forge/pysr)</div>|
 
