@@ -10,3 +10,4 @@ dependencies:
   - pyjulia
   - openlibm
   - openspecfun
+  - click
