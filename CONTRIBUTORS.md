@@ -1,6 +1,6 @@
 # Welcome to PySR's contributing guide <!-- Forked from GitHub's awesome template contributing guide -->
 
-Thank you for investing your time in contributing to our project! Any contribution you make will be reflected on the contributors lists: [frontend](https://github.com/MilesCranmer/PySR/graphs/contributors) and [backend](https://github.com/MilesCranmer/SymbolicRegression.jl/graphs/contributors) :sparkles:.
+Thank you for investing your time in contributing to our project! Any contribution you make will be reflected on the [contributors list](#contributors) :sparkles:.
 
 In this guide you will get an overview of the contribution workflow from opening an issue, creating a PR, reviewing, and merging the PR.
 
