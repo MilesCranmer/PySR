@@ -9,7 +9,7 @@ def cli(context):
 
 
 @cli.command("install", help="Install Julia dependencies for PySR")
-@click.option("-p", "--project", default=None, type=str)
+@click.option("-p", "julia_project", "--project", default=None, type=str)
 @click.option("-q", "--quiet", is_flag=True, default=False)
 @click.option("--precompile", 'precompile', flag_value=True, default=None)
 @click.option("--no-precompile", 'precompile', flag_value=False, default=None)
