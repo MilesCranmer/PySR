@@ -6,11 +6,7 @@ https://user-images.githubusercontent.com/7593028/188328887-1b6cda72-2f41-439e-a
 
 # PySR: High-Performance Symbolic Regression in Python
 
-</div>
-
 PySR uses evolutionary algorithms to search for symbolic expressions which optimize a particular objective.
-
-<div align="center">
 
 | **Docs** | **Forums** | **colab demo** |
 |:---:|:---:|:---:|
@@ -20,10 +16,22 @@ PySR uses evolutionary algorithms to search for symbolic expressions which optim
 
 </div>
 
-(pronounced like *py* as in python, and then *sur* as in surface)
+We warmly welcome new contributors and are happy to get you up to speed! Check out our contributors [guide](https://github.com/MilesCranmer/PySR/blob/master/CONTRIBUTORS.md) for tips 🚀.
+If you have an idea for a new feature, don't hesitate to share it on the [issues](https://github.com/MilesCranmer/PySR/issues) or [discussions](https://github.com/MilesCranmer/PySR/discussions) page.
 
 If you find PySR useful, please cite it using the citation information given in [CITATION.md](https://github.com/MilesCranmer/PySR/blob/master/CITATION.md).
-If you've finished a project with PySR, please submit a PR to showcase your work on the [Research Showcase page](https://astroautomata.com/PySR/papers)!
+If you've finished a project with PySR, please submit a PR to showcase your work on the [research showcase page](https://astroautomata.com/PySR/papers)!
+
+### Contributors
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
 
 <div align="center">
 
