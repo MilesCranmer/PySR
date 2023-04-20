@@ -1,11 +1,11 @@
 import click
-from pysr.julia_helpers import install
+from ..julia_helpers import install
 
 
 @click.group("cli")
 @click.pass_context
-def cli():
-    somevariable = "33"
+def cli(context):
+    ctx = context
 
 
 @cli.command("install")
