@@ -43,8 +43,8 @@ body:
       description: What package manager are you using to install PySR?
       options:
         - pip
-        - conda
-        - other (specify below)
+        - Conda
+        - Other (specify below)
   - type: dropdown
     id: display
     attributes:
@@ -53,8 +53,9 @@ body:
       options:
         - Jupyter Notebook
         - IPython Terminal
-        - Script
+        - Script (i.e., `python my_script.py`)
         - Google Colab
+        - Other (specify below)
     validations:
       required: true
   - type: textarea
