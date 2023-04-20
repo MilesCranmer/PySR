@@ -54,7 +54,7 @@ jobs:
             python -m pip install --upgrade pip
             pip install -r requirements.txt
             python setup.py install
-            python -c 'import pysr; pysr.install()'
+            python -m pysr install
       - name: "Install Coverage tool"
         run: pip install coverage coveralls
       - name: "Run tests"
@@ -112,7 +112,7 @@ jobs:
       - name: "Install PySR"
         run: |
             python3 -m pip install .
-            python3 -c 'import pysr; pysr.install()'
+            python3 -m pysr install
       - name: "Run tests"
         run: cd /tmp && python -m pysr.test main
 
