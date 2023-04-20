@@ -55,16 +55,16 @@ body:
         - IPython Terminal
         - Script
         - Google Colab
-      validations:
-        required: true
+    validations:
+      required: true
   - type: textarea
     id: logs
     attributes:
-      labels: Relevant log output
+      label: Relevant log output
       description: Please copy and paste any log output or error messages. This will be automatically formatted into code, so no need for backticks.
       render: shell
   - type: textarea
     id: extra
     attributes:
-      labels: Extra Info
+      label: Extra Info
       description: Please tell us any other information that you think might help. For example, what are your PySR settings? What dataset are you running on? If possible, please share a minimal code example that produces the error.
