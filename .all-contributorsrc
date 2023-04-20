@@ -373,5 +373,15 @@
     }
   ],
   "contributorsPerLine": 10,
-  "linkToUsage": false
+  "linkToUsage": false,
+  "types": {
+    "ideas": {
+      "symbol": "💡",
+      "description": "Ideas, planning, and feedback."
+    },
+    "example": {
+      "description": "Examples.",
+      "symbol": "🌍"
+    }
+  }
 }
