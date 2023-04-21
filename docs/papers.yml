@@ -2,6 +2,21 @@
 # information to generate the "Research Showcase"
 
 papers:
+  - title: Data-Driven Equation Discovery of a Cloud Cover Parameterization
+    authors:
+      - Arthur Grundner (1,2)
+      - Tom Beucler (3)
+      - Pierre Gentine (2,3)
+      - Veronika Eyring (1,4)
+    affiliations:
+      1: Institut für Physik der Atmosphäre, Deutsches Zentrum für Luft- und Raumfahrt
+      2: Center for Learning the Earth with Artificial Intelligence And Physics, Columbia University
+      3: Institute of Earth Surface Dynamics, University of Lausanne
+      4: Institute of Environmental Physics, University of Bremen
+    link: https://arxiv.org/abs/2304.08063
+    abstract: "A promising method for improving the representation of clouds in climate models, and hence climate projections, is to develop machine learning-based parameterizations using output from global storm-resolving models. While neural networks can achieve state-of-the-art performance, they are typically climate model-specific, require post-hoc tools for interpretation, and struggle to predict outside of their training distribution. To avoid these limitations, we combine symbolic regression, sequential feature selection, and physical constraints in a hierarchical modeling framework. This framework allows us to discover new equations diagnosing cloud cover from coarse-grained variables of global storm-resolving model simulations. These analytical equations are interpretable by construction and easily transferable to other grids or climate models. Our best equation balances performance and complexity, achieving a performance comparable to that of neural networks ($R^2=0.94$) while remaining simple (with only 13 trainable parameters). It reproduces cloud cover distributions more accurately than the Xu-Randall scheme across all cloud regimes (Hellinger distances $<0.09$), and matches neural networks in condensate-rich regimes. When applied and fine-tuned to the ERA5 reanalysis, the equation exhibits superior transferability to new data compared to all other optimal cloud cover schemes. Our findings demonstrate the effectiveness of symbolic regression in discovering interpretable, physically-consistent, and nonlinear equations to parameterize cloud cover."
+    image: cloud_cover.jpg
+    date: 2023-04-17
   - title: Modeling assembly bias with machine learning and symbolic regression
     authors:
       - Digvijay Wadekar (1)
