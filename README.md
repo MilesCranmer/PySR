@@ -4,7 +4,7 @@
 
 https://user-images.githubusercontent.com/7593028/188328887-1b6cda72-2f41-439e-ae23-75dd3489bc24.mp4
 
-# PySR: High-Performance Symbolic Regression in Python
+# PySR: High-Performance Symbolic Regression in Python and Julia
 
 PySR uses evolutionary algorithms to search for symbolic expressions which optimize a particular objective.
 
