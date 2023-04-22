@@ -3,5 +3,5 @@ pandas
 numpy
 scikit_learn >= 1.0.0
 julia >= 0.6.0
-click>=8.0.4
+click>=7.0.0
 setuptools>=66.0.0
