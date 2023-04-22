@@ -525,6 +525,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         If you pass complex data, the corresponding complex precision
         will be used (i.e., `64` for complex128, `32` for complex64).
         Default is `32`.
+    enable_autodiff : bool
+        Whether to create derivative versions of operators for automatic
+        differentiation. This is only necessary if you wish to compute
+        the gradients of an expression within a custom loss function.
+        Default is `False`.
     random_state : int, Numpy RandomState instance or None
         Pass an int for reproducible results across multiple function calls.
         See :term:`Glossary <random_state>`.
@@ -747,6 +752,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         fast_cycle=False,
         turbo=False,
         precision=32,
+        enable_autodiff=False,
         random_state=None,
         deterministic=False,
         warm_start=False,
@@ -839,6 +845,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.fast_cycle = fast_cycle
         self.turbo = turbo
         self.precision = precision
+        self.enable_autodiff = enable_autodiff
         self.random_state = random_state
         self.deterministic = deterministic
         self.warm_start = warm_start
@@ -1623,6 +1630,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             maxdepth=maxdepth,
             fast_cycle=self.fast_cycle,
             turbo=self.turbo,
+            enable_autodiff=self.enable_autodiff,
             migration=self.migration,
             hof_migration=self.hof_migration,
             fraction_replaced_hof=self.fraction_replaced_hof,

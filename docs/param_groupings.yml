@@ -71,6 +71,7 @@
   - precision
   - fast_cycle
   - turbo
+  - enable_autodiff
   - random_state
   - deterministic
   - warm_start
