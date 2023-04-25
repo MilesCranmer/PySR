@@ -1,7 +1,7 @@
 sympy
 pandas
 numpy
-scikit_learn >= 1.0.0
-julia >= 0.6.0
-click>=8.0.4
-setuptools>=66.0.0
+scikit_learn>=1.0.0
+julia>=0.6.0
+click>=7.0.0
+setuptools>=50.0.0
