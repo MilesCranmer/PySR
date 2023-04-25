@@ -110,8 +110,8 @@ def install(julia_project=None, quiet=False, precompile=None):  # pragma: no cov
 
 def _import_error():
     return """
-    Required dependencies are not installed or built.  Run the following command:
-        python -m pysr install
+    Required dependencies are not installed or built.  Run the following command in your terminal:
+        python3 -m pysr install
     """
 
 
@@ -284,14 +284,14 @@ def _backend_version_assertion(Main):
                 f"does not match expected version {expected_backend_version}. "
                 "Things may break. "
                 "Please update your PySR installation with "
-                "`python -m pysr install`."
+                "`python3 -m pysr install`."
             )
     except JuliaError:  # pragma: no cover
         warnings.warn(
             "You seem to have an outdated version of SymbolicRegression.jl. "
             "Things may break. "
             "Please update your PySR installation with "
-            "`python -m pysr install`."
+            "`python3 -m pysr install`."
         )
 
 
