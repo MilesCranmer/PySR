@@ -1,0 +1,387 @@
+{
+  "projectName": "PySR",
+  "projectOwner": "MilesCranmer",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "README.md",
+    "CONTRIBUTORS.md"
+  ],
+  "imageSize": 50,
+  "commit": false,
+  "commitConvention": "angular",
+  "contributors": [
+    {
+      "login": "mkitti",
+      "name": "Mark Kittisopikul",
+      "avatar_url": "https://avatars.githubusercontent.com/u/8062771?v=4",
+      "profile": "https://www.linkedin.com/in/markkittisopikul/",
+      "contributions": [
+        "code",
+        "ideas",
+        "infra",
+        "platform",
+        "promotion",
+        "review",
+        "tool",
+        "test"
+      ]
+    },
+    {
+      "login": "tttc3",
+      "name": "T Coxon",
+      "avatar_url": "https://avatars.githubusercontent.com/u/97948946?v=4",
+      "profile": "https://github.com/tttc3",
+      "contributions": [
+        "bug",
+        "code",
+        "plugin",
+        "ideas",
+        "infra",
+        "maintenance",
+        "review",
+        "tool",
+        "test",
+        "userTesting"
+      ]
+    },
+    {
+      "login": "DhananjayAshok",
+      "name": "Dhananjay Ashok",
+      "avatar_url": "https://avatars.githubusercontent.com/u/46792537?v=4",
+      "profile": "https://github.com/DhananjayAshok",
+      "contributions": [
+        "code",
+        "example",
+        "ideas",
+        "maintenance",
+        "test"
+      ]
+    },
+    {
+      "login": "johanbluecreek",
+      "name": "Johan Blåbäck",
+      "avatar_url": "https://avatars.githubusercontent.com/u/852554?v=4",
+      "profile": "https://gitlab.com/johanbluecreek",
+      "contributions": [
+        "bug",
+        "code",
+        "ideas",
+        "maintenance",
+        "promotion",
+        "review",
+        "test",
+        "userTesting"
+      ]
+    },
+    {
+      "login": "AlCap23",
+      "name": "JuliusMartensen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20998300?v=4",
+      "profile": "https://mathopt.de/people/martensen/index.php",
+      "contributions": [
+        "bug",
+        "code",
+        "doc",
+        "plugin",
+        "ideas",
+        "infra",
+        "maintenance",
+        "platform",
+        "promotion",
+        "review",
+        "tool",
+        "userTesting"
+      ]
+    },
+    {
+      "login": "ngam",
+      "name": "ngam",
+      "avatar_url": "https://avatars.githubusercontent.com/u/67342040?v=4",
+      "profile": "https://github.com/ngam",
+      "contributions": [
+        "code",
+        "infra",
+        "platform",
+        "review",
+        "tool",
+        "test"
+      ]
+    },
+    {
+      "login": "kazewong",
+      "name": "Kaze Wong",
+      "avatar_url": "https://avatars.githubusercontent.com/u/8803931?v=4",
+      "profile": "https://github.com/kazewong",
+      "contributions": [
+        "bug",
+        "code",
+        "ideas",
+        "infra",
+        "maintenance",
+        "promotion",
+        "review",
+        "research",
+        "userTesting"
+      ]
+    },
+    {
+      "login": "ChrisRackauckas",
+      "name": "Christopher Rackauckas",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1814174?v=4",
+      "profile": "https://github.com/ChrisRackauckas",
+      "contributions": [
+        "bug",
+        "code",
+        "plugin",
+        "ideas",
+        "infra",
+        "promotion",
+        "review",
+        "research",
+        "tool",
+        "test",
+        "userTesting"
+      ]
+    },
+    {
+      "login": "patrick-kidger",
+      "name": "Patrick Kidger",
+      "avatar_url": "https://avatars.githubusercontent.com/u/33688385?v=4",
+      "profile": "https://kidger.site/",
+      "contributions": [
+        "bug",
+        "code",
+        "doc",
+        "plugin",
+        "ideas",
+        "maintenance",
+        "promotion",
+        "review",
+        "research",
+        "tool",
+        "test",
+        "userTesting"
+      ]
+    },
+    {
+      "login": "Pablo-Lemos",
+      "name": "Pablo Lemos",
+      "avatar_url": "https://avatars.githubusercontent.com/u/38078898?v=4",
+      "profile": "https://pablo-lemos.github.io/",
+      "contributions": [
+        "bug",
+        "ideas",
+        "promotion",
+        "review",
+        "research",
+        "userTesting"
+      ]
+    },
+    {
+      "login": "Moelf",
+      "name": "Jerry Ling",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5306213?v=4",
+      "profile": "https://github.com/Moelf",
+      "contributions": [
+        "bug",
+        "code",
+        "doc",
+        "example",
+        "ideas",
+        "promotion",
+        "review",
+        "userTesting"
+      ]
+    },   
+    {
+      "login": "CharFox1",
+      "name": "Charles Fox",
+      "avatar_url": "https://avatars.githubusercontent.com/u/35052672?v=4",
+      "profile": "https://github.com/CharFox1",
+      "contributions": [
+        "bug",
+        "code",
+        "ideas",
+        "maintenance",
+        "promotion",
+        "review",
+        "research",
+        "userTesting"
+      ]
+    },
+    {
+      "login": "johannbrehmer",
+      "name": "Johann Brehmer",
+      "avatar_url": "https://avatars.githubusercontent.com/u/17068560?v=4",
+      "profile": "https://github.com/johannbrehmer",
+      "contributions": [
+        "code",
+        "doc",
+        "ideas",
+        "promotion",
+        "review",
+        "research",
+        "test",
+        "userTesting"
+      ]
+    },
+    {
+      "login": "marius311",
+      "name": "Marius Millea",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1510968?v=4",
+      "profile": "http://www.cosmicmar.com/",
+      "contributions": [
+        "code",
+        "ideas",
+        "promotion",
+        "review",
+        "userTesting"
+      ]
+    },
+    {
+      "login": "cobac",
+      "name": "Coba",
+      "avatar_url": "https://avatars.githubusercontent.com/u/27872944?v=4",
+      "profile": "https://gitlab.com/cobac",
+      "contributions": [
+        "bug",
+        "code",
+        "ideas",
+        "review",
+        "userTesting"
+      ]
+    },
+    {
+      "login": "pitmonticone",
+      "name": "Pietro Monticone",
+      "avatar_url": "https://avatars.githubusercontent.com/u/38562595?v=4",
+      "profile": "https://github.com/pitmonticone",
+      "contributions": [
+        "bug",
+        "doc",
+        "ideas"
+      ]
+    },
+    {
+      "login": "sheevy",
+      "name": "Mateusz Kubica",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1525683?v=4",
+      "profile": "https://github.com/sheevy",
+      "contributions": [
+        "doc",
+        "ideas"
+      ]
+    },
+    {
+      "login": "JayWadekar",
+      "name": "Jay Wadekar",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5493388?v=4",
+      "profile": "https://jaywadekar.github.io/",
+      "contributions": [
+        "bug",
+        "ideas",
+        "promotion",
+        "research"
+      ]
+    },
+    {
+      "login": "Jgmedina95",
+      "name": "Jgmedina95",
+      "avatar_url": "https://avatars.githubusercontent.com/u/97254349?v=4",
+      "profile": "https://github.com/Jgmedina95",
+      "contributions": [
+        "bug",
+        "ideas",
+        "review"
+      ]
+    },
+    {
+      "login": "mcabbott",
+      "name": "Michael Abbott",
+      "avatar_url": "https://avatars.githubusercontent.com/u/32575566?v=4",
+      "profile": "https://github.com/mcabbott",
+      "contributions": [
+        "code",
+        "ideas",
+        "review",
+        "tool"
+      ]
+    },
+    {
+      "login": "oscardssmith",
+      "name": "Oscar Smith",
+      "avatar_url": "https://avatars.githubusercontent.com/u/11729272?v=4",
+      "profile": "https://github.com/oscardssmith",
+      "contributions": [
+        "code",
+        "ideas"
+      ]
+    }, 
+    {
+      "login": "henriquebecker91",
+      "name": "Henrique Becker",
+      "avatar_url": "https://avatars.githubusercontent.com/u/14113435?v=4",
+      "profile": "https://github.com/henriquebecker91",
+      "contributions": [
+        "code",
+        "ideas",
+        "review"
+      ]
+    },
+    {
+      "login": "qwertyjl",
+      "name": "qwertyjl",
+      "avatar_url": "https://avatars.githubusercontent.com/u/110912592?v=4",
+      "profile": "https://github.com/qwertyjl",
+      "contributions": [
+        "bug",
+        "doc",
+        "ideas",
+        "userTesting"
+      ]
+    },
+    {
+      "login": "rikhuijzer",
+      "name": "Rik Huijzer",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20724914?v=4",
+      "profile": "https://huijzer.xyz/",
+      "contributions": [
+        "ideas",
+        "infra"
+      ]
+    },
+    {
+      "login": "GCaptainNemo",
+      "name": "Hongyu Wang",
+      "avatar_url": "https://avatars.githubusercontent.com/u/43086239?v=4",
+      "profile": "https://github.com/GCaptainNemo",
+      "contributions": [
+        "ideas",
+        "promotion",
+        "research"
+      ]
+    },
+    {
+      "login": "SauravMaheshkar",
+      "name": "Saurav Maheshkar",
+      "avatar_url": "https://avatars.githubusercontent.com/u/61241031?v=4",
+      "profile": "https://sauravmaheshkar.github.io/",
+      "contributions": [
+        "tool"
+      ]
+    }
+  ],
+  "contributorsPerLine": 10,
+  "linkToUsage": false,
+  "types": {
+    "ideas": {
+      "symbol": "💡",
+      "description": "Ideas, planning, and feedback."
+    },
+    "example": {
+      "description": "Examples.",
+      "symbol": "🌍"
+    }
+  }
+}
