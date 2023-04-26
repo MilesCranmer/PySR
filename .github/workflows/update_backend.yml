@@ -44,6 +44,9 @@ jobs:
       - name: "Update versions"
         if: ${{ steps.get-latest.outputs.version != steps.get-current.outputs.version }}
         run: |
+          git config --global user.name "${GITHUB_ACTOR}"
+          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+
           # Bump PySR patch number:
           CURRENT_PYSR_PATCH_VERSION=$(python -c 'import pysr; print(pysr.version.__version__.split(".")[-1])' 2>/dev/null)
           NEW_PYSR_PATCH_VERSION=$((CURRENT_PYSR_PATCH_VERSION + 1))
