@@ -59,6 +59,7 @@ jobs:
           git commit -m "Update backend version to v${{ steps.get-latest.outputs.version }}"
 
       - name: "Create PR"
+        if: ${{ steps.get-latest.outputs.version != steps.get-current.outputs.version }}
         uses: peter-evans/create-pull-request@v3
         env:
           GITHUB_TOKEN: ${{ secrets.REPO_SCOPED_TOKEN }}
