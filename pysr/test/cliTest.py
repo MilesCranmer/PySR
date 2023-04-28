@@ -1,6 +1,4 @@
-import io
 import subprocess
-import sys
 import unittest
 
 
