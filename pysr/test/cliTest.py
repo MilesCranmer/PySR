@@ -3,10 +3,16 @@ import unittest
 
 
 def run_command(command):
+    """
+    Retrieve output of a command string, decode and convert from CRLF to LF formatting
+    """
     return subprocess.run(command.split(" "), stdout=subprocess.PIPE).stdout.decode("utf-8").replace("\r\n", "\n")
 
 
 def make_command(command):
+    """
+    Convert string into list with LF formatting (for unix systems), using \n delimiter
+    """
     return "\n".join(command)
 
 
@@ -25,7 +31,7 @@ class TestCli(unittest.TestCase):
 
         expected = make_command(expected_lines)
         actual = run_command(command_to_test)
-        self.assertEqual(expected, actual)  # add assertion here
+        self.assertEqual(expected, actual)
 
     def test_help_on_install(self):
         command_to_test = "python -m pysr install --help"
