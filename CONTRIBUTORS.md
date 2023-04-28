@@ -1,34 +1,75 @@
-[//]: # (Logo:)
+# Welcome to PySR's contributing guide <!-- Forked from GitHub's awesome template contributing guide -->
+
+Thank you for investing your time in contributing to our project! Any contribution you make will be reflected on the [contributors list](#contributors) :sparkles:.
+
+In this guide you will get an overview of the contribution workflow from opening an issue, creating a PR, reviewing, and merging the PR.
+
+## New contributor guide
+
+To get an overview of the project, read PySR's [README](README.md). The [PySR docs](https://astroautomata.com/PySR/) give additional information.
+Here are some resources to help you get started with open source contributions in general:
+
+- [Finding ways to contribute to open source on GitHub](https://docs.github.com/en/get-started/exploring-projects-on-github/finding-ways-to-contribute-to-open-source-on-github)
+- [Set up Git](https://docs.github.com/en/get-started/quickstart/set-up-git)
+- [GitHub flow](https://docs.github.com/en/get-started/quickstart/github-flow)
+- [Collaborating with pull requests](https://docs.github.com/en/github/collaborating-with-pull-requests)
+
+### Issues
+
+#### Create a new issue
+
+If you spot a problem with PySR, [search if an issue already exists](https://docs.github.com/en/github/searching-for-information-on-github/searching-on-github/searching-issues-and-pull-requests#search-by-the-title-body-or-comments). If a related issue doesn't exist, you can open a new issue using a relevant [issue form](https://github.com/MilesCranmer/PySR/issues/new/choose).
+
+#### Solve an issue
+
+Scan through our [existing issues](https://github.com/MilesCranmer/PySR/issues) to find one that interests you (feel free to work on any!). You can narrow down the search using `labels` as filters. See [Labels](/contributing/how-to-use-labels.md) for more information. If you find an issue to work on, you are welcome to open a PR with a fix.
+
+### Make Changes
+
+#### Make changes locally
+
+1. Fork the repository.
+- Using GitHub Desktop:
+  - [Getting started with GitHub Desktop](https://docs.github.com/en/desktop/installing-and-configuring-github-desktop/getting-started-with-github-desktop) will guide you through setting up Desktop.
+  - Once Desktop is set up, you can use it to [fork the repo](https://docs.github.com/en/desktop/contributing-and-collaborating-using-github-desktop/cloning-and-forking-repositories-from-github-desktop)!
+
+- Using the command line:
+  - [Fork the repo](https://docs.github.com/en/github/getting-started-with-github/fork-a-repo#fork-an-example-repository) so that you can make your changes without affecting the original project until you're ready to merge them.
+
+2. Create a working branch and start with your changes!
+
+3. (Optional) If you would like to make changes to PySR itself, skip to step 4. However, if you are interested in making changes to the _symbolic regression code_ itself,
+check out the [guide](https://astroautomata.com/PySR/backend/) on modifying a custom SymbolicRegression.jl library.
+In this case, you might instead be interested in making suggestions to the [SymbolicRegression.jl](http://github.com/MilesCranmer/SymbolicRegression.jl) library.
+
+4. You can install your local version of PySR with `python setup.py install`, and run tests with `python -m pysr.test main`.
+
+### Commit your update
+
+Once you are happy with your changes, run `black .` to apply [Black](https://black.readthedocs.io/en/stable/) formatting to your local
+version. Commit the changes once you are ready.
+
+### Pull Request
+
+When you're finished with the changes, create a pull request, also known as a PR.
+- Don't forget to [link PR to issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue) if you are solving one.
+- Enable the checkbox to [allow maintainer edits](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/allowing-changes-to-a-pull-request-branch-created-from-a-fork) so the branch can be updated for a merge.
+Once you submit your PR, a PySR team member will review your proposal. We may ask questions or request additional information.
+- We may ask for changes to be made before a PR can be merged, either using [suggested changes](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/incorporating-feedback-in-your-pull-request) or pull request comments. You can apply suggested changes directly through the UI. You can make any other changes in your fork, then commit them to your branch.
+- As you update your PR and apply changes, mark each conversation as [resolved](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/commenting-on-a-pull-request#resolving-conversations).
+- If you run into any merge issues, checkout this [git tutorial](https://github.com/skills/resolve-merge-conflicts) to help you resolve merge conflicts and other issues.
+
+### Your PR is merged!
+
+Congratulations :tada::tada: The PySR team thanks you :sparkles:.
+
+Once your PR is merged, your contributions will be publicly visible.
+
+Thanks for being part of the PySR community!
 
 <div align="center">
 
-https://user-images.githubusercontent.com/7593028/188328887-1b6cda72-2f41-439e-ae23-75dd3489bc24.mp4
-
-# PySR: High-Performance Symbolic Regression in Python and Julia
-
-PySR uses evolutionary algorithms to search for symbolic expressions which optimize a particular objective.
-
-| **Docs** | **Forums** | **colab demo** |
-|:---:|:---:|:---:|
-|[![Documentation](https://github.com/MilesCranmer/PySR/actions/workflows/docs.yml/badge.svg)](https://astroautomata.com/PySR/)|[![Discussions](https://img.shields.io/badge/discussions-github-informational)](https://github.com/MilesCranmer/PySR/discussions)|[![Colab](https://img.shields.io/badge/colab-notebook-yellow)](https://colab.research.google.com/github/MilesCranmer/PySR/blob/master/examples/pysr_demo.ipynb)|
-
-| **pip** | **conda** | **Stats** |
-| :---: | :---: | :---: |
-|[![PyPI version](https://badge.fury.io/py/pysr.svg)](https://badge.fury.io/py/pysr)|[![Conda Version](https://img.shields.io/conda/vn/conda-forge/pysr.svg)](https://anaconda.org/conda-forge/pysr)|<div align="center">pip: [![Downloads](https://pepy.tech/badge/pysr)](https://badge.fury.io/py/pysr)<br>conda: [![Anaconda-Server Badge](https://anaconda.org/conda-forge/pysr/badges/downloads.svg)](https://anaconda.org/conda-forge/pysr)</div>|
-
-</div>
-
-If you find PySR useful, please cite it using the citation information given in [CITATION.md](https://github.com/MilesCranmer/PySR/blob/master/CITATION.md).
-If you've finished a project with PySR, please submit a PR to showcase your work on the [research showcase page](https://astroautomata.com/PySR/papers)!
-
-<div align="center">
-
-### Contributors ✨
-
-</div>
-
-We are eager to welcome new contributors and are looking forward to get you up to speed! Check out our contributors [guide](https://github.com/MilesCranmer/PySR/blob/master/CONTRIBUTORS.md) for tips 🚀.
-If you have an idea for a new feature, don't hesitate to share it on the [issues](https://github.com/MilesCranmer/PySR/issues) or [discussions](https://github.com/MilesCranmer/PySR/discussions) page.
+## Contributors
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
@@ -74,316 +115,4 @@ If you have an idea for a new feature, don't hesitate to share it on the [issues
 <!-- prettier-ignore-end -->
 
 <!-- ALL-CONTRIBUTORS-LIST:END -->
-
-<div align="center">
-
-### Test status
-
-| **Linux** | **Windows** | **macOS** |
-|---|---|---|
-|[![Linux](https://github.com/MilesCranmer/PySR/actions/workflows/CI.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI.yml)|[![Windows](https://github.com/MilesCranmer/PySR/actions/workflows/CI_Windows.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_Windows.yml)|[![macOS](https://github.com/MilesCranmer/PySR/actions/workflows/CI_mac.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_mac.yml)|
-| **Docker** | **Conda** | **Coverage** |
-|[![Docker](https://github.com/MilesCranmer/PySR/actions/workflows/CI_docker.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_docker.yml)|[![conda-forge](https://github.com/MilesCranmer/PySR/actions/workflows/CI_conda_forge.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_conda_forge.yml)|[![Coverage Status](https://coveralls.io/repos/github/MilesCranmer/PySR/badge.svg?branch=master&service=github)](https://coveralls.io/github/MilesCranmer/PySR)|
-
 </div>
-
-PySR is built on an extremely optimized pure-Julia backend: [SymbolicRegression.jl](https://github.com/MilesCranmer/SymbolicRegression.jl).
-
-Symbolic regression is a very interpretable machine learning algorithm
-for low-dimensional problems: these tools search equation space
-to find algebraic relations that approximate a dataset.
-
-One can also
-extend these approaches to higher-dimensional
-spaces by using a neural network as proxy, as explained in
-[2006.11287](https://arxiv.org/abs/2006.11287), where we apply
-it to N-body problems. Here, one essentially uses
-symbolic regression to convert a neural net
-to an analytic equation. Thus, these tools simultaneously present
-an explicit and powerful way to interpret deep models.
-
-*Backstory:*
-
-Previously, we have used
-[eureqa](https://www.creativemachineslab.com/eureqa.html),
-which is a very efficient and user-friendly tool. However,
-eureqa is GUI-only, doesn't allow for user-defined
-operators, has no distributed capabilities,
-and has become proprietary (and recently been merged into an online
-service). Thus, the goal
-of this package is to have an open-source symbolic regression tool
-as efficient as eureqa, while also exposing a configurable
-python interface.
-
-## Installation
-
-| [pip](#pip) | [conda](#conda) | [docker](#docker-build) |
-|:---:|:---:|:---:|
-| Everywhere (recommended) | Linux and Intel-based macOS | Everywhere (if all else fails) |
-
----
-
-### pip
-
-1. [Install Julia](https://julialang.org/downloads/)
-    - Alternatively, my personal preference is to use [juliaup](https://github.com/JuliaLang/juliaup#installation), which performs this automatically.
-2. Then, run:
-```bash
-pip install -U pysr
-```
-3. Finally, to install Julia dependencies:
-```bash
-python3 -m pysr install
-```
-
----
-
-### conda
-
-The PySR build in conda includes all required dependencies, so you can install it by simply running:
-
-```bash
-conda install -c conda-forge pysr
-```
-
-in your desired environment. 
-
-However, note that the conda install does not support precompilation of Julia libraries, so the
-start time may be slightly slower as the JIT-compilation will be running.
-(Once the compilation finishes, there will not be a performance difference though.)
-
----
-
-### docker build
-
-1. Clone this repo.
-2. In the repo, run the build command with:
-```bash
-docker build -t pysr .
-```
-3. You can then start the container with an IPython execution with:
-```bash
-docker run -it --rm pysr ipython
-```
-
-For more details, see the [docker section](#docker).
-
----
-
-### Common issues
-
-Common issues tend to be related to Python not finding Julia.
-To debug this, try running `python3 -c 'import os; print(os.environ["PATH"])'`.
-If none of these folders contain your Julia binary, then you need to add Julia's `bin` folder to your `PATH` environment variable.
-
-**Running PySR on macOS with an M1 processor:** you should use the pip version, and make sure to get the Julia binary for ARM/M-series processors.
-
-## Introduction
-
-You might wish to try the interactive tutorial [here](https://colab.research.google.com/github/MilesCranmer/PySR/blob/master/examples/pysr_demo.ipynb), which uses the notebook in `examples/pysr_demo.ipynb`.
-
-In practice, I highly recommend using IPython rather than Jupyter, as the printing is much nicer.
-Below is a quick demo here which you can paste into a Python runtime.
-First, let's import numpy to generate some test data:
-
-```python
-import numpy as np
-
-X = 2 * np.random.randn(100, 5)
-y = 2.5382 * np.cos(X[:, 3]) + X[:, 0] ** 2 - 0.5
-```
-
-We have created a dataset with 100 datapoints, with 5 features each.
-The relation we wish to model is $2.5382 \cos(x_3) + x_0^2 - 0.5$.
-
-Now, let's create a PySR model and train it.
-PySR's main interface is in the style of scikit-learn:
-
-```python
-from pysr import PySRRegressor
-
-model = PySRRegressor(
-    niterations=40,  # < Increase me for better results
-    binary_operators=["+", "*"],
-    unary_operators=[
-        "cos",
-        "exp",
-        "sin",
-        "inv(x) = 1/x",
-        # ^ Custom operator (julia syntax)
-    ],
-    extra_sympy_mappings={"inv": lambda x: 1 / x},
-    # ^ Define operator for SymPy as well
-    loss="loss(prediction, target) = (prediction - target)^2",
-    # ^ Custom loss function (julia syntax)
-)
-```
-
-This will set up the model for 40 iterations of the search code, which contains hundreds of thousands of mutations and equation evaluations.
-
-Let's train this model on our dataset:
-
-```python
-model.fit(X, y)
-```
-
-Internally, this launches a Julia process which will do a multithreaded search for equations to fit the dataset.
-
-Equations will be printed during training, and once you are satisfied, you may
-quit early by hitting 'q' and then \<enter\>.
-
-After the model has been fit, you can run `model.predict(X)`
-to see the predictions on a given dataset using the automatically-selected expression,
-or, for example, `model.predict(X, 3)` to see the predictions of the 3rd equation.
-
-You may run:
-
-```python
-print(model)
-```
-
-to print the learned equations:
-
-```python
-PySRRegressor.equations_ = [
-	   pick     score                                           equation       loss  complexity
-	0        0.000000                                          4.4324794  42.354317           1
-	1        1.255691                                          (x0 * x0)   3.437307           3
-	2        0.011629                          ((x0 * x0) + -0.28087974)   3.358285           5
-	3        0.897855                              ((x0 * x0) + cos(x3))   1.368308           6
-	4        0.857018                ((x0 * x0) + (cos(x3) * 2.4566472))   0.246483           8
-	5  >>>>       inf  (((cos(x3) + -0.19699033) * 2.5382123) + (x0 *...   0.000000          10
-]
-```
-
-This arrow in the `pick` column indicates which equation is currently selected by your
-`model_selection` strategy for prediction.
-(You may change `model_selection` after `.fit(X, y)` as well.)
-
-`model.equations_` is a pandas DataFrame containing all equations, including callable format
-(`lambda_format`),
-SymPy format (`sympy_format` - which you can also get with `model.sympy()`), and even JAX and PyTorch format
-(both of which are differentiable - which you can get with `model.jax()` and `model.pytorch()`).
-
-Note that `PySRRegressor` stores the state of the last search, and will restart from where you left off the next time you call `.fit()`, assuming you have set `warm_start=True`.
-This will cause problems if significant changes are made to the search parameters (like changing the operators). You can run `model.reset()` to reset the state.
-
-You will notice that PySR will save two files: `hall_of_fame...csv` and `hall_of_fame...pkl`.
-The csv file is a list of equations and their losses, and the pkl file is a saved state of the model.
-You may load the model from the `pkl` file with:
-
-```python
-model = PySRRegressor.from_file("hall_of_fame.2022-08-10_100832.281.pkl")
-```
-
-There are several other useful features such as denoising (e.g., `denoising=True`),
-feature selection (e.g., `select_k_features=3`).
-For examples of these and other features, see the [examples page](https://astroautomata.com/PySR/examples).
-For a detailed look at more options, see the [options page](https://astroautomata.com/PySR/options).
-You can also see the full API at [this page](https://astroautomata.com/PySR/api).
-There are also tips for tuning PySR on [this page](https://astroautomata.com/PySR/tuning).
-
-### Detailed Example
-
-The following code makes use of as many PySR features as possible.
-Note that is just a demonstration of features and you should not use this example as-is.
-For details on what each parameter does, check out the [API page](https://astroautomata.com/PySR/api/).
-
-```python
-model = PySRRegressor(
-    procs=4,
-    populations=8,
-    # ^ 2 populations per core, so one is always running.
-    population_size=50,
-    # ^ Slightly larger populations, for greater diversity.
-    ncyclesperiteration=500, 
-    # ^ Generations between migrations.
-    niterations=10000000,  # Run forever
-    early_stop_condition=(
-        "stop_if(loss, complexity) = loss < 1e-6 && complexity < 10"
-        # Stop early if we find a good and simple equation
-    ),
-    timeout_in_seconds=60 * 60 * 24,
-    # ^ Alternatively, stop after 24 hours have passed.
-    maxsize=50,
-    # ^ Allow greater complexity.
-    maxdepth=10,
-    # ^ But, avoid deep nesting.
-    binary_operators=["*", "+", "-", "/"],
-    unary_operators=["square", "cube", "exp", "cos2(x)=cos(x)^2"],
-    constraints={
-        "/": (-1, 9),
-        "square": 9,
-        "cube": 9,
-        "exp": 9,
-    },
-    # ^ Limit the complexity within each argument.
-    # "inv": (-1, 9) states that the numerator has no constraint,
-    # but the denominator has a max complexity of 9.
-    # "exp": 9 simply states that `exp` can only have
-    # an expression of complexity 9 as input.
-    nested_constraints={
-        "square": {"square": 1, "cube": 1, "exp": 0},
-        "cube": {"square": 1, "cube": 1, "exp": 0},
-        "exp": {"square": 1, "cube": 1, "exp": 0},
-    },
-    # ^ Nesting constraints on operators. For example,
-    # "square(exp(x))" is not allowed, since "square": {"exp": 0}.
-    complexity_of_operators={"/": 2, "exp": 3},
-    # ^ Custom complexity of particular operators.
-    complexity_of_constants=2,
-    # ^ Punish constants more than variables
-    select_k_features=4,
-    # ^ Train on only the 4 most important features
-    progress=True,
-    # ^ Can set to false if printing to a file.
-    weight_randomize=0.1,
-    # ^ Randomize the tree much more frequently
-    cluster_manager=None,
-    # ^ Can be set to, e.g., "slurm", to run a slurm
-    # cluster. Just launch one script from the head node.
-    precision=64,
-    # ^ Higher precision calculations.
-    warm_start=True,
-    # ^ Start from where left off.
-    turbo=True,
-    # ^ Faster evaluation (experimental)
-    julia_project=None,
-    # ^ Can set to the path of a folder containing the
-    # "SymbolicRegression.jl" repo, for custom modifications.
-    update=False,
-    # ^ Don't update Julia packages
-    extra_sympy_mappings={"cos2": lambda x: sympy.cos(x)**2},
-    # extra_torch_mappings={sympy.cos: torch.cos},
-    # ^ Not needed as cos already defined, but this
-    # is how you define custom torch operators.
-    # extra_jax_mappings={sympy.cos: "jnp.cos"},
-    # ^ For JAX, one passes a string.
-)
-```
-
-## Docker
-
-You can also test out PySR in Docker, without
-installing it locally, by running the following command in
-the root directory of this repo:
-
-```bash
-docker build -t pysr .
-```
-
-This builds an image called `pysr` for your system's architecture,
-which also contains IPython.
-
-You can then run this with:
-
-```bash
-docker run -it --rm -v "$PWD:/data" pysr ipython
-```
-
-which will link the current directory to the container's `/data` directory
-and then launch ipython.
-
-If you have issues building for your system's architecture,
-you can emulate another architecture by including `--platform linux/amd64`,
-before the `build` and `run` commands.
