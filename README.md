@@ -8,9 +8,9 @@ https://user-images.githubusercontent.com/7593028/188328887-1b6cda72-2f41-439e-a
 
 PySR uses evolutionary algorithms to search for symbolic expressions which optimize a particular objective.
 
-| **Docs** | **Forums** | **colab demo** |
-|:---:|:---:|:---:|
-|[![Documentation](https://github.com/MilesCranmer/PySR/actions/workflows/docs.yml/badge.svg)](https://astroautomata.com/PySR/)|[![Discussions](https://img.shields.io/badge/discussions-github-informational)](https://github.com/MilesCranmer/PySR/discussions)|[![Colab](https://img.shields.io/badge/colab-notebook-yellow)](https://colab.research.google.com/github/MilesCranmer/PySR/blob/master/examples/pysr_demo.ipynb)|
+| **Docs** | **Forums** | **Paper** | **colab demo** |
+|:---:|:---:|:---:|:---:|
+|[![Documentation](https://github.com/MilesCranmer/PySR/actions/workflows/docs.yml/badge.svg)](https://astroautomata.com/PySR/)|[![Discussions](https://img.shields.io/badge/discussions-github-informational)](https://github.com/MilesCranmer/PySR/discussions)|[![Paper](https://img.shields.io/badge/arXiv-2305.01582-b31b1b)](https://arxiv.org/abs/2305.01582)|[![Colab](https://img.shields.io/badge/colab-notebook-yellow)](https://colab.research.google.com/github/MilesCranmer/PySR/blob/master/examples/pysr_demo.ipynb)|
 
 | **pip** | **conda** | **Stats** |
 | :---: | :---: | :---: |
