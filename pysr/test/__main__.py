@@ -11,7 +11,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "test",
         nargs="*",
-        help="Test to run. One or more of 'main', 'env', 'jax', 'torch'.",
+        help="Test to run. One or more of 'main', 'env', 'jax', 'torch', 'cli'.",
     )
 
     # Parse args:
@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
     # Run tests:
     for test in tests:
-        if test in {"main", "env", "jax", "torch"}:
+        if test in {"main", "env", "jax", "torch", "cli"}:
             cur_dir = os.path.dirname(os.path.abspath(__file__))
             print(f"Running test from {cur_dir}")
             if test == "main":
@@ -36,6 +36,8 @@ if __name__ == "__main__":
                 runtests_jax()
             elif test == "torch":
                 runtests_torch()
+            elif test == "cli":
+                runtests_cli()
         else:
             parser.print_help()
             raise SystemExit(1)

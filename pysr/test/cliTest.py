@@ -54,5 +54,10 @@ class TestCli(unittest.TestCase):
         self.assertEqual(expected, actual)
 
 
-if __name__ == '__main__':
-    unittest.main()
+def runtests():
+    """Run all tests in cliTest.py."""
+    loader = unittest.TestLoader()
+    suite = unittest.TestSuite()
+    suite.addTests(loader.loadTestsFromTestCase(TestCli))
+    runner = unittest.TextTestRunner()
+    return runner.run(suite)
