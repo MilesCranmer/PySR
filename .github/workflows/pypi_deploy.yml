@@ -8,6 +8,11 @@ on:
 jobs:
   pypi:
     runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/pysr
+    permissions:
+      id-token: write
     steps:
       - name: "Checkout"
         uses: actions/checkout@v3
@@ -23,9 +28,11 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-          repository_url: https://test.pypi.org/legacy/
-          skip_existing: true
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
+          verbose: true
       - name: "Publish distribution 📦 to PyPI"
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
+          verbose: true
