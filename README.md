@@ -2,7 +2,9 @@
 
 <div align="center">
 
-https://user-images.githubusercontent.com/7593028/188328887-1b6cda72-2f41-439e-ae23-75dd3489bc24.mp4
+
+https://github.com/MilesCranmer/PySR/assets/7593028/c8511a49-b408-488f-8f18-b1749078268f
+
 
 # PySR: High-Performance Symbolic Regression in Python and Julia
 
