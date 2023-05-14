@@ -2,13 +2,12 @@
 
 <div align="center">
 
+PySR searches for symbolic expressions which optimize a particular objective.
 
 https://github.com/MilesCranmer/PySR/assets/7593028/c8511a49-b408-488f-8f18-b1749078268f
 
 
 # PySR: High-Performance Symbolic Regression in Python and Julia
-
-PySR uses evolutionary algorithms to search for symbolic expressions which optimize a particular objective.
 
 | **Docs** | **Forums** | **Paper** | **colab demo** |
 |:---:|:---:|:---:|:---:|
