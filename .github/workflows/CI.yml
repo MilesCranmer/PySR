@@ -58,7 +58,9 @@ jobs:
       - name: "Install Coverage tool"
         run: pip install coverage coveralls
       - name: "Run tests"
-        run: coverage run --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test main
+        run: |
+            coverage run --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test main
+            coverage run --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test cli
       - name: "Install JAX"
         run: pip install jax jaxlib # (optional import)
       - name: "Run JAX tests"

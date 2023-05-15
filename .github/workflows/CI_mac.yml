@@ -56,7 +56,9 @@ jobs:
             python setup.py install
             python -m pysr install
       - name: "Run tests"
-        run: python -m pysr.test main
+        run: |
+            python -m pysr.test main
+            python -m pysr.test cli
       - name: "Install JAX"
         run: pip install jax jaxlib # (optional import)
       - name: "Run JAX tests"
