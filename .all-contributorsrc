@@ -165,6 +165,22 @@
       ]
     },
     {
+      "login": "w2ll2am",
+      "name": "William Booth-Clibborn",
+      "avatar_url": "https://avatars.githubusercontent.com/u/16038228?v=4",
+      "profile": "https://github.com/w2ll2am",
+      "contributions": [
+        "code",
+        "example",
+        "doc",
+        "userTesting",
+        "maintenance",
+        "review",
+        "tool",
+        "test"
+      ]
+    },
+    {
       "login": "Pablo-Lemos",
       "name": "Pablo Lemos",
       "avatar_url": "https://avatars.githubusercontent.com/u/38078898?v=4",
