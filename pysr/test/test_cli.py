@@ -6,7 +6,11 @@ def run_command(command):
     """
     Retrieve output of a command string, decode and convert from CRLF to LF formatting
     """
-    return subprocess.run(command.split(" "), stdout=subprocess.PIPE).stdout.decode("utf-8").replace("\r\n", "\n")
+    return (
+        subprocess.run(command.split(" "), stdout=subprocess.PIPE)
+        .stdout.decode("utf-8")
+        .replace("\r\n", "\n")
+    )
 
 
 def make_command(command):
@@ -17,17 +21,18 @@ def make_command(command):
 
 
 class TestCli(unittest.TestCase):
-
     def test_help_on_all_commands(self):
         command_to_test = "python -m pysr --help"
-        expected_lines = ["Usage: pysr [OPTIONS] COMMAND [ARGS]...",
-                          "",
-                          "Options:",
-                          "  --help  Show this message and exit.",
-                          "",
-                          "Commands:",
-                          "  install  Install Julia dependencies for PySR.",
-                          ""]
+        expected_lines = [
+            "Usage: pysr [OPTIONS] COMMAND [ARGS]...",
+            "",
+            "Options:",
+            "  --help  Show this message and exit.",
+            "",
+            "Commands:",
+            "  install  Install Julia dependencies for PySR.",
+            "",
+        ]
 
         expected = make_command(expected_lines)
         actual = run_command(command_to_test)
@@ -35,19 +40,21 @@ class TestCli(unittest.TestCase):
 
     def test_help_on_install(self):
         command_to_test = "python -m pysr install --help"
-        expected_lines = ["Usage: pysr install [OPTIONS]",
-                          "",
-                          "  Install Julia dependencies for PySR.",
-                          "",
-                          "Options:",
-                          "  -p, --project PROJECT_DIRECTORY",
-                          "                                  Install in a specific Julia project (e.g., a",
-                          "                                  local copy of SymbolicRegression.jl).",
-                          "  -q, --quiet                     Disable logging.",
-                          "  --precompile                    Force precompilation of Julia libraries.",
-                          "  --no-precompile                 Disable precompilation.",
-                          "  --help                          Show this message and exit.",
-                          ""]
+        expected_lines = [
+            "Usage: pysr install [OPTIONS]",
+            "",
+            "  Install Julia dependencies for PySR.",
+            "",
+            "Options:",
+            "  -p, --project PROJECT_DIRECTORY",
+            "                                  Install in a specific Julia project (e.g., a",
+            "                                  local copy of SymbolicRegression.jl).",
+            "  -q, --quiet                     Disable logging.",
+            "  --precompile                    Force precompilation of Julia libraries.",
+            "  --no-precompile                 Disable precompilation.",
+            "  --help                          Show this message and exit.",
+            "",
+        ]
 
         expected = make_command(expected_lines)
         actual = run_command(command_to_test)

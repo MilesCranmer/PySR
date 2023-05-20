@@ -96,7 +96,6 @@ def generate_single_table(
                         "$" + output_variable_name + " = " + latex_equation + "$"
                     )
                 else:
-
                     broken_latex_equation = " ".join(
                         [
                             r"\begin{minipage}{0.8\linewidth}",
