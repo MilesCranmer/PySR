@@ -13,13 +13,6 @@ def run_command(command):
     )
 
 
-def make_command(command):
-    """
-    Convert string into list with LF formatting (for unix systems), using \n delimiter
-    """
-    return "\n".join(command)
-
-
 class TestCli(unittest.TestCase):
     def test_help_on_all_commands(self):
         command_to_test = "python -m pysr --help"
@@ -34,7 +27,7 @@ class TestCli(unittest.TestCase):
             "",
         ]
 
-        expected = make_command(expected_lines)
+        expected = "\n".join(expected_lines)
         actual = run_command(command_to_test)
         self.assertEqual(expected, actual)
 
@@ -56,7 +49,7 @@ class TestCli(unittest.TestCase):
             "",
         ]
 
-        expected = make_command(expected_lines)
+        expected = "\n".join(expected_lines)
         actual = run_command(command_to_test)
         self.assertEqual(expected, actual)
 
