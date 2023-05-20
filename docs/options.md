@@ -96,7 +96,7 @@ you want `pysr` to use.
 
 ## Populations
 
-By default, `populations=100`, but you can set a different
+By default, `populations=15`, but you can set a different
 number of populations with this option.
 More populations may increase
 the diversity of equations discovered, though will take longer to train.
