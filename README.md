@@ -133,7 +133,7 @@ pip install -U pysr
 ```
 3. Finally, to install Julia dependencies:
 ```bash
-python3 -m pysr install
+python3 -c 'import pysr; pysr.install()'
 ```
 
 ---
