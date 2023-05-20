@@ -42,9 +42,11 @@ jobs:
             python -m pip install --upgrade pip
             pip install -r requirements.txt
             python setup.py install
-            python -c 'import pysr; pysr.install()'
+            python -m pysr install
       - name: "Run tests"
-        run: python -m pysr.test main
+        run: |
+            python -m pysr.test main
+            python -m pysr.test cli
       - name: "Run new env test"
         run: python -m pysr.test env
         if: ${{ !(matrix.os == 'windows-latest' && matrix.python-version == '3.7') }}
