@@ -133,12 +133,13 @@ python interface.
     - Alternatively, my personal preference is to use [juliaup](https://github.com/JuliaLang/juliaup#installation), which performs this automatically.
 2. Then, run:
 ```bash
-pip install -U pysr
+pip3 install -U pysr
 ```
 3. Finally, to install Julia dependencies:
 ```bash
-python3 -c 'import pysr; pysr.install()'
+python3 -m pysr install
 ```
+> (Alternatively, from within Python, you can call `import pysr; pysr.install()`)
 
 ---
 
@@ -150,7 +151,7 @@ The PySR build in conda includes all required dependencies, so you can install i
 conda install -c conda-forge pysr
 ```
 
-in your desired environment. 
+from within your target conda environment. 
 
 However, note that the conda install does not support precompilation of Julia libraries, so the
 start time may be slightly slower as the JIT-compilation will be running.
