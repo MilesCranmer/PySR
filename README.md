@@ -19,7 +19,7 @@ https://github.com/MilesCranmer/PySR/assets/7593028/c8511a49-b408-488f-8f18-b174
 
 </div>
 
-If you find PySR useful, please cite it using the citation information given in [CITATION.md](https://github.com/MilesCranmer/PySR/blob/master/CITATION.md).
+If you find PySR useful, please cite the paper [arXiv:2305.01582](https://arxiv.org/abs/2305.01582).
 If you've finished a project with PySR, please submit a PR to showcase your work on the [research showcase page](https://astroautomata.com/PySR/papers)!
 
 <div align="center">
