@@ -34,10 +34,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
           activate-environment: pysr-test
       - name: "Install pysr with mamba"
-        run: conda activate pysr-test && mamba install pysr
+        run: conda activate pysr-test && mamba install pysr libstdcxx-ng'<13'
         if: ${{ matrix.use-mamba }}
       - name: "Install pysr with conda"
-        run: conda activate pysr-test && conda install pysr
+        run: conda activate pysr-test && conda install pysr libstdcxx-ng'<13'
         if: ${{ !matrix.use-mamba }}
       - name: "Print out conda list"
         run: conda list
