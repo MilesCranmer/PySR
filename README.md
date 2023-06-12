@@ -4,18 +4,13 @@
 
 PySR searches for symbolic expressions which optimize a particular objective.
 
-https://github.com/MilesCranmer/PySR/assets/7593028/c8511a49-b408-488f-8f18-b1749078268f
-
+<https://github.com/MilesCranmer/PySR/assets/7593028/c8511a49-b408-488f-8f18-b1749078268f>
 
 # PySR: High-Performance Symbolic Regression in Python and Julia
 
-| **Docs** | **Forums** | **Paper** | **colab demo** |
-|:---:|:---:|:---:|:---:|
-|[![Documentation](https://github.com/MilesCranmer/PySR/actions/workflows/docs.yml/badge.svg)](https://astroautomata.com/PySR/)|[![Discussions](https://img.shields.io/badge/discussions-github-informational)](https://github.com/MilesCranmer/PySR/discussions)|[![Paper](https://img.shields.io/badge/arXiv-2305.01582-b31b1b)](https://arxiv.org/abs/2305.01582)|[![Colab](https://img.shields.io/badge/colab-notebook-yellow)](https://colab.research.google.com/github/MilesCranmer/PySR/blob/master/examples/pysr_demo.ipynb)|
-
-| **pip** | **conda** | **Stats** |
-| :---: | :---: | :---: |
-|[![PyPI version](https://badge.fury.io/py/pysr.svg)](https://badge.fury.io/py/pysr)|[![Conda Version](https://img.shields.io/conda/vn/conda-forge/pysr.svg)](https://anaconda.org/conda-forge/pysr)|<div align="center">pip: [![Downloads](https://pepy.tech/badge/pysr)](https://badge.fury.io/py/pysr)<br>conda: [![Anaconda-Server Badge](https://anaconda.org/conda-forge/pysr/badges/downloads.svg)](https://anaconda.org/conda-forge/pysr)</div>|
+| **Docs** | **pip** | **Forums** | **Paper** | **colab demo** |
+|:---:|:---:|:---:|:---:|:---:|
+|[![Documentation](https://github.com/MilesCranmer/PySR/actions/workflows/docs.yml/badge.svg)](https://astroautomata.com/PySR/)|[![PyPI version](https://badge.fury.io/py/pysr.svg)](https://badge.fury.io/py/pysr)|[![Discussions](https://img.shields.io/badge/discussions-github-informational)](https://github.com/MilesCranmer/PySR/discussions)|[![Paper](https://img.shields.io/badge/arXiv-2305.01582-b31b1b)](https://arxiv.org/abs/2305.01582)|[![Colab](https://img.shields.io/badge/colab-notebook-yellow)](https://colab.research.google.com/github/MilesCranmer/PySR/blob/master/examples/pysr_demo.ipynb)|
 
 </div>
 
@@ -121,41 +116,24 @@ python interface.
 
 ## Installation
 
-| [pip](#pip) | [conda](#conda) | [docker](#docker-build) |
-|:---:|:---:|:---:|
-| Everywhere (recommended) | Linux and Intel-based macOS | Everywhere (if all else fails) |
-
----
 
 ### pip
 
 1. [Install Julia](https://julialang.org/downloads/)
     - Alternatively, my personal preference is to use [juliaup](https://github.com/JuliaLang/juliaup#installation), which performs this automatically.
 2. Then, run:
+
 ```bash
 pip3 install -U pysr
 ```
+
 3. Finally, to install Julia dependencies:
+
 ```bash
 python3 -m pysr install
 ```
+
 > (Alternatively, from within Python, you can call `import pysr; pysr.install()`)
-
----
-
-### conda
-
-The PySR build in conda includes all required dependencies, so you can install it by simply running:
-
-```bash
-conda install -c conda-forge pysr
-```
-
-from within your target conda environment. 
-
-However, note that the conda install does not support precompilation of Julia libraries, so the
-start time may be slightly slower as the JIT-compilation will be running.
-(Once the compilation finishes, there will not be a performance difference though.)
 
 ---
 
@@ -163,10 +141,13 @@ start time may be slightly slower as the JIT-compilation will be running.
 
 1. Clone this repo.
 2. In the repo, run the build command with:
+
 ```bash
 docker build -t pysr .
 ```
+
 3. You can then start the container with an IPython execution with:
+
 ```bash
 docker run -it --rm pysr ipython
 ```
@@ -251,13 +232,13 @@ to print the learned equations:
 
 ```python
 PySRRegressor.equations_ = [
-	   pick     score                                           equation       loss  complexity
-	0        0.000000                                          4.4324794  42.354317           1
-	1        1.255691                                          (x0 * x0)   3.437307           3
-	2        0.011629                          ((x0 * x0) + -0.28087974)   3.358285           5
-	3        0.897855                              ((x0 * x0) + cos(x3))   1.368308           6
-	4        0.857018                ((x0 * x0) + (cos(x3) * 2.4566472))   0.246483           8
-	5  >>>>       inf  (((cos(x3) + -0.19699033) * 2.5382123) + (x0 *...   0.000000          10
+    pick     score                                           equation       loss  complexity
+ 0        0.000000                                          4.4324794  42.354317           1
+ 1        1.255691                                          (x0 * x0)   3.437307           3
+ 2        0.011629                          ((x0 * x0) + -0.28087974)   3.358285           5
+ 3        0.897855                              ((x0 * x0) + cos(x3))   1.368308           6
+ 4        0.857018                ((x0 * x0) + (cos(x3) * 2.4566472))   0.246483           8
+ 5  >>>>       inf  (((cos(x3) + -0.19699033) * 2.5382123) + (x0 *...   0.000000          10
 ]
 ```
 
