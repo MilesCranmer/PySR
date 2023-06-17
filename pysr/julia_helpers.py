@@ -193,7 +193,7 @@ def init_julia(julia_project=None, quiet=False, julia_kwargs=None, return_aux=Fa
         julia_kwargs = {**julia_kwargs, "compiled_modules": False}
         Julia(**julia_kwargs)
         warnings.warn(
-            "Your system's Python library is static (e.g., conda), so precompilation will be turned off. For a dynamic library, try `pyenv`."
+            "Your system's Python library is static (e.g., conda), so precompilation will be turned off. For a dynamic library, try using `pyenv` and installing with `--enable-shared`: https://github.com/pyenv/pyenv/blob/master/plugins/python-build/README.md#building-with---enable-shared."
         )
 
     using_compiled_modules = (not "compiled_modules" in julia_kwargs) or julia_kwargs[
