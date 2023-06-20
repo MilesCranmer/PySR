@@ -1702,12 +1702,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/SymbolicRegression.jl
-        self.raw_julia_state_ = SymbolicRegression.EquationSearch(
+        self.raw_julia_state_ = SymbolicRegression.equation_search(
             Main.X,
             Main.y,
             weights=Main.weights,
             niterations=int(self.niterations),
-            varMap=self.feature_names_in_.tolist(),
+            variable_names=self.feature_names_in_.tolist(),
             options=options,
             numprocs=cprocs,
             parallelism=parallelism,
