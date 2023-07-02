@@ -81,7 +81,17 @@ def install(julia_project=None, quiet=False, precompile=None):  # pragma: no cov
     if precompile == False:
         os.environ["JULIA_PKG_PRECOMPILE_AUTO"] = "0"
 
-    julia.install(quiet=quiet)
+    try:
+        julia.install(quiet=quiet)
+    except JuliaError as e:
+        if "Unsatisfiable requirements detected" in str(e):
+            # Add another message on top, pointing the user to issue #27:
+            raise JuliaError(
+                str(e) + "\n\n"
+                "You might have luck with the solutions presented in "
+                "https://github.com/MilesCranmer/PySR/issues/27."
+            )
+
     Main, init_log = init_julia(julia_project, quiet=quiet, return_aux=True)
     io_arg = _get_io_arg(quiet)
 
