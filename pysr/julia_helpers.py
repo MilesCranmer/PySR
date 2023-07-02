@@ -86,7 +86,7 @@ def install(julia_project=None, quiet=False, precompile=None):  # pragma: no cov
     except julia.tools.PyCallInstallError:
         raise RuntimeError(
             "Installing PyCall.jl failed. "
-            "Please delete the folder `~/.julia/packages/PyCall` folder, "
+            "Please delete the folder `~/.julia/packages/PyCall`, "
             "and re-try installation. For further assistance, "
             "please see the issue "
             "https://github.com/MilesCranmer/PySR/issues/257."
