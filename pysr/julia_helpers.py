@@ -81,7 +81,17 @@ def install(julia_project=None, quiet=False, precompile=None):  # pragma: no cov
     if precompile == False:
         os.environ["JULIA_PKG_PRECOMPILE_AUTO"] = "0"
 
-    julia.install(quiet=quiet)
+    try:
+        julia.install(quiet=quiet)
+    except julia.tools.PyCallInstallError:
+        raise RuntimeError(
+            "Installing PyCall.jl failed. "
+            "Please delete the folder `~/.julia/packages/PyCall` folder, "
+            "and re-try installation. For further assistance, "
+            "please see the issue "
+            "https://github.com/MilesCranmer/PySR/issues/257."
+        )
+
     Main, init_log = init_julia(julia_project, quiet=quiet, return_aux=True)
     io_arg = _get_io_arg(quiet)
 
