@@ -118,7 +118,16 @@ def _import_error():
 def _process_julia_project(julia_project):
     if julia_project is None:
         is_shared = True
-        processed_julia_project = f"pysr-{__version__}"
+        juliainfo = _load_juliainfo()
+        julia_version = ".".join(
+            map(str, (juliainfo.version_major, juliainfo.version_minor))
+        )
+        python_version = ".".join(map(str, sys.version_info[:2]))
+        processed_julia_project = (
+            f"pysr-{__version__}"
+            f"-py-{python_version}"
+            f"-jl-{julia_version}"
+        )
     elif julia_project[0] == "@":
         is_shared = True
         processed_julia_project = julia_project[1:]
