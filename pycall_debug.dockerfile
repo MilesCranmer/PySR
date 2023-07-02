@@ -27,7 +27,14 @@ RUN pyenv install 3.9.2 && pyenv global 3.9.2
 RUN python3 -m pip install --upgrade pip
 
 # Try to install pysr:
-RUN python3 -m pip install pysr==0.14.2
+WORKDIR /pysr
+ADD ./requirements.txt /pysr/requirements.txt
+RUN python3 -m pip install -r /pysr/requirements.txt
+
+ADD ./setup.py /pysr/setup.py
+ADD ./pysr/ /pysr/pysr/
+RUN python3 -m pip install .
+
 RUN python3 -m pysr install
 
 # Change Python version:
@@ -35,7 +42,6 @@ RUN pyenv install 3.10 && pyenv global 3.10 && pyenv uninstall -f 3.9.2
 RUN python3 -m pip install --upgrade pip
 
 # Try to use PySR:
-RUN python3 -m pip install pysr==0.14.2
+RUN python3 -m pip install .
 RUN rm -r ~/.julia/environments/pysr-0.14.2
-# RUN julia -e 'using Pkg; Pkg.add("PyCall"); Pkg.build("PyCall")'
-# RUN python3 -m pysr install
+RUN python3 -m pysr install
