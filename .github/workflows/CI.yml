@@ -78,6 +78,15 @@ jobs:
           COVERALLS_PARALLEL: true
         run: coveralls --service=github
 
+  incremental_install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: "Build incremental install"
+        run: docker build -t pysr -f pysr/test/incremental_install_simulator.dockerfile .
+      - name: "Test incremental install"
+        run: docker run --rm pysr /bin/bash -c 'python3 -m pysr.test main && python3 -m pysr.test env'
+
   conda_test:
     runs-on: ${{ matrix.os }}
     defaults:
