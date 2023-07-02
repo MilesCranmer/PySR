@@ -124,7 +124,7 @@ def _process_julia_project(julia_project):
         )
         python_version = ".".join(map(str, sys.version_info[:2]))
         processed_julia_project = (
-            f"pysr-{__version__}" f"-py-{python_version}" f"-jl-{julia_version}"
+            f"pysr-{__version__}-py-{python_version}-jl-{julia_version}"
         )
     elif julia_project[0] == "@":
         is_shared = True
