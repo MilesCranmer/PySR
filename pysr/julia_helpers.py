@@ -86,11 +86,14 @@ def install(julia_project=None, quiet=False, precompile=None):  # pragma: no cov
     except julia.tools.PyCallInstallError:
         # Attempt to reset PyCall.jl's build:
         subprocess.run(
-            ["julia", "-e", f'ENV["PYTHON"] = "{sys.executable}"; import Pkg; Pkg.build("PyCall")'],
+            [
+                "julia",
+                "-e",
+                f'ENV["PYTHON"] = "{sys.executable}"; import Pkg; Pkg.build("PyCall")',
+            ],
         )
         # Try installing again:
         julia.install(quiet=quiet)
-
 
     Main, init_log = init_julia(julia_project, quiet=quiet, return_aux=True)
     io_arg = _get_io_arg(quiet)
