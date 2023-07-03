@@ -85,7 +85,7 @@ jobs:
       - name: "Build incremental install"
         run: docker build -t pysr -f pysr/test/incremental_install_simulator.dockerfile .
       - name: "Test incremental install"
-        run: docker run --rm pysr /bin/bash -c 'python3 -m pysr.test main && python3 -m pysr.test env'
+        run: docker run --rm pysr /bin/bash -l -c 'python3 -m pysr.test main && python3 -m pysr.test env'
 
   conda_test:
     runs-on: ${{ matrix.os }}
