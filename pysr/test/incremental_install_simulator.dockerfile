@@ -1,3 +1,7 @@
+# This dockerfile simulates a user installation that first
+# builds PySR for Python 3.9, and then upgrades to Python 3.10.
+# Normally this would cause an error when installing PyCall, so we want to
+# ensure that PySR can automatically patch things.
 FROM debian:bullseye-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
