@@ -48,5 +48,5 @@ RUN python3 -m pip install --upgrade pip
 
 # Second install of PySR:
 RUN python3 -m pip install .
-RUN rm -r ~/.julia/environments/pysr-0.14.2
+RUN rm -r ~/.julia/environments/pysr-*
 RUN python3 -m pysr install
