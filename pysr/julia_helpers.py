@@ -81,7 +81,20 @@ def install(julia_project=None, quiet=False, precompile=None):  # pragma: no cov
     if precompile == False:
         os.environ["JULIA_PKG_PRECOMPILE_AUTO"] = "0"
 
-    julia.install(quiet=quiet)
+    try:
+        julia.install(quiet=quiet)
+    except julia.tools.PyCallInstallError:
+        # Attempt to reset PyCall.jl's build:
+        subprocess.run(
+            [
+                "julia",
+                "-e",
+                f'ENV["PYTHON"] = "{sys.executable}"; import Pkg; Pkg.build("PyCall")',
+            ],
+        )
+        # Try installing again:
+        julia.install(quiet=quiet)
+
     Main, init_log = init_julia(julia_project, quiet=quiet, return_aux=True)
     io_arg = _get_io_arg(quiet)
 
