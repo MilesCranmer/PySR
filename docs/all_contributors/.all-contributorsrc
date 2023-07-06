@@ -165,6 +165,23 @@
       ]
     },
     {
+      "login": "OkonSamuel",
+      "name": "Okon Samuel",
+      "avatar_url": "https://avatars.githubusercontent.com/u/39421418?v=4",
+      "profile": "https://github.com/OkonSamuel",
+      "contributions": [
+        "bug",
+        "code",
+        "doc",
+        "maintenance",
+        "ideas",
+        "infra",
+        "review",
+        "test",
+        "userTesting"
+      ]
+    },
+    {
       "login": "w2ll2am",
       "name": "William Booth-Clibborn",
       "avatar_url": "https://avatars.githubusercontent.com/u/16038228?v=4",
@@ -209,7 +226,7 @@
         "review",
         "userTesting"
       ]
-    },   
+    },
     {
       "login": "CharFox1",
       "name": "Charles Fox",
@@ -302,6 +319,17 @@
       ]
     },
     {
+      "login": "ablaom",
+      "name": "Anthony Blaom, PhD",
+      "avatar_url": "https://avatars.githubusercontent.com/u/30517088?v=4",
+      "profile": "https://github.com/ablaom",
+      "contributions": [
+        "infra",
+        "ideas",
+        "review"
+      ]
+    },
+    {
       "login": "Jgmedina95",
       "name": "Jgmedina95",
       "avatar_url": "https://avatars.githubusercontent.com/u/97254349?v=4",
@@ -333,7 +361,18 @@
         "code",
         "ideas"
       ]
-    }, 
+    },
+    {
+      "login": "ericphanson",
+      "name": "Eric Hanson",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5846501?v=4",
+      "profile": "https://ericphanson.com/",
+      "contributions": [
+        "ideas",
+        "promotion",
+        "userTesting"
+      ]
+    },
     {
       "login": "henriquebecker91",
       "name": "Henrique Becker",
