@@ -22,13 +22,21 @@ https://github.com/MilesCranmer/PySR/assets/7593028/c8511a49-b408-488f-8f18-b174
 If you find PySR useful, please cite the paper [arXiv:2305.01582](https://arxiv.org/abs/2305.01582).
 If you've finished a project with PySR, please submit a PR to showcase your work on the [research showcase page](https://astroautomata.com/PySR/papers)!
 
+**Contents**:
+
+- [Contributors](#contributors-)
+- [Why PySR?](#why-pysr)
+- [Installation](#installation)
+- [Quickstart](#quickstart)
+- [→ Documentation](https://astroautomata.com/PySR)
+
 <div align="center">
 
 ### Contributors ✨
 
 </div>
 
-We are eager to welcome new contributors and are looking forward to get you up to speed! Check out our contributors [guide](https://github.com/MilesCranmer/PySR/blob/master/CONTRIBUTORS.md) for tips 🚀.
+We are eager to welcome new contributors! Check out our contributors [guide](https://github.com/MilesCranmer/PySR/blob/master/CONTRIBUTORS.md) for tips 🚀.
 If you have an idea for a new feature, don't hesitate to share it on the [issues](https://github.com/MilesCranmer/PySR/issues) or [discussions](https://github.com/MilesCranmer/PySR/discussions) page.
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
@@ -94,33 +102,26 @@ If you have an idea for a new feature, don't hesitate to share it on the [issues
 
 </div>
 
-PySR is built on an extremely optimized pure-Julia backend: [SymbolicRegression.jl](https://github.com/MilesCranmer/SymbolicRegression.jl).
+## Why PySR?
 
-Symbolic regression is a very interpretable machine learning algorithm
-for low-dimensional problems: these tools search equation space
-to find algebraic relations that approximate a dataset.
+PySR is an open-source tool for *Symbolic Regression*: a machine learning
+task where the goal is to find an interpretable symbolic expression that optimizes some objective.
 
-One can also
-extend these approaches to higher-dimensional
-spaces by using a neural network as proxy, as explained in
+Over a period of several years, PySR has been engineered from the ground up
+to be (1) as high-performance as possible,
+(2) as configurable as possible, and (3) easy to use.
+PySR is developed alongside the Julia library [SymbolicRegression.jl](https://github.com/MilesCranmer/SymbolicRegression.jl),
+which forms the powerful search engine of PySR.
+The details of these algorithms are described in the [PySR paper](https://arxiv.org/abs/2305.01582).
+
+Symbolic regression works best on low-dimensional datasets, but
+one can also extend these approaches to higher-dimensional
+spaces by using "*Symbolic Distillation*" of Neural Networks, as explained in
 [2006.11287](https://arxiv.org/abs/2006.11287), where we apply
 it to N-body problems. Here, one essentially uses
 symbolic regression to convert a neural net
 to an analytic equation. Thus, these tools simultaneously present
-an explicit and powerful way to interpret deep models.
-
-*Backstory:*
-
-Previously, we have used
-[eureqa](https://www.creativemachineslab.com/eureqa.html),
-which is a very efficient and user-friendly tool. However,
-eureqa is GUI-only, doesn't allow for user-defined
-operators, has no distributed capabilities,
-and has become proprietary (and recently been merged into an online
-service). Thus, the goal
-of this package is to have an open-source symbolic regression tool
-as efficient as eureqa, while also exposing a configurable
-python interface.
+an explicit and powerful way to interpret deep neural networks.
 
 ## Installation
 
@@ -186,7 +187,7 @@ If none of these folders contain your Julia binary, then you need to add Julia's
 
 **Running PySR on macOS with an M1 processor:** you should use the pip version, and make sure to get the Julia binary for ARM/M-series processors.
 
-## Introduction
+## Quickstart
 
 You might wish to try the interactive tutorial [here](https://colab.research.google.com/github/MilesCranmer/PySR/blob/master/examples/pysr_demo.ipynb), which uses the notebook in `examples/pysr_demo.ipynb`.
 
@@ -370,7 +371,7 @@ model = PySRRegressor(
 )
 ```
 
-## Docker
+### Docker
 
 You can also test out PySR in Docker, without
 installing it locally, by running the following command in
