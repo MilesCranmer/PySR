@@ -6,6 +6,6 @@
   "author": "MilesCranmer <miles.cranmer@gmail.com>",
   "license": "MIT",
   "devDependencies": {
-    "all-contributors-cli": "^6.26.0"
+    "all-contributors-cli": "6.25.1"
   }
 }
