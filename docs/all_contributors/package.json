@@ -1,0 +1,11 @@
+{
+  "name": "PySR",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:MilesCranmer/PySR.git",
+  "author": "MilesCranmer <miles.cranmer@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "all-contributors-cli": "^6.26.0"
+  }
+}
