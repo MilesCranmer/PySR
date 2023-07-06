@@ -4,7 +4,7 @@
   "main": "index.js",
   "repository": "git@github.com:MilesCranmer/PySR.git",
   "author": "MilesCranmer <miles.cranmer@gmail.com>",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "devDependencies": {
     "all-contributors-cli": "6.25.1"
   }
