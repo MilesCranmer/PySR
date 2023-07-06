@@ -4,8 +4,8 @@
   "repoType": "github",
   "repoHost": "https://github.com",
   "files": [
-    "/workspace/README.md",
-    "/workspace/CONTRIBUTORS.md"
+    "README.md",
+    "CONTRIBUTORS.md"
   ],
   "imageSize": 50,
   "commit": false,
