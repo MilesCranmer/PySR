@@ -1654,7 +1654,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             optimizer_iterations=self.optimizer_iterations,
             perturbation_factor=self.perturbation_factor,
             annealing=self.annealing,
-            return_state=True,  # Required for state saving.
             progress=progress,
             timeout_in_seconds=self.timeout_in_seconds,
             crossover_probability=self.crossover_probability,
@@ -1712,6 +1711,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             numprocs=cprocs,
             parallelism=parallelism,
             saved_state=self.raw_julia_state_,
+            return_state=True,
             addprocs_function=cluster_manager,
         )
 
