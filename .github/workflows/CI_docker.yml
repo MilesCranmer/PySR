@@ -29,14 +29,12 @@ jobs:
         shell: bash
     strategy:
       matrix:
-        julia-version: ['1.8.2']
-        python-version: ['3.10.8']
         os: [ubuntu-latest]
         arch: ['linux/amd64']
 
     steps:
       - uses: actions/checkout@v3
       - name: Build docker
-        run: docker build --platform=${{ matrix.arch }} -t pysr --build-arg JLVERSION=${{ matrix.julia-version }} --build-arg PYVERSION=${{ matrix.python-version }} .
+        run: docker build --platform=${{ matrix.arch }} -t pysr .
       - name: Test docker
         run: docker run --platform=${{ matrix.arch }} --rm pysr /bin/bash -c 'python3 -m pysr.test main && python3 -m pysr.test cli && python3 -m pysr.test env'
