@@ -1367,7 +1367,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     "Using DataFrame column names instead."
                 )
 
-            if X.columns.is_object() and X.columns.str.contains(" ").any():
+            if (
+                pd.api.types.is_object_dtype(X.columns)
+                and X.columns.str.contains(" ").any()
+            ):
                 X.columns = X.columns.str.replace(" ", "_")
                 warnings.warn(
                     "Spaces in DataFrame column names are not supported. "
@@ -1726,7 +1729,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             niterations=int(self.niterations),
             variable_names=(
                 self.pretty_feature_names_in_.tolist()
-                if self.pretty_feature_names_in_ is not None
+                if hasattr(self, "pretty_feature_names_in_")
+                and self.pretty_feature_names_in_ is not None
                 else self.feature_names_in_.tolist()
             ),
             options=options,
@@ -2123,7 +2127,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             },
         )
         # Regexp replace x₁₂₃ to x123 in `equation`:
-        if self.pretty_feature_names_in_ is not None:
+        if (
+            hasattr(self, "pretty_feature_names_in_")
+            and self.pretty_feature_names_in_ is not None
+        ):
             # df["equation"] = df["equation"].apply(_undo_subscriptify_full)
             for pname, name in zip(
                 self.pretty_feature_names_in_, self.feature_names_in_
