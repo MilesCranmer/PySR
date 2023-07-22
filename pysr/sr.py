@@ -633,8 +633,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     feature_names_in_ : ndarray of shape (`n_features_in_`,)
         Names of features seen during :term:`fit`. Defined only when `X`
         has feature names that are all strings.
-    is_default_feature_names_ : bool
-        Whether `feature_names_in_` was not set by the user.
+    pretty_feature_names_in_ : ndarray of shape (`n_features_in_`,)
+        Pretty names of features, used only during printing.
     nout_ : int
         Number of output dimensions.
     selection_mask_ : list[int] of length `select_k_features`
@@ -997,12 +997,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         model.n_features_in_ = n_features_in
 
         if feature_names_in is None:
-            model.feature_names_in_ = [f"x{_subscriptify(i)}" for i in range(n_features_in)]
-            model.is_default_feature_names_ = True
+            model.feature_names_in_ = [f"x{i}" for i in range(n_features_in)]
+            model.pretty_feature_names_in_ = [
+                f"x{_subscriptify(i)}" for i in range(n_features_in)
+            ]
         else:
             assert len(feature_names_in) == n_features_in
             model.feature_names_in_ = feature_names_in
-            model.is_default_feature_names_ = False
+            model.pretty_feature_names_in_ = None
 
         if selection_mask is None:
             model.selection_mask_ = np.ones(n_features_in, dtype=bool)
@@ -1388,17 +1390,17 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             weights = check_array(weights, ensure_2d=False)
             check_consistent_length(weights, y)
         X, y = self._validate_data(X=X, y=y, reset=True, multi_output=True)
-        feature_names_in_ = _check_feature_names_in(self, variable_names, generate_names=False)
+        self.feature_names_in_ = _check_feature_names_in(
+            self, variable_names, generate_names=False
+        )
 
-        if feature_names_in_ is None:
-            self.feature_names_in_ = [f"x{_subscriptify(i)}" for i in range(X.shape[1])]
-            # We record that we have generated the feature names
-            # so that we can undo the subscriptification (for
-            # SymPy compatibility).
-            self.is_default_feature_names_ = True
+        if self.feature_names_in_ is None:
+            self.feature_names_in_ = [f"x{i}" for i in range(X.shape[1])]
+            self.pretty_feature_names_in_ = [
+                f"x{_subscriptify(i)}" for i in range(X.shape[1])
+            ]
         else:
-            self.feature_names_in = feature_names_in_
-            self.is_default_feature_names_ = False
+            self.pretty_feature_names_in_ = None
 
         variable_names = self.feature_names_in_
 
@@ -1721,7 +1723,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Main.y,
             weights=Main.weights,
             niterations=int(self.niterations),
-            variable_names=self.feature_names_in_,
+            variable_names=(
+                self.pretty_feature_names_in_
+                if self.pretty_feature_names_in_ is not None
+                else self.feature_names_in_
+            ),
             options=options,
             numprocs=cprocs,
             parallelism=parallelism,
@@ -2098,9 +2104,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 with open(filename, "r") as f:
                     buf = f.read()
                 buf = _preprocess_julia_floats(buf)
-                all_outputs = [
-                    self._postprocess_dataframe(pd.read_csv(StringIO(buf)))
-                ]
+                all_outputs = [self._postprocess_dataframe(pd.read_csv(StringIO(buf)))]
 
         except FileNotFoundError:
             raise RuntimeError(
@@ -2118,13 +2122,22 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             },
         )
         # Regexp replace x₁₂₃ to x123 in `equation`:
-        if self.is_default_feature_names_:
-            df["equation"] = df["equation"].apply(
-                lambda s: re.sub(r"x([₀₁₂₃₄₅₆₇₈₉]+)", lambda m: f"x{_undo_subscriptify(m.group(1))}", s)
-            )
+        if self.pretty_feature_names_in_ is not None:
+            # df["equation"] = df["equation"].apply(_undo_subscriptify_full)
+            for pname, name in zip(
+                self.pretty_feature_names_in_, self.feature_names_in_
+            ):
+                df["equation"] = df["equation"].apply(
+                    lambda s: re.sub(
+                        r"\b" + f"({pname})" + r"\b",
+                        name,
+                        s,
+                    )
+                    if isinstance(s, str)
+                    else s
+                )
 
         return df
-
 
     def get_hof(self):
         """Get the equations from a hall of fame file.
@@ -2434,10 +2447,3 @@ def _subscriptify(i: int) -> str:
     For example, 123 -> "₁₂₃".
     """
     return "".join([chr(0x2080 + int(c)) for c in str(i)])
-
-def _undo_subscriptify(s: str) -> int:
-    """Converts subscript text form to integer.
-
-    For example, "₁₂₃" -> 123.
-    """
-    return int("".join([str(ord(c) - 0x2080) for c in s]))
