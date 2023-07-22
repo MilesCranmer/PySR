@@ -259,6 +259,7 @@ def init_julia(julia_project=None, quiet=False, julia_kwargs=None, return_aux=Fa
 
 def _add_sr_to_julia_project(Main, io_arg):
     Main.eval("using Pkg")
+    Main.eval("Pkg.Registry.update()")
     Main.sr_spec = Main.PackageSpec(
         name="SymbolicRegression",
         url="https://github.com/MilesCranmer/SymbolicRegression.jl",
