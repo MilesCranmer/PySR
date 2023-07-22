@@ -922,10 +922,21 @@ class TestDimensionalConstraints(unittest.TestCase):
     def test_dimensional_constraints(self):
         y = np.cos(self.X[:, 0])
         model = PySRRegressor(
-            unary_operators=["cos"],
+            binary_operators=[
+                "my_add(x, y) = x + y",
+                "my_sub(x, y) = x - y",
+                "my_mul(x, y) = x * y",
+            ],
+            unary_operators=["my_cos(x) = cos(x)"],
             **self.default_test_kwargs,
             early_stop_condition=1e-8,
             select_k_features=3,
+            extra_sympy_mappings={
+                "my_cos": sympy.cos,
+                "my_add": lambda x, y: x + y,
+                "my_sub": lambda x, y: x - y,
+                "my_mul": lambda x, y: x * y,
+            },
         )
         model.fit(self.X, y, X_units=["m", "m", "m", "m", "m"], y_units="m")
 
