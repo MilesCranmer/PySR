@@ -1706,7 +1706,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Main.y,
             weights=Main.weights,
             niterations=int(self.niterations),
-            variable_names=self.feature_names_in_.tolist(),
+            variable_names=_format_feature_names(self.feature_names_in_),
             options=options,
             numprocs=cprocs,
             parallelism=parallelism,
@@ -2409,3 +2409,12 @@ def _preprocess_julia_floats(s: str) -> str:
         s = _apply_regexp_im_sci(s)
         s = _apply_regexp_sci(s)
     return s
+
+
+def _format_feature_names(feature_names_in):
+    if all([f"x{i}" == feature_names_in[i] for i in range(len(feature_names_in))]):
+        # Use `equation_search` defaults, which are
+        # just the unicode versions
+        return None
+    else:
+        return feature_names_in.tolist()
