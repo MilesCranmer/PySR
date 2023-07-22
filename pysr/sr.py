@@ -997,10 +997,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         model.n_features_in_ = n_features_in
 
         if feature_names_in is None:
-            model.feature_names_in_ = [f"x{i}" for i in range(n_features_in)]
-            model.pretty_feature_names_in_ = [
-                f"x{_subscriptify(i)}" for i in range(n_features_in)
-            ]
+            model.feature_names_in_ = np.array([f"x{i}" for i in range(n_features_in)])
+            model.pretty_feature_names_in_ = np.array(
+                [f"x{_subscriptify(i)}" for i in range(n_features_in)]
+            )
         else:
             assert len(feature_names_in) == n_features_in
             model.feature_names_in_ = feature_names_in
@@ -1395,10 +1395,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         )
 
         if self.feature_names_in_ is None:
-            self.feature_names_in_ = [f"x{i}" for i in range(X.shape[1])]
-            self.pretty_feature_names_in_ = [
-                f"x{_subscriptify(i)}" for i in range(X.shape[1])
-            ]
+            self.feature_names_in_ = np.array([f"x{i}" for i in range(X.shape[1])])
+            self.pretty_feature_names_in_ = np.array(
+                [f"x{_subscriptify(i)}" for i in range(X.shape[1])]
+            )
         else:
             self.pretty_feature_names_in_ = None
 
@@ -1474,6 +1474,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             X, y = self._validate_data(X=X, y=y, reset=True, multi_output=True)
             # Update feature names with selected variable names
             self.feature_names_in_ = _check_feature_names_in(self, variable_names)
+            self.pretty_feature_names_in_ = None
             print(f"Using features {self.feature_names_in_}")
 
         # Denoising transformation
@@ -1724,9 +1725,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             weights=Main.weights,
             niterations=int(self.niterations),
             variable_names=(
-                self.pretty_feature_names_in_
+                self.pretty_feature_names_in_.tolist()
                 if self.pretty_feature_names_in_ is not None
-                else self.feature_names_in_
+                else self.feature_names_in_.tolist()
             ),
             options=options,
             numprocs=cprocs,
