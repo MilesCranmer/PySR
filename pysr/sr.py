@@ -184,7 +184,7 @@ def _check_assertions(
                     f"Variable name {var_name} is already a function name."
                 )
             # Check if alphanumeric only:
-            if not re.match(r"^[a-zA-Z0-9_]+$", var_name):
+            if not re.match(r"^[₀₁₂₃₄₅₆₇₈₉a-zA-Z0-9_]+$", var_name):
                 raise ValueError(
                     f"Invalid variable name {var_name}. "
                     "Only alphanumeric characters, numbers, "
@@ -633,6 +633,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     feature_names_in_ : ndarray of shape (`n_features_in_`,)
         Names of features seen during :term:`fit`. Defined only when `X`
         has feature names that are all strings.
+    is_default_feature_names_ : bool
+        Whether `feature_names_in_` was not set by the user.
     nout_ : int
         Number of output dimensions.
     selection_mask_ : list[int] of length `select_k_features`
@@ -995,10 +997,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         model.n_features_in_ = n_features_in
 
         if feature_names_in is None:
-            model.feature_names_in_ = [f"x{i}" for i in range(n_features_in)]
+            model.feature_names_in_ = [f"x{_subscriptify(i)}" for i in range(n_features_in)]
+            model.is_default_feature_names_ = True
         else:
             assert len(feature_names_in) == n_features_in
             model.feature_names_in_ = feature_names_in
+            model.is_default_feature_names_ = False
 
         if selection_mask is None:
             model.selection_mask_ = np.ones(n_features_in, dtype=bool)
@@ -1384,7 +1388,18 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             weights = check_array(weights, ensure_2d=False)
             check_consistent_length(weights, y)
         X, y = self._validate_data(X=X, y=y, reset=True, multi_output=True)
-        self.feature_names_in_ = _check_feature_names_in(self, variable_names)
+        feature_names_in_ = _check_feature_names_in(self, variable_names, generate_names=False)
+
+        if feature_names_in_ is None:
+            self.feature_names_in_ = [f"x{_subscriptify(i)}" for i in range(X.shape[1])]
+            # We record that we have generated the feature names
+            # so that we can undo the subscriptification (for
+            # SymPy compatibility).
+            self.is_default_feature_names_ = True
+        else:
+            self.feature_names_in = feature_names_in_
+            self.is_default_feature_names_ = False
+
         variable_names = self.feature_names_in_
 
         # Handle multioutput data
@@ -1706,7 +1721,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Main.y,
             weights=Main.weights,
             niterations=int(self.niterations),
-            variable_names=_format_feature_names(self.feature_names_in_),
+            variable_names=self.feature_names_in_,
             options=options,
             numprocs=cprocs,
             parallelism=parallelism,
@@ -2072,17 +2087,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     with open(cur_filename, "r") as f:
                         buf = f.read()
                     buf = _preprocess_julia_floats(buf)
-                    df = pd.read_csv(StringIO(buf))
 
-                    # Rename Complexity column to complexity:
-                    df.rename(
-                        columns={
-                            "Complexity": "complexity",
-                            "Loss": "loss",
-                            "Equation": "equation",
-                        },
-                        inplace=True,
-                    )
+                    df = self._postprocess_dataframe(pd.read_csv(StringIO(buf)))
 
                     all_outputs.append(df)
             else:
@@ -2092,15 +2098,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 with open(filename, "r") as f:
                     buf = f.read()
                 buf = _preprocess_julia_floats(buf)
-                all_outputs = [pd.read_csv(StringIO(buf))]
-                all_outputs[-1].rename(
-                    columns={
-                        "Complexity": "complexity",
-                        "Loss": "loss",
-                        "Equation": "equation",
-                    },
-                    inplace=True,
-                )
+                all_outputs = [
+                    self._postprocess_dataframe(pd.read_csv(StringIO(buf)))
+                ]
 
         except FileNotFoundError:
             raise RuntimeError(
@@ -2108,6 +2108,23 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 "before a single iteration completed."
             )
         return all_outputs
+
+    def _postprocess_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+        df = df.rename(
+            columns={
+                "Complexity": "complexity",
+                "Loss": "loss",
+                "Equation": "equation",
+            },
+        )
+        # Regexp replace x₁₂₃ to x123 in `equation`:
+        if self.is_default_feature_names_:
+            df["equation"] = df["equation"].apply(
+                lambda s: re.sub(r"x([₀₁₂₃₄₅₆₇₈₉]+)", lambda m: f"x{_undo_subscriptify(m.group(1))}", s)
+            )
+
+        return df
+
 
     def get_hof(self):
         """Get the equations from a hall of fame file.
@@ -2411,10 +2428,16 @@ def _preprocess_julia_floats(s: str) -> str:
     return s
 
 
-def _format_feature_names(feature_names_in):
-    if all([f"x{i}" == feature_names_in[i] for i in range(len(feature_names_in))]):
-        # Use `equation_search` defaults, which are
-        # just the unicode versions
-        return None
-    else:
-        return feature_names_in.tolist()
+def _subscriptify(i: int) -> str:
+    """Converts integer to subscript text form.
+
+    For example, 123 -> "₁₂₃".
+    """
+    return "".join([chr(0x2080 + int(c)) for c in str(i)])
+
+def _undo_subscriptify(s: str) -> int:
+    """Converts subscript text form to integer.
+
+    For example, "₁₂₃" -> 123.
+    """
+    return int("".join([str(ord(c) - 0x2080) for c in s]))
