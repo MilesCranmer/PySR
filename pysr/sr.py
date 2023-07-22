@@ -1521,9 +1521,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             if X_units is not None:
                 X_units = [X_units[i] for i in self.selection_mask_]
                 self.X_units_ = copy.deepcopy(X_units)
-            if y_units is not None:
-                y_units = [y_units[i] for i in self.selection_mask_]
-                self.y_units_ = copy.deepcopy(y_units)
 
             # Re-perform data validation and feature name updating
             X, y = self._validate_data(X=X, y=y, reset=True, multi_output=True)

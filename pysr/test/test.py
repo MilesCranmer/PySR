@@ -925,6 +925,7 @@ class TestDimensionalConstraints(unittest.TestCase):
             unary_operators=["cos"],
             **self.default_test_kwargs,
             early_stop_condition=1e-8,
+            select_k_features=3,
         )
         model.fit(self.X, y, X_units=["m", "m", "m", "m", "m"], y_units="m")
 
