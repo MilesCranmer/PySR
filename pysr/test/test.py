@@ -906,6 +906,42 @@ class TestLaTeXTable(unittest.TestCase):
         self.assertEqual(latex_table_str, true_latex_table_str)
 
 
+class TestDimensionalConstraints(unittest.TestCase):
+    def setUp(self):
+        self.default_test_kwargs = dict(
+            progress=False,
+            model_selection="accuracy",
+            niterations=DEFAULT_NITERATIONS * 2,
+            populations=DEFAULT_POPULATIONS * 2,
+            temp_equation_file=True,
+        )
+        self.rstate = np.random.RandomState(0)
+        self.X = self.rstate.randn(100, 5)
+
+    def test_dimensional_constraints(self):
+        y = np.cos(self.X[:, 0])
+        model = PySRRegressor(
+            unary_operators=["cos"],
+            **self.default_test_kwargs,
+            early_stop_condition=1e-8,
+        )
+        model.fit(self.X, y, X_units=["m", "m", "m", "m", "m"], y_units="m")
+
+        # The best expression should have complexity larger than just 2:
+        self.assertGreater(model.get_best()["complexity"], 2)
+        self.assertLess(model.get_best()["loss"], 1e-6)
+        self.assertGreater(model.equations_.query("complexity <= 2").loss.min(), 1e-6)
+
+
+# TODO: add tests for:
+# - custom operators + dimensions
+# - invalid number of dimensions
+#   - X
+#   - y
+# - no constants, so that it needs to find the right fraction
+# - custom dimensional_constraint_penalty
+
+
 def runtests():
     """Run all tests in test.py."""
     suite = unittest.TestSuite()
@@ -916,6 +952,7 @@ def runtests():
         TestFeatureSelection,
         TestMiscellaneous,
         TestLaTeXTable,
+        TestDimensionalConstraints,
     ]
     for test_case in test_cases:
         tests = loader.loadTestsFromTestCase(test_case)
