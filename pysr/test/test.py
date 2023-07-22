@@ -19,6 +19,7 @@ from ..sr import (
     _handle_feature_selection,
     _csv_filename_to_pkl_filename,
     idx_model_selection,
+    _check_assertions,
 )
 from ..export_latex import to_latex
 
@@ -932,12 +933,47 @@ class TestDimensionalConstraints(unittest.TestCase):
         self.assertLess(model.get_best()["loss"], 1e-6)
         self.assertGreater(model.equations_.query("complexity <= 2").loss.min(), 1e-6)
 
+    def test_unit_checks(self):
+        """This just checks the number of units passed"""
+        use_custom_variable_names = False
+        variable_names = None
+        weights = None
+        args = (use_custom_variable_names, variable_names, weights)
+        valid_units = [
+            (np.ones((10, 2)), np.ones(10), ["m/s", "s"], "m"),
+            (np.ones((10, 1)), np.ones(10), ["m/s"], None),
+            (np.ones((10, 1)), np.ones(10), None, "m/s"),
+            (np.ones((10, 1)), np.ones(10), None, ["m/s"]),
+            (np.ones((10, 1)), np.ones((10, 1)), None, ["m/s"]),
+            (np.ones((10, 1)), np.ones((10, 2)), None, ["m/s", "km"]),
+        ]
+        for X, y, X_units, y_units in valid_units:
+            _check_assertions(
+                X,
+                *args,
+                y,
+                X_units,
+                y_units,
+            )
+        invalid_units = [
+            (np.ones((10, 2)), np.ones(10), ["m/s", "s", "s^2"], None),
+            (np.ones((10, 2)), np.ones(10), ["m/s", "s", "s^2"], "m"),
+            (np.ones((10, 2)), np.ones((10, 2)), ["m/s", "s"], ["m"]),
+            (np.ones((10, 1)), np.ones((10, 1)), "m/s", ["m"]),
+        ]
+        for X, y, X_units, y_units in invalid_units:
+            with self.assertRaises(ValueError):
+                _check_assertions(
+                    X,
+                    *args,
+                    y,
+                    X_units,
+                    y_units,
+                )
+
 
 # TODO: add tests for:
 # - custom operators + dimensions
-# - invalid number of dimensions
-#   - X
-#   - y
 # - no constants, so that it needs to find the right fraction
 # - custom dimensional_constraint_penalty
 
