@@ -920,7 +920,7 @@ class TestDimensionalConstraints(unittest.TestCase):
         self.X = self.rstate.randn(100, 5)
 
     def test_dimensional_constraints(self):
-        y = np.cos(self.X[:, 0])
+        y = np.cos(self.X[:, [0, 1]])
         model = PySRRegressor(
             binary_operators=[
                 "my_add(x, y) = x + y",
@@ -938,12 +938,13 @@ class TestDimensionalConstraints(unittest.TestCase):
                 "my_mul": lambda x, y: x * y,
             },
         )
-        model.fit(self.X, y, X_units=["m", "m", "m", "m", "m"], y_units="m")
+        model.fit(self.X, y, X_units=["m", "m", "m", "m", "m"], y_units=["m", "m"])
 
         # The best expression should have complexity larger than just 2:
-        self.assertGreater(model.get_best()["complexity"], 2)
-        self.assertLess(model.get_best()["loss"], 1e-6)
-        self.assertGreater(model.equations_.query("complexity <= 2").loss.min(), 1e-6)
+        for i in range(2):
+            self.assertGreater(model.get_best()[i]["complexity"], 2)
+            self.assertLess(model.get_best()[i]["loss"], 1e-6)
+            self.assertGreater(model.equations_[i].query("complexity <= 2").loss.min(), 1e-6)
 
     def test_unit_checks(self):
         """This just checks the number of units passed"""
