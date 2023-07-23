@@ -1014,8 +1014,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             f"{pkl_filename} does not exist, "
             "so we must create the model from scratch."
         )
-        assert binary_operators is not None
-        assert unary_operators is not None
+        assert binary_operators is not None or unary_operators is not None
         assert n_features_in is not None
 
         # TODO: copy .bkup file if exists.
