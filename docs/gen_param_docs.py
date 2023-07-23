@@ -53,7 +53,7 @@ def str_param_groups(param_groupings, params, cur_heading=2):
 if __name__ == "__main__":
     # This is the path to the param_groupings.yml file
     # relative to the current file.
-    path = "param_groupings.yml"
+    path = "../pysr/param_groupings.yml"
     with open(path, "r") as f:
         param_groupings = safe_load(f)
 
