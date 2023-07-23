@@ -391,6 +391,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     parsimony : float
         Multiplicative factor for how much to punish complexity.
         Default is `0.0032`.
+    dimensional_constraint_penalty : float
+        Additive penalty for if dimensional analysis of an expression fails.
+        By default, this is `1000.0`.
     use_frequency : bool
         Whether to measure the frequency of complexities, and use that
         instead of parsimony to explore equation space. Will naturally
@@ -571,6 +574,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         What verbosity level to use for package updates.
         Will take value of `verbosity` if not given.
         Default is `None`.
+    print_precision : int
+        How many significant digits to print for floats. Default is `5`.
     progress : bool
         Whether to use a progress bar instead of printing to stdout.
         Default is `True`.
@@ -738,6 +743,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         complexity_of_constants=1,
         complexity_of_variables=1,
         parsimony=0.0032,
+        dimensional_constraint_penalty=None,
         use_frequency=True,
         use_frequency_in_tournament=True,
         adaptive_parsimony_scaling=20.0,
@@ -784,6 +790,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         warm_start=False,
         verbosity=1e9,
         update_verbosity=None,
+        print_precision=5,
         progress=True,
         equation_file=None,
         temp_equation_file=False,
@@ -828,6 +835,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.complexity_of_constants = complexity_of_constants
         self.complexity_of_variables = complexity_of_variables
         self.parsimony = parsimony
+        self.dimensional_constraint_penalty = dimensional_constraint_penalty
         self.use_frequency = use_frequency
         self.use_frequency_in_tournament = use_frequency_in_tournament
         self.adaptive_parsimony_scaling = adaptive_parsimony_scaling
@@ -879,6 +887,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # - Runtime user interface
         self.verbosity = verbosity
         self.update_verbosity = update_verbosity
+        self.print_precision = print_precision
         self.progress = progress
         # - Project management
         self.equation_file = equation_file
@@ -1699,6 +1708,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             tournament_selection_n=self.tournament_selection_n,
             # These have the same name:
             parsimony=self.parsimony,
+            dimensional_constraint_penalty=self.dimensional_constraint_penalty,
             alpha=self.alpha,
             maxdepth=maxdepth,
             fast_cycle=self.fast_cycle,
@@ -1718,6 +1728,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             fraction_replaced=self.fraction_replaced,
             topn=self.topn,
             verbosity=self.verbosity,
+            print_precision=self.print_precision,
             optimizer_algorithm=self.optimizer_algorithm,
             optimizer_nrestarts=self.optimizer_nrestarts,
             optimizer_probability=self.optimize_probability,

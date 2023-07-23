@@ -10,6 +10,7 @@ import pandas as pd
 import warnings
 import pickle as pkl
 import tempfile
+import yaml
 from pathlib import Path
 
 from .. import julia_helpers
@@ -712,6 +713,35 @@ class TestMiscellaneous(unittest.TestCase):
         # If any checks failed don't let the test pass.
         self.assertEqual(len(exception_messages), 0)
 
+    def test_param_groupings(self):
+        """Test that param_groupings are complete"""
+        param_groupings_file = (
+            Path(__file__).parent.parent.parent / "docs" / "param_groupings.yml"
+        )
+        # Read the file:
+        with open(param_groupings_file, "r") as f:
+            param_groupings = yaml.load(f, Loader=yaml.SafeLoader)
+
+        # Get all leafs of this yaml file:
+        def get_leafs(d):
+            if isinstance(d, dict):
+                for v in d.values():
+                    yield from get_leafs(v)
+            elif isinstance(d, list):
+                for v in d:
+                    yield from get_leafs(v)
+            else:
+                yield d
+
+        leafs = list(get_leafs(param_groupings))
+
+        regressor_params = [
+            p for p in DEFAULT_PARAMS.keys() if p not in ["self", "kwargs"]
+        ]
+
+        # Check the sets are equal:
+        self.assertSetEqual(set(leafs), set(regressor_params))
+
 
 TRUE_PREAMBLE = "\n".join(
     [
@@ -944,7 +974,9 @@ class TestDimensionalConstraints(unittest.TestCase):
         for i in range(2):
             self.assertGreater(model.get_best()[i]["complexity"], 2)
             self.assertLess(model.get_best()[i]["loss"], 1e-6)
-            self.assertGreater(model.equations_[i].query("complexity <= 2").loss.min(), 1e-6)
+            self.assertGreater(
+                model.equations_[i].query("complexity <= 2").loss.min(), 1e-6
+            )
 
     def test_unit_checks(self):
         """This just checks the number of units passed"""
@@ -1011,11 +1043,6 @@ class TestDimensionalConstraints(unittest.TestCase):
         self.assertNotIn("x1", best["equation"])
         self.assertIn("x2", best["equation"])
         self.assertEqual(best["complexity"], 3)
-
-
-# TODO: add tests for:
-# - no constants, so that it needs to find the right fraction
-# - custom dimensional_constraint_penalty
 
 
 def runtests():

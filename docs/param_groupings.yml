@@ -13,6 +13,7 @@
     - loss
     - full_objective
     - model_selection
+    - dimensional_constraint_penalty
   - Working with Complexities:
     - parsimony
     - constraints
@@ -72,12 +73,14 @@
   - fast_cycle
   - turbo
   - enable_autodiff
+- Determinism:
   - random_state
   - deterministic
   - warm_start
 - Monitoring:
   - verbosity
   - update_verbosity
+  - print_precision
   - progress
 - Environment:
   - temp_equation_file
