@@ -983,9 +983,36 @@ class TestDimensionalConstraints(unittest.TestCase):
                     y_units,
                 )
 
+    def test_unit_propagation(self):
+        """Check that units are propagated correctly."""
+        X = np.ones((100, 3))
+        y = np.ones((100, 1))
+        model = PySRRegressor(
+            binary_operators=["+", "*"],
+            early_stop_condition="(l, c) -> l < 1e-8 && c == 3",
+            **self.default_test_kwargs,
+            complexity_of_constants=10,
+            weight_mutate_constant=0.0,
+            should_optimize_constants=False,
+            multithreading=False,
+            deterministic=True,
+            procs=0,
+            random_state=0,
+        )
+        model.fit(
+            X,
+            y,
+            X_units=["m", "s", "A"],
+            y_units=["m*A"],
+        )
+        best = model.get_best()
+        self.assertIn("x0", best["equation"])
+        self.assertNotIn("x1", best["equation"])
+        self.assertIn("x2", best["equation"])
+        self.assertEqual(best["complexity"], 3)
+
 
 # TODO: add tests for:
-# - custom operators + dimensions
 # - no constants, so that it needs to find the right fraction
 # - custom dimensional_constraint_penalty
 
