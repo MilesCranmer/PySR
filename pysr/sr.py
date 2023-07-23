@@ -1011,7 +1011,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # Else, we re-create it.
         print(
-            f"{equation_file} does not exist, "
+            f"{pkl_filename} does not exist, "
             "so we must create the model from scratch."
         )
         assert binary_operators is not None
