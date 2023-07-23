@@ -957,7 +957,7 @@ class TestDimensionalConstraints(unittest.TestCase):
             (np.ones((10, 1)), np.ones(10), None, "m/s"),
             (np.ones((10, 1)), np.ones(10), None, ["m/s"]),
             (np.ones((10, 1)), np.ones((10, 1)), None, ["m/s"]),
-            (np.ones((10, 1)), np.ones((10, 2)), None, ["m/s", "km"]),
+            (np.ones((10, 1)), np.ones((10, 2)), None, ["m/s", ""]),
         ]
         for X, y, X_units, y_units in valid_units:
             _check_assertions(
