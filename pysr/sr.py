@@ -1782,6 +1782,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             None if parallelism in ["serial", "multithreading"] else int(self.procs)
         )
 
+        y_variable_names = None
+        if len(y.shape) > 1:
+            y_variable_names = [f"y{_subscriptify(i)}" for i in range(y.shape[1])]
+
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/SymbolicRegression.jl
         self.raw_julia_state_ = SymbolicRegression.equation_search(
@@ -1795,6 +1799,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 and self.pretty_feature_names_in_ is not None
                 else self.feature_names_in_.tolist()
             ),
+            y_variable_names=y_variable_names,
             X_units=self.X_units_,
             y_units=self.y_units_,
             options=options,
