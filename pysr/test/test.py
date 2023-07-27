@@ -1007,14 +1007,17 @@ class TestDimensionalConstraints(unittest.TestCase):
                 )
 
     def test_unit_propagation(self):
-        """Check that units are propagated correctly."""
+        """Check that units are propagated correctly.
+
+        This also tests that variables have the correct names.
+        """
         X = np.ones((100, 3))
         y = np.ones((100, 1))
         temp_dir = Path(tempfile.mkdtemp())
         equation_file = str(temp_dir / "equation_file.csv")
         model = PySRRegressor(
             binary_operators=["+", "*"],
-            early_stop_condition="(l, c) -> l < 1e-8 && c == 3",
+            early_stop_condition="(l, c) -> l < 1e-6 && c == 3",
             progress=False,
             model_selection="accuracy",
             niterations=DEFAULT_NITERATIONS * 2,
@@ -1027,6 +1030,7 @@ class TestDimensionalConstraints(unittest.TestCase):
             procs=0,
             random_state=0,
             equation_file=equation_file,
+            warm_start=True,
         )
         model.fit(
             X,
@@ -1039,6 +1043,8 @@ class TestDimensionalConstraints(unittest.TestCase):
         self.assertNotIn("x1", best["equation"])
         self.assertIn("x2", best["equation"])
         self.assertEqual(best["complexity"], 3)
+        self.assertEqual(model.equations_.iloc[0].complexity, 1)
+        self.assertGreater(model.equations_.iloc[0].loss, 1e-6)
 
         # With pkl file:
         pkl_file = str(temp_dir / "equation_file.pkl")
@@ -1054,6 +1060,13 @@ class TestDimensionalConstraints(unittest.TestCase):
         )
         best3 = model3.get_best()
         self.assertIn("x0", best3["equation"])
+
+        # Try warm start, but with no units provided (should
+        # be a different dataset, and thus different result):
+        model.fit(X, y)
+        model.early_stop_condition = "(l, c) -> l < 1e-6 && c == 1"
+        self.assertEqual(model.equations_.iloc[0].complexity, 1)
+        self.assertLess(model.equations_.iloc[0].loss, 1e-6)
 
 
 # TODO: Determine desired behavior if second .fit() call does not have units

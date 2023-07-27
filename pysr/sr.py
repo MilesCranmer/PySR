@@ -1784,6 +1784,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         y_variable_names = None
         if len(y.shape) > 1:
+            # We set these manually so that they respect Python's 0 indexing
+            # (by default Julia will use y1, y2...)
             y_variable_names = [f"y{_subscriptify(i)}" for i in range(y.shape[1])]
 
         # Call to Julia backend.
