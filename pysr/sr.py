@@ -374,6 +374,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         You may pass a function with the same arguments as this (note
         that the name of the function doesn't matter). Here,
         both `prediction` and `dataset.y` are 1D arrays of length `dataset.n`.
+        If using `batching`, then you should add an
+        `idx` argument to the function, which is `nothing`
+        for non-batched, and a 1D array of indices for batched.
         Default is `None`.
     complexity_of_operators : dict[str, float]
         If you would like to use a complexity other than 1 for an
