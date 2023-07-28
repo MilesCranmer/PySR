@@ -433,9 +433,97 @@ equal to:
 $\frac{x_0^2 x_1 - 2.0000073}{x_2^2 - 1.0000019}$, which
 is nearly the same as the true equation!
 
+## 10. Dimensional constraints
+
+One other feature we can exploit is dimensional analysis.
+Say that we know the physical units of each feature and output,
+and we want to find an expression that is dimensionally consistent.
+
+We can do this as follows, using `DynamicQuantities.jl` to assign units,
+passing a string specifying the units for each variable.
+First, let's make some data on Newton's law of gravitation, using
+astropy for units:
+
+```python
+import numpy as np
+from astropy import units as u, constants as const
+
+M = (np.random.rand(100) + 0.1) * const.M_sun
+m = 100 * (np.random.rand(100) + 0.1) * u.kg
+r = (np.random.rand(100) + 0.1) * const.R_earth
+G = const.G
+
+F = G * M * m / r**2
+```
+
+We can see the units of `F` with `F.unit`.
+
+Now, let's create our model.
+Since this data has such a large dynamic range,
+let's also create a custom loss function
+that looks at the error in log-space:
+
+```python
+loss = """function loss_fnc(prediction, target)
+    scatter_loss = abs(log((abs(prediction)+1e-20) / (abs(target)+1e-20)))
+    sign_loss = 10 * (sign(prediction) - sign(target))^2
+    return scatter_loss + sign_loss
+end
+"""
+```
+
+Now let's define our model:
+
+```python
+model = PySRRegressor(
+    binary_operators=["+", "-", "*", "/"],
+    unary_operators=["square"],
+    loss=loss,
+    complexity_of_constants=2,
+    maxsize=25,
+    niterations=100,
+    populations=50,
+    # Amount to penalize dimensional violations:
+    dimensional_constraint_penalty=10**5,
+)
+```
+
+and fit it, passing the unit information.
+To do this, we need to use the format of [DynamicQuantities.jl](https://symbolicml.org/DynamicQuantities.jl/dev/#Usage).
+
+```python
+# Get numerical arrays to fit:
+X = pd.DataFrame(dict(
+    M=M.value,
+    m=m.value,
+    r=r.value,
+))
+y = F.value
+
+model.fit(
+    X,
+    y,
+    X_units=["Constants.M_sun", "kg", "Constants.R_earth"],
+    y_units="kg * m / s^2"
+)
+```
+
+You can observe that all expressions with a loss under
+our penalty are dimensionally consistent!
+(The `"[⋅]"` indicates free units in a constant, which can cancel out other units in the expression.)
+For example,
+
+```julia
+"y[m s⁻² kg] = (M[kg] * 2.6353e-22[⋅])"
+```
+
+would indicate that the expression is dimensionally consistent, with
+a constant `"2.6353e-22[m s⁻²]"`.
+
+Note that this expression has a large dynamic range so may be difficult to find. Consider searching with a larger `niterations` if needed.
 
 
-## 10. Additional features
+## 11. Additional features
 
 For the many other features available in PySR, please
 read the [Options section](options.md).

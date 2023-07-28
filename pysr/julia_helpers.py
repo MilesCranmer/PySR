@@ -259,6 +259,7 @@ def init_julia(julia_project=None, quiet=False, julia_kwargs=None, return_aux=Fa
 
 def _add_sr_to_julia_project(Main, io_arg):
     Main.eval("using Pkg")
+    Main.eval("Pkg.Registry.update()")
     Main.sr_spec = Main.PackageSpec(
         name="SymbolicRegression",
         url="https://github.com/MilesCranmer/SymbolicRegression.jl",
@@ -266,8 +267,7 @@ def _add_sr_to_julia_project(Main, io_arg):
     )
     Main.clustermanagers_spec = Main.PackageSpec(
         name="ClusterManagers",
-        url="https://github.com/JuliaParallel/ClusterManagers.jl",
-        rev="14e7302f068794099344d5d93f71979aaf4fbeb3",
+        version="0.4",
     )
     Main.eval(f"Pkg.add([sr_spec, clustermanagers_spec], {io_arg})")
 

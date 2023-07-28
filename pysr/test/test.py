@@ -19,6 +19,7 @@ from ..sr import (
     _handle_feature_selection,
     _csv_filename_to_pkl_filename,
     idx_model_selection,
+    _check_assertions,
 )
 from ..export_latex import to_latex
 
@@ -711,6 +712,26 @@ class TestMiscellaneous(unittest.TestCase):
         # If any checks failed don't let the test pass.
         self.assertEqual(len(exception_messages), 0)
 
+    def test_param_groupings(self):
+        """Test that param_groupings are complete"""
+        param_groupings_file = Path(__file__).parent.parent / "param_groupings.yml"
+        # Read the file, discarding lines ending in ":",
+        # and removing leading "\s*-\s*":
+        params = []
+        with open(param_groupings_file, "r") as f:
+            for line in f.readlines():
+                if line.strip().endswith(":"):
+                    continue
+                if line.strip().startswith("-"):
+                    params.append(line.strip()[1:].strip())
+
+        regressor_params = [
+            p for p in DEFAULT_PARAMS.keys() if p not in ["self", "kwargs"]
+        ]
+
+        # Check the sets are equal:
+        self.assertSetEqual(set(params), set(regressor_params))
+
 
 TRUE_PREAMBLE = "\n".join(
     [
@@ -906,6 +927,151 @@ class TestLaTeXTable(unittest.TestCase):
         self.assertEqual(latex_table_str, true_latex_table_str)
 
 
+class TestDimensionalConstraints(unittest.TestCase):
+    def setUp(self):
+        self.default_test_kwargs = dict(
+            progress=False,
+            model_selection="accuracy",
+            niterations=DEFAULT_NITERATIONS * 2,
+            populations=DEFAULT_POPULATIONS * 2,
+            temp_equation_file=True,
+        )
+        self.rstate = np.random.RandomState(0)
+        self.X = self.rstate.randn(100, 5)
+
+    def test_dimensional_constraints(self):
+        y = np.cos(self.X[:, [0, 1]])
+        model = PySRRegressor(
+            binary_operators=[
+                "my_add(x, y) = x + y",
+                "my_sub(x, y) = x - y",
+                "my_mul(x, y) = x * y",
+            ],
+            unary_operators=["my_cos(x) = cos(x)"],
+            **self.default_test_kwargs,
+            early_stop_condition=1e-8,
+            select_k_features=3,
+            extra_sympy_mappings={
+                "my_cos": sympy.cos,
+                "my_add": lambda x, y: x + y,
+                "my_sub": lambda x, y: x - y,
+                "my_mul": lambda x, y: x * y,
+            },
+        )
+        model.fit(self.X, y, X_units=["m", "m", "m", "m", "m"], y_units=["m", "m"])
+
+        # The best expression should have complexity larger than just 2:
+        for i in range(2):
+            self.assertGreater(model.get_best()[i]["complexity"], 2)
+            self.assertLess(model.get_best()[i]["loss"], 1e-6)
+            self.assertGreater(
+                model.equations_[i].query("complexity <= 2").loss.min(), 1e-6
+            )
+
+    def test_unit_checks(self):
+        """This just checks the number of units passed"""
+        use_custom_variable_names = False
+        variable_names = None
+        weights = None
+        args = (use_custom_variable_names, variable_names, weights)
+        valid_units = [
+            (np.ones((10, 2)), np.ones(10), ["m/s", "s"], "m"),
+            (np.ones((10, 1)), np.ones(10), ["m/s"], None),
+            (np.ones((10, 1)), np.ones(10), None, "m/s"),
+            (np.ones((10, 1)), np.ones(10), None, ["m/s"]),
+            (np.ones((10, 1)), np.ones((10, 1)), None, ["m/s"]),
+            (np.ones((10, 1)), np.ones((10, 2)), None, ["m/s", ""]),
+        ]
+        for X, y, X_units, y_units in valid_units:
+            _check_assertions(
+                X,
+                *args,
+                y,
+                X_units,
+                y_units,
+            )
+        invalid_units = [
+            (np.ones((10, 2)), np.ones(10), ["m/s", "s", "s^2"], None),
+            (np.ones((10, 2)), np.ones(10), ["m/s", "s", "s^2"], "m"),
+            (np.ones((10, 2)), np.ones((10, 2)), ["m/s", "s"], ["m"]),
+            (np.ones((10, 1)), np.ones((10, 1)), "m/s", ["m"]),
+        ]
+        for X, y, X_units, y_units in invalid_units:
+            with self.assertRaises(ValueError):
+                _check_assertions(
+                    X,
+                    *args,
+                    y,
+                    X_units,
+                    y_units,
+                )
+
+    def test_unit_propagation(self):
+        """Check that units are propagated correctly.
+
+        This also tests that variables have the correct names.
+        """
+        X = np.ones((100, 3))
+        y = np.ones((100, 1))
+        temp_dir = Path(tempfile.mkdtemp())
+        equation_file = str(temp_dir / "equation_file.csv")
+        model = PySRRegressor(
+            binary_operators=["+", "*"],
+            early_stop_condition="(l, c) -> l < 1e-6 && c == 3",
+            progress=False,
+            model_selection="accuracy",
+            niterations=DEFAULT_NITERATIONS * 2,
+            populations=DEFAULT_POPULATIONS * 2,
+            complexity_of_constants=10,
+            weight_mutate_constant=0.0,
+            should_optimize_constants=False,
+            multithreading=False,
+            deterministic=True,
+            procs=0,
+            random_state=0,
+            equation_file=equation_file,
+            warm_start=True,
+        )
+        model.fit(
+            X,
+            y,
+            X_units=["m", "s", "A"],
+            y_units=["m*A"],
+        )
+        best = model.get_best()
+        self.assertIn("x0", best["equation"])
+        self.assertNotIn("x1", best["equation"])
+        self.assertIn("x2", best["equation"])
+        self.assertEqual(best["complexity"], 3)
+        self.assertEqual(model.equations_.iloc[0].complexity, 1)
+        self.assertGreater(model.equations_.iloc[0].loss, 1e-6)
+
+        # With pkl file:
+        pkl_file = str(temp_dir / "equation_file.pkl")
+        model2 = PySRRegressor.from_file(pkl_file)
+        best2 = model2.get_best()
+        self.assertIn("x0", best2["equation"])
+
+        # From csv file alone (we need to delete pkl file:)
+        # First, we delete the pkl file:
+        os.remove(pkl_file)
+        model3 = PySRRegressor.from_file(
+            equation_file, binary_operators=["+", "*"], n_features_in=X.shape[1]
+        )
+        best3 = model3.get_best()
+        self.assertIn("x0", best3["equation"])
+
+        # Try warm start, but with no units provided (should
+        # be a different dataset, and thus different result):
+        model.fit(X, y)
+        model.early_stop_condition = "(l, c) -> l < 1e-6 && c == 1"
+        self.assertEqual(model.equations_.iloc[0].complexity, 1)
+        self.assertLess(model.equations_.iloc[0].loss, 1e-6)
+
+
+# TODO: Determine desired behavior if second .fit() call does not have units
+
+
 def runtests():
     """Run all tests in test.py."""
     suite = unittest.TestSuite()
@@ -916,6 +1082,7 @@ def runtests():
         TestFeatureSelection,
         TestMiscellaneous,
         TestLaTeXTable,
+        TestDimensionalConstraints,
     ]
     for test_case in test_cases:
         tests = loader.loadTestsFromTestCase(test_case)

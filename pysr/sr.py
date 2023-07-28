@@ -167,6 +167,8 @@ def _check_assertions(
     variable_names,
     weights,
     y,
+    X_units,
+    y_units,
 ):
     # Check for potential errors before they happen
     assert len(X.shape) == 2
@@ -184,12 +186,30 @@ def _check_assertions(
                     f"Variable name {var_name} is already a function name."
                 )
             # Check if alphanumeric only:
-            if not re.match(r"^[a-zA-Z0-9_]+$", var_name):
+            if not re.match(r"^[₀₁₂₃₄₅₆₇₈₉a-zA-Z0-9_]+$", var_name):
                 raise ValueError(
                     f"Invalid variable name {var_name}. "
                     "Only alphanumeric characters, numbers, "
                     "and underscores are allowed."
                 )
+    if X_units is not None and len(X_units) != X.shape[1]:
+        raise ValueError(
+            "The number of units in `X_units` must equal the number of features in `X`."
+        )
+    if y_units is not None:
+        good_y_units = False
+        if isinstance(y_units, list):
+            if len(y.shape) == 1:
+                good_y_units = len(y_units) == 1
+            else:
+                good_y_units = len(y_units) == y.shape[1]
+        else:
+            good_y_units = len(y.shape) == 1 or y.shape[1] == 1
+
+        if not good_y_units:
+            raise ValueError(
+                "The number of units in `y_units` must equal the number of output features in `y`."
+            )
 
 
 def best(*args, **kwargs):  # pragma: no cover
@@ -354,6 +374,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         You may pass a function with the same arguments as this (note
         that the name of the function doesn't matter). Here,
         both `prediction` and `dataset.y` are 1D arrays of length `dataset.n`.
+        If using `batching`, then you should add an
+        `idx` argument to the function, which is `nothing`
+        for non-batched, and a 1D array of indices for batched.
         Default is `None`.
     complexity_of_operators : dict[str, float]
         If you would like to use a complexity other than 1 for an
@@ -371,6 +394,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     parsimony : float
         Multiplicative factor for how much to punish complexity.
         Default is `0.0032`.
+    dimensional_constraint_penalty : float
+        Additive penalty for if dimensional analysis of an expression fails.
+        By default, this is `1000.0`.
     use_frequency : bool
         Whether to measure the frequency of complexities, and use that
         instead of parsimony to explore equation space. Will naturally
@@ -551,6 +577,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         What verbosity level to use for package updates.
         Will take value of `verbosity` if not given.
         Default is `None`.
+    print_precision : int
+        How many significant digits to print for floats. Default is `5`.
     progress : bool
         Whether to use a progress bar instead of printing to stdout.
         Default is `True`.
@@ -633,6 +661,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     feature_names_in_ : ndarray of shape (`n_features_in_`,)
         Names of features seen during :term:`fit`. Defined only when `X`
         has feature names that are all strings.
+    pretty_feature_names_in_ : ndarray of shape (`n_features_in_`,)
+        Pretty names of features, used only during printing.
+    X_units_ : list[str] of length n_features
+        Units of each variable in the training dataset, `X`.
+    y_units_ : str | list[str] of length n_out
+        Units of each variable in the training dataset, `y`.
     nout_ : int
         Number of output dimensions.
     selection_mask_ : list[int] of length `select_k_features`
@@ -712,6 +746,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         complexity_of_constants=1,
         complexity_of_variables=1,
         parsimony=0.0032,
+        dimensional_constraint_penalty=None,
         use_frequency=True,
         use_frequency_in_tournament=True,
         adaptive_parsimony_scaling=20.0,
@@ -758,6 +793,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         warm_start=False,
         verbosity=1e9,
         update_verbosity=None,
+        print_precision=5,
         progress=True,
         equation_file=None,
         temp_equation_file=False,
@@ -802,6 +838,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.complexity_of_constants = complexity_of_constants
         self.complexity_of_variables = complexity_of_variables
         self.parsimony = parsimony
+        self.dimensional_constraint_penalty = dimensional_constraint_penalty
         self.use_frequency = use_frequency
         self.use_frequency_in_tournament = use_frequency_in_tournament
         self.adaptive_parsimony_scaling = adaptive_parsimony_scaling
@@ -853,6 +890,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # - Runtime user interface
         self.verbosity = verbosity
         self.update_verbosity = update_verbosity
+        self.print_precision = print_precision
         self.progress = progress
         # - Project management
         self.equation_file = equation_file
@@ -976,11 +1014,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # Else, we re-create it.
         print(
-            f"{equation_file} does not exist, "
+            f"{pkl_filename} does not exist, "
             "so we must create the model from scratch."
         )
-        assert binary_operators is not None
-        assert unary_operators is not None
+        assert binary_operators is not None or unary_operators is not None
         assert n_features_in is not None
 
         # TODO: copy .bkup file if exists.
@@ -995,10 +1032,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         model.n_features_in_ = n_features_in
 
         if feature_names_in is None:
-            model.feature_names_in_ = [f"x{i}" for i in range(n_features_in)]
+            model.feature_names_in_ = np.array([f"x{i}" for i in range(n_features_in)])
+            model.pretty_feature_names_in_ = np.array(
+                [f"x{_subscriptify(i)}" for i in range(n_features_in)]
+            )
         else:
             assert len(feature_names_in) == n_features_in
             model.feature_names_in_ = feature_names_in
+            model.pretty_feature_names_in_ = None
 
         if selection_mask is None:
             model.selection_mask_ = np.ones(n_features_in, dtype=bool)
@@ -1318,7 +1359,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         return packed_modified_params
 
-    def _validate_and_set_fit_params(self, X, y, Xresampled, weights, variable_names):
+    def _validate_and_set_fit_params(
+        self, X, y, Xresampled, weights, variable_names, X_units, y_units
+    ):
         """
         Validate the parameters passed to the :term`fit` method.
 
@@ -1340,6 +1383,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             for that particular element of y.
         variable_names : list[str] of length n_features
             Names of each variable in the training dataset, `X`.
+        X_units : list[str] of length n_features
+            Units of each variable in the training dataset, `X`.
+        y_units : str | list[str] of length n_out
+            Units of each variable in the training dataset, `y`.
 
         Returns
         -------
@@ -1351,6 +1398,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Validated resampled training data used for denoising.
         variable_names_validated : list[str] of length n_features
             Validated list of variable names for each feature in `X`.
+        X_units : list[str] of length n_features
+            Validated units for `X`.
+        y_units : str | list[str] of length n_out
+            Validated units for `y`.
 
         """
         if isinstance(X, pd.DataFrame):
@@ -1361,7 +1412,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     "Using DataFrame column names instead."
                 )
 
-            if X.columns.is_object() and X.columns.str.contains(" ").any():
+            if (
+                pd.api.types.is_object_dtype(X.columns)
+                and X.columns.str.contains(" ").any()
+            ):
                 X.columns = X.columns.str.replace(" ", "_")
                 warnings.warn(
                     "Spaces in DataFrame column names are not supported. "
@@ -1384,7 +1438,18 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             weights = check_array(weights, ensure_2d=False)
             check_consistent_length(weights, y)
         X, y = self._validate_data(X=X, y=y, reset=True, multi_output=True)
-        self.feature_names_in_ = _check_feature_names_in(self, variable_names)
+        self.feature_names_in_ = _check_feature_names_in(
+            self, variable_names, generate_names=False
+        )
+
+        if self.feature_names_in_ is None:
+            self.feature_names_in_ = np.array([f"x{i}" for i in range(X.shape[1])])
+            self.pretty_feature_names_in_ = np.array(
+                [f"x{_subscriptify(i)}" for i in range(X.shape[1])]
+            )
+        else:
+            self.pretty_feature_names_in_ = None
+
         variable_names = self.feature_names_in_
 
         # Handle multioutput data
@@ -1395,10 +1460,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         else:
             raise NotImplementedError("y shape not supported!")
 
-        return X, y, Xresampled, weights, variable_names
+        self.X_units_ = copy.deepcopy(X_units)
+        self.y_units_ = copy.deepcopy(y_units)
+
+        return X, y, Xresampled, weights, variable_names, X_units, y_units
 
     def _pre_transform_training_data(
-        self, X, y, Xresampled, variable_names, random_state
+        self, X, y, Xresampled, variable_names, X_units, y_units, random_state
     ):
         """
         Transform the training data before fitting the symbolic regressor.
@@ -1418,6 +1486,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         variable_names : list[str]
             Names of each variable in the training dataset, `X`.
             Of length `n_features`.
+        X_units : list[str]
+            Units of each variable in the training dataset, `X`.
+        y_units : str | list[str]
+            Units of each variable in the training dataset, `y`.
         random_state : int | np.RandomState
             Pass an int for reproducible results across multiple function calls.
             See :term:`Glossary <random_state>`. Default is `None`.
@@ -1439,6 +1511,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         variable_names_transformed : list[str] of length n_features
             Names of each variable in the transformed dataset,
             `X_transformed`.
+        X_units_transformed : list[str] of length n_features
+            Units of each variable in the transformed dataset.
+        y_units_transformed : str | list[str] of length n_out
+            Units of each variable in the transformed dataset.
         """
         # Feature selection transformation
         if self.select_k_features:
@@ -1453,10 +1529,15 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             # Reduce variable_names to selection
             variable_names = [variable_names[i] for i in self.selection_mask_]
 
+            if X_units is not None:
+                X_units = [X_units[i] for i in self.selection_mask_]
+                self.X_units_ = copy.deepcopy(X_units)
+
             # Re-perform data validation and feature name updating
             X, y = self._validate_data(X=X, y=y, reset=True, multi_output=True)
             # Update feature names with selected variable names
             self.feature_names_in_ = _check_feature_names_in(self, variable_names)
+            self.pretty_feature_names_in_ = None
             print(f"Using features {self.feature_names_in_}")
 
         # Denoising transformation
@@ -1476,7 +1557,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             else:
                 X, y = _denoise(X, y, Xresampled=Xresampled, random_state=random_state)
 
-        return X, y, variable_names
+        return X, y, variable_names, X_units, y_units
 
     def _run(self, X, y, mutated_params, weights, seed):
         """
@@ -1629,6 +1710,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             tournament_selection_n=self.tournament_selection_n,
             # These have the same name:
             parsimony=self.parsimony,
+            dimensional_constraint_penalty=self.dimensional_constraint_penalty,
             alpha=self.alpha,
             maxdepth=maxdepth,
             fast_cycle=self.fast_cycle,
@@ -1648,6 +1730,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             fraction_replaced=self.fraction_replaced,
             topn=self.topn,
             verbosity=self.verbosity,
+            print_precision=self.print_precision,
             optimizer_algorithm=self.optimizer_algorithm,
             optimizer_nrestarts=self.optimizer_nrestarts,
             optimizer_probability=self.optimize_probability,
@@ -1699,6 +1782,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             None if parallelism in ["serial", "multithreading"] else int(self.procs)
         )
 
+        y_variable_names = None
+        if len(y.shape) > 1:
+            # We set these manually so that they respect Python's 0 indexing
+            # (by default Julia will use y1, y2...)
+            y_variable_names = [f"y{_subscriptify(i)}" for i in range(y.shape[1])]
+
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/SymbolicRegression.jl
         self.raw_julia_state_ = SymbolicRegression.equation_search(
@@ -1706,7 +1795,15 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Main.y,
             weights=Main.weights,
             niterations=int(self.niterations),
-            variable_names=self.feature_names_in_.tolist(),
+            variable_names=(
+                self.pretty_feature_names_in_.tolist()
+                if hasattr(self, "pretty_feature_names_in_")
+                and self.pretty_feature_names_in_ is not None
+                else self.feature_names_in_.tolist()
+            ),
+            y_variable_names=y_variable_names,
+            X_units=self.X_units_,
+            y_units=self.y_units_,
             options=options,
             numprocs=cprocs,
             parallelism=parallelism,
@@ -1732,6 +1829,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Xresampled=None,
         weights=None,
         variable_names=None,
+        X_units=None,
+        y_units=None,
     ):
         """
         Search for equations to fit the dataset and store them in `self.equations_`.
@@ -1759,6 +1858,15 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             instead of `variable_names`. Cannot contain spaces or special
             characters. Avoid variable names which are also
             function names in `sympy`, such as "N".
+        X_units : list[str]
+            A list of units for each variable in `X`. Each unit should be
+            a string representing a Julia expression. See DynamicQuantities.jl
+            https://symbolicml.org/DynamicQuantities.jl/dev/units/ for more
+            information.
+        y_units : str | list[str]
+            Similar to `X_units`, but as a unit for the target variable, `y`.
+            If `y` is a matrix, a list of units should be passed. If `X_units`
+            is given but `y_units` is not, then `y_units` will be arbitrary.
 
         Returns
         -------
@@ -1780,6 +1888,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self.nout_ = 1
             self.selection_mask_ = None
             self.raw_julia_state_ = None
+            self.X_units_ = None
+            self.y_units_ = None
 
         random_state = check_random_state(self.random_state)  # For np random
         seed = random_state.get_state()[1][0]  # For julia random
@@ -1788,8 +1898,16 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         mutated_params = self._validate_and_set_init_params()
 
-        X, y, Xresampled, weights, variable_names = self._validate_and_set_fit_params(
-            X, y, Xresampled, weights, variable_names
+        (
+            X,
+            y,
+            Xresampled,
+            weights,
+            variable_names,
+            X_units,
+            y_units,
+        ) = self._validate_and_set_fit_params(
+            X, y, Xresampled, weights, variable_names, X_units, y_units
         )
 
         if X.shape[0] > 10000 and not self.batching:
@@ -1804,8 +1922,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             )
 
         # Pre transformations (feature selection and denoising)
-        X, y, variable_names = self._pre_transform_training_data(
-            X, y, Xresampled, variable_names, random_state
+        X, y, variable_names, X_units, y_units = self._pre_transform_training_data(
+            X, y, Xresampled, variable_names, X_units, y_units, random_state
         )
 
         # Warn about large feature counts (still warn if feature count is large
@@ -1834,6 +1952,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             variable_names,
             weights,
             y,
+            X_units,
+            y_units,
         )
 
         # Initially, just save model parameters, so that
@@ -2072,17 +2192,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     with open(cur_filename, "r") as f:
                         buf = f.read()
                     buf = _preprocess_julia_floats(buf)
-                    df = pd.read_csv(StringIO(buf))
 
-                    # Rename Complexity column to complexity:
-                    df.rename(
-                        columns={
-                            "Complexity": "complexity",
-                            "Loss": "loss",
-                            "Equation": "equation",
-                        },
-                        inplace=True,
-                    )
+                    df = self._postprocess_dataframe(pd.read_csv(StringIO(buf)))
 
                     all_outputs.append(df)
             else:
@@ -2092,15 +2203,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 with open(filename, "r") as f:
                     buf = f.read()
                 buf = _preprocess_julia_floats(buf)
-                all_outputs = [pd.read_csv(StringIO(buf))]
-                all_outputs[-1].rename(
-                    columns={
-                        "Complexity": "complexity",
-                        "Loss": "loss",
-                        "Equation": "equation",
-                    },
-                    inplace=True,
-                )
+                all_outputs = [self._postprocess_dataframe(pd.read_csv(StringIO(buf)))]
 
         except FileNotFoundError:
             raise RuntimeError(
@@ -2108,6 +2211,35 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 "before a single iteration completed."
             )
         return all_outputs
+
+    def _postprocess_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+        df = df.rename(
+            columns={
+                "Complexity": "complexity",
+                "Loss": "loss",
+                "Equation": "equation",
+            },
+        )
+        # Regexp replace x₁₂₃ to x123 in `equation`:
+        if (
+            hasattr(self, "pretty_feature_names_in_")
+            and self.pretty_feature_names_in_ is not None
+        ):
+            # df["equation"] = df["equation"].apply(_undo_subscriptify_full)
+            for pname, name in zip(
+                self.pretty_feature_names_in_, self.feature_names_in_
+            ):
+                df["equation"] = df["equation"].apply(
+                    lambda s: re.sub(
+                        r"\b" + f"({pname})" + r"\b",
+                        name,
+                        s,
+                    )
+                    if isinstance(s, str)
+                    else s
+                )
+
+        return df
 
     def get_hof(self):
         """Get the equations from a hall of fame file.
@@ -2409,3 +2541,11 @@ def _preprocess_julia_floats(s: str) -> str:
         s = _apply_regexp_im_sci(s)
         s = _apply_regexp_sci(s)
     return s
+
+
+def _subscriptify(i: int) -> str:
+    """Converts integer to subscript text form.
+
+    For example, 123 -> "₁₂₃".
+    """
+    return "".join([chr(0x2080 + int(c)) for c in str(i)])
