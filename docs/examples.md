@@ -494,9 +494,9 @@ To do this, we need to use the format of [DynamicQuantities.jl](https://symbolic
 ```python
 # Get numerical arrays to fit:
 X = pd.DataFrame(dict(
-    M=M.value,
-    m=m.value,
-    r=r.value,
+    M=M.to("M_sun").value,
+    m=m.to("kg").value,
+    r=r.to("R_earth").value,
 ))
 y = F.value
 
