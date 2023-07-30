@@ -1438,7 +1438,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             weights = check_array(weights, ensure_2d=False)
             check_consistent_length(weights, y)
         X, y = self._validate_data(X=X, y=y, reset=True, multi_output=True)
-        self.feature_names_in_ = _check_feature_names_in(
+        self.feature_names_in_ = _safe_check_feature_names_in(
             self, variable_names, generate_names=False
         )
 
@@ -2549,3 +2549,13 @@ def _subscriptify(i: int) -> str:
     For example, 123 -> "₁₂₃".
     """
     return "".join([chr(0x2080 + int(c)) for c in str(i)])
+
+
+def _safe_check_feature_names_in(self, variable_names, generate_names=True):
+    """_check_feature_names_in with compat for old versions."""
+    try:
+        return _check_feature_names_in(
+            self, variable_names, generate_names=generate_names
+        )
+    except TypeError:
+        return _check_feature_names_in(self, variable_names)
