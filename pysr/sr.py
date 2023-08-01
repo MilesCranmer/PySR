@@ -2189,7 +2189,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     cur_filename = str(self.equation_file_) + f".out{i}" + ".bkup"
                     if not os.path.exists(cur_filename):
                         cur_filename = str(self.equation_file_) + f".out{i}"
-                    with open(cur_filename, "r") as f:
+                    with open(cur_filename, "r", encoding="utf-8") as f:
                         buf = f.read()
                     buf = _preprocess_julia_floats(buf)
 
@@ -2200,7 +2200,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 filename = str(self.equation_file_) + ".bkup"
                 if not os.path.exists(filename):
                     filename = str(self.equation_file_)
-                with open(filename, "r") as f:
+                with open(filename, "r", encoding="utf-8") as f:
                     buf = f.read()
                 buf = _preprocess_julia_floats(buf)
                 all_outputs = [self._postprocess_dataframe(pd.read_csv(StringIO(buf)))]
