@@ -1313,7 +1313,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             "constraints": {},
             "multithreading": self.procs != 0 and self.cluster_manager is None,
             "batch_size": 1,
-            "update_verbosity": self.verbosity,
+            "update_verbosity": int(self.verbosity),
             "progress": buffer_available,
         }
         packed_modified_params = {}
@@ -1805,7 +1805,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             return_state=True,
             addprocs_function=cluster_manager,
             progress=progress and self.verbosity > 0 and len(y.shape) == 1,
-            verbosity=self.verbosity,
+            verbosity=int(self.verbosity),
         )
 
         # Set attributes
