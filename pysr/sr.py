@@ -572,7 +572,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Default is `False`.
     verbosity : int
         What verbosity level to use. 0 means minimal print statements.
-        Default is `1e9`.
+        Default is `1`.
     update_verbosity : int
         What verbosity level to use for package updates.
         Will take value of `verbosity` if not given.
@@ -661,7 +661,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     feature_names_in_ : ndarray of shape (`n_features_in_`,)
         Names of features seen during :term:`fit`. Defined only when `X`
         has feature names that are all strings.
-    pretty_feature_names_in_ : ndarray of shape (`n_features_in_`,)
+    display_feature_names_in_ : ndarray of shape (`n_features_in_`,)
         Pretty names of features, used only during printing.
     X_units_ : list[str] of length n_features
         Units of each variable in the training dataset, `X`.
@@ -791,7 +791,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         random_state=None,
         deterministic=False,
         warm_start=False,
-        verbosity=1e9,
+        verbosity=1,
         update_verbosity=None,
         print_precision=5,
         progress=True,
@@ -1033,13 +1033,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         if feature_names_in is None:
             model.feature_names_in_ = np.array([f"x{i}" for i in range(n_features_in)])
-            model.pretty_feature_names_in_ = np.array(
+            model.display_feature_names_in_ = np.array(
                 [f"x{_subscriptify(i)}" for i in range(n_features_in)]
             )
         else:
             assert len(feature_names_in) == n_features_in
             model.feature_names_in_ = feature_names_in
-            model.pretty_feature_names_in_ = None
+            model.display_feature_names_in_ = feature_names_in
 
         if selection_mask is None:
             model.selection_mask_ = np.ones(n_features_in, dtype=bool)
@@ -1313,7 +1313,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             "constraints": {},
             "multithreading": self.procs != 0 and self.cluster_manager is None,
             "batch_size": 1,
-            "update_verbosity": self.verbosity,
+            "update_verbosity": int(self.verbosity),
             "progress": buffer_available,
         }
         packed_modified_params = {}
@@ -1444,11 +1444,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         if self.feature_names_in_ is None:
             self.feature_names_in_ = np.array([f"x{i}" for i in range(X.shape[1])])
-            self.pretty_feature_names_in_ = np.array(
+            self.display_feature_names_in_ = np.array(
                 [f"x{_subscriptify(i)}" for i in range(X.shape[1])]
             )
         else:
-            self.pretty_feature_names_in_ = None
+            self.display_feature_names_in_ = self.feature_names_in_
 
         variable_names = self.feature_names_in_
 
@@ -1537,7 +1537,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             X, y = self._validate_data(X=X, y=y, reset=True, multi_output=True)
             # Update feature names with selected variable names
             self.feature_names_in_ = _check_feature_names_in(self, variable_names)
-            self.pretty_feature_names_in_ = None
+            self.display_feature_names_in_ = self.feature_names_in_
             print(f"Using features {self.feature_names_in_}")
 
         # Denoising transformation
@@ -1729,7 +1729,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             ncycles_per_iteration=self.ncyclesperiteration,
             fraction_replaced=self.fraction_replaced,
             topn=self.topn,
-            verbosity=self.verbosity,
             print_precision=self.print_precision,
             optimizer_algorithm=self.optimizer_algorithm,
             optimizer_nrestarts=self.optimizer_nrestarts,
@@ -1737,7 +1736,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             optimizer_iterations=self.optimizer_iterations,
             perturbation_factor=self.perturbation_factor,
             annealing=self.annealing,
-            progress=progress,
             timeout_in_seconds=self.timeout_in_seconds,
             crossover_probability=self.crossover_probability,
             skip_mutation_failures=self.skip_mutation_failures,
@@ -1795,12 +1793,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Main.y,
             weights=Main.weights,
             niterations=int(self.niterations),
-            variable_names=(
-                self.pretty_feature_names_in_.tolist()
-                if hasattr(self, "pretty_feature_names_in_")
-                and self.pretty_feature_names_in_ is not None
-                else self.feature_names_in_.tolist()
-            ),
+            variable_names=self.feature_names_in_.tolist(),
+            display_variable_names=self.display_feature_names_in_.tolist(),
             y_variable_names=y_variable_names,
             X_units=self.X_units_,
             y_units=self.y_units_,
@@ -1810,6 +1804,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             saved_state=self.raw_julia_state_,
             return_state=True,
             addprocs_function=cluster_manager,
+            progress=progress and self.verbosity > 0 and len(y.shape) == 1,
+            verbosity=int(self.verbosity),
         )
 
         # Set attributes
@@ -2220,24 +2216,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 "Equation": "equation",
             },
         )
-        # Regexp replace x₁₂₃ to x123 in `equation`:
-        if (
-            hasattr(self, "pretty_feature_names_in_")
-            and self.pretty_feature_names_in_ is not None
-        ):
-            # df["equation"] = df["equation"].apply(_undo_subscriptify_full)
-            for pname, name in zip(
-                self.pretty_feature_names_in_, self.feature_names_in_
-            ):
-                df["equation"] = df["equation"].apply(
-                    lambda s: re.sub(
-                        r"\b" + f"({pname})" + r"\b",
-                        name,
-                        s,
-                    )
-                    if isinstance(s, str)
-                    else s
-                )
 
         return df
 
