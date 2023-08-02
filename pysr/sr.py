@@ -1804,7 +1804,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             saved_state=self.raw_julia_state_,
             return_state=True,
             addprocs_function=cluster_manager,
-            progress=progress,
+            progress=progress and self.verbosity > 0 and len(y.shape) == 1,
             verbosity=self.verbosity,
         )
 
