@@ -20,6 +20,7 @@ from ..sr import (
     _csv_filename_to_pkl_filename,
     idx_model_selection,
     _check_assertions,
+    _process_constraints,
 )
 from ..export_latex import to_latex
 
@@ -552,6 +553,11 @@ class TestMiscellaneous(unittest.TestCase):
 
         # The correct value should be set:
         self.assertEqual(model.fraction_replaced, 0.2)
+
+    def test_power_law_warning(self):
+        """Ensure that a warning is given for a power law operator."""
+        with self.assertWarns(UserWarning):
+            _process_constraints(["^"], [], {})
 
     def test_size_warning(self):
         """Ensure that a warning is given for a large input size."""

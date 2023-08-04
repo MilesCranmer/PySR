@@ -104,6 +104,16 @@ def _process_constraints(binary_operators, unary_operators, constraints):
             constraints[op] = -1
     for op in binary_operators:
         if op not in constraints:
+            if op in ["^", "pow"]:
+                # Warn user that they should set up constraints
+                warnings.warn(
+                    "You are using the `^` operator, but have not set up `constraints` for it. "
+                    "This may lead to overly complex expressions. "
+                    "One typical constraint is to use `constraints={..., '^': (-1, 1)}`, which "
+                    "will allow arbitrary-complexity base (-1) but only powers such as "
+                    "a constant or variable (1). "
+                    "For more tips, please see https://astroautomata.com/PySR/tuning/"
+                )
             constraints[op] = (-1, -1)
         if op in ["plus", "sub", "+", "-"]:
             if constraints[op][0] != constraints[op][1]:
@@ -1264,14 +1274,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # Ensure instance parameters are allowable values:
         if self.tournament_selection_n > self.population_size:
             raise ValueError(
-                "tournament_selection_n parameter must be smaller than population_size."
+                "`tournament_selection_n` parameter must be smaller than `population_size`."
             )
 
         if self.maxsize > 40:
             warnings.warn(
                 "Note: Using a large maxsize for the equation search will be "
-                "exponentially slower and use significant memory. You should consider "
-                "turning `use_frequency` to False, and perhaps use `warmup_maxsize_by`."
+                "exponentially slower and use significant memory."
             )
         elif self.maxsize < 7:
             raise ValueError("PySR requires a maxsize of at least 7")
