@@ -1274,14 +1274,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # Ensure instance parameters are allowable values:
         if self.tournament_selection_n > self.population_size:
             raise ValueError(
-                "tournament_selection_n parameter must be smaller than population_size."
+                "`tournament_selection_n` parameter must be smaller than `population_size`."
             )
 
         if self.maxsize > 40:
             warnings.warn(
                 "Note: Using a large maxsize for the equation search will be "
-                "exponentially slower and use significant memory. You should consider "
-                "turning `use_frequency` to False, and perhaps use `warmup_maxsize_by`."
+                "exponentially slower and use significant memory."
             )
         elif self.maxsize < 7:
             raise ValueError("PySR requires a maxsize of at least 7")
