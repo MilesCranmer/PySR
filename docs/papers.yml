@@ -2,7 +2,7 @@
 # information to generate the "Research Showcase"
 
 papers:
- - title: Interpretable machine learning methods applied to jet background subtraction in heavy-ion collisions
+  - title: Interpretable machine learning methods applied to jet background subtraction in heavy-ion collisions
     authors:
       - Tanner Mengel (1)
       - Patrick Steffanic (1)
