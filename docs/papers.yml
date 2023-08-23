@@ -2,6 +2,20 @@
 # information to generate the "Research Showcase"
 
 papers:
+ - title: Interpretable machine learning methods applied to jet background subtraction in heavy-ion collisions
+    authors:
+      - Tanner Mengel (1)
+      - Patrick Steffanic (1)
+      - Charles Hughes (1,2)
+      - Antonio Carlos Oliveira da Silva (1,2)
+      - Christine Nattrass (1)
+    affiliations:
+      1: University of Tennessee, Knoxville
+      2: Iowa State University of Science and Technology
+    link: https://journals.aps.org/prc/abstract/10.1103/PhysRevC.108.L021901
+    abstract: "Jet measurements in heavy ion collisions can provide constraints on the properties of the quark gluon plasma, but the kinematic reach is limited by a large, fluctuating background. We present a novel application of symbolic regression to extract a functional representation of a deep neural network trained to subtract background from jets in heavy ion collisions. We show that the deep neural network is approximately the same as a method using the particle multiplicity in a jet. This demonstrates that interpretable machine learning methods can provide insight into underlying physical processes."
+    image: jet_background_diagram.jpg
+    date: 2023-08-22
   - title: Data-Driven Equation Discovery of a Cloud Cover Parameterization
     authors:
       - Arthur Grundner (1,2)
