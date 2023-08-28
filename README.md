@@ -15,7 +15,7 @@ https://github.com/MilesCranmer/PySR/assets/7593028/c8511a49-b408-488f-8f18-b174
 
 | **pip** | **conda** | **Stats** |
 | :---: | :---: | :---: |
-|[![PyPI version](https://badge.fury.io/py/pysr.svg)](https://badge.fury.io/py/pysr)|[![Conda Version](https://img.shields.io/conda/vn/conda-forge/pysr.svg)](https://anaconda.org/conda-forge/pysr)|<div align="center">pip: [![Downloads](https://pepy.tech/badge/pysr)](https://badge.fury.io/py/pysr)<br>conda: [![Anaconda-Server Badge](https://anaconda.org/conda-forge/pysr/badges/downloads.svg)](https://anaconda.org/conda-forge/pysr)</div>|
+|[![PyPI version](https://badge.fury.io/py/pysr.svg)](https://badge.fury.io/py/pysr)|[![Conda Version](https://img.shields.io/conda/vn/conda-forge/pysr.svg)](https://anaconda.org/conda-forge/pysr)|<div align="center">pip: [![Downloads](https://static.pepy.tech/badge/pysr)](https://pypi.org/project/pysr/)<br>conda: [![Anaconda-Server Badge](https://anaconda.org/conda-forge/pysr/badges/downloads.svg)](https://anaconda.org/conda-forge/pysr)</div>|
 
 </div>
 
