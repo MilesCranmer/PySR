@@ -1,10 +1,11 @@
 import unittest
+from functools import partial
+
 import numpy as np
 import pandas as pd
 import sympy
-from functools import partial
 
-from .. import sympy2jax, PySRRegressor
+from .. import PySRRegressor, sympy2jax
 
 
 class TestJAX(unittest.TestCase):

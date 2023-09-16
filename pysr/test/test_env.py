@@ -1,7 +1,7 @@
 """Contains tests for creating and initializing custom Julia projects."""
 
-import unittest
 import os
+import unittest
 from tempfile import TemporaryDirectory
 
 from .. import julia_helpers

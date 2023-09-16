@@ -1,11 +1,11 @@
 """Print the best model parameters and loss"""
-import numpy as np
 import pickle as pkl
-import hyperopt
-from hyperopt import hp, fmin, tpe, Trials
-from space import space
 from pprint import PrettyPrinter
 
+import hyperopt
+import numpy as np
+from hyperopt import Trials, fmin, hp, tpe
+from space import space
 
 # Change the following code to your file
 ################################################################################

@@ -1,8 +1,9 @@
 """Functions to help export PySR equations to LaTeX."""
+from typing import List
+
+import pandas as pd
 import sympy
 from sympy.printing.latex import LatexPrinter
-import pandas as pd
-from typing import List
 
 
 class PreciseLatexPrinter(LatexPrinter):

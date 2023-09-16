@@ -1,12 +1,14 @@
 # Load YAML file param_groupings.yml:
-from yaml import safe_load
+import re
 import sys
 
-sys.path.append("..")
-from pysr import PySRRegressor
-import pysr
-import re
 from docstring_parser import parse
+from yaml import safe_load
+
+sys.path.append("..")
+
+
+from pysr import PySRRegressor
 
 found_params = []
 

@@ -18,8 +18,14 @@ repos:
     rev: 0.6.1
     hooks:
       - id: nbstripout
-  # Unused imports:
+  # Unused imports
   - repo: https://github.com/hadialqattan/pycln
     rev: "v2.2.2"
     hooks:
       - id: pycln
+  # Sorted imports
+  - repo: https://github.com/PyCQA/isort
+    rev: "5.12.0"
+    hooks:
+      - id: isort
+        additional_dependencies: [toml]

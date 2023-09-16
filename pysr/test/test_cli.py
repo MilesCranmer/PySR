@@ -1,5 +1,7 @@
 import unittest
+
 from click import testing as click_testing
+
 from .._cli.main import pysr
 
 

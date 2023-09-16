@@ -1,8 +1,10 @@
-import numpy as np
 import csv
-from .sr import pysr, best
-from pathlib import Path
 from functools import partial
+from pathlib import Path
+
+import numpy as np
+
+from .sr import best, pysr
 
 PKG_DIR = Path(__file__).parents[1]
 FEYNMAN_DATASET = PKG_DIR / "datasets" / "FeynmanEquations.csv"
@@ -118,6 +120,7 @@ def do_feynman_experiments_parallel(
     data_dir=FEYNMAN_DATASET,
 ):
     import multiprocessing as mp
+
     from tqdm import tqdm
 
     problems = mk_problems(first=first, gen=True, dp=dp, data_dir=data_dir)
