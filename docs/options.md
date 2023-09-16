@@ -265,7 +265,7 @@ PySRRegressor(..., loss="loss(x, y) = abs(x * y)")
 With weights:
 
 ```python
-model = PySRRegressor(..., loss="myloss(x, y, w) = w * abs(x - y)") 
+model = PySRRegressor(..., loss="myloss(x, y, w) = w * abs(x - y)")
 model.fit(..., weights=weights)
 ```
 

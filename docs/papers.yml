@@ -151,7 +151,6 @@ papers:
     abstract: "We present an approach for using machine learning to automatically discover the governing equations and hidden properties of real physical systems from observations. We train a \"graph neural network\" to simulate the dynamics of our solar system's Sun, planets, and large moons from 30 years of trajectory data. We then use symbolic regression to discover an analytical expression for the force law implicitly learned by the neural network, which our results showed is equivalent to Newton's law of gravitation. The key assumptions that were required were translational and rotational equivariance, and Newton's second and third laws of motion. Our approach correctly discovered the form of the symbolic force law. Furthermore, our approach did not require any assumptions about the masses of planets and moons or physical constants. They, too, were accurately inferred through our methods. Though, of course, the classical law of gravitation has been known since Isaac Newton, our result serves as a validation that our method can discover unknown laws and hidden properties from observed data. More broadly this work represents a key step toward realizing the potential of machine learning for accelerating scientific discovery."
     image: rediscovering_gravity.png
     date: 2022-02-04
-    link: https://arxiv.org/abs/2202.02306
   - title: (Thesis) On Neural Differential Equations - Section 6.1
     authors:
       - Patrick Kidger (1)

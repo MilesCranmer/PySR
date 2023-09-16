@@ -22,8 +22,8 @@ jobs:
         python-version: ['3.10']
         os: [ubuntu-latest]
         arch: ['linux/amd64', 'linux/arm64']
-      
-    
+
+
     steps:
       - uses: actions/checkout@v3
       - name: Set up QEMU

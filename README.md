@@ -155,7 +155,7 @@ The PySR build in conda includes all required dependencies, so you can install i
 conda install -c conda-forge pysr
 ```
 
-from within your target conda environment. 
+from within your target conda environment.
 
 However, note that the conda install does not support precompilation of Julia libraries, so the
 start time may be slightly slower as the JIT-compilation will be running.
@@ -305,7 +305,7 @@ model = PySRRegressor(
     # ^ 2 populations per core, so one is always running.
     population_size=50,
     # ^ Slightly larger populations, for greater diversity.
-    ncyclesperiteration=500, 
+    ncyclesperiteration=500,
     # ^ Generations between migrations.
     niterations=10000000,  # Run forever
     early_stop_condition=(
