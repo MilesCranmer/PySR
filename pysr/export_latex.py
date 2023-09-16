@@ -3,7 +3,6 @@ import sympy
 from sympy.printing.latex import LatexPrinter
 import pandas as pd
 from typing import List
-import warnings
 
 
 class PreciseLatexPrinter(LatexPrinter):

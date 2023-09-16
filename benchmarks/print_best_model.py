@@ -1,5 +1,4 @@
 """Print the best model parameters and loss"""
-import sys
 import numpy as np
 import pickle as pkl
 import hyperopt

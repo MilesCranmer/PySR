@@ -18,3 +18,8 @@ repos:
     rev: 0.6.1
     hooks:
       - id: nbstripout
+  # Unused imports:
+  - repo: https://github.com/hadialqattan/pycln
+    rev: "v2.2.2"
+    hooks:
+      - id: pycln
