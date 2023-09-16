@@ -51,7 +51,6 @@ import glob
 path = TRIALS_FOLDER + "/*.pkl"
 files = 0
 for fname in glob.glob(path):
-
     trials_obj = pkl.load(open(fname, "rb"))
     n_trials = trials_obj["n"]
     trials_obj = trials_obj["trials"]
