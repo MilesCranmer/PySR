@@ -1,8 +1,9 @@
 """Code for exporting discovered expressions to numpy"""
+import warnings
+
 import numpy as np
 import pandas as pd
 from sympy import lambdify
-import warnings
 
 
 class CallableEquation:

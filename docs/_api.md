@@ -6,7 +6,7 @@ Let's look at them below.
 PARAMSKEY
 
 ## PySRRegressor Functions
-        
+
 ::: pysr.PySRRegressor.fit
     options:
         show_root_heading: true
@@ -60,5 +60,3 @@ PARAMSKEY
         show_root_heading: true
         heading_level: 3
         show_root_full_path: false
-
-

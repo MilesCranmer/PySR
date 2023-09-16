@@ -1,40 +1,37 @@
 """Define the PySRRegressor scikit-learn interface."""
 import copy
-from io import StringIO
 import os
+import pickle as pkl
+import re
+import shutil
 import sys
+import tempfile
+import warnings
+from datetime import datetime
+from io import StringIO
+from multiprocessing import cpu_count
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import sympy
-from sympy import sympify
-import re
-import tempfile
-import shutil
-from pathlib import Path
-import pickle as pkl
-from datetime import datetime
-import warnings
-from multiprocessing import cpu_count
-from sklearn.base import BaseEstimator, RegressorMixin, MultiOutputMixin
+from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
 from sklearn.utils import check_array, check_consistent_length, check_random_state
-from sklearn.utils.validation import (
-    _check_feature_names_in,
-    check_is_fitted,
-)
+from sklearn.utils.validation import _check_feature_names_in, check_is_fitted
+from sympy import sympify
 
-from .julia_helpers import (
-    init_julia,
-    _process_julia_project,
-    is_julia_version_greater_eq,
-    _escape_filename,
-    _load_cluster_manager,
-    _update_julia_project,
-    _load_backend,
-)
-from .export_numpy import CallableEquation
-from .export_latex import generate_single_table, generate_multiple_tables, to_latex
 from .deprecated import make_deprecated_kwargs_for_pysr_regressor
-
+from .export_latex import generate_multiple_tables, generate_single_table, to_latex
+from .export_numpy import CallableEquation
+from .julia_helpers import (
+    _escape_filename,
+    _load_backend,
+    _load_cluster_manager,
+    _process_julia_project,
+    _update_julia_project,
+    init_julia,
+    is_julia_version_greater_eq,
+)
 
 Main = None  # TODO: Rename to more descriptive name like "julia_runtime"
 
@@ -2454,7 +2451,7 @@ def idx_model_selection(equations: pd.DataFrame, model_selection: str) -> int:
 def _denoise(X, y, Xresampled=None, random_state=None):
     """Denoise the dataset using a Gaussian process."""
     from sklearn.gaussian_process import GaussianProcessRegressor
-    from sklearn.gaussian_process.kernels import RBF, WhiteKernel, ConstantKernel
+    from sklearn.gaussian_process.kernels import RBF, ConstantKernel, WhiteKernel
 
     gp_kernel = RBF(np.ones(X.shape[1])) + WhiteKernel(1e-1) + ConstantKernel()
     gpr = GaussianProcessRegressor(

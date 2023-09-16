@@ -1,12 +1,13 @@
 """Functions for initializing the Julia environment and installing deps."""
-import sys
+import os
 import subprocess
+import sys
 import warnings
 from pathlib import Path
-import os
+
 from julia.api import JuliaError
 
-from .version import __version__, __symbolic_regression_jl_version__
+from .version import __symbolic_regression_jl_version__, __version__
 
 juliainfo = None
 julia_initialized = False

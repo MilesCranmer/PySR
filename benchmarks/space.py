@@ -1,5 +1,5 @@
 import numpy as np
-from hyperopt import hp, fmin, tpe, Trials
+from hyperopt import Trials, fmin, hp, tpe
 
 binary_operators = ["*", "/", "+", "-"]
 unary_operators = ["sin", "cos", "exp", "log"]

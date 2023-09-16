@@ -1,7 +1,4 @@
-import functools as ft
 import sympy
-import string
-import random
 
 # Special since need to reduce arguments.
 MUL = 0

@@ -1,9 +1,11 @@
+import platform
 import unittest
+
 import numpy as np
 import pandas as pd
-import platform
 import sympy
-from .. import sympy2torch, PySRRegressor
+
+from .. import PySRRegressor, sympy2torch
 
 # Need to initialize Julia before importing torch...
 

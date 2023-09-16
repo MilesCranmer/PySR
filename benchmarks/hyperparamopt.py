@@ -1,12 +1,14 @@
 """Start a hyperoptimization from a single node"""
-import sys
-import numpy as np
 import pickle as pkl
-from pysr import PySRRegressor
+import sys
+
 import hyperopt
-from hyperopt import hp, fmin, tpe, Trials
+import numpy as np
+from hyperopt import Trials, fmin, hp, tpe
 from hyperopt.fmin import generate_trials_to_calculate
 from space import *
+
+from pysr import PySRRegressor
 
 # Change the following code to your file
 ################################################################################

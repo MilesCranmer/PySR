@@ -64,5 +64,3 @@ instead of `1.5e3`, if you write any constant numbers.
 Your operator should work with the entire real line (you can use
 abs(x) for operators requiring positive input - see `log_abs`); otherwise
 the search code will experience domain errors.
-
-

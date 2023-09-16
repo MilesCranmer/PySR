@@ -12,7 +12,7 @@ Generally you can do this as follows:
 git clone https://github.com/MilesCranmer/SymbolicRegression.jl
 ```
 2. Edit the source code in `src/` to your requirements:
-    -  The documentation for the backend is given [here](https://astroautomata.com/SymbolicRegression.jl/dev/). 
+    -  The documentation for the backend is given [here](https://astroautomata.com/SymbolicRegression.jl/dev/).
     - Throughout the package, you will often see template functions which typically use a symbol `T` (such as in the string `where {T<:Real}`). Here, `T` is simply the datatype of the input data and stored constants, such as `Float32` or `Float64`. Writing functions in this way lets us write functions generic to types, while still having access to the specific type specified at compilation time.
     - Expressions are stored as binary trees, using the `Node{T}` type, described [here](https://astroautomata.com/SymbolicRegression.jl/dev/types/#SymbolicRegression.CoreModule.EquationModule.Node).
     - Parts of the code which are typically edited by users include:

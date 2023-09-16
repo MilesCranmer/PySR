@@ -1,28 +1,28 @@
-import os
-import traceback
 import inspect
-import unittest
-import numpy as np
-from sklearn import model_selection
-from sklearn.utils.estimator_checks import check_estimator
-import sympy
-import pandas as pd
-import warnings
+import os
 import pickle as pkl
 import tempfile
+import traceback
+import unittest
+import warnings
 from pathlib import Path
 
-from .. import julia_helpers
-from .. import PySRRegressor
-from ..sr import (
-    run_feature_selection,
-    _handle_feature_selection,
-    _csv_filename_to_pkl_filename,
-    idx_model_selection,
-    _check_assertions,
-    _process_constraints,
-)
+import numpy as np
+import pandas as pd
+import sympy
+from sklearn import model_selection
+from sklearn.utils.estimator_checks import check_estimator
+
+from .. import PySRRegressor, julia_helpers
 from ..export_latex import to_latex
+from ..sr import (
+    _check_assertions,
+    _csv_filename_to_pkl_filename,
+    _handle_feature_selection,
+    _process_constraints,
+    idx_model_selection,
+    run_feature_selection,
+)
 
 DEFAULT_PARAMS = inspect.signature(PySRRegressor.__init__).parameters
 DEFAULT_NITERATIONS = DEFAULT_PARAMS["niterations"].default

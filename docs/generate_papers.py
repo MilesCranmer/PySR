@@ -1,6 +1,7 @@
 """This script generates the papers.md file from the papers.yml file."""
-import yaml
 from pathlib import Path
+
+import yaml
 
 data_file = "papers.yml"
 papers_header = Path("stylesheets") / "papers_header.txt"
@@ -49,7 +50,7 @@ with open(output_file, "w") as f:
 
 <center>
 {authors}
-    
+
 <small>{affiliations}</small>
 </center>
 

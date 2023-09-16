@@ -1,12 +1,11 @@
 """Print the best model parameters and loss"""
-import sys
-import numpy as np
 import pickle as pkl
-import hyperopt
-from hyperopt import hp, fmin, tpe, Trials
-from space import space
 from pprint import PrettyPrinter
 
+import hyperopt
+import numpy as np
+from hyperopt import Trials, fmin, hp, tpe
+from space import space
 
 # Change the following code to your file
 ################################################################################
@@ -51,7 +50,6 @@ import glob
 path = TRIALS_FOLDER + "/*.pkl"
 files = 0
 for fname in glob.glob(path):
-
     trials_obj = pkl.load(open(fname, "rb"))
     n_trials = trials_obj["n"]
     trials_obj = trials_obj["trials"]
