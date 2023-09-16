@@ -277,7 +277,8 @@ SymPy format (`sympy_format` - which you can also get with `model.sympy()`), and
 Note that `PySRRegressor` stores the state of the last search, and will restart from where you left off the next time you call `.fit()`, assuming you have set `warm_start=True`.
 This will cause problems if significant changes are made to the search parameters (like changing the operators). You can run `model.reset()` to reset the state.
 
-You will notice that PySR will save two files: `hall_of_fame...csv` and `hall_of_fame...pkl`.
+You will notice that PySR will save two files:
+`hall_of_fame...csv` and `hall_of_fame...pkl`.
 The csv file is a list of equations and their losses, and the pkl file is a saved state of the model.
 You may load the model from the `pkl` file with:
 
