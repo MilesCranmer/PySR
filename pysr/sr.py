@@ -1187,7 +1187,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         )
         return self.equations_
 
-    def get_best(self, index=None):
+    def get_best(self, index=None, model_selection=None):
         """
         Get best equation using `model_selection`.
 
@@ -1209,6 +1209,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         NotImplementedError
             Raised when an invalid model selection strategy is provided.
         """
+        if not model_selection:
+            model_selection = self.model_selection
+
         check_is_fitted(self, attributes=["equations_"])
         if self.equations_ is None:
             raise ValueError("No equations have been generated yet.")
@@ -1223,11 +1226,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         if isinstance(self.equations_, list):
             return [
-                eq.iloc[idx_model_selection(eq, self.model_selection)]
+                eq.iloc[idx_model_selection(eq, model_selection)]
                 for eq in self.equations_
             ]
         return self.equations_.iloc[
-            idx_model_selection(self.equations_, self.model_selection)
+            idx_model_selection(self.equations_, model_selection)
         ]
 
     def _setup_equation_file(self):
@@ -2379,6 +2382,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         indices=None,
         precision=3,
         columns=["equation", "complexity", "loss", "score"],
+        index=None,
+        display_options=[]
     ):
         """Create a LaTeX/booktabs table for all, or some, of the equations.
 
@@ -2404,6 +2409,25 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         """
         self.refresh()
 
+        options = dict()
+
+        if "index" in display_options:
+            columns.insert(0, "index")
+        if "best" in display_options:
+            best_rows = self.get_best(index=index, model_selection="best")
+            best_idx = [i.name for i in best_rows]
+            options['best'] = best_idx
+        if "score" in display_options:
+            score_rows = self.get_best(index=index, model_selection="score")
+            score_idx = [i.name for i in score_rows]
+            options['score'] = score_idx
+        if "accuracy" in display_options:
+            accuracy_rows = self.get_best(index=index, model_selection="accuracy")
+            accuracy_idx = [i.name for i in accuracy_rows]
+            options['accuracy'] = accuracy_idx
+        if len(options) != 0:
+            columns.insert(0, "chosen")
+        
         if self.nout_ > 1:
             if indices is not None:
                 assert isinstance(indices, list)
@@ -2419,7 +2443,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             generator_fnc = generate_single_table
 
         table_string = generator_fnc(
-            self.equations_, indices=indices, precision=precision, columns=columns
+            self.equations_, indices=indices, precision=precision, columns=columns, options=options
         )
         preamble_string = [
             r"\usepackage{breqn}",
