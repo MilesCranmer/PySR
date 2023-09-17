@@ -14,14 +14,9 @@ from sklearn.utils.estimator_checks import check_estimator
 
 from .. import PySRRegressor, julia_helpers
 from ..export_latex import sympy2latex
-from ..sr import (
-    _check_assertions,
-    _csv_filename_to_pkl_filename,
-    _handle_feature_selection,
-    _process_constraints,
-    idx_model_selection,
-    run_feature_selection,
-)
+from ..feature_selection import _handle_feature_selection, run_feature_selection
+from ..sr import _check_assertions, _process_constraints, idx_model_selection
+from ..utils import _csv_filename_to_pkl_filename
 
 DEFAULT_PARAMS = inspect.signature(PySRRegressor.__init__).parameters
 DEFAULT_NITERATIONS = DEFAULT_PARAMS["niterations"].default
