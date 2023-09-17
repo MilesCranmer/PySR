@@ -18,6 +18,7 @@ from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
 from sklearn.utils import check_array, check_consistent_length, check_random_state
 from sklearn.utils.validation import _check_feature_names_in, check_is_fitted
 
+from .denoising import denoise, multi_denoise
 from .deprecated import make_deprecated_kwargs_for_pysr_regressor
 from .export_jax import sympy2jax
 from .export_latex import sympy2latex, sympy2latextable, sympy2multilatextable
@@ -1506,19 +1507,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # Denoising transformation
         if self.denoise:
             if self.nout_ > 1:
-                y = np.stack(
-                    [
-                        _denoise(
-                            X, y[:, i], Xresampled=Xresampled, random_state=random_state
-                        )[1]
-                        for i in range(self.nout_)
-                    ],
-                    axis=1,
+                X, y = multi_denoise(
+                    X, y, Xresampled=Xresampled, random_state=random_state
                 )
-                if Xresampled is not None:
-                    X = Xresampled
             else:
-                X, y = _denoise(X, y, Xresampled=Xresampled, random_state=random_state)
+                X, y = denoise(X, y, Xresampled=Xresampled, random_state=random_state)
 
         return X, y, variable_names, X_units, y_units
 
@@ -2392,22 +2385,6 @@ def idx_model_selection(equations: pd.DataFrame, model_selection: str) -> int:
             f"{model_selection} is not a valid model selection strategy."
         )
     return chosen_idx
-
-
-def _denoise(X, y, Xresampled=None, random_state=None):
-    """Denoise the dataset using a Gaussian process."""
-    from sklearn.gaussian_process import GaussianProcessRegressor
-    from sklearn.gaussian_process.kernels import RBF, ConstantKernel, WhiteKernel
-
-    gp_kernel = RBF(np.ones(X.shape[1])) + WhiteKernel(1e-1) + ConstantKernel()
-    gpr = GaussianProcessRegressor(
-        kernel=gp_kernel, n_restarts_optimizer=50, random_state=random_state
-    )
-    gpr.fit(X, y)
-    if Xresampled is not None:
-        return Xresampled, gpr.predict(Xresampled)
-
-    return X, gpr.predict(X)
 
 
 # Function has not been removed only due to usage in module tests
