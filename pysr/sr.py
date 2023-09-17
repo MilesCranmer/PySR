@@ -11,6 +11,7 @@ from datetime import datetime
 from io import StringIO
 from multiprocessing import cpu_count
 from pathlib import Path
+from typing import List, Optional
 
 import numpy as np
 import pandas as pd
@@ -1781,10 +1782,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         y,
         Xresampled=None,
         weights=None,
-        variable_names=None,
-        X_units=None,
-        y_units=None,
-    ):
+        variable_names: Optional[List[str]] = None,
+        X_units: Optional[List[str]] = None,
+        y_units: Optional[List[str]] = None,
+    ) -> "PySRRegressor":
         """
         Search for equations to fit the dataset and store them in `self.equations_`.
 
@@ -2371,7 +2372,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         return "\n".join(preamble_string + [table_string])
 
 
-def idx_model_selection(equations: pd.DataFrame, model_selection: str) -> int:
+def idx_model_selection(equations: pd.DataFrame, model_selection: str):
     """Select an expression and return its index."""
     if model_selection == "accuracy":
         chosen_idx = equations["loss"].idxmin()
