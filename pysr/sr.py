@@ -48,17 +48,6 @@ Main = None  # TODO: Rename to more descriptive name like "julia_runtime"
 already_ran = False
 
 
-def pysr(X, y, weights=None, **kwargs):  # pragma: no cover
-    warnings.warn(
-        "Calling `pysr` is deprecated. "
-        "Please use `model = PySRRegressor(**params); model.fit(X, y)` going forward.",
-        FutureWarning,
-    )
-    model = PySRRegressor(**kwargs)
-    model.fit(X, y, weights=weights)
-    return model.equations_
-
-
 def _process_constraints(binary_operators, unary_operators, constraints):
     constraints = constraints.copy()
     for op in unary_operators:
@@ -179,37 +168,6 @@ def _check_assertions(
             raise ValueError(
                 "The number of units in `y_units` must equal the number of output features in `y`."
             )
-
-
-def best(*args, **kwargs):  # pragma: no cover
-    raise NotImplementedError(
-        "`best` has been deprecated. Please use the `PySRRegressor` interface. "
-        "After fitting, you can return `.sympy()` to get the sympy representation "
-        "of the best equation."
-    )
-
-
-def best_row(*args, **kwargs):  # pragma: no cover
-    raise NotImplementedError(
-        "`best_row` has been deprecated. Please use the `PySRRegressor` interface. "
-        "After fitting, you can run `print(model)` to view the best equation, or "
-        "`model.get_best()` to return the best equation's row in `model.equations_`."
-    )
-
-
-def best_tex(*args, **kwargs):  # pragma: no cover
-    raise NotImplementedError(
-        "`best_tex` has been deprecated. Please use the `PySRRegressor` interface. "
-        "After fitting, you can return `.latex()` to get the sympy representation "
-        "of the best equation."
-    )
-
-
-def best_callable(*args, **kwargs):  # pragma: no cover
-    raise NotImplementedError(
-        "`best_callable` has been deprecated. Please use the `PySRRegressor` "
-        "interface. After fitting, you can use `.predict(X)` to use the best callable."
-    )
 
 
 # Class validation constants
