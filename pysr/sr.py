@@ -25,6 +25,7 @@ from .export_latex import sympy2latex, sympy2latextable, sympy2multilatextable
 from .export_numpy import sympy2numpy
 from .export_sympy import assert_valid_sympy_symbol, create_sympy_symbols, pysr2sympy
 from .export_torch import sympy2torch
+from .feature_selection import run_feature_selection
 from .julia_helpers import (
     _escape_filename,
     _load_backend,
@@ -2385,36 +2386,3 @@ def idx_model_selection(equations: pd.DataFrame, model_selection: str) -> int:
             f"{model_selection} is not a valid model selection strategy."
         )
     return chosen_idx
-
-
-# Function has not been removed only due to usage in module tests
-def _handle_feature_selection(X, select_k_features, y, variable_names):
-    if select_k_features is not None:
-        selection = run_feature_selection(X, y, select_k_features)
-        print(f"Using features {[variable_names[i] for i in selection]}")
-        X = X[:, selection]
-
-    else:
-        selection = None
-    return X, selection
-
-
-def run_feature_selection(X, y, select_k_features, random_state=None):
-    """
-    Find most important features.
-
-    Uses a gradient boosting tree regressor as a proxy for finding
-    the k most important features in X, returning indices for those
-    features as output.
-    """
-    from sklearn.ensemble import RandomForestRegressor
-    from sklearn.feature_selection import SelectFromModel
-
-    clf = RandomForestRegressor(
-        n_estimators=100, max_depth=3, random_state=random_state
-    )
-    clf.fit(X, y)
-    selector = SelectFromModel(
-        clf, threshold=-np.inf, max_features=select_k_features, prefit=True
-    )
-    return selector.get_support(indices=True)
