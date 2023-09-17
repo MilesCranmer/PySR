@@ -109,7 +109,7 @@ class TestPipeline(unittest.TestCase):
         from pysr.sr import Main
 
         # We should have that the model state is now a Float64 hof:
-        Main.test_state = model.raw_julia_state_
+        Main.test_state = model.sr_state_
         self.assertTrue(Main.eval("typeof(test_state[2]).parameters[1] == Float64"))
 
     def test_multioutput_custom_operator_quiet_custom_complexity(self):
@@ -232,7 +232,7 @@ class TestPipeline(unittest.TestCase):
         from pysr.sr import Main
 
         # We should have that the model state is now a Float32 hof:
-        Main.test_state = regressor.raw_julia_state_
+        Main.test_state = regressor.sr_state_
         self.assertTrue(Main.eval("typeof(test_state[2]).parameters[1] == Float32"))
         # This should exit almost immediately, and use the old equations
         regressor.fit(X, y)

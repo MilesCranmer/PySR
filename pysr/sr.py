@@ -603,8 +603,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Path to the temporary equations directory.
     equation_file_ : str
         Output equation file name produced by the julia backend.
-    raw_julia_state_ : tuple[list[PyCall.jlwrap], PyCall.jlwrap]
+    sr_state_ : tuple[list[PyCall.jlwrap], PyCall.jlwrap]
         The state for the julia SymbolicRegression.jl backend post fitting.
+    sr_options_ : PyCall.jlwrap
+        The options used by `SymbolicRegression.jl`, created during
+        a call to `.fit`. You may use this to manually call functions
+        in `SymbolicRegression` which take an `::Options` argument.
     equation_file_contents_ : list[pandas.DataFrame]
         Contents of the equation file output by the Julia backend.
     show_pickle_warnings_ : bool
@@ -1031,7 +1035,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         serialization.
 
         Thus, for `PySRRegressor` to support pickle serialization, the
-        `raw_julia_state_` attribute must be hidden from pickle. This will
+        `sr_state_` attribute must be hidden from pickle. This will
         prevent the `warm_start` of any model that is loaded via `pickle.loads()`,
         but does allow all other attributes of a fitted `PySRRegressor` estimator
         to be serialized. Note: Jax and Torch format equations are also removed
@@ -1041,9 +1045,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         show_pickle_warning = not (
             "show_pickle_warnings_" in state and not state["show_pickle_warnings_"]
         )
-        if "raw_julia_state_" in state and show_pickle_warning:
+        if ("sr_state_" in state or "sr_options_" in state) and show_pickle_warning:
             warnings.warn(
-                "raw_julia_state_ cannot be pickled and will be removed from the "
+                "sr_state_ and sr_options_ cannot be pickled and will be removed from the "
                 "serialized instance. This will prevent a `warm_start` fit of any "
                 "model that is deserialized via `pickle.load()`."
             )
@@ -1055,7 +1059,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     "serialized instance. When loading the model, please redefine "
                     f"`{state_key}` at runtime."
                 )
-        state_keys_to_clear = ["raw_julia_state_"] + state_keys_containing_lambdas
+        state_keys_to_clear = [
+            "sr_state_",
+            "sr_options_",
+        ] + state_keys_containing_lambdas
         pickled_state = {
             key: (None if key in state_keys_to_clear else value)
             for key, value in state.items()
@@ -1104,6 +1111,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             FutureWarning,
         )
         return self.equations_
+
+    @property
+    def raw_julia_state_(self):  # pragma: no cover
+        warnings.warn(
+            "PySRRegressor.raw_julia_state_ is now deprecated. "
+            "Please use PySRRegressor.sr_state_ instead.",
+        )
+        return self.sr_state_
 
     def get_best(self, index=None):
         """
@@ -1605,7 +1620,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/OptionsStruct.jl
-        options = SymbolicRegression.Options(
+        self.sr_options_ = SymbolicRegression.Options(
             binary_operators=Main.eval(str(binary_operators).replace("'", "")),
             unary_operators=Main.eval(str(unary_operators).replace("'", "")),
             bin_constraints=bin_constraints,
@@ -1704,7 +1719,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/SymbolicRegression.jl
-        self.raw_julia_state_ = SymbolicRegression.equation_search(
+        self.sr_state_ = SymbolicRegression.equation_search(
             Main.X,
             Main.y,
             weights=Main.weights,
@@ -1714,10 +1729,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             y_variable_names=y_variable_names,
             X_units=self.X_units_,
             y_units=self.y_units_,
-            options=options,
+            options=self.sr_options_,
             numprocs=cprocs,
             parallelism=parallelism,
-            saved_state=self.raw_julia_state_,
+            saved_state=self.sr_state_,
             return_state=True,
             addprocs_function=cluster_manager,
             progress=progress and self.verbosity > 0 and len(y.shape) == 1,
@@ -1786,10 +1801,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Fitted estimator.
         """
         # Init attributes that are not specified in BaseEstimator
-        if self.warm_start and hasattr(self, "raw_julia_state_"):
+        if self.warm_start and hasattr(self, "sr_state_"):
             pass
         else:
-            if hasattr(self, "raw_julia_state_"):
+            if hasattr(self, "sr_state_"):
                 warnings.warn(
                     "The discovered expressions are being reset. "
                     "Please set `warm_start=True` if you wish to continue "
@@ -1799,7 +1814,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self.equations_ = None
             self.nout_ = 1
             self.selection_mask_ = None
-            self.raw_julia_state_ = None
+            self.sr_state_ = None
+            self.sr_options_ = None
             self.X_units_ = None
             self.y_units_ = None
 
