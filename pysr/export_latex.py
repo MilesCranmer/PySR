@@ -1,5 +1,5 @@
 """Functions to help export PySR equations to LaTeX."""
-from typing import List
+from typing import List, Optional, Tuple
 
 import pandas as pd
 import sympy
@@ -19,14 +19,16 @@ class PreciseLatexPrinter(LatexPrinter):
         return super()._print_Float(reduced_float)
 
 
-def sympy2latex(expr, prec=3, full_prec=True, **settings):
+def sympy2latex(expr, prec=3, full_prec=True, **settings) -> str:
     """Convert sympy expression to LaTeX with custom precision."""
     settings["full_prec"] = full_prec
     printer = PreciseLatexPrinter(settings=settings, prec=prec)
     return printer.doprint(expr)
 
 
-def generate_table_environment(columns=["equation", "complexity", "loss"]):
+def generate_table_environment(
+    columns: List[str] = ["equation", "complexity", "loss"]
+) -> Tuple[str, str]:
     margins = "c" * len(columns)
     column_map = {
         "complexity": "Complexity",
@@ -58,12 +60,12 @@ def generate_table_environment(columns=["equation", "complexity", "loss"]):
 
 def sympy2latextable(
     equations: pd.DataFrame,
-    indices: List[int] = None,
+    indices: Optional[List[int]] = None,
     precision: int = 3,
-    columns=["equation", "complexity", "loss", "score"],
+    columns: List[str] = ["equation", "complexity", "loss", "score"],
     max_equation_length: int = 50,
     output_variable_name: str = "y",
-):
+) -> str:
     """Generate a booktabs-style LaTeX table for a single set of equations."""
     assert isinstance(equations, pd.DataFrame)
 
@@ -71,7 +73,7 @@ def sympy2latextable(
     latex_table_content = []
 
     if indices is None:
-        indices = range(len(equations))
+        indices = list(equations.index)
 
     for i in indices:
         latex_equation = sympy2latex(
@@ -126,11 +128,11 @@ def sympy2latextable(
 
 def sympy2multilatextable(
     equations: List[pd.DataFrame],
-    indices: List[List[int]] = None,
+    indices: Optional[List[List[int]]] = None,
     precision: int = 3,
-    columns=["equation", "complexity", "loss", "score"],
-    output_variable_names: str = None,
-):
+    columns: List[str] = ["equation", "complexity", "loss", "score"],
+    output_variable_names: Optional[List[str]] = None,
+) -> str:
     """Generate multiple latex tables for a list of equation sets."""
     # TODO: Let user specify custom output variable
 

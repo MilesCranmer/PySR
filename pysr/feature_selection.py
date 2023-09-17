@@ -2,7 +2,7 @@
 import numpy as np
 
 
-def run_feature_selection(X, y, select_k_features, random_state=None) -> np.ndarray:
+def run_feature_selection(X, y, select_k_features, random_state=None):
     """
     Find most important features.
 
