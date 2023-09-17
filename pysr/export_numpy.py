@@ -6,14 +6,17 @@ import pandas as pd
 from sympy import lambdify
 
 
+def sympy2numpy(eqn, sympy_symbols, *, selection=None):
+    return CallableEquation(eqn, sympy_symbols, selection=selection)
+
+
 class CallableEquation:
     """Simple wrapper for numpy lambda functions built with sympy"""
 
-    def __init__(self, sympy_symbols, eqn, selection=None, variable_names=None):
+    def __init__(self, eqn, sympy_symbols, selection=None):
         self._sympy = eqn
         self._sympy_symbols = sympy_symbols
         self._selection = selection
-        self._variable_names = variable_names
 
     def __repr__(self):
         return f"PySRFunction(X=>{self._sympy})"
@@ -23,7 +26,7 @@ class CallableEquation:
         if isinstance(X, pd.DataFrame):
             # Lambda function takes as argument:
             return self._lambda(
-                **{k: X[k].values for k in self._variable_names}
+                **{k: X[k].values for k in map(str, self._sympy_symbols)}
             ) * np.ones(expected_shape)
         if self._selection is not None:
             if X.shape[1] != len(self._selection):

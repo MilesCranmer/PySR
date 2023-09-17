@@ -19,7 +19,7 @@ class PreciseLatexPrinter(LatexPrinter):
         return super()._print_Float(reduced_float)
 
 
-def to_latex(expr, prec=3, full_prec=True, **settings):
+def sympy2latex(expr, prec=3, full_prec=True, **settings):
     """Convert sympy expression to LaTeX with custom precision."""
     settings["full_prec"] = full_prec
     printer = PreciseLatexPrinter(settings=settings, prec=prec)
@@ -56,7 +56,7 @@ def generate_table_environment(columns=["equation", "complexity", "loss"]):
     return top_latex_table, bottom_latex_table
 
 
-def generate_single_table(
+def sympy2latextable(
     equations: pd.DataFrame,
     indices: List[int] = None,
     precision: int = 3,
@@ -74,16 +74,16 @@ def generate_single_table(
         indices = range(len(equations))
 
     for i in indices:
-        latex_equation = to_latex(
+        latex_equation = sympy2latex(
             equations.iloc[i]["sympy_format"],
             prec=precision,
         )
         complexity = str(equations.iloc[i]["complexity"])
-        loss = to_latex(
+        loss = sympy2latex(
             sympy.Float(equations.iloc[i]["loss"]),
             prec=precision,
         )
-        score = to_latex(
+        score = sympy2latex(
             sympy.Float(equations.iloc[i]["score"]),
             prec=precision,
         )
@@ -124,7 +124,7 @@ def generate_single_table(
     return "\n".join([latex_top, *latex_table_content, latex_bottom])
 
 
-def generate_multiple_tables(
+def sympy2multilatextable(
     equations: List[pd.DataFrame],
     indices: List[List[int]] = None,
     precision: int = 3,
@@ -135,7 +135,7 @@ def generate_multiple_tables(
     # TODO: Let user specify custom output variable
 
     latex_tables = [
-        generate_single_table(
+        sympy2latextable(
             equations[i],
             (None if not indices else indices[i]),
             precision=precision,

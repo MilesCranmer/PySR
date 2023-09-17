@@ -14,15 +14,16 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import sympy
 from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
 from sklearn.utils import check_array, check_consistent_length, check_random_state
 from sklearn.utils.validation import _check_feature_names_in, check_is_fitted
-from sympy import sympify
 
 from .deprecated import make_deprecated_kwargs_for_pysr_regressor
-from .export_latex import generate_multiple_tables, generate_single_table, to_latex
-from .export_numpy import CallableEquation
+from .export_jax import sympy2jax
+from .export_latex import sympy2latex, sympy2latextable, sympy2multilatextable
+from .export_numpy import sympy2numpy
+from .export_sympy import assert_valid_sympy_symbol, create_sympy_symbols, pysr2sympy
+from .export_torch import sympy2torch
 from .julia_helpers import (
     _escape_filename,
     _load_backend,
@@ -36,51 +37,6 @@ from .julia_helpers import (
 Main = None  # TODO: Rename to more descriptive name like "julia_runtime"
 
 already_ran = False
-
-sympy_mappings = {
-    "div": lambda x, y: x / y,
-    "mult": lambda x, y: x * y,
-    "sqrt": lambda x: sympy.sqrt(x),
-    "sqrt_abs": lambda x: sympy.sqrt(abs(x)),
-    "square": lambda x: x**2,
-    "cube": lambda x: x**3,
-    "plus": lambda x, y: x + y,
-    "sub": lambda x, y: x - y,
-    "neg": lambda x: -x,
-    "pow": lambda x, y: x**y,
-    "pow_abs": lambda x, y: abs(x) ** y,
-    "cos": sympy.cos,
-    "sin": sympy.sin,
-    "tan": sympy.tan,
-    "cosh": sympy.cosh,
-    "sinh": sympy.sinh,
-    "tanh": sympy.tanh,
-    "exp": sympy.exp,
-    "acos": sympy.acos,
-    "asin": sympy.asin,
-    "atan": sympy.atan,
-    "acosh": lambda x: sympy.acosh(x),
-    "acosh_abs": lambda x: sympy.acosh(abs(x) + 1),
-    "asinh": sympy.asinh,
-    "atanh": lambda x: sympy.atanh(sympy.Mod(x + 1, 2) - 1),
-    "atanh_clip": lambda x: sympy.atanh(sympy.Mod(x + 1, 2) - 1),
-    "abs": abs,
-    "mod": sympy.Mod,
-    "erf": sympy.erf,
-    "erfc": sympy.erfc,
-    "log": lambda x: sympy.log(x),
-    "log10": lambda x: sympy.log(x, 10),
-    "log2": lambda x: sympy.log(x, 2),
-    "log1p": lambda x: sympy.log(x + 1),
-    "log_abs": lambda x: sympy.log(abs(x)),
-    "log10_abs": lambda x: sympy.log(abs(x), 10),
-    "log2_abs": lambda x: sympy.log(abs(x), 2),
-    "log1p_abs": lambda x: sympy.log(abs(x) + 1),
-    "floor": sympy.floor,
-    "ceil": sympy.ceiling,
-    "sign": sympy.sign,
-    "gamma": sympy.gamma,
-}
 
 
 def pysr(X, y, weights=None, **kwargs):  # pragma: no cover
@@ -188,10 +144,6 @@ def _check_assertions(
         assert len(variable_names) == X.shape[1]
         # Check none of the variable names are function names:
         for var_name in variable_names:
-            if var_name in sympy_mappings or var_name in sympy.__dict__.keys():
-                raise ValueError(
-                    f"Variable name {var_name} is already a function name."
-                )
             # Check if alphanumeric only:
             if not re.match(r"^[₀₁₂₃₄₅₆₇₈₉a-zA-Z0-9_]+$", var_name):
                 raise ValueError(
@@ -199,6 +151,7 @@ def _check_assertions(
                     "Only alphanumeric characters, numbers, "
                     "and underscores are allowed."
                 )
+            assert_valid_sympy_symbol(var_name)
     if X_units is not None and len(X_units) != X.shape[1]:
         raise ValueError(
             "The number of units in `X_units` must equal the number of features in `X`."
@@ -2116,10 +2069,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if self.nout_ > 1:
             output = []
             for s in sympy_representation:
-                latex = to_latex(s, prec=precision)
+                latex = sympy2latex(s, prec=precision)
                 output.append(latex)
             return output
-        return to_latex(sympy_representation, prec=precision)
+        return sympy2latex(sympy_representation, prec=precision)
 
     def jax(self, index=None):
         """
@@ -2282,53 +2235,41 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 jax_format = []
             if self.output_torch_format:
                 torch_format = []
-            local_sympy_mappings = {
-                **(self.extra_sympy_mappings if self.extra_sympy_mappings else {}),
-                **sympy_mappings,
-            }
-
-            sympy_symbols = [
-                sympy.Symbol(variable) for variable in self.feature_names_in_
-            ]
 
             for _, eqn_row in output.iterrows():
-                eqn = sympify(eqn_row["equation"], locals=local_sympy_mappings)
+                eqn = pysr2sympy(
+                    eqn_row["equation"],
+                    extra_sympy_mappings=self.extra_sympy_mappings,
+                )
                 sympy_format.append(eqn)
 
-                # Numpy:
+                # NumPy:
+                sympy_symbols = create_sympy_symbols(self.feature_names_in_)
                 lambda_format.append(
-                    CallableEquation(
-                        sympy_symbols, eqn, self.selection_mask_, self.feature_names_in_
+                    sympy2numpy(
+                        eqn,
+                        sympy_symbols,
+                        selection=self.selection_mask_,
                     )
                 )
 
                 # JAX:
                 if self.output_jax_format:
-                    from .export_jax import sympy2jax
-
                     func, params = sympy2jax(
                         eqn,
                         sympy_symbols,
                         selection=self.selection_mask_,
-                        extra_jax_mappings=(
-                            self.extra_jax_mappings if self.extra_jax_mappings else {}
-                        ),
+                        extra_jax_mappings=self.extra_jax_mappings,
                     )
                     jax_format.append({"callable": func, "parameters": params})
 
                 # Torch:
                 if self.output_torch_format:
-                    from .export_torch import sympy2torch
-
                     module = sympy2torch(
                         eqn,
                         sympy_symbols,
                         selection=self.selection_mask_,
-                        extra_torch_mappings=(
-                            self.extra_torch_mappings
-                            if self.extra_torch_mappings
-                            else {}
-                        ),
+                        extra_torch_mappings=self.extra_torch_mappings,
                     )
                     torch_format.append(module)
 
@@ -2410,17 +2351,18 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 assert isinstance(indices[0], list)
                 assert len(indices) == self.nout_
 
-            generator_fnc = generate_multiple_tables
+            table_string = sympy2multilatextable(
+                self.equations_, indices=indices, precision=precision, columns=columns
+            )
         else:
             if indices is not None:
                 assert isinstance(indices, list)
                 assert isinstance(indices[0], int)
 
-            generator_fnc = generate_single_table
+            table_string = sympy2latextable(
+                self.equations_, indices=indices, precision=precision, columns=columns
+            )
 
-        table_string = generator_fnc(
-            self.equations_, indices=indices, precision=precision, columns=columns
-        )
         preamble_string = [
             r"\usepackage{breqn}",
             r"\usepackage{booktabs}",
