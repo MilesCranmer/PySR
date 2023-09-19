@@ -47,6 +47,8 @@ sympy_mappings = {
     "ceil": sympy.ceiling,
     "sign": sympy.sign,
     "gamma": sympy.gamma,
+    "logical_or": lambda x, y: sympy.Piecewise((1.0, 0.0), ((x > 0) | (y > 0), True)),
+    "logical_and": lambda x, y: sympy.Piecewise((1.0, 0.0), ((x > 0) & (y > 0), True)),
 }
 
 
