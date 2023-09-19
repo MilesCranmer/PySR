@@ -49,6 +49,7 @@ sympy_mappings = {
     "gamma": sympy.gamma,
     "logical_or": lambda x, y: sympy.Piecewise((1.0, 0.0), ((x > 0) | (y > 0), True)),
     "logical_and": lambda x, y: sympy.Piecewise((1.0, 0.0), ((x > 0) & (y > 0), True)),
+    "relu": lambda x: sympy.Piecewise((0.0, x), (x < 0, True)),
 }
 
 
