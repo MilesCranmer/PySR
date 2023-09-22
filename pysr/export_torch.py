@@ -89,12 +89,6 @@ def _initialize_torch():
                         already_used = already_used | cond
             return output
 
-        def as_bool(x):
-            if isinstance(x, torch.Tensor):
-                return x.bool()
-            else:
-                return bool(x)
-
         # TODO: Add test that makes sure tensors are on the same device
 
         _global_func_lookup = {
@@ -145,7 +139,7 @@ def _initialize_torch():
             sympy.Heaviside: torch.heaviside,
             sympy.core.numbers.Half: (lambda: 0.5),
             sympy.core.numbers.One: (lambda: 1.0),
-            sympy.logic.boolalg.Boolean: as_bool,
+            sympy.logic.boolalg.Boolean: lambda x: x,
             sympy.logic.boolalg.BooleanTrue: (lambda: True),
             sympy.logic.boolalg.BooleanFalse: (lambda: False),
             sympy.functions.elementary.piecewise.ExprCondPair: expr_cond_pair,
