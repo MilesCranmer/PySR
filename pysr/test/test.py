@@ -10,11 +10,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import sympy
-from sklearn import model_selection
 from sklearn.utils.estimator_checks import check_estimator
 
 from .. import PySRRegressor, julia_helpers
-from ..export_latex import to_latex
+from ..export_latex import sympy2latex
 from ..sr import (
     _check_assertions,
     _csv_filename_to_pkl_filename,
@@ -884,23 +883,23 @@ class TestLaTeXTable(unittest.TestCase):
     def test_latex_float_precision(self):
         """Test that we can print latex expressions with custom precision"""
         expr = sympy.Float(4583.4485748, dps=50)
-        self.assertEqual(to_latex(expr, prec=6), r"4583.45")
-        self.assertEqual(to_latex(expr, prec=5), r"4583.4")
-        self.assertEqual(to_latex(expr, prec=4), r"4583.")
-        self.assertEqual(to_latex(expr, prec=3), r"4.58 \cdot 10^{3}")
-        self.assertEqual(to_latex(expr, prec=2), r"4.6 \cdot 10^{3}")
+        self.assertEqual(sympy2latex(expr, prec=6), r"4583.45")
+        self.assertEqual(sympy2latex(expr, prec=5), r"4583.4")
+        self.assertEqual(sympy2latex(expr, prec=4), r"4583.")
+        self.assertEqual(sympy2latex(expr, prec=3), r"4.58 \cdot 10^{3}")
+        self.assertEqual(sympy2latex(expr, prec=2), r"4.6 \cdot 10^{3}")
 
         # Multiple numbers:
         x = sympy.Symbol("x")
         expr = x * 3232.324857384 - 1.4857485e-10
         self.assertEqual(
-            to_latex(expr, prec=2), r"3.2 \cdot 10^{3} x - 1.5 \cdot 10^{-10}"
+            sympy2latex(expr, prec=2), r"3.2 \cdot 10^{3} x - 1.5 \cdot 10^{-10}"
         )
         self.assertEqual(
-            to_latex(expr, prec=3), r"3.23 \cdot 10^{3} x - 1.49 \cdot 10^{-10}"
+            sympy2latex(expr, prec=3), r"3.23 \cdot 10^{3} x - 1.49 \cdot 10^{-10}"
         )
         self.assertEqual(
-            to_latex(expr, prec=8), r"3232.3249 x - 1.4857485 \cdot 10^{-10}"
+            sympy2latex(expr, prec=8), r"3232.3249 x - 1.4857485 \cdot 10^{-10}"
         )
 
     def test_latex_break_long_equation(self):
