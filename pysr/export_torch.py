@@ -194,7 +194,7 @@ def _initialize_torch():
                         self._torch_func = _func_lookup[expr.func]
                     except KeyError:
                         raise KeyError(
-                            f"Function {expr.func} was not found in Torch function mappings."
+                            f"Function {expr.func} was not found in Torch function mappings. "
                             "Please add it to extra_torch_mappings in the format, e.g., "
                             "{sympy.sqrt: torch.sqrt}."
                         )
@@ -222,7 +222,13 @@ def _initialize_torch():
                         arg_ = arg(memodict)
                         memodict[arg] = arg_
                     args.append(arg_)
-                return self._torch_func(*args)
+                try:
+                    return self._torch_func(*args)
+                except Exception as err:
+                    # Add information about the current node to the error:
+                    raise type(err)(
+                        f"Error occurred in node {self._sympy_func} with args {args}"
+                    )
 
         class _SingleSymPyModule(torch.nn.Module):
             """SympyTorch code from https://github.com/patrick-kidger/sympytorch"""
