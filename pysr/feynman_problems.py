@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 
-from .sr import best, pysr
+from .deprecated import best, pysr
 
 PKG_DIR = Path(__file__).parents[1]
 FEYNMAN_DATASET = PKG_DIR / "datasets" / "FeynmanEquations.csv"

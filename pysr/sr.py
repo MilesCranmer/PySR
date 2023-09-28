@@ -11,6 +11,7 @@ from datetime import datetime
 from io import StringIO
 from multiprocessing import cpu_count
 from pathlib import Path
+from typing import List, Optional
 
 import numpy as np
 import pandas as pd
@@ -18,12 +19,14 @@ from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
 from sklearn.utils import check_array, check_consistent_length, check_random_state
 from sklearn.utils.validation import _check_feature_names_in, check_is_fitted
 
+from .denoising import denoise, multi_denoise
 from .deprecated import make_deprecated_kwargs_for_pysr_regressor
 from .export_jax import sympy2jax
 from .export_latex import sympy2latex, sympy2latextable, sympy2multilatextable
 from .export_numpy import sympy2numpy
 from .export_sympy import assert_valid_sympy_symbol, create_sympy_symbols, pysr2sympy
 from .export_torch import sympy2torch
+from .feature_selection import run_feature_selection
 from .julia_helpers import (
     _escape_filename,
     _load_backend,
@@ -33,21 +36,16 @@ from .julia_helpers import (
     init_julia,
     is_julia_version_greater_eq,
 )
+from .utils import (
+    _csv_filename_to_pkl_filename,
+    _preprocess_julia_floats,
+    _safe_check_feature_names_in,
+    _subscriptify,
+)
 
 Main = None  # TODO: Rename to more descriptive name like "julia_runtime"
 
 already_ran = False
-
-
-def pysr(X, y, weights=None, **kwargs):  # pragma: no cover
-    warnings.warn(
-        "Calling `pysr` is deprecated. "
-        "Please use `model = PySRRegressor(**params); model.fit(X, y)` going forward.",
-        FutureWarning,
-    )
-    model = PySRRegressor(**kwargs)
-    model.fit(X, y, weights=weights)
-    return model.equations_
 
 
 def _process_constraints(binary_operators, unary_operators, constraints):
@@ -170,37 +168,6 @@ def _check_assertions(
             raise ValueError(
                 "The number of units in `y_units` must equal the number of output features in `y`."
             )
-
-
-def best(*args, **kwargs):  # pragma: no cover
-    raise NotImplementedError(
-        "`best` has been deprecated. Please use the `PySRRegressor` interface. "
-        "After fitting, you can return `.sympy()` to get the sympy representation "
-        "of the best equation."
-    )
-
-
-def best_row(*args, **kwargs):  # pragma: no cover
-    raise NotImplementedError(
-        "`best_row` has been deprecated. Please use the `PySRRegressor` interface. "
-        "After fitting, you can run `print(model)` to view the best equation, or "
-        "`model.get_best()` to return the best equation's row in `model.equations_`."
-    )
-
-
-def best_tex(*args, **kwargs):  # pragma: no cover
-    raise NotImplementedError(
-        "`best_tex` has been deprecated. Please use the `PySRRegressor` interface. "
-        "After fitting, you can return `.latex()` to get the sympy representation "
-        "of the best equation."
-    )
-
-
-def best_callable(*args, **kwargs):  # pragma: no cover
-    raise NotImplementedError(
-        "`best_callable` has been deprecated. Please use the `PySRRegressor` "
-        "interface. After fitting, you can use `.predict(X)` to use the best callable."
-    )
 
 
 # Class validation constants
@@ -945,10 +912,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         model : PySRRegressor
             The model with fitted equations.
         """
-        if os.path.splitext(equation_file)[1] != ".pkl":
-            pkl_filename = _csv_filename_to_pkl_filename(equation_file)
-        else:
-            pkl_filename = equation_file
+
+        pkl_filename = _csv_filename_to_pkl_filename(equation_file)
 
         # Try to load model from <equation_file>.pkl
         print(f"Checking if {pkl_filename} exists...")
@@ -1502,19 +1467,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # Denoising transformation
         if self.denoise:
             if self.nout_ > 1:
-                y = np.stack(
-                    [
-                        _denoise(
-                            X, y[:, i], Xresampled=Xresampled, random_state=random_state
-                        )[1]
-                        for i in range(self.nout_)
-                    ],
-                    axis=1,
+                X, y = multi_denoise(
+                    X, y, Xresampled=Xresampled, random_state=random_state
                 )
-                if Xresampled is not None:
-                    X = Xresampled
             else:
-                X, y = _denoise(X, y, Xresampled=Xresampled, random_state=random_state)
+                X, y = denoise(X, y, Xresampled=Xresampled, random_state=random_state)
 
         return X, y, variable_names, X_units, y_units
 
@@ -1783,10 +1740,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         y,
         Xresampled=None,
         weights=None,
-        variable_names=None,
-        X_units=None,
-        y_units=None,
-    ):
+        variable_names: Optional[List[str]] = None,
+        X_units: Optional[List[str]] = None,
+        y_units: Optional[List[str]] = None,
+    ) -> "PySRRegressor":
         """
         Search for equations to fit the dataset and store them in `self.equations_`.
 
@@ -2373,7 +2330,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         return "\n".join(preamble_string + [table_string])
 
 
-def idx_model_selection(equations: pd.DataFrame, model_selection: str) -> int:
+def idx_model_selection(equations: pd.DataFrame, model_selection: str):
     """Select an expression and return its index."""
     if model_selection == "accuracy":
         chosen_idx = equations["loss"].idxmin()
@@ -2388,100 +2345,3 @@ def idx_model_selection(equations: pd.DataFrame, model_selection: str) -> int:
             f"{model_selection} is not a valid model selection strategy."
         )
     return chosen_idx
-
-
-def _denoise(X, y, Xresampled=None, random_state=None):
-    """Denoise the dataset using a Gaussian process."""
-    from sklearn.gaussian_process import GaussianProcessRegressor
-    from sklearn.gaussian_process.kernels import RBF, ConstantKernel, WhiteKernel
-
-    gp_kernel = RBF(np.ones(X.shape[1])) + WhiteKernel(1e-1) + ConstantKernel()
-    gpr = GaussianProcessRegressor(
-        kernel=gp_kernel, n_restarts_optimizer=50, random_state=random_state
-    )
-    gpr.fit(X, y)
-    if Xresampled is not None:
-        return Xresampled, gpr.predict(Xresampled)
-
-    return X, gpr.predict(X)
-
-
-# Function has not been removed only due to usage in module tests
-def _handle_feature_selection(X, select_k_features, y, variable_names):
-    if select_k_features is not None:
-        selection = run_feature_selection(X, y, select_k_features)
-        print(f"Using features {[variable_names[i] for i in selection]}")
-        X = X[:, selection]
-
-    else:
-        selection = None
-    return X, selection
-
-
-def run_feature_selection(X, y, select_k_features, random_state=None):
-    """
-    Find most important features.
-
-    Uses a gradient boosting tree regressor as a proxy for finding
-    the k most important features in X, returning indices for those
-    features as output.
-    """
-    from sklearn.ensemble import RandomForestRegressor
-    from sklearn.feature_selection import SelectFromModel
-
-    clf = RandomForestRegressor(
-        n_estimators=100, max_depth=3, random_state=random_state
-    )
-    clf.fit(X, y)
-    selector = SelectFromModel(
-        clf, threshold=-np.inf, max_features=select_k_features, prefit=True
-    )
-    return selector.get_support(indices=True)
-
-
-def _csv_filename_to_pkl_filename(csv_filename) -> str:
-    # Assume that the csv filename is of the form "foo.csv"
-    assert str(csv_filename).endswith(".csv")
-
-    dirname = str(os.path.dirname(csv_filename))
-    basename = str(os.path.basename(csv_filename))
-    base = str(os.path.splitext(basename)[0])
-
-    pkl_basename = base + ".pkl"
-
-    return os.path.join(dirname, pkl_basename)
-
-
-_regexp_im = re.compile(r"\b(\d+\.\d+)im\b")
-_regexp_im_sci = re.compile(r"\b(\d+\.\d+)[eEfF]([+-]?\d+)im\b")
-_regexp_sci = re.compile(r"\b(\d+\.\d+)[eEfF]([+-]?\d+)\b")
-
-_apply_regexp_im = lambda x: _regexp_im.sub(r"\1j", x)
-_apply_regexp_im_sci = lambda x: _regexp_im_sci.sub(r"\1e\2j", x)
-_apply_regexp_sci = lambda x: _regexp_sci.sub(r"\1e\2", x)
-
-
-def _preprocess_julia_floats(s: str) -> str:
-    if isinstance(s, str):
-        s = _apply_regexp_im(s)
-        s = _apply_regexp_im_sci(s)
-        s = _apply_regexp_sci(s)
-    return s
-
-
-def _subscriptify(i: int) -> str:
-    """Converts integer to subscript text form.
-
-    For example, 123 -> "₁₂₃".
-    """
-    return "".join([chr(0x2080 + int(c)) for c in str(i)])
-
-
-def _safe_check_feature_names_in(self, variable_names, generate_names=True):
-    """_check_feature_names_in with compat for old versions."""
-    try:
-        return _check_feature_names_in(
-            self, variable_names, generate_names=generate_names
-        )
-    except TypeError:
-        return _check_feature_names_in(self, variable_names)
