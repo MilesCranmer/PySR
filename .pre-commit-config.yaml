@@ -1,7 +1,7 @@
 repos:
   # General linting
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -20,7 +20,7 @@ repos:
       - id: nbstripout
   # Unused imports
   - repo: https://github.com/hadialqattan/pycln
-    rev: "v2.2.2"
+    rev: "v2.3.0"
     hooks:
       - id: pycln
   # Sorted imports
