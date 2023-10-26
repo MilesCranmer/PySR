@@ -2,8 +2,8 @@
 
 ## Pre-defined
 
-All Base julia operators that take 1 or 2 float32 as input,
-and output a float32 as output, are available. A selection
+All Base julia operators that take 1 or 2 scalars as input,
+and output a scalar as output, are available. A selection
 of these and other valid operators are stated below.
 
 **Binary**
@@ -58,9 +58,16 @@ you can define with by passing it to the `pysr` function, with, e.g.,
 
 
 Make sure that it works with
-`Float32` as a datatype. That means you need to write `1.5f3`
-instead of `1.5e3`, if you write any constant numbers.
+`Float32` as a datatype (for default precision, or `Float64` if you set `precision=64`). That means you need to write `1.5f3`
+instead of `1.5e3`, if you write any constant numbers, or simply convert a result to `Float64(...)`.
 
-Your operator should work with the entire real line (you can use
-abs(x) for operators requiring positive input - see `log_abs`); otherwise
-the search code will experience domain errors.
+PySR expects that operators not throw an error for any input value over the entire real line from `-3.4e38` to `+3.4e38`.
+Thus, for "invalid" inputs, such as negative numbers to a `sqrt` function, you may simply return a `NaN` of the same type as the input. For example,
+
+```julia
+my_sqrt(x) = x >= 0 ? sqrt(x) : convert(typeof(x), NaN)
+```
+
+would be a valid operator. The genetic algorithm
+will preferentially selection expressions which avoid
+any invalid values over the training dataset.
