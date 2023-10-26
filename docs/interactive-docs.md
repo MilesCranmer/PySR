@@ -1,4 +1,4 @@
-# Interactive Reference ⭐
+# Interactive Reference
 
 <!-- Display content from `astroautomata.com/pysr_interactive` -->
 

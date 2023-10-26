@@ -25,12 +25,11 @@ theme:
 
 nav:
   - index.md
-  - options.md
+  - examples.md
   - operators.md
   - tuning.md
-  - Examples:
-    - examples.md
-    - papers.md
+  - options.md
+  - papers.md
   - Reference:
     - api.md
     - api-advanced.md
