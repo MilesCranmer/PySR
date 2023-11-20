@@ -1,13 +1,11 @@
-# Sweep AI turns bugs & feature requests into code changes (https://sweep.dev)
-# For details on our config file, check out our docs at https://docs.sweep.dev/usage/config
-
+# Docs: https://docs.sweep.dev/usage/config
 # This setting contains a list of rules that Sweep will check for. If any of these rules are broken in a new commit, Sweep will create an pull request to fix the broken rule.
 rules:
   - "All docstrings and comments should be up to date."
-['All new business logic should have corresponding unit tests.', 'Refactor large functions to be more modular.', 'Add docstrings to all functions and file headers.']
+  - "All new logic should have corresponding unit tests."
 
 # This is the branch that Sweep will develop from and make pull requests to. Most people use 'main' or 'master' but some users also use 'dev' or 'staging'.
-branch: 'main'
+branch: 'master'
 
 # By default Sweep will read the logs and outputs from your existing Github Actions. To disable this, set this to false.
 gha_enabled: True
@@ -17,7 +15,7 @@ gha_enabled: True
 # Example:
 #
 # description: sweepai/sweep is a python project. The main api endpoints are in sweepai/api.py. Write code that adheres to PEP8.
-description: ''
+description: "PySR is a Python scikit-learn wrapper around the SymbolicRegression.jl symbolic regression library. The main wrapper is in pysr/sr.py."
 
 # This sets whether to create pull requests as drafts. If this is set to True, then all pull requests will be created as drafts and GitHub Actions will not be triggered.
 draft: False
@@ -31,7 +29,9 @@ blocked_dirs: []
 #
 # docs:
 #   - PyGitHub: ["https://pygithub.readthedocs.io/en/latest/", "We use pygithub to interact with the GitHub API"]
-docs: []
+docs:
+  - PyJulia: ["https://pyjulia.readthedocs.io/en/stable/", "PySR uses PyJulia to interface Julia."]
+  - Scikit-Learn: ["https://scikit-learn.org/stable/", "The PySRRegressor inherits many functions from scikit-learn base regressors."]
 
 # Sandbox executes commands in a sandboxed environment to validate code changes after every edit to guarantee pristine code. For more details, see the [Sandbox](./sandbox) page.
 sandbox:
