@@ -48,7 +48,7 @@ sympy_mappings = {
     "sign": sympy.sign,
     "gamma": sympy.gamma,
     "max": lambda x, y: sympy.Piecewise((y, x < y), (x, True)),
-    "min" : lambda x, y: sympy.Piecewise((x, x < y), (y, True)),
+    "min": lambda x, y: sympy.Piecewise((x, x < y), (y, True)),
 }
 
 
