@@ -50,6 +50,7 @@ sympy_mappings = {
     "max": lambda x, y: sympy.Piecewise((y, x < y), (x, True)),
     "min": lambda x, y: sympy.Piecewise((x, x < y), (y, True)),
     "round": lambda x: sympy.ceiling(x - 0.5),
+    "cond": lambda x, y: sympy.Heaviside(x, H0=0) * y,
 }
 
 
