@@ -94,7 +94,15 @@ def install(julia_project=None, quiet=False, precompile=None):  # pragma: no cov
             ],
         )
         # Try installing again:
-        julia.install(quiet=quiet)
+        try:
+            julia.install(quiet=quiet)
+        except julia.tools.PyCallInstallError:
+            warnings.warn(
+                "PyCall.jl failed to install on second attempt. "
+                + "Please consult the GitHub issue "
+                + "https://github.com/MilesCranmer/PySR/issues/257 "
+                + "for advice on fixing this."
+            )
 
     Main, init_log = init_julia(julia_project, quiet=quiet, return_aux=True)
     io_arg = _get_io_arg(quiet)
