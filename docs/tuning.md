@@ -12,15 +12,16 @@ I run from IPython (Jupyter Notebooks don't work as well[^1]) on the head node o
 
 1. Use the default parameters.
 2. Use only the operators I think it needs and no more.
-3. Set `niterations` to some very large value, so it just runs for a week until my job finishes. If the equation looks good, I quit the job early.
-4. Increase `populations` to `3*num_cores`.
-5. Set `ncyclesperiteration` to maybe `5000` or so, until the head node occupation is under `10%`.
+3. Increase `populations` to `3*num_cores`.
+4. If my dataset is more than 1000 points, I either subsample it (low-dimensional and not much noise) or set `batching=True` (high-dimensional or very noisy, so it needs to evaluate on all the data).
+5. While on a laptop or single node machine, you might leave the default `ncyclesperiteration`, on a cluster with ~100 cores I like to set `ncyclesperiteration` to maybe `5000` or so, until the head node occupation is under `10%`. (A larger value means the workers talk less frequently to eachother, which is useful when you have many workers!)
 6. Set `constraints` and `nested_constraints` as strict as possible. These can help quite a bit with exploration. Typically, if I am using `pow`, I would set `constraints={"pow": (9, 1)}`, so that power laws can only have a variable or constant as their exponent. If I am using `sin` and `cos`, I also like to set `nested_constraints={"sin": {"sin": 0, "cos": 0}, "cos": {"sin": 0, "cos": 0}}`, so that sin and cos can't be nested, which seems to happen frequently. (Although in practice I would just use `sin`, since the search could always add a phase offset!)
 7. Set `maxsize` a bit larger than the final size you want. e.g., if you want a final equation of size `30`, you might set this to `35`, so that it has a bit of room to explore.
-8. Set `maxdepth` strictly, but leave a bit of room for exploration. e.g., if you want a final equation limited to a depth of `5`, you might set this to `6` or `7`, so that it has a bit of room to explore.
+8. I typically don't use `maxdepth`, but if I do, I set it strictly, while also leaving a bit of room for exploration. e.g., if you want a final equation limited to a depth of `5`, you might set this to `6` or `7`, so that it has a bit of room to explore.
 9.  Set `parsimony` equal to about the minimum loss you would expect, divided by 5-10. e.g., if you expect the final equation to have a loss of `0.001`, you might set `parsimony=0.0001`.
 10. Set `weight_optimize` to some larger value, maybe `0.001`. This is very important if `ncyclesperiteration` is large, so that optimization happens more frequently.
 11. Set `turbo` to `True`. This may or not work, if there's an error just turn it off (some operators are not SIMD-capable). If it does work, it should give you a nice 20% speedup.
+12. For final runs, after I have tuned everything, I typically set `niterations` to some very large value, and just let it run for a week until my job finishes (genetic algorithms tend not to converge, they can look like they settle down, but then find a new family of expression, and explore a new space). If I am satisfied with the current equations (which are visible either in the terminal or in the saved csv file), I quit the job early.
 
 Since I am running in IPython, I can just hit `q` and then `<enter>` to stop the job, tweak the hyperparameters, and then start the search again.
 I can also use `warm_start=True` if I wish to continue where I left off (though note that changing some parameters, like `maxsize`, are incompatible with warm starts).
