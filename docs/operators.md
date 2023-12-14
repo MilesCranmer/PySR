@@ -14,6 +14,9 @@ A selection of these and other valid operators are stated below.
 - `*`
 - `/`
 - `^`
+- `max`
+- `min`
+- `mod`
 - `cond`
     - Equal to `(x, y) -> x > 0 ? y : 0`
 - `greater`
@@ -22,7 +25,6 @@ A selection of these and other valid operators are stated below.
     - Equal to `(x, y) -> (x > 0 || y > 0) ? 1 : 0`
 - `logical_and`
     - Equal to `(x, y) -> (x > 0 && y > 0) ? 1 : 0`
-- `mod`
 
 **Unary**
 
@@ -60,7 +62,7 @@ A selection of these and other valid operators are stated below.
 ## Custom
 
 Instead of passing a predefined operator as a string,
-you can define with by passing it to the `pysr` function, with, e.g.,
+you can just define a custom function as Julia code. For example:
 
 ```python
     PySRRegressor(
