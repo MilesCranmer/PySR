@@ -455,6 +455,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         "htc". If set to one of these, PySR will run in distributed
         mode, and use `procs` to figure out how many processes to launch.
         Default is `None`.
+    heap_size_hint_in_bytes : int
+        For multiprocessing, this sets the `--heap-size-hint` parameter
+        for new Julia processes. This can be configured when using
+        multi-node distributed compute, to give a hint to each process
+        about how much memory they can use before aggressive garbage
+        collection.
     batching : bool
         Whether to compare population members on small batches during
         evolution. Still uses full dataset for comparing against hall
@@ -709,6 +715,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         procs=cpu_count(),
         multithreading=None,
         cluster_manager=None,
+        heap_size_hint_in_bytes=None,
         batching=False,
         batch_size=50,
         fast_cycle=False,
@@ -800,10 +807,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # -- Selection parameters
         self.tournament_selection_n = tournament_selection_n
         self.tournament_selection_p = tournament_selection_p
-        # Solver parameters
+        # -- Performance parameters
         self.procs = procs
         self.multithreading = multithreading
         self.cluster_manager = cluster_manager
+        self.heap_size_hint_in_bytes = heap_size_hint_in_bytes
         self.batching = batching
         self.batch_size = batch_size
         self.fast_cycle = fast_cycle
@@ -1720,6 +1728,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             saved_state=self.raw_julia_state_,
             return_state=True,
             addprocs_function=cluster_manager,
+            heap_size_hint_in_bytes=self.heap_size_hint_in_bytes,
             progress=progress and self.verbosity > 0 and len(y.shape) == 1,
             verbosity=int(self.verbosity),
         )
