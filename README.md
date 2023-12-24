@@ -286,7 +286,7 @@ You may load the model from the `pkl` file with:
 model = PySRRegressor.from_file("hall_of_fame.2022-08-10_100832.281.pkl")
 ```
 
-There are several other useful features such as denoising (e.g., `denoising=True`),
+There are several other useful features such as denoising (e.g., `denoise=True`),
 feature selection (e.g., `select_k_features=3`).
 For examples of these and other features, see the [examples page](https://astroautomata.com/PySR/examples).
 For a detailed look at more options, see the [options page](https://astroautomata.com/PySR/options).
