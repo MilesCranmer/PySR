@@ -171,7 +171,7 @@ def _check_assertions(
 
 
 # Class validation constants
-VALID_OPTIMIZER_ALGORITHMS = ["NelderMead", "BFGS"]
+VALID_OPTIMIZER_ALGORITHMS = ["BFGS", "NelderMead"]
 
 
 class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
@@ -705,7 +705,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         topn: int = 12,
         should_simplify: Optional[bool] = None,
         should_optimize_constants: bool = True,
-        optimizer_algorithm: str = "BFGS",
+        optimizer_algorithm: Literal["BFGS", "NelderMead"] = "BFGS",
         optimizer_nrestarts: int = 2,
         optimize_probability: float = 0.14,
         optimizer_iterations: int = 8,
