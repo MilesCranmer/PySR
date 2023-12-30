@@ -164,8 +164,8 @@ jobs:
       - name: "Install PySR and all dependencies"
         run: |
             python -m pip install --upgrade pip
-            pip install -r requirements.txt
-            pip install mypy jax jaxlib torch
+            python -m pip install -r requirements.txt
+            python -m pip install mypy jax jaxlib torch
             python setup.py install
       - name: "Run mypy"
-        run: mypy --install-types --non-interactive pysr
+        run: python -m mypy --install-types --non-interactive pysr
