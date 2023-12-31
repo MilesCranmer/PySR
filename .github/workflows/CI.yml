@@ -29,9 +29,13 @@ jobs:
         shell: bash
     strategy:
       matrix:
-        julia-version: ['1.6', '1']
-        python-version: ['3.7', '3.11']
+        julia-version: ['1']
+        python-version: ['3.11']
         os: [ubuntu-latest]
+      include:
+        - julia-version: ['1.6']
+          python-version: ['3.7']
+          os: [ubuntu-latest]
 
     steps:
       - uses: actions/checkout@v3
