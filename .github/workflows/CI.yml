@@ -32,10 +32,12 @@ jobs:
         julia-version: ['1']
         python-version: ['3.11']
         os: [ubuntu-latest]
+        test-id: ['main']
       include:
         - julia-version: ['1.6']
           python-version: ['3.7']
           os: [ubuntu-latest]
+          test-id: ['include']
 
     steps:
       - uses: actions/checkout@v3
@@ -67,12 +69,16 @@ jobs:
             coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test cli
       - name: "Install JAX"
         run: pip install jax jaxlib # (optional import)
+        if: ${{ matrix.test-id == 'main' }}
       - name: "Run JAX tests"
         run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test jax
+        if: ${{ matrix.test-id == 'main' }}
       - name: "Install Torch"
         run: pip install torch # (optional import)
+        if: ${{ matrix.test-id == 'main' }}
       - name: "Run Torch tests"
         run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test torch
+        if: ${{ matrix.test-id == 'main' }}
       - name: "Run custom env tests"
         run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test env
       - name: "Coveralls"
