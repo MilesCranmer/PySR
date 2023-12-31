@@ -29,8 +29,8 @@ jobs:
         shell: bash
     strategy:
       matrix:
-        julia-version: ['1.9']
-        python-version: ['3.10']
+        julia-version: ['1']
+        python-version: ['3.11']
         os: [macos-latest]
 
     steps:
