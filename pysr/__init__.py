@@ -1,3 +1,12 @@
+import sys
+import warnings
+
+if sys.version_info >= (3, 12, 0):
+    warnings.warn(
+        "PySR experiences occassional segfaults with Python 3.12. "
+        + "Please use an earlier version of Python with PySR until this issue is resolved."
+    )
+
 from . import sklearn_monkeypatch
 from .deprecated import best, best_callable, best_row, best_tex, pysr
 from .export_jax import sympy2jax
