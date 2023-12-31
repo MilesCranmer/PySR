@@ -29,9 +29,15 @@ jobs:
         shell: bash
     strategy:
       matrix:
-        julia-version: ['1.9']
-        python-version: ['3.10']
+        julia-version: ['1']
+        python-version: ['3.11']
         os: [ubuntu-latest]
+        test-id: [main]
+        include:
+          - julia-version: '1.6'
+            python-version: '3.7'
+            os: ubuntu-latest
+            test-id: include
 
     steps:
       - uses: actions/checkout@v3
@@ -63,18 +69,22 @@ jobs:
             coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test cli
       - name: "Install JAX"
         run: pip install jax jaxlib # (optional import)
+        if: ${{ matrix.test-id == 'main' }}
       - name: "Run JAX tests"
         run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test jax
+        if: ${{ matrix.test-id == 'main' }}
       - name: "Install Torch"
         run: pip install torch # (optional import)
+        if: ${{ matrix.test-id == 'main' }}
       - name: "Run Torch tests"
         run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test torch
+        if: ${{ matrix.test-id == 'main' }}
       - name: "Run custom env tests"
         run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test env
       - name: "Coveralls"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COVERALLS_FLAG_NAME: test-${{ matrix.test-name }}
+          COVERALLS_FLAG_NAME: test-${{ matrix.julia-version }}-${{ matrix.python-version }}
           COVERALLS_PARALLEL: true
         run: coveralls --service=github
 
@@ -94,7 +104,7 @@ jobs:
         shell: bash -l {0}
     strategy:
       matrix:
-        python-version: ['3.9']
+        python-version: ['3.11']
         os: ['ubuntu-latest']
 
     steps:
@@ -152,7 +162,10 @@ jobs:
         shell: bash -l {0}
     strategy:
       matrix:
-        python-version: ['3.10']
+        python-version:
+          - '3.11'
+          - '3.7'
+        os: ['ubuntu-latest']
 
     steps:
       - uses: actions/checkout@v3
@@ -164,8 +177,15 @@ jobs:
       - name: "Install PySR and all dependencies"
         run: |
             python -m pip install --upgrade pip
-            pip install -r requirements.txt
-            pip install mypy jax jaxlib torch
-            python setup.py install
+            python -m pip install -r requirements.txt
+            python -m pip install mypy
+            python -m pip install .
+      - name: "Install additional dependencies"
+        run: python -m pip install jax jaxlib torch
+        if: ${{ matrix.python-version != '3.7' }}
       - name: "Run mypy"
-        run: mypy --install-types --non-interactive pysr
+        run: python -m mypy --install-types --non-interactive pysr
+        if: ${{ matrix.python-version != '3.7' }}
+      - name: "Run compatible mypy"
+        run: python -m mypy --ignore-missing-imports pysr
+        if: ${{ matrix.python-version == '3.7' }}
