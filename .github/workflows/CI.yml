@@ -32,12 +32,12 @@ jobs:
         julia-version: ['1']
         python-version: ['3.11']
         os: [ubuntu-latest]
-        test-id: ['main']
+        test-id: [main]
         include:
-          - julia-version: ['1.6']
-            python-version: ['3.7']
-            os: [ubuntu-latest]
-            test-id: ['include']
+          - julia-version: '1.6'
+            python-version: '3.7'
+            os: ubuntu-latest
+            test-id: include
 
     steps:
       - uses: actions/checkout@v3
