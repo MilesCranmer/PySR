@@ -40,7 +40,7 @@ jobs:
             test-id: include
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: "Set up Julia"
         uses: julia-actions/setup-julia@v1
         with:
@@ -91,7 +91,7 @@ jobs:
   incremental_install:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: "Build incremental install"
         run: docker build -t pysr -f pysr/test/incremental_install_simulator.dockerfile .
       - name: "Test incremental install"
@@ -108,7 +108,7 @@ jobs:
         os: ['ubuntu-latest']
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: "Cache conda"
         uses: actions/cache@v2
         env:
@@ -168,7 +168,7 @@ jobs:
         os: ['ubuntu-latest']
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: "Set up Python"
         uses: actions/setup-python@v5
         with:
