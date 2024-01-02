@@ -22,7 +22,7 @@ jobs:
         julia-version: [1.9.4]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         if: github.event_name != 'pull_request'
