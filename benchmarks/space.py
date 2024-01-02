@@ -53,6 +53,10 @@ space = dict(
     weight_mutate_operator=hp.loguniform(
         "weight_mutate_operator", np.log(0.0001), np.log(100)
     ),
+    #     weight_swap_operands=1,
+    weight_swap_operands=hp.loguniform(
+        "weight_swap_operands", np.log(0.0001), np.log(100)
+    ),
     #     weight_randomize=1,
     weight_randomize=hp.loguniform("weight_randomize", np.log(0.0001), np.log(100)),
     #     weight_simplify=0.002,

@@ -387,6 +387,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     weight_mutate_operator : float
         Relative likelihood for mutation to swap an operator.
         Default is `0.47`.
+    weight_swap_operands : float
+        Relative likehood for swapping operands in binary operators.
+        Default is `0.024`.
     weight_randomize : float
         Relative likelihood for mutation to completely delete and then
         randomly generate the equation
@@ -700,6 +703,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         weight_do_nothing: float = 0.21,
         weight_mutate_constant: float = 0.048,
         weight_mutate_operator: float = 0.47,
+        weight_swap_operands: float = 0.024,
         weight_randomize: float = 0.00023,
         weight_simplify: float = 0.0020,
         weight_optimize: float = 0.0,
@@ -793,6 +797,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.weight_do_nothing = weight_do_nothing
         self.weight_mutate_constant = weight_mutate_constant
         self.weight_mutate_operator = weight_mutate_operator
+        self.weight_swap_operands = weight_swap_operands
         self.weight_randomize = weight_randomize
         self.weight_simplify = weight_simplify
         self.weight_optimize = weight_optimize
@@ -1609,6 +1614,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         mutation_weights = SymbolicRegression.MutationWeights(
             mutate_constant=self.weight_mutate_constant,
             mutate_operator=self.weight_mutate_operator,
+            swap_operands=self.weight_swap_operands,
             add_node=self.weight_add_node,
             insert_node=self.weight_insert_node,
             delete_node=self.weight_delete_node,
