@@ -33,6 +33,7 @@
     - weight_do_nothing
     - weight_mutate_constant
     - weight_mutate_operator
+    - weight_swap_operands
     - weight_randomize
     - weight_simplify
     - weight_optimize

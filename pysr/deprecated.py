@@ -70,6 +70,7 @@ def make_deprecated_kwargs_for_pysr_regressor():
         weightInsertNode => weight_insert_node
         weightMutateConstant => weight_mutate_constant
         weightMutateOperator => weight_mutate_operator
+        weightSwapOperands => weight_swap_operands
         weightRandomize => weight_randomize
         weightSimplify => weight_simplify
         crossoverProbability => crossover_probability
