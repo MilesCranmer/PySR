@@ -234,3 +234,14 @@ papers:
     abstract: "Electron transfer is the most elementary process in nature, but the existing electron transfer rules are seldom applied to high-pressure situations, such as in the deep Earth. Here we show a deep learning model to obtain the electronegativity of 96 elements under arbitrary pressure, and a regressed unified formula to quantify its relationship with pressure and electronic configuration. The relative work function of minerals is further predicted by electronegativity, presenting a decreasing trend with pressure because of pressure-induced electron delocalization. Using the work function as the case study of electronegativity, it reveals that the driving force behind directional electron transfer results from the enlarged work function difference between compounds with pressure. This well explains the deep high-conductivity anomalies, and helps discover the redox reactivity between widespread Fe(II)-bearing minerals and water during ongoing subduction. Our results give an insight into the fundamental physicochemical properties of elements and their compounds under pressure"
     image: electronnegativity_introduction.jpg
     date: 2023-03-31
+  - title: Closed-Form Interpretation of Neural Network Classifiers with Symbolic Regression Gradients
+    authors:
+      - Sebastian Johann Wetzel (1,2,3)
+    affiliations:
+      1: University of Waterloo
+      2: Perimeter Institute
+      3: Homes Plus Magazine Inc.
+    link: https://arxiv.org/abs/2401.04978
+    abstract: "I introduce a unified framework for interpreting neural network classifiers tailored toward automated scientific discovery. In contrast to neural network-based regression, for classification, it is in general impossible to find a one-to-one mapping from the neural network to a symbolic equation even if the neural network itself bases its classification on a quantity that can be written as a closed-form equation. In this paper, I embed a trained neural network into an equivalence class of classifying functions that base their decisions on the same quantity. I interpret neural networks by finding an intersection between this equivalence class and human-readable equations defined by the search space of symbolic regression. The approach is not limited to classifiers or full neural networks and can be applied to arbitrary neurons in hidden layers or latent spaces or to simplify the process of interpreting neural network regressors."
+    image: NNIntersection.png
+    date: 2024-01-10
