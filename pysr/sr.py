@@ -32,23 +32,13 @@ from .export_numpy import sympy2numpy
 from .export_sympy import assert_valid_sympy_symbol, create_sympy_symbols, pysr2sympy
 from .export_torch import sympy2torch
 from .feature_selection import run_feature_selection
-from .julia_helpers import (
-    _escape_filename,
-    _load_backend,
-    _load_cluster_manager,
-    _process_julia_project,
-    _update_julia_project,
-    init_julia,
-    is_julia_version_greater_eq,
-)
+from .julia_helpers import _escape_filename, _load_cluster_manager, jl
 from .utils import (
     _csv_filename_to_pkl_filename,
     _preprocess_julia_floats,
     _safe_check_feature_names_in,
     _subscriptify,
 )
-
-Main = None  # TODO: Rename to more descriptive name like "julia_runtime"
 
 already_ran = False
 
@@ -92,7 +82,6 @@ def _process_constraints(binary_operators, unary_operators, constraints):
 def _maybe_create_inline_operators(
     binary_operators, unary_operators, extra_sympy_mappings
 ):
-    global Main
     binary_operators = binary_operators.copy()
     unary_operators = unary_operators.copy()
     for op_list in [binary_operators, unary_operators]:
@@ -100,7 +89,7 @@ def _maybe_create_inline_operators(
             is_user_defined_operator = "(" in op
 
             if is_user_defined_operator:
-                Main.eval(op)
+                jl.seval(op)
                 # Cut off from the first non-alphanumeric char:
                 first_non_char = [j for j, char in enumerate(op) if char == "("][0]
                 function_name = op[:first_non_char]
@@ -1528,7 +1517,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # Need to be global as we don't want to recreate/reinstate julia for
         # every new instance of PySRRegressor
         global already_ran
-        global Main
 
         # These are the parameters which may be modified from the ones
         # specified in init, so we define them here locally:
@@ -1549,26 +1537,17 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if not already_ran and update_verbosity != 0:
             print("Compiling Julia backend...")
 
-        Main = init_julia(self.julia_project, julia_kwargs=julia_kwargs)
-
         if cluster_manager is not None:
-            cluster_manager = _load_cluster_manager(Main, cluster_manager)
+            cluster_manager = _load_cluster_manager(cluster_manager)
 
-        if self.update:
-            _, is_shared = _process_julia_project(self.julia_project)
-            io = "devnull" if update_verbosity == 0 else "stderr"
-            io_arg = (
-                f"io={io}" if is_julia_version_greater_eq(version=(1, 6, 0)) else ""
-            )
-            _update_julia_project(Main, is_shared, io_arg)
+        jl.seval("using SymbolicRegression")
+        SymbolicRegression = jl.SymbolicRegression
 
-        SymbolicRegression = _load_backend(Main)
-
-        Main.plus = Main.eval("(+)")
-        Main.sub = Main.eval("(-)")
-        Main.mult = Main.eval("(*)")
-        Main.pow = Main.eval("(^)")
-        Main.div = Main.eval("(/)")
+        jl.plus = jl.seval("(+)")
+        jl.sub = jl.seval("(-)")
+        jl.mult = jl.seval("(*)")
+        jl.pow = jl.seval("(^)")
+        jl.div = jl.seval("(/)")
 
         # TODO(mcranmer): These functions should be part of this class.
         binary_operators, unary_operators = _maybe_create_inline_operators(
@@ -1594,7 +1573,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     nested_constraints_str += f"({inner_k}) => {inner_v}, "
                 nested_constraints_str += "), "
             nested_constraints_str += ")"
-            nested_constraints = Main.eval(nested_constraints_str)
+            nested_constraints = jl.seval(nested_constraints_str)
 
         # Parse dict into Julia Dict for complexities:
         if complexity_of_operators is not None:
@@ -1602,13 +1581,17 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             for k, v in complexity_of_operators.items():
                 complexity_of_operators_str += f"({k}) => {v}, "
             complexity_of_operators_str += ")"
-            complexity_of_operators = Main.eval(complexity_of_operators_str)
+            complexity_of_operators = jl.seval(complexity_of_operators_str)
 
-        custom_loss = Main.eval(self.loss)
-        custom_full_objective = Main.eval(self.full_objective)
+        custom_loss = jl.seval(str(self.loss) if self.loss is not None else "nothing")
+        custom_full_objective = jl.seval(
+            str(self.full_objective) if self.full_objective is not None else "nothing"
+        )
 
-        early_stop_condition = Main.eval(
-            str(self.early_stop_condition) if self.early_stop_condition else None
+        early_stop_condition = jl.seval(
+            str(self.early_stop_condition)
+            if self.early_stop_condition is not None
+            else "nothing"
         )
 
         mutation_weights = SymbolicRegression.MutationWeights(
@@ -1626,9 +1609,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/OptionsStruct.jl
+        print(bin_constraints)
         options = SymbolicRegression.Options(
-            binary_operators=Main.eval(str(binary_operators).replace("'", "")),
-            unary_operators=Main.eval(str(unary_operators).replace("'", "")),
+            binary_operators=jl.seval(str(binary_operators).replace("'", "")),
+            unary_operators=jl.seval(str(unary_operators).replace("'", "")),
             bin_constraints=bin_constraints,
             una_constraints=una_constraints,
             complexity_of_operators=complexity_of_operators,
