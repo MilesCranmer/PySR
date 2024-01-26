@@ -1,6 +1,12 @@
 """Functions for initializing the Julia environment and installing deps."""
 import os
+import sys
 import warnings
+
+if "juliacall" in sys.modules:
+    warnings.warn(
+        "juliacall module already imported. Make sure that you have set `PYTHON_JULIACALL_HANDLE_SIGNALS=yes` to avoid segfaults."
+    )
 
 # Required to avoid segfaults (https://juliapy.github.io/PythonCall.jl/dev/faq/)
 if os.environ.get("PYTHON_JULIACALL_HANDLE_SIGNALS", "yes") != "yes":
@@ -10,7 +16,7 @@ if os.environ.get("PYTHON_JULIACALL_HANDLE_SIGNALS", "yes") != "yes":
     )
 
 os.environ["PYTHON_JULIACALL_HANDLE_SIGNALS"] = "yes"
-os.environ["JULIA_NUM_THREADS"] = "auto"
+os.environ["JULIA_NUM_THREADS"] = os.environ.get("JULIA_NUM_THREADS", "auto")
 
 import juliapkg
 from juliacall import Main as jl
