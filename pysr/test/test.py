@@ -106,11 +106,11 @@ class TestPipeline(unittest.TestCase):
             warm_start=True,
         )
         model.fit(self.X, y)
-        from pysr.sr import Main
+        from pysr.sr import jl
 
         # We should have that the model state is now a Float64 hof:
-        Main.test_state = model.raw_julia_state_
-        self.assertTrue(Main.eval("typeof(test_state[2]).parameters[1] == Float64"))
+        jl.test_state = model.raw_julia_state_
+        self.assertTrue(jl.seval("typeof(test_state[2]).parameters[1] == Float64"))
 
     def test_multioutput_custom_operator_quiet_custom_complexity(self):
         y = self.X[:, [0, 1]] ** 2
@@ -229,11 +229,11 @@ class TestPipeline(unittest.TestCase):
             early_stop_condition=None,
         )
         # Check that the the julia state is saved:
-        from pysr.sr import Main
+        from pysr.sr import jl
 
         # We should have that the model state is now a Float32 hof:
-        Main.test_state = regressor.raw_julia_state_
-        self.assertTrue(Main.eval("typeof(test_state[2]).parameters[1] == Float32"))
+        jl.test_state = regressor.raw_julia_state_
+        self.assertTrue(jl.eval("typeof(test_state[2]).parameters[1] == Float32"))
         # This should exit almost immediately, and use the old equations
         regressor.fit(X, y)
 

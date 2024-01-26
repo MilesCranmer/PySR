@@ -11,11 +11,8 @@ if os.environ.get("PYTHON_JULIACALL_HANDLE_SIGNALS", "yes") != "yes":
 
 os.environ["PYTHON_JULIACALL_HANDLE_SIGNALS"] = "yes"
 
-import juliacall
 import juliapkg
-
-jl = juliacall.newmodule("PySR")
-
+from juliacall import Main as jl
 from juliacall import convert as jl_convert
 
 jl.seval("using PythonCall: PythonCall")
@@ -53,3 +50,9 @@ def _backend_version_assertion():
 def _load_cluster_manager(cluster_manager):
     jl.seval(f"using ClusterManagers: addprocs_{cluster_manager}")
     return jl.seval(f"addprocs_{cluster_manager}")
+
+
+def jl_array(x):
+    if x is None:
+        return None
+    return jl_convert(jl.Array, x)
