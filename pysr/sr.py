@@ -32,7 +32,7 @@ from .export_numpy import sympy2numpy
 from .export_sympy import assert_valid_sympy_symbol, create_sympy_symbols, pysr2sympy
 from .export_torch import sympy2torch
 from .feature_selection import run_feature_selection
-from .julia_helpers import _escape_filename, _load_cluster_manager, jl
+from .julia_helpers import _escape_filename, _load_cluster_manager, jl, jl_convert
 from .utils import (
     _csv_filename_to_pkl_filename,
     _preprocess_julia_floats,
@@ -1609,12 +1609,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/OptionsStruct.jl
-        print(bin_constraints)
         options = SymbolicRegression.Options(
             binary_operators=jl.seval(str(binary_operators).replace("'", "")),
             unary_operators=jl.seval(str(unary_operators).replace("'", "")),
-            bin_constraints=bin_constraints,
-            una_constraints=una_constraints,
+            bin_constraints=jl_convert(jl.Vector, bin_constraints),
+            una_constraints=jl_convert(jl.Vector, una_constraints),
             complexity_of_operators=complexity_of_operators,
             complexity_of_constants=self.complexity_of_constants,
             complexity_of_variables=self.complexity_of_variables,
@@ -1679,18 +1678,18 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             np_dtype = {32: np.complex64, 64: np.complex128}[self.precision]
 
         # This converts the data into a Julia array:
-        Main.X = np.array(X, dtype=np_dtype).T
+        jl_X = jl_convert(jl.Array, np.array(X, dtype=np_dtype).T)
         if len(y.shape) == 1:
-            Main.y = np.array(y, dtype=np_dtype)
+            jl_y = jl_convert(jl.Vector, np.array(y, dtype=np_dtype))
         else:
-            Main.y = np.array(y, dtype=np_dtype).T
+            jl_y = jl_convert(jl.Array, np.array(y, dtype=np_dtype).T)
         if weights is not None:
             if len(weights.shape) == 1:
-                Main.weights = np.array(weights, dtype=np_dtype)
+                jl_weights = jl_convert(jl.Vector, np.array(weights, dtype=np_dtype))
             else:
-                Main.weights = np.array(weights, dtype=np_dtype).T
+                jl_weights = jl_convert(jl.Array, np.array(weights, dtype=np_dtype).T)
         else:
-            Main.weights = None
+            jl_weights = None
 
         if self.procs == 0 and not multithreading:
             parallelism = "serial"
@@ -1703,22 +1702,30 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             None if parallelism in ["serial", "multithreading"] else int(self.procs)
         )
 
-        y_variable_names = None
         if len(y.shape) > 1:
             # We set these manually so that they respect Python's 0 indexing
             # (by default Julia will use y1, y2...)
-            y_variable_names = [f"y{_subscriptify(i)}" for i in range(y.shape[1])]
+            jl_y_variable_names = jl_convert(
+                jl.Vector, [f"y{_subscriptify(i)}" for i in range(y.shape[1])]
+            )
+        else:
+            jl_y_variable_names = None
+
+        jl_feature_names = jl_convert(jl.Vector, self.feature_names_in_.tolist())
+        jl_display_feature_names = jl_convert(
+            jl.Vector, self.display_feature_names_in_.tolist()
+        )
 
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/SymbolicRegression.jl
         self.raw_julia_state_ = SymbolicRegression.equation_search(
-            Main.X,
-            Main.y,
-            weights=Main.weights,
+            jl_X,
+            jl_y,
+            weights=jl_weights,
             niterations=int(self.niterations),
-            variable_names=self.feature_names_in_.tolist(),
-            display_variable_names=self.display_feature_names_in_.tolist(),
-            y_variable_names=y_variable_names,
+            variable_names=jl_feature_names,
+            display_variable_names=jl_display_feature_names,
+            y_variable_names=jl_y_variable_names,
             X_units=self.X_units_,
             y_units=self.y_units_,
             options=options,

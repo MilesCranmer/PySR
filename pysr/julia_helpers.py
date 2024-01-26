@@ -6,6 +6,8 @@ import juliapkg
 
 jl = juliacall.newmodule("PySR")
 
+from juliacall import convert as jl_convert
+
 juliainfo = None
 julia_initialized = False
 julia_kwargs_at_initialization = None
