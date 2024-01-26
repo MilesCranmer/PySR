@@ -3,7 +3,7 @@ import os
 import warnings
 
 # Required to avoid segfaults (https://juliapy.github.io/PythonCall.jl/dev/faq/)
-if os.environ["PYTHON_JULIACALL_HANDLE_SIGNALS"] not in {"yes", ""}:
+if os.environ.get("PYTHON_JULIACALL_HANDLE_SIGNALS", "yes") != "yes":
     warnings.warn(
         "PYTHON_JULIACALL_HANDLE_SIGNALS environment variable is set to something other than 'yes' or ''. "
         + "You will experience segfaults if running with multithreading."
