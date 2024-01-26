@@ -1,6 +1,6 @@
-import click
+import warnings
 
-from ..julia_helpers import install
+import click
 
 
 @click.group("pysr")
@@ -35,4 +35,6 @@ def pysr(context):
     help="Disable precompilation.",
 )
 def _install(julia_project, quiet, precompile):
-    install(julia_project, quiet, precompile)
+    warnings.warn(
+        "This command is deprecated. Julia dependencies are now installed at first import."
+    )
