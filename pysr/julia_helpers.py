@@ -10,6 +10,7 @@ if os.environ.get("PYTHON_JULIACALL_HANDLE_SIGNALS", "yes") != "yes":
     )
 
 os.environ["PYTHON_JULIACALL_HANDLE_SIGNALS"] = "yes"
+os.environ["JULIA_NUM_THREADS"] = "auto"
 
 import juliapkg
 from juliacall import Main as jl
