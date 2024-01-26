@@ -1,5 +1,15 @@
 """Functions for initializing the Julia environment and installing deps."""
+import os
 import warnings
+
+# Required to avoid segfaults (https://juliapy.github.io/PythonCall.jl/dev/faq/)
+if os.environ["PYTHON_JULIACALL_HANDLE_SIGNALS"] not in {"yes", ""}:
+    warnings.warn(
+        "PYTHON_JULIACALL_HANDLE_SIGNALS environment variable is set to something other than 'yes' or ''. "
+        + "You will experience segfaults if running with multithreading."
+    )
+
+os.environ["PYTHON_JULIACALL_HANDLE_SIGNALS"] = "yes"
 
 import juliacall
 import juliapkg
@@ -7,6 +17,9 @@ import juliapkg
 jl = juliacall.newmodule("PySR")
 
 from juliacall import convert as jl_convert
+
+jl.seval("using PythonCall: PythonCall")
+PythonCall = jl.PythonCall
 
 juliainfo = None
 julia_initialized = False

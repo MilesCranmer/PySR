@@ -32,7 +32,13 @@ from .export_numpy import sympy2numpy
 from .export_sympy import assert_valid_sympy_symbol, create_sympy_symbols, pysr2sympy
 from .export_torch import sympy2torch
 from .feature_selection import run_feature_selection
-from .julia_helpers import _escape_filename, _load_cluster_manager, jl, jl_convert
+from .julia_helpers import (
+    PythonCall,
+    _escape_filename,
+    _load_cluster_manager,
+    jl,
+    jl_convert,
+)
 from .utils import (
     _csv_filename_to_pkl_filename,
     _preprocess_julia_floats,
@@ -1716,6 +1722,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             jl.Vector, self.display_feature_names_in_.tolist()
         )
 
+        PythonCall.GC.disable()
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/SymbolicRegression.jl
         self.raw_julia_state_ = SymbolicRegression.equation_search(
@@ -1738,6 +1745,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             progress=progress and self.verbosity > 0 and len(y.shape) == 1,
             verbosity=int(self.verbosity),
         )
+        PythonCall.GC.enable()
 
         # Set attributes
         self.equations_ = self.get_hof()
