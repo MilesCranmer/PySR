@@ -1054,6 +1054,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         from the pickled instance.
         """
         state = self.__dict__
+        show_pickle_warning = not (
+            "show_pickle_warnings_" in state and not state["show_pickle_warnings_"]
+        )
         state_keys_containing_lambdas = ["extra_sympy_mappings", "extra_torch_mappings"]
         for state_key in state_keys_containing_lambdas:
             if state[state_key] is not None and show_pickle_warning:
