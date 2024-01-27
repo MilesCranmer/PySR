@@ -38,17 +38,6 @@ def _escape_filename(filename):
     return str_repr
 
 
-def _backend_version_assertion():
-    backend_version = jl.seval("string(SymbolicRegression.PACKAGE_VERSION)")
-    expected_backend_version = juliapkg.status(target="SymbolicRegression").version
-    if backend_version != expected_backend_version:  # pragma: no cover
-        warnings.warn(
-            f"PySR backend (SymbolicRegression.jl) version {backend_version} "
-            f"does not match expected version {expected_backend_version}. "
-            "Things may break. "
-        )
-
-
 def _load_cluster_manager(cluster_manager):
     jl.seval(f"using ClusterManagers: addprocs_{cluster_manager}")
     return jl.seval(f"addprocs_{cluster_manager}")
