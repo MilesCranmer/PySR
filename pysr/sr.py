@@ -613,7 +613,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     equation_file_ : str
         Output equation file name produced by the julia backend.
     raw_julia_state_stream_ : ndarray
-        The serialized state for the julia SymbolicRegression.jl backend (after fitting).
+        The serialized state for the julia SymbolicRegression.jl backend (after fitting),
+        stored as an array of uint8, produced by Julia's Serialization.serialize function.
     equation_file_contents_ : list[pandas.DataFrame]
         Contents of the equation file output by the Julia backend.
     show_pickle_warnings_ : bool
