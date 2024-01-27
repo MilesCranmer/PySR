@@ -7,7 +7,6 @@ import shutil
 import sys
 import tempfile
 import warnings
-from collections import namedtuple
 from datetime import datetime
 from io import StringIO
 from multiprocessing import cpu_count
@@ -1723,31 +1722,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         else:
             jl_y_variable_names = None
 
-        # Because we call some multi-threading code, we first create the arguments.
-        # We do a deep copy of them **within Julia**, so that
-        # Python's garbage collection is unaware of them.
-        jl._equation_search_args = (jl_X, jl_y)
-        jl._equation_search_kwargs = namedtuple(
-            "equation_search_kwargs",
-            (
-                "weights",
-                "niterations",
-                "variable_names",
-                "display_variable_names",
-                "y_variable_names",
-                "X_units",
-                "y_units",
-                "options",
-                "numprocs",
-                "parallelism",
-                "saved_state",
-                "return_state",
-                "addprocs_function",
-                "heap_size_hint_in_bytes",
-                "progress",
-                "verbosity",
-            ),
-        )(
+        jl.PythonCall.GC.disable()
+        out = SymbolicRegression.equation_search(
+            jl_X,
+            jl_y,
             weights=jl_weights,
             niterations=int(self.niterations),
             variable_names=jl_array(self.feature_names_in_.tolist()),
@@ -1765,21 +1743,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             progress=progress and self.verbosity > 0 and len(y.shape) == 1,
             verbosity=int(self.verbosity),
         )
-        jl.PythonCall.GC.disable()
-        output_stream = jl.seval(
-            """
-            let args = deepcopy(_equation_search_args), kwargs=deepcopy(_equation_search_kwargs)
-                out = SymbolicRegression.equation_search(args...; kwargs...)
-                buf = IOBuffer()
-                Serialization.serialize(buf, out)
-                take!(buf)
-            end
-        """
-        )
         jl.PythonCall.GC.enable()
-        jl._equation_search_args = None
-        jl._equation_search_kwargs = None
-        self.raw_julia_state_stream_ = np.array(output_stream)
+
+        # Serialize output (for pickling)
+        buf = jl.IOBuffer()
+        jl.Serialization.serialize(buf, out)
+        self.raw_julia_state_stream_ = np.array(jl.take_b(buf))
 
         # Set attributes
         self.equations_ = self.get_hof()
