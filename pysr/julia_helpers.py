@@ -31,11 +31,6 @@ julia_kwargs_at_initialization = None
 julia_activated_env = None
 
 
-def _get_io_arg(quiet):
-    io = "devnull" if quiet else "stderr"
-    return f"io={io}"
-
-
 def _escape_filename(filename):
     """Turn a path into a string with correctly escaped backslashes."""
     str_repr = str(filename)
