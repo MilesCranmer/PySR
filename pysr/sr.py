@@ -1765,6 +1765,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             progress=progress and self.verbosity > 0 and len(y.shape) == 1,
             verbosity=int(self.verbosity),
         )
+        jl.PythonCall.GC.disable()
         output_stream = jl.seval(
             """
             let args = deepcopy(_equation_search_args), kwargs=deepcopy(_equation_search_kwargs)
@@ -1775,9 +1776,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             end
         """
         )
+        jl.PythonCall.GC.enable()
         jl._equation_search_args = None
         jl._equation_search_kwargs = None
-        self.raw_julia_state_stream_ = np.array(output_stream).copy()
+        self.raw_julia_state_stream_ = np.array(output_stream)
 
         # Set attributes
         self.equations_ = self.get_hof()

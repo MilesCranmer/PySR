@@ -23,6 +23,7 @@ from juliacall import Main as jl
 from juliacall import convert as jl_convert
 
 jl.seval("using Serialization: Serialization")
+jl.seval("using PythonCall: PythonCall")
 
 juliainfo = None
 julia_initialized = False
