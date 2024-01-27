@@ -22,8 +22,7 @@ import juliapkg
 from juliacall import Main as jl
 from juliacall import convert as jl_convert
 
-jl.seval("using PythonCall: PythonCall")
-PythonCall = jl.PythonCall
+jl.seval("using Serialization: Serialization")
 
 juliainfo = None
 julia_initialized = False
@@ -63,3 +62,12 @@ def jl_array(x):
     if x is None:
         return None
     return jl_convert(jl.Array, x)
+
+
+def jl_deserialize_s(s):
+    if s is None:
+        return s
+    buf = jl.IOBuffer()
+    jl.write(buf, jl_array(s))
+    jl.seekstart(buf)
+    return jl.Serialization.deserialize(buf)

@@ -34,12 +34,11 @@ from .export_sympy import assert_valid_sympy_symbol, create_sympy_symbols, pysr2
 from .export_torch import sympy2torch
 from .feature_selection import run_feature_selection
 from .julia_helpers import (
-    PythonCall,
     _escape_filename,
     _load_cluster_manager,
     jl,
     jl_array,
-    jl_convert,
+    jl_deserialize_s,
 )
 from .utils import (
     _csv_filename_to_pkl_filename,
@@ -614,8 +613,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Path to the temporary equations directory.
     equation_file_ : str
         Output equation file name produced by the julia backend.
-    raw_julia_state_ : tuple[list[PyCall.jlwrap], PyCall.jlwrap]
-        The state for the julia SymbolicRegression.jl backend post fitting.
+    raw_julia_state_stream_ : ndarray
+        The serialized state for the julia SymbolicRegression.jl backend (after fitting).
     equation_file_contents_ : list[pandas.DataFrame]
         Contents of the equation file output by the Julia backend.
     show_pickle_warnings_ : bool
@@ -1048,22 +1047,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         serialization.
 
         Thus, for `PySRRegressor` to support pickle serialization, the
-        `raw_julia_state_` attribute must be hidden from pickle. This will
+        `raw_julia_state_stream_` attribute must be hidden from pickle. This will
         prevent the `warm_start` of any model that is loaded via `pickle.loads()`,
         but does allow all other attributes of a fitted `PySRRegressor` estimator
         to be serialized. Note: Jax and Torch format equations are also removed
         from the pickled instance.
         """
         state = self.__dict__
-        show_pickle_warning = not (
-            "show_pickle_warnings_" in state and not state["show_pickle_warnings_"]
-        )
-        if "raw_julia_state_" in state and show_pickle_warning:
-            warnings.warn(
-                "raw_julia_state_ cannot be pickled and will be removed from the "
-                "serialized instance. This will prevent a `warm_start` fit of any "
-                "model that is deserialized via `pickle.load()`."
-            )
         state_keys_containing_lambdas = ["extra_sympy_mappings", "extra_torch_mappings"]
         for state_key in state_keys_containing_lambdas:
             if state[state_key] is not None and show_pickle_warning:
@@ -1072,7 +1062,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     "serialized instance. When loading the model, please redefine "
                     f"`{state_key}` at runtime."
                 )
-        state_keys_to_clear = ["raw_julia_state_"] + state_keys_containing_lambdas
+        state_keys_to_clear = state_keys_containing_lambdas
         pickled_state = {
             key: (None if key in state_keys_to_clear else value)
             for key, value in state.items()
@@ -1121,6 +1111,20 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             FutureWarning,
         )
         return self.equations_
+
+    @property
+    def julia_state(self):
+        return jl_deserialize_s(self.raw_julia_state_stream_)
+
+    @property
+    def raw_julia_state_(self):
+        warnings.warn(
+            "PySRRegressor.raw_julia_state_ is now deprecated. "
+            "Please use PySRRegressor.julia_state instead, or `raw_julia_state_stream_` "
+            "for the raw stream of bytes.",
+            FutureWarning,
+        )
+        return self.julia_state
 
     def get_best(self, index=None):
         """
@@ -1724,7 +1728,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # Python's garbage collection is unaware of them.
         jl._equation_search_args = (jl_X, jl_y)
         jl._equation_search_kwargs = namedtuple(
-            "K",
+            "equation_search_kwargs",
             (
                 "weights",
                 "niterations",
@@ -1754,18 +1758,26 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             options=options,
             numprocs=cprocs,
             parallelism=parallelism,
-            saved_state=self.raw_julia_state_,
+            saved_state=self.julia_state,
             return_state=True,
             addprocs_function=cluster_manager,
             heap_size_hint_in_bytes=self.heap_size_hint_in_bytes,
             progress=progress and self.verbosity > 0 and len(y.shape) == 1,
             verbosity=int(self.verbosity),
         )
-        self.raw_julia_state_ = jl.seval(
-            "deepcopy(SymbolicRegression.equation_search(deepcopy(_equation_search_args)...; deepcopy(_equation_search_kwargs)...))"
+        output_stream = jl.seval(
+            """
+            let args = deepcopy(_equation_search_args), kwargs=deepcopy(_equation_search_kwargs)
+                out = SymbolicRegression.equation_search(args...; kwargs...)
+                buf = IOBuffer()
+                Serialization.serialize(buf, out)
+                take!(buf)
+            end
+        """
         )
         jl._equation_search_args = None
         jl._equation_search_kwargs = None
+        self.raw_julia_state_stream_ = np.array(output_stream).copy()
 
         # Set attributes
         self.equations_ = self.get_hof()
@@ -1829,10 +1841,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Fitted estimator.
         """
         # Init attributes that are not specified in BaseEstimator
-        if self.warm_start and hasattr(self, "raw_julia_state_"):
+        if self.warm_start and hasattr(self, "raw_julia_state_stream_"):
             pass
         else:
-            if hasattr(self, "raw_julia_state_"):
+            if hasattr(self, "raw_julia_state_stream_"):
                 warnings.warn(
                     "The discovered expressions are being reset. "
                     "Please set `warm_start=True` if you wish to continue "
@@ -1842,7 +1854,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self.equations_ = None
             self.nout_ = 1
             self.selection_mask_ = None
-            self.raw_julia_state_ = None
+            self.raw_julia_state_stream_ = None
             self.X_units_ = None
             self.y_units_ = None
 
