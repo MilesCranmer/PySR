@@ -7,6 +7,7 @@ import shutil
 import sys
 import tempfile
 import warnings
+from collections import namedtuple
 from datetime import datetime
 from io import StringIO
 from multiprocessing import cpu_count
@@ -1718,12 +1719,31 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         else:
             jl_y_variable_names = None
 
-        PythonCall.GC.disable()
-        # Call to Julia backend.
-        # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/SymbolicRegression.jl
-        self.raw_julia_state_ = SymbolicRegression.equation_search(
-            jl_X,
-            jl_y,
+        # Because we call some multi-threading code, we first create the arguments.
+        # We do a deep copy of them **within Julia**, so that
+        # Python's garbage collection is unaware of them.
+        jl._equation_search_args = (jl_X, jl_y)
+        jl._equation_search_kwargs = namedtuple(
+            "K",
+            (
+                "weights",
+                "niterations",
+                "variable_names",
+                "display_variable_names",
+                "y_variable_names",
+                "X_units",
+                "y_units",
+                "options",
+                "numprocs",
+                "parallelism",
+                "saved_state",
+                "return_state",
+                "addprocs_function",
+                "heap_size_hint_in_bytes",
+                "progress",
+                "verbosity",
+            ),
+        )(
             weights=jl_weights,
             niterations=int(self.niterations),
             variable_names=jl_array(self.feature_names_in_.tolist()),
@@ -1741,7 +1761,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             progress=progress and self.verbosity > 0 and len(y.shape) == 1,
             verbosity=int(self.verbosity),
         )
-        PythonCall.GC.enable()
+        self.raw_julia_state_ = jl.seval(
+            "deepcopy(SymbolicRegression.equation_search(deepcopy(_equation_search_args)...; deepcopy(_equation_search_kwargs)...))"
+        )
+        jl._equation_search_args = None
+        jl._equation_search_kwargs = None
 
         # Set attributes
         self.equations_ = self.get_hof()
