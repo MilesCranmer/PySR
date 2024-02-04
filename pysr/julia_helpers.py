@@ -22,10 +22,14 @@ if os.environ.get("JULIA_NUM_THREADS", "auto") != "auto":
         "of your CPU."
     )
 
-os.environ["PYTHON_JULIACALL_HANDLE_SIGNALS"] = os.environ.get(
-    "PYTHON_JULIACALL_HANDLE_SIGNALS", "yes"
-)
-os.environ["JULIA_NUM_THREADS"] = os.environ.get("JULIA_NUM_THREADS", "auto")
+# TODO: Remove these when juliapkg lets you specify this
+for k, default in (
+    ("PYTHON_JULIACALL_HANDLE_SIGNALS", "yes"),
+    ("JULIA_NUM_THREADS", "auto"),
+    ("JULIA_OPTIMIZE", "3"),
+):
+    os.environ[k] = os.environ.get(k, default)
+
 
 import juliapkg
 from juliacall import Main as jl
