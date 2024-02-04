@@ -38,11 +38,6 @@ from juliacall import convert as jl_convert
 jl.seval("using Serialization: Serialization")
 jl.seval("using PythonCall: PythonCall")
 
-juliainfo = None
-julia_initialized = False
-julia_kwargs_at_initialization = None
-julia_activated_env = None
-
 
 def _escape_filename(filename):
     """Turn a path into a string with correctly escaped backslashes."""

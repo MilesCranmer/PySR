@@ -2,6 +2,14 @@ import warnings
 
 import click
 
+from ..test import (
+    get_runtests_cli,
+    runtests,
+    runtests_env,
+    runtests_jax,
+    runtests_torch,
+)
+
 
 @click.group("pysr")
 @click.pass_context
@@ -38,3 +46,34 @@ def _install(julia_project, quiet, precompile):
     warnings.warn(
         "This command is deprecated. Julia dependencies are now installed at first import."
     )
+
+
+TEST_OPTIONS = {"main", "env", "jax", "torch", "cli"}
+
+
+@pysr.command("test", help="Run PySR test suite.")
+@click.argument("tests", nargs=-1, help="Choose from " + ", ".join(TEST_OPTIONS) + ".")
+def _tests(tests):
+    if len(tests) == 0:
+        raise click.UsageError(
+            "At least one test must be specified. "
+            + "The following are available: "
+            + ", ".join(TEST_OPTIONS)
+            + "."
+        )
+    else:
+        for test in tests:
+            if test in TEST_OPTIONS:
+                if test == "main":
+                    runtests()
+                elif test == "env":
+                    runtests_env()
+                elif test == "jax":
+                    runtests_jax()
+                elif test == "torch":
+                    runtests_torch()
+                elif test == "cli":
+                    runtests_cli = get_runtests_cli()
+                    runtests_cli()
+            else:
+                warnings.warn(f"Invalid test {test}. Skipping.")
