@@ -15,7 +15,16 @@ if os.environ.get("PYTHON_JULIACALL_HANDLE_SIGNALS", "yes") != "yes":
         + "You will experience segfaults if running with multithreading."
     )
 
-os.environ["PYTHON_JULIACALL_HANDLE_SIGNALS"] = "yes"
+if os.environ.get("JULIA_NUM_THREADS", "auto") != "auto":
+    warnings.warn(
+        "JULIA_NUM_THREADS environment variable is set to something other than 'auto', "
+        "so PySR was not able to set it. You may wish to set it to `'auto'` for full use "
+        "of your CPU."
+    )
+
+os.environ["PYTHON_JULIACALL_HANDLE_SIGNALS"] = os.environ.get(
+    "PYTHON_JULIACALL_HANDLE_SIGNALS", "yes"
+)
 os.environ["JULIA_NUM_THREADS"] = os.environ.get("JULIA_NUM_THREADS", "auto")
 
 import juliapkg
