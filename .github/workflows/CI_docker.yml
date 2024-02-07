@@ -37,4 +37,4 @@ jobs:
       - name: Build docker
         run: docker build --platform=${{ matrix.arch }} -t pysr .
       - name: Test docker
-        run: docker run --platform=${{ matrix.arch }} --rm pysr /bin/bash -c 'python3 -m pysr.test main && python3 -m pysr.test cli && python3 -m pysr.test env'
+        run: docker run --platform=${{ matrix.arch }} --rm pysr /bin/bash -c 'python3 -m pysr test main && python3 -m pysr test cli && python3 -m pysr test env'

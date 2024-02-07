@@ -6,7 +6,6 @@ from . import *
 if __name__ == "__main__":
     # Get args:
     parser = argparse.ArgumentParser()
-    parser.usage = "python -m pysr.test [tests...]"
     parser.add_argument(
         "test",
         nargs="*",

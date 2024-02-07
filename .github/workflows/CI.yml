@@ -65,22 +65,22 @@ jobs:
         run: pip install coverage coveralls
       - name: "Run tests"
         run: |
-            coverage run --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test main
-            coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test cli
+            coverage run --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr test main
+            coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr test cli
       - name: "Install JAX"
         run: pip install jax jaxlib # (optional import)
         if: ${{ matrix.test-id == 'main' }}
       - name: "Run JAX tests"
-        run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test jax
+        run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr test jax
         if: ${{ matrix.test-id == 'main' }}
       - name: "Install Torch"
         run: pip install torch # (optional import)
         if: ${{ matrix.test-id == 'main' }}
       - name: "Run Torch tests"
-        run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test torch
+        run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr test torch
         if: ${{ matrix.test-id == 'main' }}
       - name: "Run custom env tests"
-        run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test env
+        run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr test env
       - name: "Coveralls"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -95,7 +95,7 @@ jobs:
       - name: "Build incremental install"
         run: docker build -t pysr -f pysr/test/incremental_install_simulator.dockerfile .
       - name: "Test incremental install"
-        run: docker run --rm pysr /bin/bash -l -c 'python3 -m pysr.test main && python3 -m pysr.test env'
+        run: docker run --rm pysr /bin/bash -l -c 'python3 -m pysr test main && python3 -m pysr test env'
 
   conda_test:
     runs-on: ${{ matrix.os }}
@@ -135,7 +135,7 @@ jobs:
             python3 -m pip install .
             python3 -m pysr install
       - name: "Run tests"
-        run: cd /tmp && python -m pysr.test main
+        run: cd /tmp && python -m pysr test main
 
   coveralls:
     name: Indicate completion to coveralls.io

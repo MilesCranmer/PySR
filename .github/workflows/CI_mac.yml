@@ -57,15 +57,15 @@ jobs:
             python -m pysr install
       - name: "Run tests"
         run: |
-            python -m pysr.test main
-            python -m pysr.test cli
+            python -m pysr test main
+            python -m pysr test cli
       - name: "Install JAX"
         run: pip install jax jaxlib # (optional import)
       - name: "Run JAX tests"
-        run: python -m pysr.test jax
+        run: python -m pysr test jax
       - name: "Install Torch"
         run: pip install torch # (optional import)
       - name: "Run Torch tests"
-        run: python -m pysr.test torch
+        run: python -m pysr test torch
       - name: "Run custom env tests"
-        run: python -m pysr.test env
+        run: python -m pysr test env
