@@ -64,22 +64,22 @@ jobs:
         run: pip install coverage coveralls
       - name: "Run tests"
         run: |
-            coverage run --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr test main
-            coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr test cli
+            coverage run --source=pysr --omit='*/test/*' -m pysr test main
+            coverage run --append --source=pysr --omit='*/test/*' -m pysr test cli
       - name: "Install JAX"
         run: pip install jax jaxlib # (optional import)
         if: ${{ matrix.test-id == 'main' }}
       - name: "Run JAX tests"
-        run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr test jax
+        run: coverage run --append --source=pysr --omit='*/test/*' -m pysr test jax
         if: ${{ matrix.test-id == 'main' }}
       - name: "Install Torch"
         run: pip install torch # (optional import)
         if: ${{ matrix.test-id == 'main' }}
       - name: "Run Torch tests"
-        run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr test torch
+        run: coverage run --append --source=pysr --omit='*/test/*' -m pysr test torch
         if: ${{ matrix.test-id == 'main' }}
       - name: "Run custom env tests"
-        run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr test env
+        run: coverage run --append --source=pysr --omit='*/test/*' -m pysr test env
       - name: "Coveralls"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
