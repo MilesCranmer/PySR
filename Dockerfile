@@ -13,20 +13,20 @@ COPY --from=jl /usr/local/julia /usr/local/julia
 ENV PATH="/usr/local/julia/bin:${PATH}"
 
 # Install IPython and other useful libraries:
-RUN pip install ipython matplotlib
+RUN pip install --no-cache-dir ipython matplotlib
 
 WORKDIR /pysr
 
 # Caches install (https://stackoverflow.com/questions/25305788/how-to-avoid-reinstalling-packages-when-building-docker-image-for-python-project)
 ADD ./requirements.txt /pysr/requirements.txt
-RUN pip3 install -r /pysr/requirements.txt
+RUN pip3 install --no-cache-dir -r /pysr/requirements.txt
 
 # Install PySR:
 # We do a minimal copy so it doesn't need to rerun at every file change:
 ADD ./pyproject.toml /pysr/pyproject.toml
 ADD ./setup.py /pysr/setup.py
-ADD ./pysr/ /pysr/pysr/
-RUN pip3 install .
+ADD ./pysr /pysr/pysr
+RUN pip3 install --no-cache-dir -e .
 
 # Install Julia pre-requisites:
 RUN python3 -c 'import pysr'

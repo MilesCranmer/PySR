@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "setuptools_scm"]
+requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -26,9 +26,6 @@ package-data = {pysr = ["../datasets/*"]}
 
 [tool.setuptools.dynamic]
 dependencies = {file = "requirements.txt"}
-
-[tool.setuptools_scm]
-write_to = "pysr/version.py"
 
 [tool.isort]
 profile = "black"
