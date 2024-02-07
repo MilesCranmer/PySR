@@ -40,7 +40,7 @@ ADD ./pysr/ /pysr/pysr/
 
 # First install of PySR:
 RUN python3 -m pip install .
-RUN python3 -m pysr install
+RUN python3 -c 'import pysr'
 
 # Change Python version:
 RUN pyenv install 3.10 && pyenv global 3.10 && pyenv uninstall -f 3.9.2
@@ -49,4 +49,4 @@ RUN python3 -m pip install --upgrade pip
 # Second install of PySR:
 RUN python3 -m pip install .
 RUN rm -r ~/.julia/environments/pysr-*
-RUN python3 -m pysr install
+RUN python3 -c 'import pysr'

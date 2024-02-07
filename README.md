@@ -27,10 +27,6 @@ If you've finished a project with PySR, please submit a PR to showcase your work
 - [Contributors](#contributors-)
 - [Why PySR?](#why-pysr)
 - [Installation](#installation)
-  - [pip](#pip)
-  - [conda](#conda)
-  - [docker](#docker-build)
-  - [Troubleshooting](#troubleshooting)
 - [Quickstart](#quickstart)
 - [→ Documentation](https://astroautomata.com/PySR)
 
@@ -129,48 +125,31 @@ an explicit and powerful way to interpret deep neural networks.
 
 ## Installation
 
-| [pip](#pip) | [conda](#conda) | [docker](#docker-build) |
-|:---:|:---:|:---:|
-| Everywhere (recommended) | Linux and Intel-based macOS | Everywhere (if all else fails) |
+### Pip
 
----
+You can install PySR with pip:
 
-### pip
-
-1. [Install Julia](https://julialang.org/downloads/)
-    - Alternatively, my personal preference is to use [juliaup](https://github.com/JuliaLang/juliaup#installation), which performs this automatically.
-2. Then, run:
 ```bash
-pip3 install -U pysr
+pip install pysr
 ```
-3. Finally, to install Julia dependencies:
-```bash
-python3 -m pysr install
-```
-> (Alternatively, from within Python, you can call `import pysr; pysr.install()`)
 
----
+Julia dependencies will be installed at first import.
 
-### conda
+### Conda
 
-The PySR build in conda includes all required dependencies, so you can install it by simply running:
+Similarly, with conda:
 
 ```bash
 conda install -c conda-forge pysr
 ```
 
-from within your target conda environment.
 
-However, note that the conda install does not support precompilation of Julia libraries, so the
-start time may be slightly slower as the JIT-compilation will be running.
-(Once the compilation finishes, there will not be a performance difference though.)
+### Docker
 
----
-
-### docker build
+You can also use the `Dockerfile` to install PySR in a docker container
 
 1. Clone this repo.
-2. In the repo, run the build command with:
+2. Within the repo's directory, build the docker container:
 ```bash
 docker build -t pysr .
 ```
@@ -185,11 +164,7 @@ For more details, see the [docker section](#docker).
 
 ### Troubleshooting
 
-Common issues tend to be related to Python not finding Julia.
-To debug this, try running `python3 -c 'import os; print(os.environ["PATH"])'`.
-If none of these folders contain your Julia binary, then you need to add Julia's `bin` folder to your `PATH` environment variable.
-
-Another issue you might run into can result in a hard crash at import with
+One issue you might run into can result in a hard crash at import with
 a message like "`GLIBCXX_...` not found". This is due to another one of the Python dependencies
 loading an incorrect `libstdc++` library. To fix this, you should modify your
 `LD_LIBRARY_PATH` variable to reference the Julia libraries. For example, if the Julia
@@ -202,7 +177,6 @@ export LD_LIBRARY_PATH=$HOME/.julia/juliaup/julia-1.10.0+0.x64.linux.gnu/lib/jul
 
 to your `.bashrc` or `.zshrc` file.
 
-**Running PySR on macOS with an M1 processor:** you should use the pip version, and make sure to get the Julia binary for ARM/M-series processors.
 
 ## Quickstart
 
