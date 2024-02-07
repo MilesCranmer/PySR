@@ -1,2 +1,30 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pysr"
+authors = [
+    {name = "Miles Cranmer", email = "miles.cranmer@gmail.com"},
+]
+description = "Simple and efficient symbolic regression"
+readme = {file = "README.md", content-type = "text/markdown"}
+license = {file = "LICENSE"}
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: Apache Software License"
+]
+dynamic = ["version", "dependencies"]
+
+[tool.setuptools]
+packages = ["pysr"]
+include-package-data = false
+package-data = {pysr = ["../datasets/*"]}
+
+[tool.setuptools.dynamic]
+dependencies = {file = "requirements.txt"}
+
 [tool.isort]
 profile = "black"
