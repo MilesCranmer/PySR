@@ -31,7 +31,6 @@ for k, default in (
     os.environ[k] = os.environ.get(k, default)
 
 
-import juliapkg
 from juliacall import Main as jl
 from juliacall import convert as jl_convert
 
