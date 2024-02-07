@@ -31,8 +31,8 @@ for k, default in (
     os.environ[k] = os.environ.get(k, default)
 
 
-from juliacall import Main as jl
-from juliacall import convert as jl_convert
+from juliacall import Main as jl  # type: ignore
+from juliacall import convert as jl_convert  # type: ignore
 
 jl.seval("using Serialization: Serialization")
 jl.seval("using PythonCall: PythonCall")
