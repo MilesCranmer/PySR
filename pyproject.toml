@@ -1,9 +1,10 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools", "setuptools_scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "pysr"
+version = "0.17.0"
 authors = [
     {name = "Miles Cranmer", email = "miles.cranmer@gmail.com"},
 ]
@@ -16,7 +17,7 @@ classifiers = [
     "Operating System :: OS Independent",
     "License :: OSI Approved :: Apache Software License"
 ]
-dynamic = ["version", "dependencies"]
+dynamic = ["dependencies"]
 
 [tool.setuptools]
 packages = ["pysr"]
@@ -25,6 +26,9 @@ package-data = {pysr = ["../datasets/*"]}
 
 [tool.setuptools.dynamic]
 dependencies = {file = "requirements.txt"}
+
+[tool.setuptools_scm]
+write_to = "pysr/version.py"
 
 [tool.isort]
 profile = "black"
