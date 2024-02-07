@@ -52,8 +52,12 @@ TEST_OPTIONS = {"main", "env", "jax", "torch", "cli"}
 
 
 @pysr.command("test", help="Run PySR test suite.")
-@click.argument("tests", nargs=-1, help="Choose from " + ", ".join(TEST_OPTIONS) + ".")
+@click.argument("tests", nargs=-1)
 def _tests(tests):
+    """Run part of the PySR test suite.
+
+    Choose from main, env, jax, torch, and cli.
+    """
     if len(tests) == 0:
         raise click.UsageError(
             "At least one test must be specified. "
