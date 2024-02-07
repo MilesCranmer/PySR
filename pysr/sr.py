@@ -834,7 +834,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.temp_equation_file = temp_equation_file
         self.tempdir = tempdir
         self.delete_tempfiles = delete_tempfiles
-        self.julia_project = julia_project
         self.update = update
         self.output_jax_format = output_jax_format
         self.output_torch_format = output_torch_format

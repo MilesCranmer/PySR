@@ -78,8 +78,6 @@ jobs:
       - name: "Run Torch tests"
         run: coverage run --append --source=pysr --omit='*/test/*' -m pysr test torch
         if: ${{ matrix.test-id == 'main' }}
-      - name: "Run custom env tests"
-        run: coverage run --append --source=pysr --omit='*/test/*' -m pysr test env
       - name: "Coveralls"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

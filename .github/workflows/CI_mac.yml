@@ -66,5 +66,3 @@ jobs:
         run: pip install torch # (optional import)
       - name: "Run Torch tests"
         run: python -m pysr test torch
-      - name: "Run custom env tests"
-        run: python -m pysr test env

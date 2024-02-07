@@ -9,6 +9,5 @@ if __name__ == "__main__":
     parser.add_argument(
         "test",
         nargs="*",
-        help="DEPRECATED. Use `python -m pysr test [tests...]` instead."
-        # help="Test to run. One or more of 'main', 'env', 'jax', 'torch', 'cli'.",
+        help="DEPRECATED. Use `python -m pysr test [tests...]` instead.",
     )

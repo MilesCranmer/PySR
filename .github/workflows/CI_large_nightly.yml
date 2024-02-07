@@ -46,6 +46,3 @@ jobs:
         run: |
             python -m pysr test main
             python -m pysr test cli
-      - name: "Run new env test"
-        run: python -m pysr test env
-        if: ${{ !(matrix.os == 'windows-latest' && matrix.python-version == '3.7') }}

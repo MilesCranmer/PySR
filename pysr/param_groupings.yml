@@ -88,7 +88,6 @@
   - temp_equation_file
   - tempdir
   - delete_tempfiles
-  - julia_project
   - update
   - julia_kwargs
 - Exporting the Results:
