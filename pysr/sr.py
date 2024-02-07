@@ -35,10 +35,10 @@ from .feature_selection import run_feature_selection
 from .julia_helpers import (
     _escape_filename,
     _load_cluster_manager,
-    jl,
     jl_array,
     jl_deserialize_s,
 )
+from .julia_import import jl
 from .utils import (
     _csv_filename_to_pkl_filename,
     _preprocess_julia_floats,
