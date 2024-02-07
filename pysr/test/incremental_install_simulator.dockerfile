@@ -33,13 +33,14 @@ RUN python3 -m pip install --upgrade pip
 # Get PySR source:
 WORKDIR /pysr
 ADD ./requirements.txt /pysr/requirements.txt
-RUN python3 -m pip install -r /pysr/requirements.txt
+RUN python3 -m pip install --no-cache-dir -r /pysr/requirements.txt
 
+ADD ./pyproject.toml /pysr/pyproject.toml
 ADD ./setup.py /pysr/setup.py
 ADD ./pysr/ /pysr/pysr/
 
 # First install of PySR:
-RUN python3 -m pip install .
+RUN python3 -m pip install --no-cache-dir .
 RUN python3 -c 'import pysr'
 
 # Change Python version:
@@ -48,5 +49,4 @@ RUN python3 -m pip install --upgrade pip
 
 # Second install of PySR:
 RUN python3 -m pip install .
-RUN rm -r ~/.julia/environments/pysr-*
-RUN python3 -c 'import pysr'
+RUN python3 -c 'import pysr' && python3 -c 'from pysr.sr import jl; jl.seval("@assert VERSION < v\"1.9\"")'
