@@ -531,11 +531,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     delete_tempfiles : bool
         Whether to delete the temporary files after finishing.
         Default is `True`.
-    julia_project : str
-        A Julia environment location containing a Project.toml
-        (and potentially the source code for SymbolicRegression.jl).
-        Default gives the Python package directory, where a
-        Project.toml file should be present from the install.
     update: bool
         Whether to automatically update Julia packages when `fit` is called.
         You should make sure that PySR is up-to-date itself first, as
@@ -740,7 +735,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         temp_equation_file: bool = False,
         tempdir: Optional[str] = None,
         delete_tempfiles: bool = True,
-        julia_project: Optional[str] = None,
         update: bool = False,
         output_jax_format: bool = False,
         output_torch_format: bool = False,
@@ -872,6 +866,18 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                         f"{k} is a data dependant parameter so should be passed when fit is called. "
                         f"Ignoring parameter; please pass {k} during the call to fit instead.",
                         FutureWarning,
+                    )
+                elif k == "julia_project":
+                    warnings.warn(
+                        "The `julia_project` parameter has been deprecated. To use a custom "
+                        "julia project, you should instead:\n"
+                        "    1. Clone the PySR repository.\n"
+                        "    2. Modify the `pysr/juliapkg.json` file's specification of the "
+                        'SymbolicRegression.jl package to have `"dev": true` and `"path": '
+                        '"/path/to/custom/project"`.\n'
+                        "    3. Install this PySR package with `pip install -e .` from the "
+                        "PySR repository root.\n"
+                        "You should now be able to use the custom julia project.",
                     )
                 else:
                     raise TypeError(

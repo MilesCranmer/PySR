@@ -2,13 +2,7 @@ import warnings
 
 import click
 
-from ..test import (
-    get_runtests_cli,
-    runtests,
-    runtests_env,
-    runtests_jax,
-    runtests_torch,
-)
+from ..test import get_runtests_cli, runtests, runtests_jax, runtests_torch
 
 
 @click.group("pysr")
@@ -48,7 +42,7 @@ def _install(julia_project, quiet, precompile):
     )
 
 
-TEST_OPTIONS = {"main", "env", "jax", "torch", "cli"}
+TEST_OPTIONS = {"main", "jax", "torch", "cli"}
 
 
 @pysr.command("test", help="Run PySR test suite.")
@@ -56,7 +50,7 @@ TEST_OPTIONS = {"main", "env", "jax", "torch", "cli"}
 def _tests(tests):
     """Run part of the PySR test suite.
 
-    Choose from main, env, jax, torch, and cli.
+    Choose from main, jax, torch, and cli.
     """
     if len(tests) == 0:
         raise click.UsageError(
@@ -70,8 +64,6 @@ def _tests(tests):
             if test in TEST_OPTIONS:
                 if test == "main":
                     runtests()
-                elif test == "env":
-                    runtests_env()
                 elif test == "jax":
                     runtests_jax()
                 elif test == "torch":
