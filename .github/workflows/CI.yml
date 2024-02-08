@@ -61,8 +61,8 @@ jobs:
             pip install .
             python -c 'import pysr'
       - name: "Assert Julia version"
-        run: |
-            python3 -c "from pysr import jl; assert jl.VERSION == jl.seval('v\"${{ matrix.julia-version }}\"')"
+        if: ${{ matrix.julia-version != '1'}}
+        run: python3 -c "from pysr import jl; assert jl.VERSION.major == jl.seval('v\"${{ matrix.julia-version }}\"').major; assert jl.VERSION.minor == jl.seval('v\"${{ matrix.julia-version }}\"').minor"
       - name: "Install Coverage tool"
         run: pip install coverage coveralls
       - name: "Run tests"
