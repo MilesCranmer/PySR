@@ -60,6 +60,9 @@ jobs:
             python -m pip install --upgrade pip
             pip install .
             python -c 'import pysr'
+      - name: "Assert Julia version"
+        run: |
+            python3 -c "from pysr import jl; assert jl.VERSION == jl.seval('v\"${{ matrix.julia-version }}\"')"
       - name: "Install Coverage tool"
         run: pip install coverage coveralls
       - name: "Run tests"
