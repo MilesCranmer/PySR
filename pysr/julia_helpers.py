@@ -1,10 +1,20 @@
 """Functions for initializing the Julia environment and installing deps."""
+import warnings
+
 from juliacall import convert as jl_convert  # type: ignore
 
 from .julia_import import jl
 
 jl.seval("using Serialization: Serialization")
 jl.seval("using PythonCall: PythonCall")
+
+
+def install(*args, **kwargs):
+    del args, kwargs
+    warnings.warn(
+        "The `install` function has been removed. "
+        "PySR now uses the `juliacall` package to install its dependencies automatically at import time. "
+    )
 
 
 def _escape_filename(filename):

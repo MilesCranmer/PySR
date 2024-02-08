@@ -7,6 +7,7 @@ from . import sklearn_monkeypatch
 from .deprecated import best, best_callable, best_row, best_tex, pysr
 from .export_jax import sympy2jax
 from .export_torch import sympy2torch
+from .julia_helpers import install
 from .sr import PySRRegressor
 
 # This file is created by setuptools_scm during the build process:
@@ -26,4 +27,5 @@ __all__ = [
     "pysr",
     "__version__",
     "jl",
+    "install",
 ]
