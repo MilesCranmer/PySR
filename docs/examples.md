@@ -189,12 +189,10 @@ where $p_i$ is the $i$th prime number, and $x$ is the input feature.
 Let's see if we can discover this using
 the [Primes.jl](https://github.com/JuliaMath/Primes.jl) package.
 
-First, let's manually initialize the Julia backend
-(here, with 8 threads and `-O3`):
+First, let's get the Julia backend:
 
 ```python
-import pysr
-jl = pysr.julia_helpers.init_julia(julia_kwargs={"threads": 8, "optimize": 3})
+from pysr import jl
 ```
 
 `jl` stores the Julia runtime.
@@ -203,7 +201,7 @@ Now, let's run some Julia code to add the Primes.jl
 package to the PySR environment:
 
 ```python
-jl.eval("""
+jl.seval("""
 import Pkg
 Pkg.add("Primes")
 """)
@@ -213,13 +211,13 @@ This imports the Julia package manager, and uses it to install
 `Primes.jl`. Now let's import `Primes.jl`:
 
 ```python
-jl.eval("import Primes")
+jl.seval("import Primes")
 ```
 
 Now, we define a custom operator:
 
 ```python
-jl.eval("""
+jl.seval("""
 function p(i::T) where T
     if (0.5 < i < 1000)
         return T(Primes.prime(round(Int, i)))

@@ -229,11 +229,11 @@ class TestPipeline(unittest.TestCase):
             early_stop_condition=None,
         )
         # Check that the the julia state is saved:
-        from pysr.sr import jl
+        from pysr import jl
 
         # We should have that the model state is now a Float32 hof:
         jl.test_state = regressor.raw_julia_state_
-        self.assertTrue(jl.eval("typeof(test_state[2]).parameters[1] == Float32"))
+        self.assertTrue(jl.seval("typeof(test_state[2]).parameters[1] == Float32"))
         # This should exit almost immediately, and use the old equations
         regressor.fit(X, y)
 
