@@ -31,15 +31,13 @@ for k, default in (
 
 
 def is_in_jupyter() -> bool:
-    try:
-        ipy = get_ipython().__class__.__name__  # type: ignore
-        return ipy == "ZMQInteractiveShell"
-    except NameError:
-        return False
+    return hasattr(__builtins__, "__IPYTHON__")
 
 
 if is_in_jupyter():
-    get_ipython().run_line_magic("load_ext", "julia.ipython")  # type: ignore
+    from IPython import get_ipython
+
+    get_ipython().run_line_magic("load_ext", "juliacall")
 
 
 from juliacall import Main as jl  # type: ignore
