@@ -29,6 +29,19 @@ for k, default in (
 ):
     os.environ[k] = os.environ.get(k, default)
 
+
+def is_in_jupyter() -> bool:
+    try:
+        ipy = get_ipython().__class__.__name__  # type: ignore
+        return ipy == "ZMQInteractiveShell"
+    except NameError:
+        return False
+
+
+if is_in_jupyter():
+    get_ipython().run_line_magic("load_ext", "julia.ipython")  # type: ignore
+
+
 from juliacall import Main as jl  # type: ignore
 
 
