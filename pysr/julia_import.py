@@ -30,3 +30,11 @@ for k, default in (
     os.environ[k] = os.environ.get(k, default)
 
 from juliacall import Main as jl  # type: ignore
+
+
+# TODO: Overwrite this once PythonCall.jl is updated:
+def seval(s: str):
+    return jl.eval(jl.Meta.parseall(s))
+
+
+jl.seval = seval
