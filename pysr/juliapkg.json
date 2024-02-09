@@ -3,8 +3,7 @@
     "packages": {
         "SymbolicRegression": {
             "uuid": "8254be44-1295-4e6a-a16d-46603ac705cb",
-            "rev": "v0.23.1",
-            "url": "https://github.com/MilesCranmer/SymbolicRegression.jl"
+            "version": "0.23.1"
         },
         "ClusterManagers": {
             "uuid": "34f1f09b-3a8b-5176-ab39-66d58a4d544e",
