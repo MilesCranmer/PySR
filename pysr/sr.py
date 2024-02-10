@@ -1121,14 +1121,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         return self.equations_
 
     @property
-    def julia_state(self):
+    def julia_state_(self):
         return jl_deserialize_s(self.raw_julia_state_stream_)
 
     @property
     def raw_julia_state_(self):
         warnings.warn(
             "PySRRegressor.raw_julia_state_ is now deprecated. "
-            "Please use PySRRegressor.julia_state instead, or `raw_julia_state_stream_` "
+            "Please use PySRRegressor.julia_state_ instead, or raw_julia_state_stream_ "
             "for the raw stream of bytes.",
             FutureWarning,
         )
