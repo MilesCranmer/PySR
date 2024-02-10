@@ -1,12 +1,16 @@
 """Functions for initializing the Julia environment and installing deps."""
 import warnings
 
+import numpy as np
 from juliacall import convert as jl_convert  # type: ignore
 
 from .julia_import import jl
 
 jl.seval("using Serialization: Serialization")
 jl.seval("using PythonCall: PythonCall")
+
+Serialization = jl.Serialization
+PythonCall = jl.PythonCall
 
 
 def install(*args, **kwargs):
@@ -35,10 +39,16 @@ def jl_array(x):
     return jl_convert(jl.Array, x)
 
 
-def jl_deserialize_s(s):
+def jl_serialize(obj):
+    buf = jl.IOBuffer()
+    Serialization.serialize(buf, obj)
+    return np.array(jl.take_b(buf))
+
+
+def jl_deserialize(s):
     if s is None:
         return s
     buf = jl.IOBuffer()
     jl.write(buf, jl_array(s))
     jl.seekstart(buf)
-    return jl.Serialization.deserialize(buf)
+    return Serialization.deserialize(buf)

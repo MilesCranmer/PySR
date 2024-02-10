@@ -33,10 +33,12 @@ from .export_sympy import assert_valid_sympy_symbol, create_sympy_symbols, pysr2
 from .export_torch import sympy2torch
 from .feature_selection import run_feature_selection
 from .julia_helpers import (
+    PythonCall,
     _escape_filename,
     _load_cluster_manager,
     jl_array,
-    jl_deserialize_s,
+    jl_deserialize,
+    jl_serialize,
 )
 from .julia_import import SymbolicRegression, jl
 from .utils import (
@@ -602,11 +604,15 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Path to the temporary equations directory.
     equation_file_ : str
         Output equation file name produced by the julia backend.
-    raw_julia_state_stream_ : ndarray
+    julia_state_stream_ : ndarray
         The serialized state for the julia SymbolicRegression.jl backend (after fitting),
         stored as an array of uint8, produced by Julia's Serialization.serialize function.
-    julia_state_ : ndarray
+    julia_state_
         The deserialized state.
+    julia_options_stream_ : ndarray
+        The serialized julia options, stored as an array of uint8,
+    julia_options_
+        The deserialized julia options.
     equation_file_contents_ : list[pandas.DataFrame]
         Contents of the equation file output by the Julia backend.
     show_pickle_warnings_ : bool
@@ -1053,7 +1059,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         serialization.
 
         Thus, for `PySRRegressor` to support pickle serialization, the
-        `raw_julia_state_stream_` attribute must be hidden from pickle. This will
+        `julia_state_stream_` attribute must be hidden from pickle. This will
         prevent the `warm_start` of any model that is loaded via `pickle.loads()`,
         but does allow all other attributes of a fitted `PySRRegressor` estimator
         to be serialized. Note: Jax and Torch format equations are also removed
@@ -1122,14 +1128,18 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         return self.equations_
 
     @property
+    def julia_options_(self):
+        return jl_deserialize(self.julia_options_stream_)
+
+    @property
     def julia_state_(self):
-        return jl_deserialize_s(self.raw_julia_state_stream_)
+        return jl_deserialize(self.julia_state_stream_)
 
     @property
     def raw_julia_state_(self):
         warnings.warn(
             "PySRRegressor.raw_julia_state_ is now deprecated. "
-            "Please use PySRRegressor.julia_state_ instead, or raw_julia_state_stream_ "
+            "Please use PySRRegressor.julia_state_ instead, or julia_state_stream_ "
             "for the raw stream of bytes.",
             FutureWarning,
         )
@@ -1675,6 +1685,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             define_helper_functions=False,
         )
 
+        self.julia_options_stream_ = jl_serialize(options)
+
         # Convert data to desired precision
         test_X = np.array(X)
         is_complex = np.issubdtype(test_X.dtype, np.complexfloating)
@@ -1718,7 +1730,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         else:
             jl_y_variable_names = None
 
-        jl.PythonCall.GC.disable()
+        PythonCall.GC.disable()
         out = SymbolicRegression.equation_search(
             jl_X,
             jl_y,
@@ -1741,12 +1753,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             progress=progress and self.verbosity > 0 and len(y.shape) == 1,
             verbosity=int(self.verbosity),
         )
-        jl.PythonCall.GC.enable()
+        PythonCall.GC.enable()
 
-        # Serialize output (for pickling)
-        buf = jl.IOBuffer()
-        jl.Serialization.serialize(buf, out)
-        self.raw_julia_state_stream_ = np.array(jl.take_b(buf))
+        self.julia_state_stream_ = jl_serialize(out)
 
         # Set attributes
         self.equations_ = self.get_hof()
@@ -1810,10 +1819,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Fitted estimator.
         """
         # Init attributes that are not specified in BaseEstimator
-        if self.warm_start and hasattr(self, "raw_julia_state_stream_"):
+        if self.warm_start and hasattr(self, "julia_state_stream_"):
             pass
         else:
-            if hasattr(self, "raw_julia_state_stream_"):
+            if hasattr(self, "julia_state_stream_"):
                 warnings.warn(
                     "The discovered expressions are being reset. "
                     "Please set `warm_start=True` if you wish to continue "
@@ -1823,7 +1832,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self.equations_ = None
             self.nout_ = 1
             self.selection_mask_ = None
-            self.raw_julia_state_stream_ = None
+            self.julia_state_stream_ = None
+            self.julia_options_stream_ = None
             self.X_units_ = None
             self.y_units_ = None
 
