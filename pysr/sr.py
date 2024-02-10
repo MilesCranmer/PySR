@@ -870,14 +870,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 elif k == "julia_project":
                     warnings.warn(
                         "The `julia_project` parameter has been deprecated. To use a custom "
-                        "julia project, you should instead:\n"
-                        "    1. Clone the PySR repository.\n"
-                        "    2. Modify the `pysr/juliapkg.json` file's specification of the "
-                        'SymbolicRegression.jl package to have `"dev": true` and `"path": '
-                        '"/path/to/custom/project"`.\n'
-                        "    3. Install this PySR package with `pip install -e .` from the "
-                        "PySR repository root.\n"
-                        "You should now be able to use the custom julia project.",
+                        "julia project, please see `https://astroautomata.com/PySR/backend`.",
                     )
                 elif k == "julia_kwargs":
                     warnings.warn(
