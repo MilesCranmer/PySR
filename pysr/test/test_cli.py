@@ -57,7 +57,8 @@ def get_runtests():
 
                   Run parts of the PySR test suite.
 
-                  Choose from main, jax, torch, cli, and startup. You can give multiple tests, separated by commas.
+                  Choose from main, jax, torch, cli, and startup. You can give multiple tests,
+                  separated by commas.
 
                 Options:
                   --help  Show this message and exit.
