@@ -69,20 +69,21 @@ jobs:
         run: python3 -c "from pysr import jl; assert jl.VERSION.major == jl.seval('v\"${{ matrix.julia-version }}\"').major; assert jl.VERSION.minor == jl.seval('v\"${{ matrix.julia-version }}\"').minor"
       - name: "Install Coverage tool"
         run: pip install coverage coveralls
+      - name: "Set up coverage for subprocesses"
+        run:
       - name: "Run tests"
-        run: |
-            coverage run --source=pysr --omit='*/test/*' -m pysr test main,cli,startup
+        run: COVERAGE_PROCESS_START="${PWD}/.coveragerc" coverage run --source=pysr -m pysr test main,cli,startup
       - name: "Install JAX"
         run: pip install jax jaxlib # (optional import)
         if: ${{ matrix.test-id == 'main' }}
       - name: "Run JAX tests"
-        run: coverage run --append --source=pysr --omit='*/test/*' -m pysr test jax
+        run: COVERAGE_PROCESS_START="${PWD}/.coveragerc" coverage run --append --source=pysr -m pysr test jax
         if: ${{ matrix.test-id == 'main' }}
       - name: "Install Torch"
         run: pip install torch # (optional import)
         if: ${{ matrix.test-id == 'main' }}
       - name: "Run Torch tests"
-        run: coverage run --append --source=pysr --omit='*/test/*' -m pysr test torch
+        run: COVERAGE_PROCESS_START="${PWD}/.coveragerc" coverage run --append --source=pysr -m pysr test torch
         if: ${{ matrix.test-id == 'main' }}
       - name: "Coveralls"
         env:
