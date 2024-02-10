@@ -38,7 +38,7 @@ from .julia_helpers import (
     jl_array,
     jl_deserialize_s,
 )
-from .julia_import import jl
+from .julia_import import SymbolicRegression, jl
 from .utils import (
     _csv_filename_to_pkl_filename,
     _preprocess_julia_floats,
@@ -1549,9 +1549,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         if cluster_manager is not None:
             cluster_manager = _load_cluster_manager(cluster_manager)
-
-        jl.seval("using SymbolicRegression")
-        SymbolicRegression = jl.SymbolicRegression
 
         jl.plus = jl.seval("(+)")
         jl.sub = jl.seval("(-)")

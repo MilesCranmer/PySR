@@ -66,3 +66,6 @@ if jl.seval('VERSION >= v"1.9.0-DEV.0"'):
         return jl.eval(jl.Meta.parseall(s))
 
     jl.seval = seval
+
+jl.seval("using SymbolicRegression")
+SymbolicRegression = jl.SymbolicRegression
