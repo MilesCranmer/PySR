@@ -2,7 +2,13 @@ import warnings
 
 import click
 
-from ..test import get_runtests_cli, runtests, runtests_jax, runtests_torch
+from ..test import (
+    get_runtests_cli,
+    runtests,
+    runtests_jax,
+    runtests_torch,
+    runtests_warm_start,
+)
 
 
 @click.group("pysr")
@@ -42,7 +48,7 @@ def _install(julia_project, quiet, precompile):
     )
 
 
-TEST_OPTIONS = {"main", "jax", "torch", "cli"}
+TEST_OPTIONS = {"main", "jax", "torch", "cli", "warm_start"}
 
 
 @pysr.command("test", help="Run PySR test suite.")
@@ -50,7 +56,7 @@ TEST_OPTIONS = {"main", "jax", "torch", "cli"}
 def _tests(tests):
     """Run part of the PySR test suite.
 
-    Choose from main, jax, torch, and cli.
+    Choose from main, jax, torch, cli, and warm_start.
     """
     if len(tests) == 0:
         raise click.UsageError(
@@ -71,5 +77,7 @@ def _tests(tests):
                 elif test == "cli":
                     runtests_cli = get_runtests_cli()
                     runtests_cli()
+                elif test == "warm_start":
+                    runtests_warm_start()
             else:
                 warnings.warn(f"Invalid test {test}. Skipping.")
