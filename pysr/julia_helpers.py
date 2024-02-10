@@ -12,6 +12,12 @@ jl.seval("using PythonCall: PythonCall")
 Serialization = jl.Serialization
 PythonCall = jl.PythonCall
 
+jl.plus = jl.seval("(+)")
+jl.sub = jl.seval("(-)")
+jl.mult = jl.seval("(*)")
+jl.pow = jl.seval("(^)")
+jl.div = jl.seval("(/)")
+
 
 def install(*args, **kwargs):
     del args, kwargs

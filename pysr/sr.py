@@ -1560,12 +1560,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if cluster_manager is not None:
             cluster_manager = _load_cluster_manager(cluster_manager)
 
-        jl.plus = jl.seval("(+)")
-        jl.sub = jl.seval("(-)")
-        jl.mult = jl.seval("(*)")
-        jl.pow = jl.seval("(^)")
-        jl.div = jl.seval("(/)")
-
         # TODO(mcranmer): These functions should be part of this class.
         binary_operators, unary_operators = _maybe_create_inline_operators(
             binary_operators=binary_operators,
