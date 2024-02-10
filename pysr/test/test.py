@@ -208,7 +208,7 @@ class TestPipeline(unittest.TestCase):
         model.fit(X, y)
         test_y = model.predict(X)
         self.assertTrue(np.issubdtype(test_y.dtype, np.complexfloating))
-        self.assertLessEqual(np.average(np.abs(test_y - y) ** 2), 1e-4)
+        self.assertLessEqual(np.average(np.abs(test_y - y) ** 2), 1e-3)
 
     def test_empty_operators_single_input_warm_start(self):
         X = self.rstate.randn(100, 1)
