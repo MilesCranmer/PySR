@@ -870,12 +870,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     warnings.warn(
                         "The `julia_project` parameter has been deprecated. To use a custom "
                         "julia project, please see `https://astroautomata.com/PySR/backend`.",
+                        FutureWarning,
                     )
                 elif k == "julia_kwargs":
                     warnings.warn(
                         "The `julia_kwargs` parameter has been deprecated. To pass custom "
                         "keyword arguments to the julia backend, you should use environment variables. "
                         "See the Julia documentation for more information.",
+                        FutureWarning,
                     )
                 else:
                     raise TypeError(

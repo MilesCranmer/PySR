@@ -11,9 +11,10 @@ import pandas as pd
 import sympy
 from sklearn.utils.estimator_checks import check_estimator
 
-from .. import PySRRegressor
+from .. import PySRRegressor, install, jl
 from ..export_latex import sympy2latex
 from ..feature_selection import _handle_feature_selection, run_feature_selection
+from ..julia_helpers import init_julia
 from ..sr import _check_assertions, _process_constraints, idx_model_selection
 from ..utils import _csv_filename_to_pkl_filename
 from .params import (
@@ -106,7 +107,6 @@ class TestPipeline(unittest.TestCase):
             warm_start=True,
         )
         model.fit(self.X, y)
-        from pysr.sr import jl
 
         # We should have that the model state is now a Float64 hof:
         jl.test_state = model.raw_julia_state_
@@ -228,8 +228,6 @@ class TestPipeline(unittest.TestCase):
             warm_start=True,
             early_stop_condition=None,
         )
-        # Check that the the julia state is saved:
-        from pysr import jl
 
         # We should have that the model state is now a Float32 hof:
         jl.test_state = regressor.raw_julia_state_
@@ -547,6 +545,17 @@ class TestMiscellaneous(unittest.TestCase):
 
         # The correct value should be set:
         self.assertEqual(model.fraction_replaced, 0.2)
+
+    def test_deprecated_functions(self):
+        with self.assertWarns(FutureWarning):
+            install()
+
+        _jl = None
+
+        with self.assertWarns(FutureWarning):
+            _jl = init_julia()
+
+        self.assertEqual(_jl, jl)
 
     def test_power_law_warning(self):
         """Ensure that a warning is given for a power law operator."""
