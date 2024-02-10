@@ -31,6 +31,19 @@ else:
     ):
         os.environ[k] = os.environ.get(k, default)
 
+try:
+    get_ipython = sys.modules["IPython"].get_ipython
+
+    if "IPKernelApp" not in get_ipython().config:
+        raise ImportError("console")
+
+    print("Detected Jupyter notebook. Loading juliacall extension.")
+
+    # TODO: Turn this off if juliacall does this automatically
+    get_ipython().run_line_magic("load_ext", "juliacall")
+except Exception:
+    pass
+
 
 from juliacall import Main as jl  # type: ignore
 
