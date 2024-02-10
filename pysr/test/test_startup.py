@@ -106,8 +106,8 @@ class TestStartup(unittest.TestCase):
                 msg="PYTHON_JULIACALL_HANDLE_SIGNALS environment variable is set",
             ),
             dict(
-                code='import os; os.environ["JULIA_NUM_THREADS"] = "1"; import pysr',
-                msg="JULIA_NUM_THREADS environment variable is set",
+                code='import os; os.environ["PYTHON_JULIACALL_THREADS"] = "1"; import pysr',
+                msg="PYTHON_JULIACALL_THREADS environment variable is set",
             ),
             dict(
                 code="import juliacall; import pysr",
