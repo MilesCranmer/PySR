@@ -24,6 +24,8 @@ jobs:
   test:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
+    env:
+      COVERAGE_PROCESS_START: "${{ github.workspace }}/.coveragerc"
     defaults:
       run:
         shell: bash
@@ -72,18 +74,18 @@ jobs:
       - name: "Set up coverage for subprocesses"
         run:
       - name: "Run tests"
-        run: COVERAGE_PROCESS_START="${PWD}/.coveragerc" coverage run --source=pysr -m pysr test main,cli,startup
+        run: coverage run -m pysr test main,cli,startup
       - name: "Install JAX"
         run: pip install jax jaxlib # (optional import)
         if: ${{ matrix.test-id == 'main' }}
       - name: "Run JAX tests"
-        run: COVERAGE_PROCESS_START="${PWD}/.coveragerc" coverage run --append --source=pysr -m pysr test jax
+        run: coverage run --append -m pysr test jax
         if: ${{ matrix.test-id == 'main' }}
       - name: "Install Torch"
         run: pip install torch # (optional import)
         if: ${{ matrix.test-id == 'main' }}
       - name: "Run Torch tests"
-        run: COVERAGE_PROCESS_START="${PWD}/.coveragerc" coverage run --append --source=pysr -m pysr test torch
+        run: coverage run --append -m pysr test torch
         if: ${{ matrix.test-id == 'main' }}
       - name: "Coveralls"
         env:
