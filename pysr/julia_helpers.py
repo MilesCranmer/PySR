@@ -12,11 +12,7 @@ jl.seval("using PythonCall: PythonCall")
 Serialization = jl.Serialization
 PythonCall = jl.PythonCall
 
-jl.plus = jl.seval("(+)")
-jl.sub = jl.seval("(-)")
-jl.mult = jl.seval("(*)")
-jl.pow = jl.seval("(^)")
-jl.div = jl.seval("(/)")
+jl.seval("using SymbolicRegression: plus, sub, mult, div, pow")
 
 
 def install(*args, **kwargs):
