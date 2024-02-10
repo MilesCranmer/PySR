@@ -44,7 +44,7 @@ def _install(julia_project, quiet, precompile):
     )
 
 
-TEST_OPTIONS = {"main", "jax", "torch", "cli", "warm_start"}
+TEST_OPTIONS = {"main", "jax", "torch", "cli", "warm-start"}
 
 
 @pysr.command("test")
@@ -52,7 +52,7 @@ TEST_OPTIONS = {"main", "jax", "torch", "cli", "warm_start"}
 def _tests(tests):
     """Run parts of the PySR test suite.
 
-    Choose from main, jax, torch, cli, and warm_start. You can give multiple tests, separated by commas.
+    Choose from main, jax, torch, cli, and warm-start. You can give multiple tests, separated by commas.
     """
     for test in tests.split(","):
         if test in TEST_OPTIONS:

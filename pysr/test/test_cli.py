@@ -20,15 +20,15 @@ def get_runtests():
                     Usage: pysr [OPTIONS] COMMAND [ARGS]...
 
                     Options:
-                    --help  Show this message and exit.
+                      --help  Show this message and exit.
 
                     Commands:
-                    install  DEPRECATED (dependencies are now installed at import).
-                    test     Run PySR test suite.
+                      install  DEPRECATED (dependencies are now installed at import).
+                      test     Run parts of the PySR test suite.
                 """
             )
             result = self.cli_runner.invoke(pysr, ["--help"])
-            self.assertEqual(result.output, expected)
+            self.assertEqual(result.output.strip(), expected.strip())
             self.assertEqual(result.exit_code, 0)
 
         def test_help_on_install(self):
@@ -36,18 +36,18 @@ def get_runtests():
                 """
                 Usage: pysr install [OPTIONS]
 
-                DEPRECATED (dependencies are now installed at import).
+                  DEPRECATED (dependencies are now installed at import).
 
                 Options:
-                -p, --project TEXT
-                -q, --quiet         Disable logging.
-                --precompile
-                --no-precompile
-                --help              Show this message and exit.
+                  -p, --project TEXT
+                  -q, --quiet         Disable logging.
+                  --precompile
+                  --no-precompile
+                  --help              Show this message and exit.
                 """
             )
             result = self.cli_runner.invoke(pysr, ["install", "--help"])
-            self.assertEqual(result.output, expected)
+            self.assertEqual(result.output.strip(), expected.strip())
             self.assertEqual(result.exit_code, 0)
 
         def test_help_on_test(self):
@@ -55,17 +55,17 @@ def get_runtests():
                 """
                 Usage: pysr test [OPTIONS] TESTS
 
-                Run parts of the PySR test suite.
+                  Run parts of the PySR test suite.
 
-                Choose from main, jax, torch, cli, and warm_start. You can give multiple
-                tests, separated by commas.
+                  Choose from main, jax, torch, cli, and warm-start. You can give multiple
+                  tests, separated by commas.
 
                 Options:
-                --help  Show this message and exit.
+                  --help  Show this message and exit.
                 """
             )
             result = self.cli_runner.invoke(pysr, ["test", "--help"])
-            self.assertEqual(result.output, expected)
+            self.assertEqual(result.output.strip(), expected.strip())
             self.assertEqual(result.exit_code, 0)
 
     def runtests():
