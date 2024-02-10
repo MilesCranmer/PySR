@@ -7,12 +7,7 @@ from pathlib import Path
 import numpy as np
 
 from .. import PySRRegressor
-from .params import (
-    DEFAULT_NCYCLES,
-    DEFAULT_NITERATIONS,
-    DEFAULT_PARAMS,
-    DEFAULT_POPULATIONS,
-)
+from .params import DEFAULT_NITERATIONS, DEFAULT_POPULATIONS
 
 
 class TestWarmStart(unittest.TestCase):
