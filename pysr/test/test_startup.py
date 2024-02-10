@@ -1,4 +1,6 @@
+import os
 import subprocess
+import sys
 import tempfile
 import textwrap
 import unittest
@@ -57,7 +59,7 @@ class TestStartup(unittest.TestCase):
             # Now, create a new process and warm start from the file:
             result = subprocess.run(
                 [
-                    "python",
+                    sys.executable,
                     "-c",
                     textwrap.dedent(
                         f"""
@@ -91,6 +93,7 @@ class TestStartup(unittest.TestCase):
                 ],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
+                env=os.environ,
             )
             self.assertEqual(result.returncode, 0)
             self.assertIn("Loading model from file", result.stdout.decode())
@@ -117,9 +120,10 @@ class TestStartup(unittest.TestCase):
         ]
         for warning_test in warning_tests:
             result = subprocess.run(
-                ["python", "-c", warning_test["code"]],
+                [sys.executable, "-c", warning_test["code"]],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
+                env=os.environ,
             )
             self.assertIn(warning_test["msg"], result.stderr.decode())
 
