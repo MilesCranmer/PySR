@@ -2,6 +2,9 @@ import os
 import sys
 import warnings
 
+# Check if JuliaCall is already loaded, and if so, warn the user
+# about the relevant environment variables. If not loaded,
+# set up sensible defaults.
 if "juliacall" in sys.modules:
     warnings.warn(
         "juliacall module already imported. "
@@ -31,6 +34,7 @@ else:
     ):
         os.environ[k] = os.environ.get(k, default)
 
+# Next, automatically load the juliacall extension if we're in a Jupyter notebook
 if os.environ.get("PYSR_AUTOLOAD_EXTENSIONS", "yes") in {"yes", ""}:
     try:
         get_ipython = sys.modules["IPython"].get_ipython
@@ -54,10 +58,11 @@ elif os.environ["PYSR_AUTOLOAD_EXTENSIONS"] not in {"no", "yes", ""}:
 
 from juliacall import Main as jl  # type: ignore
 
+# Finally, overwrite the seval function to use Meta.parseall
+# instead of Meta.parse.
+if jl.seval('VERSION >= v"1.9.0-DEV.0"'):
+    # TODO: Overwrite this once PythonCall.jl is updated:
+    def seval(s: str):
+        return jl.eval(jl.Meta.parseall(s))
 
-# TODO: Overwrite this once PythonCall.jl is updated:
-def seval(s: str):
-    return jl.eval(jl.Meta.parseall(s))
-
-
-jl.seval = seval
+    jl.seval = seval
