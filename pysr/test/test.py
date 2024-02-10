@@ -96,6 +96,9 @@ class TestPipeline(unittest.TestCase):
         self.assertLessEqual(best_loss, 1e-10)
         self.assertGreaterEqual(best_loss, 0.0)
 
+        # Test options stored:
+        self.assertEqual(model.julia_options_.turbo, True)
+
     def test_high_precision_search_custom_loss(self):
         y = 1.23456789 * self.X[:, 0]
         model = PySRRegressor(
@@ -111,6 +114,9 @@ class TestPipeline(unittest.TestCase):
         # We should have that the model state is now a Float64 hof:
         jl.test_state = model.raw_julia_state_
         self.assertTrue(jl.seval("typeof(test_state[2]).parameters[1] == Float64"))
+
+        # Test options stored:
+        self.assertEqual(model.julia_options_.turbo, False)
 
     def test_multioutput_custom_operator_quiet_custom_complexity(self):
         y = self.X[:, [0, 1]] ** 2
