@@ -2,7 +2,7 @@
 
 If you have explored the [options](options.md) and [PySRRegressor reference](api.md), and still haven't figured out how to specify a constraint or objective required for your problem, you might consider editing the backend.
 The backend of PySR is written as a pure Julia package under the name [SymbolicRegression.jl](https://github.com/MilesCranmer/SymbolicRegression.jl).
-This package is accessed with [`PyJulia`](https://github.com/JuliaPy/pyjulia), which allows us to transfer objects back and forth between the Python and Julia runtimes.
+This package is accessed with [`juliacall`](https://github.com/JuliaPy/PythonCall.jl), which allows us to transfer objects back and forth between the Python and Julia runtimes.
 
 PySR gives you access to everything in SymbolicRegression.jl, but there are some specific use-cases which require modifications to the backend itself.
 Generally you can do this as follows:

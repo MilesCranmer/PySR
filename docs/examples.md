@@ -235,7 +235,7 @@ If in-bounds, it rounds it to the nearest integer, compures the corresponding pr
 converts it to the same type as input.
 
 Next, let's generate a list of primes for our test dataset.
-Since we are using PyJulia, we can just call `p` directly to do this:
+Since we are using juliacall, we can just call `p` directly to do this:
 
 ```python
 primes = {i: jl.p(i*1.0) for i in range(1, 999)}
