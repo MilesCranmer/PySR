@@ -70,6 +70,10 @@ class TestWarmStart(unittest.TestCase):
 
                         assert model.julia_state_ is not None
 
+                        # Reset saved equations; should be loaded from state!
+                        model.equations_ = None
+                        model.equation_file_contents_ = None
+
                         model.warm_start = True
                         model.niterations = 0
                         model.max_evals = 0
