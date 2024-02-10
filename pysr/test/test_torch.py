@@ -1,4 +1,3 @@
-import platform
 import unittest
 
 import numpy as np
@@ -7,42 +6,28 @@ import sympy
 
 from .. import PySRRegressor, sympy2torch
 
-# Need to initialize Julia before importing torch...
-
-
-def _import_torch():
-    if platform.system() == "Darwin":
-        # Import PyJulia, then Torch
-        from ..julia_helpers import init_julia
-
-        init_julia()
-
-        import torch
-    else:
-        # Import Torch, then PyJulia
-        # https://github.com/pytorch/pytorch/issues/78829
-        import torch
-    return torch
-
 
 class TestTorch(unittest.TestCase):
     def setUp(self):
         np.random.seed(0)
 
+        # Need to import after juliacall:
+        import torch
+
+        self.torch = torch
+
     def test_sympy2torch(self):
-        torch = _import_torch()
         x, y, z = sympy.symbols("x y z")
         cosx = 1.0 * sympy.cos(x) + y
 
-        X = torch.tensor(np.random.randn(1000, 3))
-        true = 1.0 * torch.cos(X[:, 0]) + X[:, 1]
+        X = self.torch.tensor(np.random.randn(1000, 3))
+        true = 1.0 * self.torch.cos(X[:, 0]) + X[:, 1]
         torch_module = sympy2torch(cosx, [x, y, z])
         self.assertTrue(
             np.all(np.isclose(torch_module(X).detach().numpy(), true.detach().numpy()))
         )
 
     def test_pipeline_pandas(self):
-        torch = _import_torch()
         X = pd.DataFrame(np.random.randn(100, 10))
         y = np.ones(X.shape[0])
         model = PySRRegressor(
@@ -71,13 +56,12 @@ class TestTorch(unittest.TestCase):
         self.assertEqual(str(tformat), "_SingleSymPyModule(expression=cos(x1)**2)")
 
         np.testing.assert_almost_equal(
-            tformat(torch.tensor(X.values)).detach().numpy(),
+            tformat(self.torch.tensor(X.values)).detach().numpy(),
             np.square(np.cos(X.values[:, 1])),  # Selection 1st feature
             decimal=3,
         )
 
     def test_pipeline(self):
-        torch = _import_torch()
         X = np.random.randn(100, 10)
         y = np.ones(X.shape[0])
         model = PySRRegressor(
@@ -106,22 +90,22 @@ class TestTorch(unittest.TestCase):
         self.assertEqual(str(tformat), "_SingleSymPyModule(expression=cos(x1)**2)")
 
         np.testing.assert_almost_equal(
-            tformat(torch.tensor(X)).detach().numpy(),
+            tformat(self.torch.tensor(X)).detach().numpy(),
             np.square(np.cos(X[:, 1])),  # 2nd feature
             decimal=3,
         )
 
     def test_mod_mapping(self):
-        torch = _import_torch()
         x, y, z = sympy.symbols("x y z")
         expression = x**2 + sympy.atanh(sympy.Mod(y + 1, 2) - 1) * 3.2 * z
 
         module = sympy2torch(expression, [x, y, z])
 
-        X = torch.rand(100, 3).float() * 10
+        X = self.torch.rand(100, 3).float() * 10
 
         true_out = (
-            X[:, 0] ** 2 + torch.atanh(torch.fmod(X[:, 1] + 1, 2) - 1) * 3.2 * X[:, 2]
+            X[:, 0] ** 2
+            + self.torch.atanh(self.torch.fmod(X[:, 1] + 1, 2) - 1) * 3.2 * X[:, 2]
         )
         torch_out = module(X)
 
@@ -130,7 +114,6 @@ class TestTorch(unittest.TestCase):
         )
 
     def test_custom_operator(self):
-        torch = _import_torch()
         X = np.random.randn(100, 3)
         y = np.ones(X.shape[0])
         model = PySRRegressor(
@@ -156,7 +139,7 @@ class TestTorch(unittest.TestCase):
         model.set_params(
             equation_file="equation_file_custom_operator.csv",
             extra_sympy_mappings={"mycustomoperator": sympy.sin},
-            extra_torch_mappings={"mycustomoperator": torch.sin},
+            extra_torch_mappings={"mycustomoperator": self.torch.sin},
         )
         model.refresh(checkpoint_file="equation_file_custom_operator.csv")
         self.assertEqual(str(model.sympy()), "sin(x1)")
@@ -165,13 +148,12 @@ class TestTorch(unittest.TestCase):
         tformat = model.pytorch()
         self.assertEqual(str(tformat), "_SingleSymPyModule(expression=sin(x1))")
         np.testing.assert_almost_equal(
-            tformat(torch.tensor(X)).detach().numpy(),
+            tformat(self.torch.tensor(X)).detach().numpy(),
             np.sin(X[:, 1]),
             decimal=3,
         )
 
     def test_feature_selection_custom_operators(self):
-        torch = _import_torch()
         rstate = np.random.RandomState(0)
         X = pd.DataFrame({f"k{i}": rstate.randn(2000) for i in range(10, 21)})
         cos_approx = lambda x: 1 - (x**2) / 2 + (x**4) / 24 + (x**6) / 720
@@ -196,7 +178,7 @@ class TestTorch(unittest.TestCase):
 
         np_output = model.predict(X.values)
 
-        torch_output = torch_module(torch.tensor(X.values)).detach().numpy()
+        torch_output = torch_module(self.torch.tensor(X.values)).detach().numpy()
 
         np.testing.assert_almost_equal(y.values, np_output, decimal=3)
         np.testing.assert_almost_equal(y.values, torch_output, decimal=3)
