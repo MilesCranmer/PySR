@@ -1,4 +1,5 @@
 import unittest
+from textwrap import dedent
 
 from click import testing as click_testing
 
@@ -14,43 +15,58 @@ def get_runtests():
             self.cli_runner = click_testing.CliRunner()
 
         def test_help_on_all_commands(self):
-            expected = "\n".join(
-                [
-                    "Usage: pysr [OPTIONS] COMMAND [ARGS]...",
-                    "",
-                    "Options:",
-                    "  --help  Show this message and exit.",
-                    "",
-                    "Commands:",
-                    "  install  Install Julia dependencies for PySR.",
-                    "",
-                ]
+            expected = dedent(
+                """
+                    Usage: pysr [OPTIONS] COMMAND [ARGS]...
+
+                    Options:
+                    --help  Show this message and exit.
+
+                    Commands:
+                    install  DEPRECATED (dependencies are now installed at import).
+                    test     Run PySR test suite.
+                """
             )
             result = self.cli_runner.invoke(pysr, ["--help"])
-            self.assertEqual(expected, result.output)
-            self.assertEqual(0, result.exit_code)
+            self.assertEqual(result.output, expected)
+            self.assertEqual(result.exit_code, 0)
 
         def test_help_on_install(self):
-            expected = "\n".join(
-                [
-                    "Usage: pysr install [OPTIONS]",
-                    "",
-                    "  Install Julia dependencies for PySR.",
-                    "",
-                    "Options:",
-                    "  -p, --project PROJECT_DIRECTORY",
-                    "                                  Install in a specific Julia project (e.g., a",
-                    "                                  local copy of SymbolicRegression.jl).",
-                    "  -q, --quiet                     Disable logging.",
-                    "  --precompile                    Force precompilation of Julia libraries.",
-                    "  --no-precompile                 Disable precompilation.",
-                    "  --help                          Show this message and exit.",
-                    "",
-                ]
+            expected = dedent(
+                """
+                Usage: pysr install [OPTIONS]
+
+                DEPRECATED (dependencies are now installed at import).
+
+                Options:
+                -p, --project TEXT
+                -q, --quiet         Disable logging.
+                --precompile
+                --no-precompile
+                --help              Show this message and exit.
+                """
             )
             result = self.cli_runner.invoke(pysr, ["install", "--help"])
-            self.assertEqual(expected, result.output)
-            self.assertEqual(0, result.exit_code)
+            self.assertEqual(result.output, expected)
+            self.assertEqual(result.exit_code, 0)
+
+        def test_help_on_test(self):
+            expected = dedent(
+                """
+                Usage: pysr test [OPTIONS] TESTS
+
+                Run parts of the PySR test suite.
+
+                Choose from main, jax, torch, cli, and warm_start. You can give multiple
+                tests, separated by commas.
+
+                Options:
+                --help  Show this message and exit.
+                """
+            )
+            result = self.cli_runner.invoke(pysr, ["test", "--help"])
+            self.assertEqual(result.output, expected)
+            self.assertEqual(result.exit_code, 0)
 
     def runtests():
         """Run all tests in cliTest.py."""

@@ -40,4 +40,4 @@ jobs:
         run: conda activate pysr-test && conda install pysr
         if: ${{ !matrix.use-mamba }}
       - name: "Run tests"
-        run: python -m pysr test main
+        run: python -m pysr test main,warm-start
