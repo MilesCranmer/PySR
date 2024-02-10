@@ -31,18 +31,25 @@ else:
     ):
         os.environ[k] = os.environ.get(k, default)
 
-try:
-    get_ipython = sys.modules["IPython"].get_ipython
+if os.environ.get("PYSR_AUTOLOAD_EXTENSIONS", "yes") in {"yes", ""}:
+    try:
+        get_ipython = sys.modules["IPython"].get_ipython
 
-    if "IPKernelApp" not in get_ipython().config:
-        raise ImportError("console")
+        if "IPKernelApp" not in get_ipython().config:
+            raise ImportError("console")
 
-    print("Detected Jupyter notebook. Loading juliacall extension.")
+        print(
+            "Detected Jupyter notebook. Loading juliacall extension. Set `PYSR_AUTOLOAD_EXTENSIONS=no` to disable."
+        )
 
-    # TODO: Turn this off if juliacall does this automatically
-    get_ipython().run_line_magic("load_ext", "juliacall")
-except Exception:
-    pass
+        # TODO: Turn this off if juliacall does this automatically
+        get_ipython().run_line_magic("load_ext", "juliacall")
+    except Exception:
+        pass
+elif os.environ["PYSR_AUTOLOAD_EXTENSIONS"] not in {"no", "yes", ""}:
+    warnings.warn(
+        "PYSR_AUTOLOAD_EXTENSIONS environment variable is set to something other than 'yes' or 'no' or ''."
+    )
 
 
 from juliacall import Main as jl  # type: ignore
