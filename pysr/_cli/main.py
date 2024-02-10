@@ -55,17 +55,16 @@ def _tests(tests):
     Choose from main, jax, torch, cli, and warm-start. You can give multiple tests, separated by commas.
     """
     for test in tests.split(","):
-        if test in TEST_OPTIONS:
-            if test == "main":
-                runtests()
-            elif test == "jax":
-                runtests_jax()
-            elif test == "torch":
-                runtests_torch()
-            elif test == "cli":
-                runtests_cli = get_runtests_cli()
-                runtests_cli()
-            elif test == "warm-start":
-                runtests_warm_start()
+        if test == "main":
+            runtests()
+        elif test == "jax":
+            runtests_jax()
+        elif test == "torch":
+            runtests_torch()
+        elif test == "cli":
+            runtests_cli = get_runtests_cli()
+            runtests_cli()
+        elif test == "warm-start":
+            runtests_warm_start()
         else:
             warnings.warn(f"Invalid test {test}. Skipping.")
