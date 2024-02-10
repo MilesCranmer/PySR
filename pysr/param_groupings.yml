@@ -89,7 +89,6 @@
   - tempdir
   - delete_tempfiles
   - update
-  - julia_kwargs
 - Exporting the Results:
   - equation_file
   - output_jax_format

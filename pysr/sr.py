@@ -605,6 +605,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     raw_julia_state_stream_ : ndarray
         The serialized state for the julia SymbolicRegression.jl backend (after fitting),
         stored as an array of uint8, produced by Julia's Serialization.serialize function.
+    julia_state_ : ndarray
+        The deserialized state.
     equation_file_contents_ : list[pandas.DataFrame]
         Contents of the equation file output by the Julia backend.
     show_pickle_warnings_ : bool
@@ -1131,7 +1133,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             "for the raw stream of bytes.",
             FutureWarning,
         )
-        return self.julia_state
+        return self.julia_state_
 
     def get_best(self, index=None):
         """
@@ -1735,7 +1737,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             options=options,
             numprocs=cprocs,
             parallelism=parallelism,
-            saved_state=self.julia_state,
+            saved_state=self.julia_state_,
             return_state=True,
             addprocs_function=cluster_manager,
             heap_size_hint_in_bytes=self.heap_size_hint_in_bytes,
