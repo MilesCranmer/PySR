@@ -214,7 +214,7 @@ model = PySRRegressor(
     ],
     extra_sympy_mappings={"inv": lambda x: 1 / x},
     # ^ Define operator for SymPy as well
-    loss="loss(prediction, target) = (prediction - target)^2",
+    elementwise_loss="loss(prediction, target) = (prediction - target)^2",
     # ^ Custom loss function (julia syntax)
 )
 ```

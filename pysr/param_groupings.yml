@@ -10,8 +10,8 @@
     - population_size
     - ncycles_per_iteration
   - The Objective:
-    - loss
-    - full_objective
+    - elementwise_loss
+    - loss_function
     - model_selection
     - dimensional_constraint_penalty
   - Working with Complexities:

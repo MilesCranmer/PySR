@@ -1,9 +1,9 @@
 """Functions for initializing the Julia environment and installing deps."""
-import warnings
 
 import numpy as np
 from juliacall import convert as jl_convert  # type: ignore
 
+from .deprecated import init_julia, install
 from .julia_import import jl
 
 jl.seval("using Serialization: Serialization")
@@ -13,14 +13,6 @@ Serialization = jl.Serialization
 PythonCall = jl.PythonCall
 
 jl.seval("using SymbolicRegression: plus, sub, mult, div, pow")
-
-
-def install(*args, **kwargs):
-    del args, kwargs
-    warnings.warn(
-        "The `install` function has been removed. "
-        "PySR now uses the `juliacall` package to install its dependencies automatically at import time. "
-    )
 
 
 def _escape_filename(filename):

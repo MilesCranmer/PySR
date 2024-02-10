@@ -80,7 +80,7 @@ class TestPipeline(unittest.TestCase):
             multithreading=False,
             turbo=True,
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-10 && complexity == 1",
-            full_objective="""
+            loss_function="""
             function my_objective(tree::Node{T}, dataset::Dataset{T}, options::Options) where T
                 prediction, flag = eval_tree_array(tree, dataset.X, options)
                 !flag && return T(Inf)
@@ -100,7 +100,7 @@ class TestPipeline(unittest.TestCase):
         model = PySRRegressor(
             **self.default_test_kwargs,
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 3",
-            loss="my_loss(prediction, target) = (prediction - target)^2",
+            elementwise_loss="my_loss(prediction, target) = (prediction - target)^2",
             precision=64,
             parsimony=0.01,
             warm_start=True,

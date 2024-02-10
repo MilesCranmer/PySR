@@ -243,7 +243,7 @@ train the parameters within JAX (and is differentiable).
 
 The default loss is mean-square error, and weighted mean-square error.
 One can pass an arbitrary Julia string to define a custom loss, using,
-e.g., `loss="myloss(x, y) = abs(x - y)^1.5"`. For more details,
+e.g., `elementwise_loss="myloss(x, y) = abs(x - y)^1.5"`. For more details,
 see the
 [Losses](https://milescranmer.github.io/SymbolicRegression.jl/dev/losses/)
 page for SymbolicRegression.jl.
@@ -253,26 +253,26 @@ Here are some additional examples:
 abs(x-y) loss
 
 ```python
-PySRRegressor(..., loss="f(x, y) = abs(x - y)^1.5")
+PySRRegressor(..., elementwise_loss="f(x, y) = abs(x - y)^1.5")
 ```
 
 Note that the function name doesn't matter:
 
 ```python
-PySRRegressor(..., loss="loss(x, y) = abs(x * y)")
+PySRRegressor(..., elementwise_loss="loss(x, y) = abs(x * y)")
 ```
 
 With weights:
 
 ```python
-model = PySRRegressor(..., loss="myloss(x, y, w) = w * abs(x - y)")
+model = PySRRegressor(..., elementwise_loss="myloss(x, y, w) = w * abs(x - y)")
 model.fit(..., weights=weights)
 ```
 
 Weights can be used in arbitrary ways:
 
 ```python
-model = PySRRegressor(..., weights=weights, loss="myloss(x, y, w) = abs(x - y)^2/w^2")
+model = PySRRegressor(..., weights=weights, elementwise_loss="myloss(x, y, w) = abs(x - y)^2/w^2")
 model.fit(..., weights=weights)
 ```
 
@@ -280,13 +280,13 @@ Built-in loss (faster) (see [losses](https://astroautomata.com/SymbolicRegressio
 This one computes the L3 norm:
 
 ```python
-PySRRegressor(..., loss="LPDistLoss{3}()")
+PySRRegressor(..., elementwise_loss="LPDistLoss{3}()")
 ```
 
 Can also uses these losses for weighted (weighted-average):
 
 ```python
-model = PySRRegressor(..., weights=weights, loss="LPDistLoss{3}()")
+model = PySRRegressor(..., weights=weights, elementwise_loss="LPDistLoss{3}()")
 model.fit(..., weights=weights)
 ```
 

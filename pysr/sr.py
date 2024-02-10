@@ -25,7 +25,7 @@ from sklearn.utils import check_array, check_consistent_length, check_random_sta
 from sklearn.utils.validation import _check_feature_names_in, check_is_fitted
 
 from .denoising import denoise, multi_denoise
-from .deprecated import make_deprecated_kwargs_for_pysr_regressor
+from .deprecated import DEPRECATED_KWARGS
 from .export_jax import sympy2jax
 from .export_latex import sympy2latex, sympy2latextable, sympy2multilatextable
 from .export_numpy import sympy2numpy
@@ -268,7 +268,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         arguments are treated the same way, and the max of each
         argument is constrained.
         Default is `None`.
-    loss : str
+    elementwise_loss : str
         String of Julia code specifying an elementwise loss function.
         Can either be a loss from LossFunctions.jl, or your own loss
         written as a function. Examples of custom written losses include:
@@ -284,11 +284,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         `ModifiedHuberLoss()`, `L2MarginLoss()`, `ExpLoss()`,
         `SigmoidLoss()`, `DWDMarginLoss(q)`.
         Default is `"L2DistLoss()"`.
-    full_objective : str
+    loss_function : str
         Alternatively, you can specify the full objective function as
         a snippet of Julia code, including any sort of custom evaluation
         (including symbolic manipulations beforehand), and any sort
-        of loss function or regularizations. The default `full_objective`
+        of loss function or regularizations. The default `loss_function`
         used in SymbolicRegression.jl is roughly equal to:
         ```julia
         function eval_loss(tree, dataset::Dataset{T,L}, options)::L where {T,L}
@@ -637,7 +637,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     ...         "inv(x) = 1/x",  # Custom operator (julia syntax)
     ...     ],
     ...     model_selection="best",
-    ...     loss="loss(x, y) = (x - y)^2",  # Custom loss function (julia syntax)
+    ...     elementwise_loss="loss(x, y) = (x - y)^2",  # Custom loss function (julia syntax)
     ... )
     >>> model.fit(X, y)
     >>> model
@@ -675,8 +675,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         timeout_in_seconds: Optional[float] = None,
         constraints: Optional[Dict[str, Union[int, Tuple[int, int]]]] = None,
         nested_constraints: Optional[Dict[str, Dict[str, int]]] = None,
-        loss: Optional[str] = None,
-        full_objective: Optional[str] = None,
+        elementwise_loss: Optional[str] = None,
+        loss_function: Optional[str] = None,
         complexity_of_operators: Optional[Dict[str, Union[int, float]]] = None,
         complexity_of_constants: Union[int, float] = 1,
         complexity_of_variables: Union[int, float] = 1,
@@ -769,8 +769,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.timeout_in_seconds = timeout_in_seconds
         self.early_stop_condition = early_stop_condition
         # - Loss parameters
-        self.loss = loss
-        self.full_objective = full_objective
+        self.elementwise_loss = elementwise_loss
+        self.loss_function = loss_function
         self.complexity_of_operators = complexity_of_operators
         self.complexity_of_constants = complexity_of_constants
         self.complexity_of_variables = complexity_of_variables
@@ -849,11 +849,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # Once all valid parameters have been assigned handle the
         # deprecated kwargs
         if len(kwargs) > 0:  # pragma: no cover
-            deprecated_kwargs = make_deprecated_kwargs_for_pysr_regressor()
             for k, v in kwargs.items():
                 # Handle renamed kwargs
-                if k in deprecated_kwargs:
-                    updated_kwarg_name = deprecated_kwargs[k]
+                if k in DEPRECATED_KWARGS:
+                    updated_kwarg_name = DEPRECATED_KWARGS[k]
                     setattr(self, updated_kwarg_name, v)
                     warnings.warn(
                         f"{k} has been renamed to {updated_kwarg_name} in PySRRegressor. "
@@ -1251,8 +1250,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 "to True and `procs` to 0 will result in non-deterministic searches. "
             )
 
-        if self.loss is not None and self.full_objective is not None:
-            raise ValueError("You cannot set both `loss` and `full_objective`.")
+        if self.elementwise_loss is not None and self.loss_function is not None:
+            raise ValueError(
+                "You cannot set both `elementwise_loss` and `loss_function`."
+            )
 
         # NotImplementedError - Values that could be supported at a later time
         if self.optimizer_algorithm not in VALID_OPTIMIZER_ALGORITHMS:
@@ -1587,9 +1588,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             complexity_of_operators_str += ")"
             complexity_of_operators = jl.seval(complexity_of_operators_str)
 
-        custom_loss = jl.seval(str(self.loss) if self.loss is not None else "nothing")
+        custom_loss = jl.seval(
+            str(self.elementwise_loss)
+            if self.elementwise_loss is not None
+            else "nothing"
+        )
         custom_full_objective = jl.seval(
-            str(self.full_objective) if self.full_objective is not None else "nothing"
+            str(self.loss_function) if self.loss_function is not None else "nothing"
         )
 
         early_stop_condition = jl.seval(

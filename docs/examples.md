@@ -144,7 +144,7 @@ but there are still some additional steps you can take to reduce the effect of n
 
 One thing you could do, which we won't detail here, is to create a custom log-likelihood
 given some assumed noise model. By passing weights to the fit function, and
-defining a custom loss function such as `loss="myloss(x, y, w) = w * (x - y)^2"`,
+defining a custom loss function such as `elementwise_loss="myloss(x, y, w) = w * (x - y)^2"`,
 you can define any sort of log-likelihood you wish. (However, note that it must be bounded at zero)
 
 However, the simplest thing to do is preprocessing, just like for feature selection. To do this,
@@ -380,7 +380,7 @@ end
 model = PySRRegressor(
     niterations=100,
     binary_operators=["*", "+", "-"],
-    full_objective=objective,
+    loss_function=objective,
 )
 ```
 
@@ -462,7 +462,7 @@ let's also create a custom loss function
 that looks at the error in log-space:
 
 ```python
-loss = """function loss_fnc(prediction, target)
+elementwise_loss = """function loss_fnc(prediction, target)
     scatter_loss = abs(log((abs(prediction)+1e-20) / (abs(target)+1e-20)))
     sign_loss = 10 * (sign(prediction) - sign(target))^2
     return scatter_loss + sign_loss
@@ -476,7 +476,7 @@ Now let's define our model:
 model = PySRRegressor(
     binary_operators=["+", "-", "*", "/"],
     unary_operators=["square"],
-    loss=loss,
+    elementwise_loss=elementwise_loss,
     complexity_of_constants=2,
     maxsize=25,
     niterations=100,
