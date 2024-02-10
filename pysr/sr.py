@@ -354,7 +354,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         takes a loss and complexity as input, for example:
         `"f(loss, complexity) = (loss < 0.1) && (complexity < 10)"`.
         Default is `None`.
-    ncyclesperiteration : int
+    ncycles_per_iteration : int
         Number of total mutations to run, per 10 samples of the
         population, per iteration.
         Default is `550`.
@@ -398,7 +398,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Constant optimization can also be performed as a mutation, in addition to
         the normal strategy controlled by `optimize_probability` which happens
         every iteration. Using it as a mutation is useful if you want to use
-        a large `ncyclesperiteration`, and may not optimize very often.
+        a large `ncycles_periteration`, and may not optimize very often.
         Default is `0.0`.
     crossover_probability : float
         Absolute probability of crossover-type genetic operation, instead of a mutation.
@@ -688,7 +688,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         alpha: float = 0.1,
         annealing: bool = False,
         early_stop_condition: Optional[Union[float, str]] = None,
-        ncyclesperiteration: int = 550,
+        ncycles_per_iteration: int = 550,
         fraction_replaced: float = 0.000364,
         fraction_replaced_hof: float = 0.035,
         weight_add_node: float = 0.79,
@@ -756,7 +756,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.niterations = niterations
         self.populations = populations
         self.population_size = population_size
-        self.ncyclesperiteration = ncyclesperiteration
+        self.ncycles_per_iteration = ncycles_per_iteration
         # - Equation Constraints
         self.maxsize = maxsize
         self.maxdepth = maxdepth
@@ -1652,7 +1652,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             use_frequency_in_tournament=self.use_frequency_in_tournament,
             adaptive_parsimony_scaling=self.adaptive_parsimony_scaling,
             npop=self.population_size,
-            ncycles_per_iteration=self.ncyclesperiteration,
+            ncycles_per_iteration=self.ncycles_per_iteration,
             fraction_replaced=self.fraction_replaced,
             topn=self.topn,
             print_precision=self.print_precision,

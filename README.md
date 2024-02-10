@@ -297,7 +297,7 @@ model = PySRRegressor(
     # ^ 2 populations per core, so one is always running.
     population_size=50,
     # ^ Slightly larger populations, for greater diversity.
-    ncyclesperiteration=500,
+    ncycles_per_iteration=500,
     # ^ Generations between migrations.
     niterations=10000000,  # Run forever
     early_stop_condition=(

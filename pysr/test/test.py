@@ -224,7 +224,7 @@ class TestPipeline(unittest.TestCase):
         # Test if repeated fit works:
         regressor.set_params(
             niterations=1,
-            ncyclesperiteration=2,
+            ncycles_per_iteration=2,
             warm_start=True,
             early_stop_condition=None,
         )
@@ -661,7 +661,7 @@ class TestMiscellaneous(unittest.TestCase):
         model = PySRRegressor(
             niterations=int(1 + DEFAULT_NITERATIONS / 10),
             populations=int(1 + DEFAULT_POPULATIONS / 3),
-            ncyclesperiteration=int(2 + DEFAULT_NCYCLES / 10),
+            ncycles_per_iteration=int(2 + DEFAULT_NCYCLES / 10),
             verbosity=0,
             progress=False,
             random_state=0,

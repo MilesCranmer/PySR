@@ -79,6 +79,7 @@ def make_deprecated_kwargs_for_pysr_regressor():
         warmupMaxsizeBy => warmup_maxsize_by
         useFrequency => use_frequency
         useFrequencyInTournament => use_frequency_in_tournament
+        ncyclesperiteration => ncycles_per_iteration
     """
     # Turn this into a dict:
     deprecated_kwargs = {}

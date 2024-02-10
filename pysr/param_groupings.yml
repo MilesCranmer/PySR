@@ -8,7 +8,7 @@
     - niterations
     - populations
     - population_size
-    - ncyclesperiteration
+    - ncycles_per_iteration
   - The Objective:
     - loss
     - full_objective

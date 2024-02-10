@@ -78,7 +78,7 @@ class TestWarmStart(unittest.TestCase):
                         model.warm_start = True
                         model.niterations = 0
                         model.max_evals = 0
-                        model.ncyclesperiteration = 0
+                        model.ncycles_per_iteration = 0
 
                         model.fit(X, y)
 
