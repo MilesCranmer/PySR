@@ -56,7 +56,7 @@ jobs:
             python -c 'import pysr'
       - name: "Run tests"
         run: |
-            python -m pysr test main,cli,warm-start
+            python -m pysr test main,cli,startup
       - name: "Install JAX"
         run: pip install jax jaxlib # (optional import)
       - name: "Run JAX tests"

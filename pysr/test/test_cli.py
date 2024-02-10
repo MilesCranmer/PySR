@@ -57,7 +57,7 @@ def get_runtests():
 
                   Run parts of the PySR test suite.
 
-                  Choose from main, jax, torch, cli, and warm-start. You can give multiple
+                  Choose from main, jax, torch, cli, and startup. You can give multiple
                   tests, separated by commas.
 
                 Options:

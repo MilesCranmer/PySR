@@ -47,4 +47,4 @@ jobs:
         run: python3 -c "from pysr import jl; assert jl.VERSION.major == jl.seval('v\"${{ matrix.julia-version }}\"').major; assert jl.VERSION.minor == jl.seval('v\"${{ matrix.julia-version }}\"').minor"
       - name: "Run tests"
         run: |
-            python -m pysr test main,cli,warm-start
+            python -m pysr test main,cli,startup

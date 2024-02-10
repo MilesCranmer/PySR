@@ -638,6 +638,50 @@ class TestMiscellaneous(unittest.TestCase):
             model.fit(X, y, variable_names=["f{c}"])
         self.assertIn("Invalid variable name", str(cm.exception))
 
+    def test_bad_kwargs(self):
+        bad_kwargs = [
+            dict(
+                kwargs=dict(
+                    elementwise_loss="g(x, y) = 0.0", loss_function="f(*args) = 0.0"
+                ),
+                error=ValueError,
+            ),
+            dict(
+                kwargs=dict(maxsize=3),
+                error=ValueError,
+            ),
+            dict(
+                kwargs=dict(tournament_selection_n=10, population_size=3),
+                error=ValueError,
+            ),
+            dict(
+                kwargs=dict(optimizer_algorithm="COBYLA"),
+                error=NotImplementedError,
+            ),
+            dict(
+                kwargs=dict(
+                    constraints={
+                        "+": (3, 5),
+                    }
+                ),
+                error=NotImplementedError,
+            ),
+            dict(
+                kwargs=dict(binary_operators=["α(x, y) = x - y"]),
+                error=ValueError,
+            ),
+            dict(
+                kwargs=dict(model_selection="unknown"),
+                error=NotImplementedError,
+            ),
+        ]
+        for opt in bad_kwargs:
+            model = PySRRegressor(**opt["kwargs"], niterations=1)
+            with self.assertRaises(opt["error"]):
+                model.fit([[1]], [1])
+                model.get_best()
+                print("Failed", opt["kwargs"])
+
     def test_pickle_with_temp_equation_file(self):
         """If we have a temporary equation file, unpickle the estimator."""
         model = PySRRegressor(

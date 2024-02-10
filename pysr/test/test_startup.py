@@ -10,7 +10,9 @@ from .. import PySRRegressor
 from .params import DEFAULT_NITERATIONS, DEFAULT_POPULATIONS
 
 
-class TestWarmStart(unittest.TestCase):
+class TestStartup(unittest.TestCase):
+    """Various tests related to starting up PySR."""
+
     def setUp(self):
         # Using inspect,
         # get default niterations from PySRRegressor, and double them:
@@ -94,10 +96,37 @@ class TestWarmStart(unittest.TestCase):
             self.assertIn("Loading model from file", result.stdout.decode())
             self.assertIn("Started!", result.stderr.decode())
 
+    def test_bad_startup_options(self):
+        warning_tests = [
+            dict(
+                code='import os; os.environ["PYTHON_JULIACALL_HANDLE_SIGNALS"] = "no"; import pysr',
+                msg="PYTHON_JULIACALL_HANDLE_SIGNALS environment variable is set",
+            ),
+            dict(
+                code='import os; os.environ["JULIA_NUM_THREADS"] = "1"; import pysr',
+                msg="JULIA_NUM_THREADS environment variable is set",
+            ),
+            dict(
+                code="import juliacall; import pysr",
+                msg="juliacall module already imported.",
+            ),
+            dict(
+                code='import os; os.environ["PYSR_AUTOLOAD_EXTENSIONS"] = "foo"; import pysr',
+                msg="PYSR_AUTOLOAD_EXTENSIONS environment variable is set",
+            ),
+        ]
+        for warning_test in warning_tests:
+            result = subprocess.run(
+                ["python", "-c", warning_test["code"]],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            self.assertIn(warning_test["msg"], result.stderr.decode())
+
 
 def runtests():
     suite = unittest.TestSuite()
     loader = unittest.TestLoader()
-    suite.addTests(loader.loadTestsFromTestCase(TestWarmStart))
+    suite.addTests(loader.loadTestsFromTestCase(TestStartup))
     runner = unittest.TextTestRunner()
     return runner.run(suite)

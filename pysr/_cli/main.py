@@ -6,8 +6,8 @@ from ..test import (
     get_runtests_cli,
     runtests,
     runtests_jax,
+    runtests_startup,
     runtests_torch,
-    runtests_warm_start,
 )
 
 
@@ -44,7 +44,7 @@ def _install(julia_project, quiet, precompile):
     )
 
 
-TEST_OPTIONS = {"main", "jax", "torch", "cli", "warm-start"}
+TEST_OPTIONS = {"main", "jax", "torch", "cli", "startup"}
 
 
 @pysr.command("test")
@@ -52,7 +52,7 @@ TEST_OPTIONS = {"main", "jax", "torch", "cli", "warm-start"}
 def _tests(tests):
     """Run parts of the PySR test suite.
 
-    Choose from main, jax, torch, cli, and warm-start. You can give multiple tests, separated by commas.
+    Choose from main, jax, torch, cli, and startup. You can give multiple tests, separated by commas.
     """
     for test in tests.split(","):
         if test == "main":
@@ -64,7 +64,7 @@ def _tests(tests):
         elif test == "cli":
             runtests_cli = get_runtests_cli()
             runtests_cli()
-        elif test == "warm-start":
-            runtests_warm_start()
+        elif test == "startup":
+            runtests_startup()
         else:
             warnings.warn(f"Invalid test {test}. Skipping.")

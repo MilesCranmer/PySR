@@ -71,7 +71,7 @@ jobs:
         run: pip install coverage coveralls
       - name: "Run tests"
         run: |
-            coverage run --source=pysr --omit='*/test/*' -m pysr test main,cli,warm-start
+            coverage run --source=pysr --omit='*/test/*' -m pysr test main,cli,startup
       - name: "Install JAX"
         run: pip install jax jaxlib # (optional import)
         if: ${{ matrix.test-id == 'main' }}
