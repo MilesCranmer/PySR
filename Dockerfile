@@ -26,7 +26,7 @@ RUN pip3 install --no-cache-dir -r /pysr/requirements.txt
 ADD ./pyproject.toml /pysr/pyproject.toml
 ADD ./setup.py /pysr/setup.py
 ADD ./pysr /pysr/pysr
-RUN pip3 install --no-cache-dir -e .
+RUN pip3 install --no-cache-dir .
 
 # Install Julia pre-requisites:
 RUN python3 -c 'import pysr'
