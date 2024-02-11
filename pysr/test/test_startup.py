@@ -135,6 +135,8 @@ class TestStartup(unittest.TestCase):
                 "pytest",
                 "--nbval",
                 str(Path(__file__).parent / "test_nb.ipynb"),
+                "--nbval-sanitize-with",
+                str(Path(__file__).parent / "nb_sanitize.cfg"),
             ],
             env=os.environ,
         )
