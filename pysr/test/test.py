@@ -125,8 +125,8 @@ class TestPipeline(unittest.TestCase):
         model.fit(self.X, y)
 
         # We should have that the model state is now a Float64 hof:
-        jl.test_state = model.raw_julia_state_
-        self.assertTrue(jl.seval("typeof(test_state[2]).parameters[1] == Float64"))
+        test_state = model.raw_julia_state_
+        self.assertTrue(jl.typeof(test_state[1]).parameters[1] == jl.Float64)
 
         # Test options stored:
         self.assertEqual(model.julia_options_.turbo, False)
