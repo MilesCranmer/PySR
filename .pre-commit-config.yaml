@@ -13,11 +13,13 @@ repos:
     hooks:
       - id: black
       - id: black-jupyter
+        exclude: pysr/test/test_nb.ipynb
   # Stripping notebooks
   - repo: https://github.com/kynan/nbstripout
     rev: 0.6.1
     hooks:
       - id: nbstripout
+        exclude: pysr/test/test_nb.ipynb
   # Unused imports
   - repo: https://github.com/hadialqattan/pycln
     rev: "v2.4.0"

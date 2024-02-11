@@ -69,8 +69,8 @@ jobs:
       - name: "Assert Julia version"
         if: ${{ matrix.julia-version != '1'}}
         run: python3 -c "from pysr import jl; assert jl.VERSION.major == jl.seval('v\"${{ matrix.julia-version }}\"').major; assert jl.VERSION.minor == jl.seval('v\"${{ matrix.julia-version }}\"').minor"
-      - name: "Install Coverage tool"
-        run: pip install coverage coveralls
+      - name: "Install test dependencies"
+        run: pip install coverage coveralls pytest nbval
       - name: "Set up coverage for subprocesses"
         run: echo 'import coverage; coverage.process_startup()' > "${{ github.workspace }}/sitecustomize.py"
       - name: "Run tests"

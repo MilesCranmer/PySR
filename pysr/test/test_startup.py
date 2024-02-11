@@ -127,6 +127,19 @@ class TestStartup(unittest.TestCase):
             )
             self.assertIn(warning_test["msg"], result.stderr.decode())
 
+    def test_notebook(self):
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "pytest",
+                "--nbval",
+                str(Path(__file__).parent / "test_nb.ipynb"),
+            ],
+            env=os.environ,
+        )
+        self.assertEqual(result.returncode, 0)
+
 
 def runtests():
     suite = unittest.TestSuite()
