@@ -184,10 +184,14 @@ class TestTorch(unittest.TestCase):
         np.testing.assert_almost_equal(y.values, torch_output, decimal=3)
 
 
-def runtests():
+def runtests(just_tests=False):
     """Run all tests in test_torch.py."""
+    tests = [TestTorch]
+    if just_tests:
+        return tests
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()
-    suite.addTests(loader.loadTestsFromTestCase(TestTorch))
+    for test in tests:
+        suite.addTests(loader.loadTestsFromTestCase(test))
     runner = unittest.TextTestRunner()
     return runner.run(suite)

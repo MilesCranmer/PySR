@@ -68,11 +68,15 @@ def get_runtests():
             self.assertEqual(result.output.strip(), expected.strip())
             self.assertEqual(result.exit_code, 0)
 
-    def runtests():
+    def runtests(just_tests=False):
         """Run all tests in cliTest.py."""
+        tests = [TestCli]
+        if just_tests:
+            return tests
         loader = unittest.TestLoader()
         suite = unittest.TestSuite()
-        suite.addTests(loader.loadTestsFromTestCase(TestCli))
+        for test in tests:
+            suite.addTests(loader.loadTestsFromTestCase(test))
         runner = unittest.TextTestRunner()
         return runner.run(suite)
 

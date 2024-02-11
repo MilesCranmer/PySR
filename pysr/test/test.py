@@ -1127,10 +1127,8 @@ class TestDimensionalConstraints(unittest.TestCase):
 # TODO: Determine desired behavior if second .fit() call does not have units
 
 
-def runtests():
+def runtests(just_tests=False):
     """Run all tests in test.py."""
-    suite = unittest.TestSuite()
-    loader = unittest.TestLoader()
     test_cases = [
         TestPipeline,
         TestBest,
@@ -1139,8 +1137,11 @@ def runtests():
         TestLaTeXTable,
         TestDimensionalConstraints,
     ]
+    if just_tests:
+        return test_cases
+    suite = unittest.TestSuite()
+    loader = unittest.TestLoader()
     for test_case in test_cases:
-        tests = loader.loadTestsFromTestCase(test_case)
-        suite.addTests(tests)
+        suite.addTests(loader.loadTestsFromTestCase(test_case))
     runner = unittest.TextTestRunner()
     return runner.run(suite)

@@ -121,10 +121,14 @@ class TestJAX(unittest.TestCase):
         np.testing.assert_almost_equal(y.values, jax_output, decimal=3)
 
 
-def runtests():
+def runtests(just_tests=False):
     """Run all tests in test_jax.py."""
+    tests = [TestJAX]
+    if just_tests:
+        return tests
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()
-    suite.addTests(loader.loadTestsFromTestCase(TestJAX))
+    for test in tests:
+        suite.addTests(loader.loadTestsFromTestCase(test))
     runner = unittest.TextTestRunner()
     return runner.run(suite)

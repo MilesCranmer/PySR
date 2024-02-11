@@ -47,9 +47,13 @@ class TestDev(unittest.TestCase):
         self.assertEqual(test_result.stdout.decode("utf-8").strip(), "2.3")
 
 
-def runtests():
+def runtests(just_tests=False):
+    tests = [TestDev]
+    if just_tests:
+        return tests
     suite = unittest.TestSuite()
     loader = unittest.TestLoader()
-    suite.addTests(loader.loadTestsFromTestCase(TestDev))
+    for test in tests:
+        suite.addTests(loader.loadTestsFromTestCase(test))
     runner = unittest.TextTestRunner()
     return runner.run(suite)

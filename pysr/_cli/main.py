@@ -1,3 +1,4 @@
+import unittest
 import warnings
 
 import click
@@ -55,19 +56,27 @@ def _tests(tests):
 
     Choose from main, jax, torch, cli, dev, and startup. You can give multiple tests, separated by commas.
     """
+    test_cases = []
     for test in tests.split(","):
         if test == "main":
-            runtests()
+            test_cases.extend(runtests(just_tests=True))
         elif test == "jax":
-            runtests_jax()
+            test_cases.extend(runtests_jax(just_tests=True))
         elif test == "torch":
-            runtests_torch()
+            test_cases.extend(runtests_torch(just_tests=True))
         elif test == "cli":
             runtests_cli = get_runtests_cli()
-            runtests_cli()
+            test_cases.extend(runtests_cli(just_tests=True))
         elif test == "dev":
-            runtests_dev()
+            test_cases.extend(runtests_dev(just_tests=True))
         elif test == "startup":
-            runtests_startup()
+            test_cases.extend(runtests_startup(just_tests=True))
         else:
             warnings.warn(f"Invalid test {test}. Skipping.")
+
+    loader = unittest.TestLoader()
+    suite = unittest.TestSuite()
+    for test_case in test_cases:
+        suite.addTests(loader.loadTestsFromTestCase(test_case))
+    runner = unittest.TextTestRunner()
+    return runner.run(suite)

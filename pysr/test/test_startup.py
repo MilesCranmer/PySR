@@ -143,9 +143,13 @@ class TestStartup(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
 
 
-def runtests():
+def runtests(just_tests=False):
+    tests = [TestStartup]
+    if just_tests:
+        return tests
     suite = unittest.TestSuite()
     loader = unittest.TestLoader()
-    suite.addTests(loader.loadTestsFromTestCase(TestStartup))
+    for test in tests:
+        suite.addTests(loader.loadTestsFromTestCase(test))
     runner = unittest.TextTestRunner()
     return runner.run(suite)
