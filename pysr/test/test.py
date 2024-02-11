@@ -100,7 +100,7 @@ class TestPipeline(unittest.TestCase):
         self.assertEqual(model.julia_options_.turbo, True)
 
     def test_multiline_seval(self):
-        if jl.seval('VERSION >= v"1.9"'):
+        if jl.seval('VERSION >= v"1.9.0-DEV.0"'):
             # The user should be able to run multiple things in a single seval call:
             num = jl.seval(
                 """
