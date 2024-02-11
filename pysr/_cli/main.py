@@ -5,6 +5,7 @@ import click
 from ..test import (
     get_runtests_cli,
     runtests,
+    runtests_dev,
     runtests_jax,
     runtests_startup,
     runtests_torch,
@@ -44,7 +45,7 @@ def _install(julia_project, quiet, precompile):
     )
 
 
-TEST_OPTIONS = {"main", "jax", "torch", "cli", "startup"}
+TEST_OPTIONS = {"main", "jax", "torch", "cli", "dev", "startup"}
 
 
 @pysr.command("test")
@@ -52,7 +53,7 @@ TEST_OPTIONS = {"main", "jax", "torch", "cli", "startup"}
 def _tests(tests):
     """Run parts of the PySR test suite.
 
-    Choose from main, jax, torch, cli, and startup. You can give multiple tests, separated by commas.
+    Choose from main, jax, torch, cli, dev, and startup. You can give multiple tests, separated by commas.
     """
     for test in tests.split(","):
         if test == "main":
@@ -64,6 +65,8 @@ def _tests(tests):
         elif test == "cli":
             runtests_cli = get_runtests_cli()
             runtests_cli()
+        elif test == "dev":
+            runtests_dev()
         elif test == "startup":
             runtests_startup()
         else:
