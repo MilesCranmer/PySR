@@ -100,17 +100,16 @@ class TestPipeline(unittest.TestCase):
         self.assertEqual(model.julia_options_.turbo, True)
 
     def test_multiline_seval(self):
-        if jl.seval('VERSION >= v"1.9.0-DEV.0"'):
-            # The user should be able to run multiple things in a single seval call:
-            num = jl.seval(
-                """
-                function my_new_objective(x)
-                    x^2
-                end
-                1.5
+        # The user should be able to run multiple things in a single seval call:
+        num = jl.seval(
             """
-            )
-            self.assertEqual(num, 1.5)
+            function my_new_objective(x)
+                x^2
+            end
+            1.5
+        """
+        )
+        self.assertEqual(num, 1.5)
 
     def test_high_precision_search_custom_loss(self):
         y = 1.23456789 * self.X[:, 0]

@@ -58,18 +58,16 @@ elif os.environ["PYSR_AUTOLOAD_EXTENSIONS"] not in {"no", "yes", ""}:
 
 from juliacall import Main as jl  # type: ignore
 
-
 # Finally, overwrite the seval function to use Meta.parseall
 # instead of Meta.parse.
-# TODO: Overwrite this once PythonCall.jl is updated:
-def seval(s: str):
-    return jl.eval(jl.Meta.parseall(s))
-
-
-try:
-    jl.seval = seval
-except:
-    pass
+jl.seval("using PythonCall: PythonCall, Py, pyconvert")
+jl.seval(
+    """function PythonCall.pyjlmodule_seval(self::Module, expr::Py)
+    e = Meta.parseall(strip(pyconvert(String, expr)))
+    Py(Base.eval(self, e))
+end"""
+)
+# ^TODO: Overwrite this once PythonCall.jl is updated:
 
 jl.seval("using SymbolicRegression")
 SymbolicRegression = jl.SymbolicRegression
