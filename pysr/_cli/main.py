@@ -1,3 +1,4 @@
+import sys
 import unittest
 import warnings
 
@@ -79,4 +80,9 @@ def _tests(tests):
     for test_case in test_cases:
         suite.addTests(loader.loadTestsFromTestCase(test_case))
     runner = unittest.TextTestRunner()
-    return runner.run(suite)
+    results = runner.run(suite)
+    # Normally unittest would run this, but here we have
+    # to do it manually to get the exit code.
+
+    if not results.wasSuccessful():
+        sys.exit(1)
