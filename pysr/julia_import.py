@@ -34,8 +34,25 @@ else:
     ):
         os.environ[k] = os.environ.get(k, default)
 
+
+from juliacall import Main as jl  # type: ignore
+
+# Overwrite the seval function to use Meta.parseall
+# instead of Meta.parse.
+jl.seval("using PythonCall: PythonCall, Py, pyconvert")
+jl.seval(
+    """function PythonCall.pyjlmodule_seval(self::Module, expr::Py)
+    e = Meta.parseall(strip(pyconvert(String, expr)))
+    Py(Base.eval(self, e))
+end"""
+)
+# ^TODO: Overwrite this once PythonCall.jl is updated:
+
+jl_version = (jl.VERSION.major, jl.VERSION.minor, jl.VERSION.patch)
+
 # Next, automatically load the juliacall extension if we're in a Jupyter notebook
-if os.environ.get("PYSR_AUTOLOAD_EXTENSIONS", "yes") in {"yes", ""}:
+autoload_extensions = os.environ.get("PYSR_AUTOLOAD_EXTENSIONS", "yes")
+if autoload_extensions in {"yes", ""} and jl_version >= (1, 9, 0):
     try:
         get_ipython = sys.modules["IPython"].get_ipython
 
@@ -50,24 +67,10 @@ if os.environ.get("PYSR_AUTOLOAD_EXTENSIONS", "yes") in {"yes", ""}:
         get_ipython().run_line_magic("load_ext", "juliacall")
     except Exception:
         pass
-elif os.environ["PYSR_AUTOLOAD_EXTENSIONS"] not in {"no", "yes", ""}:
+elif autoload_extensions not in {"no", "yes", ""}:
     warnings.warn(
         "PYSR_AUTOLOAD_EXTENSIONS environment variable is set to something other than 'yes' or 'no' or ''."
     )
-
-
-from juliacall import Main as jl  # type: ignore
-
-# Finally, overwrite the seval function to use Meta.parseall
-# instead of Meta.parse.
-jl.seval("using PythonCall: PythonCall, Py, pyconvert")
-jl.seval(
-    """function PythonCall.pyjlmodule_seval(self::Module, expr::Py)
-    e = Meta.parseall(strip(pyconvert(String, expr)))
-    Py(Base.eval(self, e))
-end"""
-)
-# ^TODO: Overwrite this once PythonCall.jl is updated:
 
 jl.seval("using SymbolicRegression")
 SymbolicRegression = jl.SymbolicRegression
