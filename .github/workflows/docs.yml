@@ -10,6 +10,7 @@ on:
       - 'docs/**'
       - 'setup.py'
       - 'README.md'
+      - 'mkdocs.yml'
   workflow_dispatch:
 
 jobs:
