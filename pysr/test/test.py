@@ -217,6 +217,7 @@ class TestPipeline(unittest.TestCase):
             **self.default_test_kwargs,
             early_stop_condition="(loss, complexity) -> loss <= 1e-4 && complexity <= 6",
         )
+        model.niterations = DEFAULT_NITERATIONS * 10
         model.fit(X, y)
         test_y = model.predict(X)
         self.assertTrue(np.issubdtype(test_y.dtype, np.complexfloating))
