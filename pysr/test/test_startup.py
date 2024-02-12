@@ -1,4 +1,5 @@
 import os
+import platform
 import subprocess
 import sys
 import tempfile
@@ -131,6 +132,8 @@ class TestStartup(unittest.TestCase):
     def test_notebook(self):
         if jl_version < (1, 9, 0):
             self.skipTest("Julia version too old")
+        if platform.system() == "Windows":
+            self.skipTest("Notebook test incompatible with Windows")
         result = subprocess.run(
             [
                 sys.executable,
