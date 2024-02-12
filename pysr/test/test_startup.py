@@ -9,6 +9,7 @@ from pathlib import Path
 import numpy as np
 
 from .. import PySRRegressor
+from ..julia_import import jl_version
 from .params import DEFAULT_NITERATIONS, DEFAULT_POPULATIONS
 
 
@@ -128,6 +129,8 @@ class TestStartup(unittest.TestCase):
             self.assertIn(warning_test["msg"], result.stderr.decode())
 
     def test_notebook(self):
+        if jl_version < (1, 9, 0):
+            self.skipTest("Julia version too old")
         result = subprocess.run(
             [
                 sys.executable,
