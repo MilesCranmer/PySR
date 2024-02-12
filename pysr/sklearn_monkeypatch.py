@@ -9,5 +9,5 @@ def _ensure_no_complex_data(*args, **kwargs):
 
 try:
     validation._ensure_no_complex_data = _ensure_no_complex_data
-except AttributeError:
+except AttributeError:  # pragma: no cover
     ...

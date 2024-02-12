@@ -24,6 +24,8 @@ jobs:
   test:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
+    env:
+      COVERAGE_PROCESS_START: "${{ github.workspace }}/.coveragerc"
     defaults:
       run:
         shell: bash
@@ -36,6 +38,10 @@ jobs:
         include:
           - julia-version: '1.6'
             python-version: '3.7'
+            os: ubuntu-latest
+            test-id: include
+          - julia-version: '1'
+            python-version: '3.12'
             os: ubuntu-latest
             test-id: include
 
@@ -58,29 +64,29 @@ jobs:
       - name: "Install PySR"
         run: |
             python -m pip install --upgrade pip
-            pip install -r requirements.txt
-            python setup.py install
-            python -m pysr install
-      - name: "Install Coverage tool"
-        run: pip install coverage coveralls
+            pip install .
+            python -c 'import pysr'
+      - name: "Assert Julia version"
+        if: ${{ matrix.julia-version != '1'}}
+        run: python3 -c "from pysr import jl; assert jl.VERSION.major == jl.seval('v\"${{ matrix.julia-version }}\"').major; assert jl.VERSION.minor == jl.seval('v\"${{ matrix.julia-version }}\"').minor"
+      - name: "Install test dependencies"
+        run: pip install coverage coveralls pytest nbval
+      - name: "Set up coverage for subprocesses"
+        run: echo 'import coverage; coverage.process_startup()' > "${{ github.workspace }}/sitecustomize.py"
       - name: "Run tests"
-        run: |
-            coverage run --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test main
-            coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test cli
+        run: coverage run -m pysr test main,cli,startup
       - name: "Install JAX"
         run: pip install jax jaxlib # (optional import)
         if: ${{ matrix.test-id == 'main' }}
       - name: "Run JAX tests"
-        run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test jax
+        run: coverage run --append -m pysr test jax
         if: ${{ matrix.test-id == 'main' }}
       - name: "Install Torch"
         run: pip install torch # (optional import)
         if: ${{ matrix.test-id == 'main' }}
       - name: "Run Torch tests"
-        run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test torch
+        run: coverage run --append -m pysr test torch
         if: ${{ matrix.test-id == 'main' }}
-      - name: "Run custom env tests"
-        run: coverage run --append --source=pysr --omit='*/test/*,*/feynman_problems.py' -m pysr.test env
       - name: "Coveralls"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -88,14 +94,26 @@ jobs:
           COVERALLS_PARALLEL: true
         run: coveralls --service=github
 
-  incremental_install:
-    runs-on: ubuntu-latest
+  dev_install:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ['ubuntu-latest']
+        python-version: ['3.11']
+        julia-version: ['1']
+        include:
+          - os: ubuntu-latest
+            python-version: '3.7'
+            julia-version: '1.6'
     steps:
       - uses: actions/checkout@v4
-      - name: "Build incremental install"
-        run: docker build -t pysr -f pysr/test/incremental_install_simulator.dockerfile .
-      - name: "Test incremental install"
-        run: docker run --rm pysr /bin/bash -l -c 'python3 -m pysr.test main && python3 -m pysr.test env'
+      - uses: actions/setup-python@v5
+      - name: "Install PySR"
+        run: |
+            python -m pip install --upgrade pip
+            pip install .
+      - name: "Run development test"
+        run: PYSR_TEST_JULIA_VERSION=${{ matrix.julia-version }} PYSR_TEST_PYTHON_VERSION=${{ matrix.python-version }} python -m pysr test dev
 
   conda_test:
     runs-on: ${{ matrix.os }}
@@ -133,9 +151,9 @@ jobs:
       - name: "Install PySR"
         run: |
             python3 -m pip install .
-            python3 -m pysr install
+            python3 -c 'import pysr'
       - name: "Run tests"
-        run: cd /tmp && python -m pysr.test main
+        run: cd /tmp && python -m pysr test main
 
   coveralls:
     name: Indicate completion to coveralls.io
@@ -177,9 +195,8 @@ jobs:
       - name: "Install PySR and all dependencies"
         run: |
             python -m pip install --upgrade pip
-            python -m pip install -r requirements.txt
-            python -m pip install mypy
-            python -m pip install .
+            pip install .
+            pip install mypy
       - name: "Install additional dependencies"
         run: python -m pip install jax jaxlib torch
         if: ${{ matrix.python-version != '3.7' }}

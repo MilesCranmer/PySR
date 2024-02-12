@@ -144,7 +144,7 @@ but there are still some additional steps you can take to reduce the effect of n
 
 One thing you could do, which we won't detail here, is to create a custom log-likelihood
 given some assumed noise model. By passing weights to the fit function, and
-defining a custom loss function such as `loss="myloss(x, y, w) = w * (x - y)^2"`,
+defining a custom loss function such as `elementwise_loss="myloss(x, y, w) = w * (x - y)^2"`,
 you can define any sort of log-likelihood you wish. (However, note that it must be bounded at zero)
 
 However, the simplest thing to do is preprocessing, just like for feature selection. To do this,
@@ -189,12 +189,10 @@ where $p_i$ is the $i$th prime number, and $x$ is the input feature.
 Let's see if we can discover this using
 the [Primes.jl](https://github.com/JuliaMath/Primes.jl) package.
 
-First, let's manually initialize the Julia backend
-(here, with 8 threads and `-O3`):
+First, let's get the Julia backend:
 
 ```python
-import pysr
-jl = pysr.julia_helpers.init_julia(julia_kwargs={"threads": 8, "optimize": 3})
+from pysr import jl
 ```
 
 `jl` stores the Julia runtime.
@@ -203,7 +201,7 @@ Now, let's run some Julia code to add the Primes.jl
 package to the PySR environment:
 
 ```python
-jl.eval("""
+jl.seval("""
 import Pkg
 Pkg.add("Primes")
 """)
@@ -213,13 +211,13 @@ This imports the Julia package manager, and uses it to install
 `Primes.jl`. Now let's import `Primes.jl`:
 
 ```python
-jl.eval("import Primes")
+jl.seval("import Primes")
 ```
 
 Now, we define a custom operator:
 
 ```python
-jl.eval("""
+jl.seval("""
 function p(i::T) where T
     if (0.5 < i < 1000)
         return T(Primes.prime(round(Int, i)))
@@ -237,7 +235,7 @@ If in-bounds, it rounds it to the nearest integer, compures the corresponding pr
 converts it to the same type as input.
 
 Next, let's generate a list of primes for our test dataset.
-Since we are using PyJulia, we can just call `p` directly to do this:
+Since we are using juliacall, we can just call `p` directly to do this:
 
 ```python
 primes = {i: jl.p(i*1.0) for i in range(1, 999)}
@@ -382,7 +380,7 @@ end
 model = PySRRegressor(
     niterations=100,
     binary_operators=["*", "+", "-"],
-    full_objective=objective,
+    loss_function=objective,
 )
 ```
 
@@ -464,7 +462,7 @@ let's also create a custom loss function
 that looks at the error in log-space:
 
 ```python
-loss = """function loss_fnc(prediction, target)
+elementwise_loss = """function loss_fnc(prediction, target)
     scatter_loss = abs(log((abs(prediction)+1e-20) / (abs(target)+1e-20)))
     sign_loss = 10 * (sign(prediction) - sign(target))^2
     return scatter_loss + sign_loss
@@ -478,7 +476,7 @@ Now let's define our model:
 model = PySRRegressor(
     binary_operators=["+", "-", "*", "/"],
     unary_operators=["square"],
-    loss=loss,
+    elementwise_loss=elementwise_loss,
     complexity_of_constants=2,
     maxsize=25,
     niterations=100,

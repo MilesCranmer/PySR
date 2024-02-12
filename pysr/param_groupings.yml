@@ -8,10 +8,10 @@
     - niterations
     - populations
     - population_size
-    - ncyclesperiteration
+    - ncycles_per_iteration
   - The Objective:
-    - loss
-    - full_objective
+    - elementwise_loss
+    - loss_function
     - model_selection
     - dimensional_constraint_penalty
   - Working with Complexities:
@@ -88,9 +88,7 @@
   - temp_equation_file
   - tempdir
   - delete_tempfiles
-  - julia_project
   - update
-  - julia_kwargs
 - Exporting the Results:
   - equation_file
   - output_jax_format
