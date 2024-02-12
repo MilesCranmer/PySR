@@ -109,6 +109,19 @@
       ]
     },
     {
+      "login": "cjdoris",
+      "name": "Christopher Rowley",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1844215?v=4",
+      "profile": "https://cjdoris.github.io/",
+      "contributions": [
+        "code",
+        "ideas",
+        "infra",
+        "platform",
+        "review"
+      ]
+    },
+    {
       "login": "kazewong",
       "name": "Kaze Wong",
       "avatar_url": "https://avatars.githubusercontent.com/u/8803931?v=4",
@@ -286,6 +299,31 @@
       ]
     },
     {
+      "login": "foxtran",
+      "name": "foxtran",
+      "avatar_url": "https://avatars.githubusercontent.com/u/39676482?v=4",
+      "profile": "https://github.com/foxtran",
+      "contributions": [
+        "code",
+        "ideas",
+        "maintenance",
+        "tool",
+        "userTesting"
+      ]
+    },
+    {
+      "login": "tanweer-mahdi",
+      "name": "Shah Mahdi Hasan ",
+      "avatar_url": "https://avatars.githubusercontent.com/u/36223598?v=4",
+      "profile": "https://smhasan.com/",
+      "contributions": [
+        "bug",
+        "code",
+        "review",
+        "userTesting"
+      ]
+    },
+    {
       "login": "pitmonticone",
       "name": "Pietro Monticone",
       "avatar_url": "https://avatars.githubusercontent.com/u/38562595?v=4",
@@ -415,6 +453,47 @@
         "ideas",
         "promotion",
         "research"
+      ]
+    },
+    {
+      "login": "ZehaoJin",
+      "name": "Zehao Jin",
+      "avatar_url": "https://avatars.githubusercontent.com/u/50961376?v=4",
+      "profile": "https://github.com/ZehaoJin",
+      "contributions": [
+        "research",
+        "promotion"
+      ]
+    },
+    {
+      "login": "tmengel",
+      "name": "Tanner Mengel",
+      "avatar_url": "https://avatars.githubusercontent.com/u/38924390?v=4",
+      "profile": "https://github.com/tmengel",
+      "contributions": [
+        "research",
+        "promotion"
+      ]
+    },
+    {
+      "login": "agrundner24",
+      "name": "Arthur Grundner",
+      "avatar_url": "https://avatars.githubusercontent.com/u/38557656?v=4",
+      "profile": "https://github.com/agrundner24",
+      "contributions": [
+        "research",
+        "promotion"
+      ]
+    },
+    {
+      "login": "sjwetzel",
+      "name": "sjwetzel",
+      "avatar_url": "https://avatars.githubusercontent.com/u/24393721?v=4",
+      "profile": "https://github.com/sjwetzel",
+      "contributions": [
+        "research",
+        "promotion",
+        "userTesting"
       ]
     },
     {
