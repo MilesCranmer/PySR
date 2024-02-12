@@ -32,6 +32,9 @@ class TestStartup(unittest.TestCase):
 
     def test_warm_start_from_file(self):
         """Test that we can warm start in another process."""
+        if platform.system() == "Windows":
+            self.skipTest("Warm start test incompatible with Windows")
+
         with tempfile.TemporaryDirectory() as tmpdirname:
             model = PySRRegressor(
                 **self.default_test_kwargs,
