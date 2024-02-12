@@ -29,7 +29,7 @@ jobs:
       - name: "Install packages for docs building"
         run: pip install -r docs/requirements.txt
       - name: "Install PySR"
-        run: pip install -e .
+        run: pip install . && python -c 'import pysr'
       - name: "Build API docs"
         run: cd docs && ./gen_docs.sh
       - name: "Deploy documentation"
