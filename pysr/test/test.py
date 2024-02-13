@@ -1038,7 +1038,7 @@ class TestDimensionalConstraints(unittest.TestCase):
         valid_units = [
             (np.ones((10, 2)), np.ones(10), ["m/s", "s"], "m"),
             (np.ones((10, 1)), np.ones(10), ["m/s"], None),
-            (np.ones((10, 1)), np.ones(10), None, "m/s"),
+            (np.ones((10, 1)), np.ones(10), None, "km/s"),
             (np.ones((10, 1)), np.ones(10), None, ["m/s"]),
             (np.ones((10, 1)), np.ones((10, 1)), None, ["m/s"]),
             (np.ones((10, 1)), np.ones((10, 2)), None, ["m/s", ""]),
@@ -1053,7 +1053,7 @@ class TestDimensionalConstraints(unittest.TestCase):
             )
         invalid_units = [
             (np.ones((10, 2)), np.ones(10), ["m/s", "s", "s^2"], None),
-            (np.ones((10, 2)), np.ones(10), ["m/s", "s", "s^2"], "m"),
+            (np.ones((10, 2)), np.ones(10), ["m/s", "s", "s^2"], "km"),
             (np.ones((10, 2)), np.ones((10, 2)), ["m/s", "s"], ["m"]),
             (np.ones((10, 1)), np.ones((10, 1)), "m/s", ["m"]),
         ]
