@@ -1736,7 +1736,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             ),
             y_variable_names=jl_y_variable_names,
             X_units=jl_array(self.X_units_),
-            y_units=jl_array(self.y_units_),
+            y_units=jl_array(self.y_units_)
+            if isinstance(self.y_units_, list)
+            else self.y_units_,
             options=options,
             numprocs=cprocs,
             parallelism=parallelism,
