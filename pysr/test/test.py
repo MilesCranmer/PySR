@@ -654,6 +654,19 @@ class TestMiscellaneous(unittest.TestCase):
             model.fit(X, y, variable_names=["f{c}"])
         self.assertIn("Invalid variable name", str(cm.exception))
 
+    def test_python_built_in_python_funcs_as_variable_names(self):
+        model = PySRRegressor()
+        X = np.random.randn(100, 2)
+        y = np.random.randn(100)
+
+        # Should not throw an error
+        try:
+            model.fit(X, y, variable_names=["exec", "hash"])
+        except Exception:
+            self.fail(
+                "Should not have thrown when a variable name is a builtin_function_or_method"
+            )
+
     def test_bad_kwargs(self):
         bad_kwargs = [
             dict(

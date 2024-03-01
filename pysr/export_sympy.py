@@ -64,9 +64,13 @@ def create_sympy_symbols(
 
 
 def pysr2sympy(
-    equation: str, *, extra_sympy_mappings: Optional[Dict[str, Callable]] = None
+    equation: str,
+    feature_names_in: List[str],
+    *,
+    extra_sympy_mappings: Optional[Dict[str, Callable]] = None,
 ):
     local_sympy_mappings = {
+        **{f: sympy.Symbol(f) for f in feature_names_in},
         **(extra_sympy_mappings if extra_sympy_mappings else {}),
         **sympy_mappings,
     }
