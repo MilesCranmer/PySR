@@ -1,4 +1,6 @@
 """Define utilities to export to sympy"""
+from __future__ import annotations
+
 from collections.abc import Callable
 
 import sympy

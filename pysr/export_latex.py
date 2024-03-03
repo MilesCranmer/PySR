@@ -1,4 +1,6 @@
 """Functions to help export PySR equations to LaTeX."""
+from __future__ import annotations
+
 import pandas as pd
 import sympy
 from sympy.printing.latex import LatexPrinter

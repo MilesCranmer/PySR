@@ -21,6 +21,8 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import Literal
 
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
