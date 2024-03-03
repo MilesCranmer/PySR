@@ -56,34 +56,108 @@ already_ran = False
 
 @dataclass(frozen=True)
 class RawDataset:
+    """
+    Raw input dataset for PySRRegressor.
+
+    Parameters
+    ----------
+    X : ndarray | pandas.DataFrame
+        Training data of shape `(n_samples, n_features)`.
+    y : ndarray | pandas.DataFrame}
+        Target values of shape `(n_samples,)` or `(n_samples, n_targets)`.
+        Will be cast to `X`'s dtype if necessary.
+    Xresampled : ndarray | pandas.DataFrame
+        Resampled training data used for denoising,
+        of shape `(n_resampled, n_features)`.
+    weights : ndarray | pandas.DataFrame
+        Weight array of the same shape as `y`.
+        Each element is how to weight the mean-square-error loss
+        for that particular element of y.
+    variable_names : list[str] of length n_features
+        Names of each variable in the training dataset, `X`.
+    X_units : list[str] of length n_features
+        Units of each variable in the training dataset, `X`.
+    y_units : str | list[str] of length n_out
+        Units of each variable in the training dataset, `y`.
+    """
+
     X: Any
     y: Any
     Xresampled: Any
     weights: Any
     variable_names: list[str] | None
     X_units: list[str] | None
-    y_units: list[str] | None
+    y_units: str | list[str] | None
 
 
 @dataclass(frozen=True)
 class ValidatedDataset:
+    """
+    Validated dataset for PySRRegressor.
+
+    Parameters
+    ----------
+    X_validated : ndarray of shape (n_samples, n_features)
+        Validated training data.
+    y_validated : ndarray of shape (n_samples,) or (n_samples, n_targets)
+        Validated target data.
+    Xresampled : ndarray of shape (n_resampled, n_features)
+        Validated resampled training data used for denoising.
+    weights : ndarray of the same shape as `y_validated` or `None`
+        Validated sample weights.
+    variable_names : list[str] of length n_features
+        Validated list of variable names for each feature in `X`.
+    X_units : list[str] of length n_features
+        Validated units for `X`.
+    y_units : str | list[str] of length n_out
+        Validated units for `y`.
+    """
+
     X: np.ndarray
     y: np.ndarray
     Xresampled: np.ndarray | None
     weights: np.ndarray | None
-    variable_names: np.ndarray
+    variable_names: np.ndarray | None
     X_units: list[str] | None
-    y_units: list[str] | None
+    y_units: str | list[str] | None
 
 
 @dataclass(frozen=True)
 class ProcessedDataset:
+    """
+    Processed dataset for PySRRegressor.
+
+    Parameters
+    ----------
+    X : ndarray of shape (n_samples, n_features)
+        Transformed training data. n_samples will be equal to
+        `Xresampled.shape[0]` if `self.denoise` is `True`,
+        and `Xresampled is not None`, otherwise it will be
+        equal to `X.shape[0]`. n_features will be equal to
+        `self.select_k_features` if `self.select_k_features is not None`,
+        otherwise it will be equal to `X.shape[1]`
+    y : ndarray of shape (n_samples,) or (n_samples, n_outputs)
+        Transformed target data. n_samples will be equal to
+        `Xresampled.shape[0]` if `self.denoise` is `True`,
+        and `Xresampled is not None`, otherwise it will be
+        equal to `X.shape[0]`.
+    weights : ndarray of the same shape as `y` or `None`
+        Sample weights.
+    variable_names : list[str] of length n_features
+        Names of each variable in the transformed dataset,
+        `X`.
+    X_units : list[str] of length n_features
+        Units of each variable in the transformed dataset.
+    y_units : str | list[str] of length n_out
+        Units of each variable in the transformed dataset.
+    """
+
     X: np.ndarray
     y: np.ndarray
     weights: np.ndarray | None
-    variable_names: np.ndarray
+    variable_names: np.ndarray | None
     X_units: list[str] | None
-    y_units: list[str] | None
+    y_units: str | list[str] | None
 
 
 def _process_constraints(binary_operators, unary_operators, constraints):
@@ -920,14 +994,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     @classmethod
     def from_file(
         cls,
-        equation_file,
+        equation_file: str | Path,
         *,
-        binary_operators=None,
-        unary_operators=None,
-        n_features_in=None,
-        feature_names_in=None,
-        selection_mask=None,
-        nout=1,
+        binary_operators: list[str] | None = None,
+        unary_operators: list[str] | None = None,
+        n_features_in: int | None = None,
+        feature_names_in: list[str] | np.ndarray | None = None,
+        selection_mask: list[bool] | None = None,
+        nout: int = 1,
         **pysr_kwargs,
     ) -> "PySRRegressor":
         """
@@ -1351,43 +1425,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Validate the parameters passed to the :term`fit` method.
 
         This method also sets the `nout_` attribute.
-
-        Parameters
-        ----------
-        X : ndarray | pandas.DataFrame
-            Training data of shape `(n_samples, n_features)`.
-        y : ndarray | pandas.DataFrame}
-            Target values of shape `(n_samples,)` or `(n_samples, n_targets)`.
-            Will be cast to `X`'s dtype if necessary.
-        Xresampled : ndarray | pandas.DataFrame
-            Resampled training data used for denoising,
-            of shape `(n_resampled, n_features)`.
-        weights : ndarray | pandas.DataFrame
-            Weight array of the same shape as `y`.
-            Each element is how to weight the mean-square-error loss
-            for that particular element of y.
-        variable_names : list[str] of length n_features
-            Names of each variable in the training dataset, `X`.
-        X_units : list[str] of length n_features
-            Units of each variable in the training dataset, `X`.
-        y_units : str | list[str] of length n_out
-            Units of each variable in the training dataset, `y`.
-
-        Returns
-        -------
-        X_validated : ndarray of shape (n_samples, n_features)
-            Validated training data.
-        y_validated : ndarray of shape (n_samples,) or (n_samples, n_targets)
-            Validated target data.
-        Xresampled : ndarray of shape (n_resampled, n_features)
-            Validated resampled training data used for denoising.
-        variable_names : list[str] of length n_features
-            Validated list of variable names for each feature in `X`.
-        X_units : list[str] of length n_features
-            Validated units for `X`.
-        y_units : str | list[str] of length n_out
-            Validated units for `y`.
-
         """
         X = raw_dataset.X
         y = raw_dataset.y
@@ -1477,48 +1514,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         This method also updates/sets the `selection_mask_` attribute.
 
-        Parameters
-        ----------
-        X : ndarray | pandas.DataFrame
-            Training data of shape (n_samples, n_features).
-        y : ndarray | pandas.DataFrame
-            Target values of shape (n_samples,) or (n_samples, n_targets).
-            Will be cast to X's dtype if necessary.
-        Xresampled : ndarray | pandas.DataFrame
-            Resampled training data, of shape `(n_resampled, n_features)`,
-            used for denoising.
-        variable_names : list[str]
-            Names of each variable in the training dataset, `X`.
-            Of length `n_features`.
-        X_units : list[str]
-            Units of each variable in the training dataset, `X`.
-        y_units : str | list[str]
-            Units of each variable in the training dataset, `y`.
         random_state : int | np.RandomState
             Pass an int for reproducible results across multiple function calls.
             See :term:`Glossary <random_state>`. Default is `None`.
 
         Returns
         -------
-        X_transformed : ndarray of shape (n_samples, n_features)
-            Transformed training data. n_samples will be equal to
-            `Xresampled.shape[0]` if `self.denoise` is `True`,
-            and `Xresampled is not None`, otherwise it will be
-            equal to `X.shape[0]`. n_features will be equal to
-            `self.select_k_features` if `self.select_k_features is not None`,
-            otherwise it will be equal to `X.shape[1]`
-        y_transformed : ndarray of shape (n_samples,) or (n_samples, n_outputs)
-            Transformed target data. n_samples will be equal to
-            `Xresampled.shape[0]` if `self.denoise` is `True`,
-            and `Xresampled is not None`, otherwise it will be
-            equal to `X.shape[0]`.
-        variable_names_transformed : list[str] of length n_features
-            Names of each variable in the transformed dataset,
-            `X_transformed`.
-        X_units_transformed : list[str] of length n_features
-            Units of each variable in the transformed dataset.
-        y_units_transformed : str | list[str] of length n_out
-            Units of each variable in the transformed dataset.
         """
         X = validated_dataset.X
         y = validated_dataset.y
@@ -1537,7 +1538,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 Xresampled = Xresampled[:, self.selection_mask_]
 
             # Reduce variable_names to selection
-            variable_names = [variable_names[i] for i in self.selection_mask_]
+            variable_names = np.array([variable_names[i] for i in self.selection_mask_])
 
             if X_units is not None:
                 X_units = [X_units[i] for i in self.selection_mask_]
@@ -1909,17 +1910,17 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         mutated_params = self._validate_and_set_init_params()
 
-        raw_dataset = RawDataset(
-            X=X,
-            y=y,
-            Xresampled=Xresampled,
-            weights=weights,
-            variable_names=variable_names,
-            X_units=X_units,
-            y_units=y_units,
+        validated_dataset = self._validate_and_set_fit_params(
+            RawDataset(
+                X=X,
+                y=y,
+                Xresampled=Xresampled,
+                weights=weights,
+                variable_names=variable_names,
+                X_units=X_units,
+                y_units=y_units,
+            )
         )
-
-        validated_dataset = self._validate_and_set_fit_params(raw_dataset)
 
         if validated_dataset.X.shape[0] > 10000 and not self.batching:
             warnings.warn(
@@ -2092,7 +2093,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             return [eq["sympy_format"] for eq in best_equation]
         return best_equation["sympy_format"]
 
-    def latex(self, index=None, precision=3):
+    def latex(self, index=None, precision=3) -> str | list[str]:
         """
         Return latex representation of the equation(s) chosen by `model_selection`.
 
@@ -2184,7 +2185,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             return [eq["torch_format"] for eq in best_equation]
         return best_equation["torch_format"]
 
-    def _read_equation_file(self):
+    def _read_equation_file(self) -> list[pd.DataFrame]:
         """Read the hall of fame file created by `SymbolicRegression.jl`."""
 
         try:
@@ -2228,7 +2229,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         return df
 
-    def get_hof(self):
+    def get_hof(self) -> pd.DataFrame | list[pd.DataFrame]:
         """Get the equations from a hall of fame file.
 
         If no arguments entered, the ones used

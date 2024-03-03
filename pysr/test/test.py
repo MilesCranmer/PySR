@@ -15,7 +15,12 @@ from .. import PySRRegressor, install, jl
 from ..export_latex import sympy2latex
 from ..feature_selection import _handle_feature_selection, run_feature_selection
 from ..julia_helpers import init_julia
-from ..sr import _check_assertions, _process_constraints, idx_model_selection
+from ..sr import (
+    ProcessedDataset,
+    _check_assertions,
+    _process_constraints,
+    idx_model_selection,
+)
 from ..utils import _csv_filename_to_pkl_filename
 from .params import (
     DEFAULT_NCYCLES,
@@ -1031,10 +1036,8 @@ class TestDimensionalConstraints(unittest.TestCase):
 
     def test_unit_checks(self):
         """This just checks the number of units passed"""
-        use_custom_variable_names = False
         variable_names = None
         weights = None
-        args = (use_custom_variable_names, variable_names, weights)
         valid_units = [
             (np.ones((10, 2)), np.ones(10), ["m/s", "s"], "m"),
             (np.ones((10, 1)), np.ones(10), ["m/s"], None),
@@ -1045,11 +1048,14 @@ class TestDimensionalConstraints(unittest.TestCase):
         ]
         for X, y, X_units, y_units in valid_units:
             _check_assertions(
-                X,
-                *args,
-                y,
-                X_units,
-                y_units,
+                ProcessedDataset(
+                    X=X,
+                    y=y,
+                    variable_names=variable_names,
+                    weights=weights,
+                    X_units=X_units,
+                    y_units=y_units,
+                )
             )
         invalid_units = [
             (np.ones((10, 2)), np.ones(10), ["m/s", "s", "s^2"], None),
@@ -1060,11 +1066,14 @@ class TestDimensionalConstraints(unittest.TestCase):
         for X, y, X_units, y_units in invalid_units:
             with self.assertRaises(ValueError):
                 _check_assertions(
-                    X,
-                    *args,
-                    y,
-                    X_units,
-                    y_units,
+                    ProcessedDataset(
+                        X=X,
+                        y=y,
+                        variable_names=variable_names,
+                        weights=weights,
+                        X_units=X_units,
+                        y_units=y_units,
+                    )
                 )
 
     def test_unit_propagation(self):
