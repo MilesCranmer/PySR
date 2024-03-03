@@ -1921,38 +1921,21 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         mutated_params = self._validate_and_set_init_params()
 
-        validated_dataset = self._validate_and_set_fit_params(
-            RawDataset(
-                X=X,
-                y=y,
-                Xresampled=Xresampled,
-                weights=weights,
-                variable_names=variable_names,
-                X_units=X_units,
-                y_units=y_units,
-            )
+        raw_dataset = RawDataset(
+            X=X,
+            y=y,
+            Xresampled=Xresampled,
+            weights=weights,
+            variable_names=variable_names,
+            X_units=X_units,
+            y_units=y_units,
         )
+        validated_dataset = self._validate_and_set_fit_params(raw_dataset)
 
         # Pre transformations (feature selection and denoising)
         processed_dataset = self._pre_transform_training_data(
             validated_dataset, random_state
         )
-
-        # Warn about large feature counts (still warn if feature count is large
-        # after running feature selection)
-        if self.n_features_in_ >= 10:
-            warnings.warn(
-                "Note: you are running with 10 features or more. "
-                "Genetic algorithms like used in PySR scale poorly with large numbers of features. "
-                "You should run PySR for more `niterations` to ensure it can find "
-                "the correct variables, "
-                "or, alternatively, do a dimensionality reduction beforehand. "
-                "For example, `X = PCA(n_components=6).fit_transform(X)`, "
-                "using scikit-learn's `PCA` class, "
-                "will reduce the number of features to 6 in an interpretable way, "
-                "as each resultant feature "
-                "will be a linear combination of the original features. "
-            )
 
         _check_assertions(processed_dataset)
 
