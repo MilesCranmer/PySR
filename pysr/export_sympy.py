@@ -57,21 +57,29 @@ sympy_mappings = {
 }
 
 
+def create_sympy_symbols_map(
+    feature_names_in: List[str],
+) -> Dict[str, sympy.Symbol]:
+    return {variable: sympy.Symbol(variable) for variable in feature_names_in}
+
+
 def create_sympy_symbols(
     feature_names_in: List[str],
 ) -> List[sympy.Symbol]:
-    return [sympy.Symbol(variable) for variable in feature_names_in]
+    return list(create_sympy_symbols_map(feature_names_in).values())
 
 
 def pysr2sympy(
     equation: str,
-    feature_names_in: List[str],
     *,
+    feature_names_in: Optional[List[str]] = None,
     extra_sympy_mappings: Optional[Dict[str, Callable]] = None,
 ):
+    if feature_names_in is None:
+        feature_names_in = []
     local_sympy_mappings = {
-        **{f: sympy.Symbol(f) for f in feature_names_in},
-        **(extra_sympy_mappings if extra_sympy_mappings else {}),
+        **create_sympy_symbols_map(feature_names_in),
+        **(extra_sympy_mappings if extra_sympy_mappings is not None else {}),
         **sympy_mappings,
     }
 

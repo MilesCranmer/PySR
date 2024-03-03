@@ -2226,7 +2226,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             for _, eqn_row in output.iterrows():
                 eqn = pysr2sympy(
                     eqn_row["equation"],
-                    self.feature_names_in_,
+                    feature_names_in=self.feature_names_in_,
                     extra_sympy_mappings=self.extra_sympy_mappings,
                 )
                 sympy_format.append(eqn)
