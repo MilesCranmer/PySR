@@ -1,3 +1,7 @@
+from beartype.claw import beartype_this_package
+
+beartype_this_package()
+
 # This must be imported as early as possible to prevent
 # library linking issues caused by numpy/pytorch/etc. importing
 # old libraries:

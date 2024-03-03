@@ -7,11 +7,11 @@ import shutil
 import sys
 import tempfile
 import warnings
+from collections.abc import Callable
 from datetime import datetime
 from io import StringIO
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple, Union
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -663,8 +663,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self,
         model_selection: Literal["best", "accuracy", "score"] = "best",
         *,
-        binary_operators: Optional[List[str]] = None,
-        unary_operators: Optional[List[str]] = None,
+        binary_operators: Optional[list[str]] = None,
+        unary_operators: Optional[list[str]] = None,
         niterations: int = 40,
         populations: int = 15,
         population_size: int = 33,
@@ -673,13 +673,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         maxdepth: Optional[int] = None,
         warmup_maxsize_by: Optional[float] = None,
         timeout_in_seconds: Optional[float] = None,
-        constraints: Optional[Dict[str, Union[int, Tuple[int, int]]]] = None,
-        nested_constraints: Optional[Dict[str, Dict[str, int]]] = None,
+        constraints: Optional[dict[str, int | tuple[int, int]]] = None,
+        nested_constraints: Optional[dict[str, dict[str, int]]] = None,
         elementwise_loss: Optional[str] = None,
         loss_function: Optional[str] = None,
-        complexity_of_operators: Optional[Dict[str, Union[int, float]]] = None,
-        complexity_of_constants: Union[int, float] = 1,
-        complexity_of_variables: Union[int, float] = 1,
+        complexity_of_operators: Optional[dict[str, int | float]] = None,
+        complexity_of_constants: int | float = 1,
+        complexity_of_variables: int | float = 1,
         parsimony: float = 0.0032,
         dimensional_constraint_penalty: Optional[float] = None,
         use_frequency: bool = True,
@@ -687,7 +687,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         adaptive_parsimony_scaling: float = 20.0,
         alpha: float = 0.1,
         annealing: bool = False,
-        early_stop_condition: Optional[Union[float, str]] = None,
+        early_stop_condition: Optional[float | str] = None,
         ncycles_per_iteration: int = 550,
         fraction_replaced: float = 0.000364,
         fraction_replaced_hof: float = 0.035,
@@ -741,9 +741,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         update: bool = False,
         output_jax_format: bool = False,
         output_torch_format: bool = False,
-        extra_sympy_mappings: Optional[Dict[str, Callable]] = None,
-        extra_torch_mappings: Optional[Dict[Callable, Callable]] = None,
-        extra_jax_mappings: Optional[Dict[Callable, str]] = None,
+        extra_sympy_mappings: Optional[dict[str, Callable]] = None,
+        extra_torch_mappings: Optional[dict[Callable, Callable]] = None,
+        extra_jax_mappings: Optional[dict[Callable, str]] = None,
         denoise: bool = False,
         select_k_features: Optional[int] = None,
         **kwargs,
@@ -1769,9 +1769,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         y,
         Xresampled=None,
         weights=None,
-        variable_names: Optional[List[str]] = None,
-        X_units: Optional[List[str]] = None,
-        y_units: Optional[List[str]] = None,
+        variable_names: Optional[list[str]] = None,
+        X_units: Optional[list[str]] = None,
+        y_units: Optional[list[str]] = None,
     ) -> "PySRRegressor":
         """
         Search for equations to fit the dataset and store them in `self.equations_`.

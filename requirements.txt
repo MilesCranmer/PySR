@@ -6,3 +6,4 @@ juliacall==0.9.15
 click>=7.0.0,<9.0.0
 setuptools>=50.0.0
 typing_extensions>=4.0.0,<5.0.0; python_version < "3.8"
+beartype
