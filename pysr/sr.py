@@ -1472,6 +1472,17 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self, variable_names, generate_names=False
         )
 
+        if X.shape[0] > 10000 and not self.batching:
+            warnings.warn(
+                "Note: you are running with more than 10,000 datapoints. "
+                "You should consider turning on batching (https://astroautomata.com/PySR/options/#batching). "
+                "You should also reconsider if you need that many datapoints. "
+                "Unless you have a large amount of noise (in which case you "
+                "should smooth your dataset first), generally < 10,000 datapoints "
+                "is enough to find a functional form with symbolic regression. "
+                "More datapoints will lower the search speed."
+            )
+
         if feature_names_in_ is None:
             self.feature_names_in_ = np.array([f"x{i}" for i in range(X.shape[1])])
             self.display_feature_names_in_ = np.array(
@@ -1921,17 +1932,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 y_units=y_units,
             )
         )
-
-        if validated_dataset.X.shape[0] > 10000 and not self.batching:
-            warnings.warn(
-                "Note: you are running with more than 10,000 datapoints. "
-                "You should consider turning on batching (https://astroautomata.com/PySR/options/#batching). "
-                "You should also reconsider if you need that many datapoints. "
-                "Unless you have a large amount of noise (in which case you "
-                "should smooth your dataset first), generally < 10,000 datapoints "
-                "is enough to find a functional form with symbolic regression. "
-                "More datapoints will lower the search speed."
-            )
 
         # Pre transformations (feature selection and denoising)
         processed_dataset = self._pre_transform_training_data(
