@@ -934,7 +934,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             The model with fitted equations.
         """
 
-        pkl_filename = _csv_filename_to_pkl_filename(equation_file)
+        pkl_filename = _csv_filename_to_pkl_filename(str(equation_file))
 
         # Try to load model from <equation_file>.pkl
         print(f"Checking if {pkl_filename} exists...")
