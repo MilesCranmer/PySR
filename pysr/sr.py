@@ -1,4 +1,5 @@
 """Define the PySRRegressor scikit-learn interface."""
+
 import copy
 import os
 import pickle as pkl
@@ -8,10 +9,12 @@ import sys
 import tempfile
 import warnings
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime
 from io import StringIO
 from multiprocessing import cpu_count
 from pathlib import Path
+from typing import Any
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -49,6 +52,38 @@ from .utils import (
 )
 
 already_ran = False
+
+
+@dataclass(frozen=True)
+class RawDataset:
+    X: Any
+    y: Any
+    Xresampled: Any
+    weights: Any
+    variable_names: list[str] | None
+    X_units: list[str] | None
+    y_units: list[str] | None
+
+
+@dataclass(frozen=True)
+class ValidatedDataset:
+    X: np.ndarray
+    y: np.ndarray
+    Xresampled: np.ndarray | None
+    weights: np.ndarray | None
+    variable_names: np.ndarray
+    X_units: list[str] | None
+    y_units: list[str] | None
+
+
+@dataclass(frozen=True)
+class ProcessedDataset:
+    X: np.ndarray
+    y: np.ndarray
+    weights: np.ndarray | None
+    variable_names: np.ndarray
+    X_units: list[str] | None
+    y_units: list[str] | None
 
 
 def _process_constraints(binary_operators, unary_operators, constraints):
@@ -124,23 +159,21 @@ def _maybe_create_inline_operators(
     return binary_operators, unary_operators
 
 
-def _check_assertions(
-    X,
-    use_custom_variable_names,
-    variable_names,
-    weights,
-    y,
-    X_units,
-    y_units,
-):
+def _check_assertions(processed_dataset: ProcessedDataset) -> None:
     # Check for potential errors before they happen
+    X = processed_dataset.X
+    y = processed_dataset.y
+    weights = processed_dataset.weights
+    variable_names = processed_dataset.variable_names
+    X_units = processed_dataset.X_units
+    y_units = processed_dataset.y_units
     assert len(X.shape) == 2
     assert len(y.shape) in [1, 2]
     assert X.shape[0] == y.shape[0]
     if weights is not None:
         assert weights.shape == y.shape
         assert X.shape[0] == weights.shape[0]
-    if use_custom_variable_names:
+    if variable_names is not None:
         assert len(variable_names) == X.shape[1]
         # Check none of the variable names are function names:
         for var_name in variable_names:
@@ -717,8 +750,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         tournament_selection_p: float = 0.86,
         procs: int = cpu_count(),
         multithreading: bool | None = None,
-        cluster_manager: Literal["slurm", "pbs", "lsf", "sge", "qrsh", "scyld", "htc"]
-        | None = None,
+        cluster_manager: (
+            Literal["slurm", "pbs", "lsf", "sge", "qrsh", "scyld", "htc"] | None
+        ) = None,
         heap_size_hint_in_bytes: int | None = None,
         batching: bool = False,
         batch_size: int = 50,
@@ -746,7 +780,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         denoise: bool = False,
         select_k_features: int | None = None,
         **kwargs,
-    ):
+    ) -> None:
         # Hyperparameters
         # - Model search parameters
         self.model_selection = model_selection
@@ -895,7 +929,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         selection_mask=None,
         nout=1,
         **pysr_kwargs,
-    ):
+    ) -> "PySRRegressor":
         """
         Create a model from a saved model checkpoint or equation file.
 
@@ -1043,7 +1077,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         output += "]"
         return output
 
-    def __getstate__(self):
+    def __getstate__(self) -> dict[str, Any] | None:
         """
         Handle pickle serialization for PySRRegressor.
 
@@ -1100,7 +1134,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 ]
         return pickled_state
 
-    def _checkpoint(self):
+    def _checkpoint(self) -> None:
         """Save the model's current state to a checkpoint file.
 
         This should only be used internally by PySRRegressor.
@@ -1138,7 +1172,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         )
         return self.julia_state_
 
-    def get_best(self, index=None):
+    def get_best(self, index=None) -> pd.Series | list[pd.Series]:
         """
         Get best equation using `model_selection`.
 
@@ -1181,7 +1215,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             idx_model_selection(self.equations_, self.model_selection)
         ]
 
-    def _setup_equation_file(self):
+    def _setup_equation_file(self) -> None:
         """
         Set the full pathname of the equation file.
 
@@ -1204,7 +1238,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self.equation_file_ = self.equation_file
         self.equation_file_contents_ = None
 
-    def _validate_and_set_init_params(self):
+    def _validate_and_set_init_params(self) -> dict[str, Any]:
         """
         Ensure parameters passed at initialization are valid.
 
@@ -1312,9 +1346,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         return packed_modified_params
 
-    def _validate_and_set_fit_params(
-        self, X, y, Xresampled, weights, variable_names, X_units, y_units
-    ):
+    def _validate_and_set_fit_params(self, raw_dataset: RawDataset) -> ValidatedDataset:
         """
         Validate the parameters passed to the :term`fit` method.
 
@@ -1349,7 +1381,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Validated target data.
         Xresampled : ndarray of shape (n_resampled, n_features)
             Validated resampled training data used for denoising.
-        variable_names_validated : list[str] of length n_features
+        variable_names : list[str] of length n_features
             Validated list of variable names for each feature in `X`.
         X_units : list[str] of length n_features
             Validated units for `X`.
@@ -1357,6 +1389,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Validated units for `y`.
 
         """
+        X = raw_dataset.X
+        y = raw_dataset.y
+        Xresampled = raw_dataset.Xresampled
+        weights = raw_dataset.weights
+        variable_names = raw_dataset.variable_names
+        X_units = raw_dataset.X_units
+        y_units = raw_dataset.y_units
+
         if isinstance(X, pd.DataFrame):
             if variable_names:
                 variable_names = None
@@ -1391,16 +1431,17 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             weights = check_array(weights, ensure_2d=False)
             check_consistent_length(weights, y)
         X, y = self._validate_data(X=X, y=y, reset=True, multi_output=True)
-        self.feature_names_in_ = _safe_check_feature_names_in(
+        feature_names_in_ = _safe_check_feature_names_in(
             self, variable_names, generate_names=False
         )
 
-        if self.feature_names_in_ is None:
+        if feature_names_in_ is None:
             self.feature_names_in_ = np.array([f"x{i}" for i in range(X.shape[1])])
             self.display_feature_names_in_ = np.array(
                 [f"x{_subscriptify(i)}" for i in range(X.shape[1])]
             )
         else:
+            self.feature_names_in_ = np.array(self.feature_names_in_)
             self.display_feature_names_in_ = self.feature_names_in_
 
         variable_names = self.feature_names_in_
@@ -1416,11 +1457,21 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.X_units_ = copy.deepcopy(X_units)
         self.y_units_ = copy.deepcopy(y_units)
 
-        return X, y, Xresampled, weights, variable_names, X_units, y_units
+        return ValidatedDataset(
+            X=X,
+            y=y,
+            Xresampled=Xresampled,
+            weights=weights,
+            variable_names=variable_names,
+            X_units=X_units,
+            y_units=y_units,
+        )
 
     def _pre_transform_training_data(
-        self, X, y, Xresampled, variable_names, X_units, y_units, random_state
-    ):
+        self,
+        validated_dataset: ValidatedDataset,
+        random_state: int | np.random.RandomState | np.random.Generator,
+    ) -> ProcessedDataset:
         """
         Transform the training data before fitting the symbolic regressor.
 
@@ -1469,6 +1520,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         y_units_transformed : str | list[str] of length n_out
             Units of each variable in the transformed dataset.
         """
+        X = validated_dataset.X
+        y = validated_dataset.y
+        Xresampled = validated_dataset.Xresampled
+        variable_names = validated_dataset.variable_names
+        X_units = validated_dataset.X_units
+
         # Feature selection transformation
         if self.select_k_features:
             self.selection_mask_ = run_feature_selection(
@@ -1502,7 +1559,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             else:
                 X, y = denoise(X, y, Xresampled=Xresampled, random_state=random_state)
 
-        return X, y, variable_names, X_units, y_units
+        return ProcessedDataset(
+            X=X,
+            y=y,
+            weights=validated_dataset.weights,
+            variable_names=variable_names,
+            X_units=X_units,
+            y_units=validated_dataset.y_units,
+        )
 
     def _run(self, X, y, mutated_params, weights, seed):
         """
@@ -1655,9 +1719,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             fraction_replaced_hof=self.fraction_replaced_hof,
             should_simplify=self.should_simplify,
             should_optimize_constants=self.should_optimize_constants,
-            warmup_maxsize_by=0.0
-            if self.warmup_maxsize_by is None
-            else self.warmup_maxsize_by,
+            warmup_maxsize_by=(
+                0.0 if self.warmup_maxsize_by is None else self.warmup_maxsize_by
+            ),
             use_frequency=self.use_frequency,
             use_frequency_in_tournament=self.use_frequency_in_tournament,
             adaptive_parsimony_scaling=self.adaptive_parsimony_scaling,
@@ -1739,9 +1803,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             ),
             y_variable_names=jl_y_variable_names,
             X_units=jl_array(self.X_units_),
-            y_units=jl_array(self.y_units_)
-            if isinstance(self.y_units_, list)
-            else self.y_units_,
+            y_units=(
+                jl_array(self.y_units_)
+                if isinstance(self.y_units_, list)
+                else self.y_units_
+            ),
             options=options,
             numprocs=cprocs,
             parallelism=parallelism,
@@ -1843,19 +1909,19 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         mutated_params = self._validate_and_set_init_params()
 
-        (
-            X,
-            y,
-            Xresampled,
-            weights,
-            variable_names,
-            X_units,
-            y_units,
-        ) = self._validate_and_set_fit_params(
-            X, y, Xresampled, weights, variable_names, X_units, y_units
+        raw_dataset = RawDataset(
+            X=X,
+            y=y,
+            Xresampled=Xresampled,
+            weights=weights,
+            variable_names=variable_names,
+            X_units=X_units,
+            y_units=y_units,
         )
 
-        if X.shape[0] > 10000 and not self.batching:
+        validated_dataset = self._validate_and_set_fit_params(raw_dataset)
+
+        if validated_dataset.X.shape[0] > 10000 and not self.batching:
             warnings.warn(
                 "Note: you are running with more than 10,000 datapoints. "
                 "You should consider turning on batching (https://astroautomata.com/PySR/options/#batching). "
@@ -1867,8 +1933,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             )
 
         # Pre transformations (feature selection and denoising)
-        X, y, variable_names, X_units, y_units = self._pre_transform_training_data(
-            X, y, Xresampled, variable_names, X_units, y_units, random_state
+        processed_dataset = self._pre_transform_training_data(
+            validated_dataset, random_state
         )
 
         # Warn about large feature counts (still warn if feature count is large
@@ -1887,19 +1953,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 "will be a linear combination of the original features. "
             )
 
-        # Assertion checks
-        use_custom_variable_names = variable_names is not None
-        # TODO: this is always true.
-
-        _check_assertions(
-            X,
-            use_custom_variable_names,
-            variable_names,
-            weights,
-            y,
-            X_units,
-            y_units,
-        )
+        _check_assertions(processed_dataset)
 
         # Initially, just save model parameters, so that
         # it can be loaded from an early exit:
@@ -1907,7 +1961,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self._checkpoint()
 
         # Perform the search:
-        self._run(X, y, mutated_params, weights=weights, seed=seed)
+        self._run(
+            X=processed_dataset.X,
+            y=processed_dataset.y,
+            mutated_params=mutated_params,
+            weights=processed_dataset.weights,
+            seed=seed,
+        )
 
         # Then, after fit, we save again, so the pickle file contains
         # the equations:
@@ -1916,7 +1976,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         return self
 
-    def refresh(self, checkpoint_file=None):
+    def refresh(self, checkpoint_file=None) -> None:
         """
         Update self.equations_ with any new options passed.
 
@@ -1935,7 +1995,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         check_is_fitted(self, attributes=["equation_file_"])
         self.equations_ = self.get_hof()
 
-    def predict(self, X, index=None):
+    def predict(self, X, index=None) -> np.ndarray:
         """
         Predict y from input X using the equation chosen by `model_selection`.
 
