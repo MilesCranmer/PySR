@@ -1489,7 +1489,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 [f"x{_subscriptify(i)}" for i in range(X.shape[1])]
             )
         else:
-            self.feature_names_in_ = np.array(self.feature_names_in_)
+            self.feature_names_in_ = np.array(feature_names_in_)
             self.display_feature_names_in_ = self.feature_names_in_
 
         variable_names = self.feature_names_in_
