@@ -66,7 +66,7 @@ def create_sympy_symbols_map(
 def create_sympy_symbols(
     feature_names_in: List[str],
 ) -> List[sympy.Symbol]:
-    return list(create_sympy_symbols_map(feature_names_in).values())
+    return [sympy.Symbol(variable) for variable in feature_names_in]
 
 
 def pysr2sympy(
