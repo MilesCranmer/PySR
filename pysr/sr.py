@@ -1286,6 +1286,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     parameter_value, str
                 ):
                     parameter_value = [parameter_value]
+                    warnings.warn(
+                        "Passing a single operator as a string is deprecated. "
+                        "You should always pass operators as a list, even if just a single element."
+                    )
                 elif parameter == "batch_size" and parameter_value < 1:
                     warnings.warn(
                         "Given `batch_size` must be greater than or equal to one. "
@@ -1768,9 +1772,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         y,
         Xresampled=None,
         weights=None,
-        variable_names: (list[str]) | None = None,
-        X_units: (list[str]) | None = None,
-        y_units: (list[str]) | None = None,
+        variable_names: list[str] | None = None,
+        X_units: list[str] | None = None,
+        y_units: list[str] | None = None,
     ) -> "PySRRegressor":
         """
         Search for equations to fit the dataset and store them in `self.equations_`.
