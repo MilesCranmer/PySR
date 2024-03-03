@@ -1,3 +1,13 @@
+try:
+    from beartype import BeartypeConf
+    from beartype.claw import beartype_this_package
+
+    beartype_this_package(conf=BeartypeConf(violation_type=UserWarning))
+except ImportError:
+    import warnings
+
+    warnings.warn("beartype not installed, skipping runtime type checks.")
+
 # This must be imported as early as possible to prevent
 # library linking issues caused by numpy/pytorch/etc. importing
 # old libraries:
