@@ -2230,7 +2230,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 sympy_format.append(eqn)
 
                 # NumPy:
-                sympy_symbols = create_sympy_symbols(self.feature_names_in_)
+                sympy_symbols = create_sympy_symbols(list(self.feature_names_in_))
                 lambda_format.append(
                     sympy2numpy(
                         eqn,
