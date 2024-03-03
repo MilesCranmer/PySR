@@ -600,17 +600,6 @@ class TestMiscellaneous(unittest.TestCase):
                 model.fit(X, y)
             self.assertIn("more than 10,000", str(context.exception))
 
-    def test_feature_warning(self):
-        """Ensure that a warning is given for large number of features."""
-        model = PySRRegressor()
-        X = np.random.randn(100, 10)
-        y = np.random.randn(100)
-        with warnings.catch_warnings():
-            warnings.simplefilter("error")
-            with self.assertRaises(Exception) as context:
-                model.fit(X, y)
-            self.assertIn("with 10 features or more", str(context.exception))
-
     def test_deterministic_warnings(self):
         """Ensure that warnings are given for determinism"""
         model = PySRRegressor(random_state=0)

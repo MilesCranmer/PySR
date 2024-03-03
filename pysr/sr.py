@@ -160,6 +160,10 @@ class ProcessedDataset:
     y_units: str | list[str] | None
 
 
+# TODO: These last features don't actually get used,
+#       we instead are currently using the `self.y_units_`
+
+
 def _process_constraints(binary_operators, unary_operators, constraints):
     constraints = constraints.copy()
     for op in unary_operators:
@@ -1580,23 +1584,16 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             y_units=validated_dataset.y_units,
         )
 
-    def _run(self, X, y, mutated_params, weights, seed):
+    def _run(self, data: ProcessedDataset, mutated_params, seed):
         """
         Run the symbolic regression fitting process on the julia backend.
 
         Parameters
         ----------
-        X : ndarray | pandas.DataFrame
-            Training data of shape `(n_samples, n_features)`.
-        y : ndarray | pandas.DataFrame
-            Target values of shape `(n_samples,)` or `(n_samples, n_targets)`.
-            Will be cast to `X`'s dtype if necessary.
+        data: ProcessedDataset
+            Validated and process data to be used for fitting.
         mutated_params : dict[str, Any]
             Dictionary of mutated versions of some parameters passed in __init__.
-        weights : ndarray | pandas.DataFrame
-            Weight array of the same shape as `y`.
-            Each element is how to weight the mean-square-error loss
-            for that particular element of y.
         seed : int
             Random seed for julia backend process.
 
@@ -1613,6 +1610,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # Need to be global as we don't want to recreate/reinstate julia for
         # every new instance of PySRRegressor
         global already_ran
+
+        num_rows = len(data.X)
 
         # These are the parameters which may be modified from the ones
         # specified in init, so we define them here locally:
@@ -1714,7 +1713,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             output_file=_escape_filename(self.equation_file_),
             npopulations=int(self.populations),
             batching=self.batching,
-            batch_size=int(min([batch_size, len(X)]) if self.batching else len(X)),
+            batch_size=int(min([batch_size, num_rows]) if self.batching else num_rows),
             mutation_weights=mutation_weights,
             tournament_selection_p=self.tournament_selection_p,
             tournament_selection_n=self.tournament_selection_n,
@@ -1761,7 +1760,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.julia_options_stream_ = jl_serialize(options)
 
         # Convert data to desired precision
-        test_X = np.array(X)
+        test_X = np.array(data.X)
         is_complex = np.issubdtype(test_X.dtype, np.complexfloating)
         is_real = not is_complex
         if is_real:
@@ -1770,16 +1769,16 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             np_dtype = {32: np.complex64, 64: np.complex128}[self.precision]
 
         # This converts the data into a Julia array:
-        jl_X = jl_array(np.array(X, dtype=np_dtype).T)
-        if len(y.shape) == 1:
-            jl_y = jl_array(np.array(y, dtype=np_dtype))
+        jl_X = jl_array(np.array(data.X, dtype=np_dtype).T)
+        if len(data.y.shape) == 1:
+            jl_y = jl_array(np.array(data.y, dtype=np_dtype))
         else:
-            jl_y = jl_array(np.array(y, dtype=np_dtype).T)
-        if weights is not None:
-            if len(weights.shape) == 1:
-                jl_weights = jl_array(np.array(weights, dtype=np_dtype))
+            jl_y = jl_array(np.array(data.y, dtype=np_dtype).T)
+        if data.weights is not None:
+            if len(data.weights.shape) == 1:
+                jl_weights = jl_array(np.array(data.weights, dtype=np_dtype))
             else:
-                jl_weights = jl_array(np.array(weights, dtype=np_dtype).T)
+                jl_weights = jl_array(np.array(data.weights, dtype=np_dtype).T)
         else:
             jl_weights = None
 
@@ -1794,11 +1793,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             None if parallelism in ["serial", "multithreading"] else int(self.procs)
         )
 
-        if len(y.shape) > 1:
+        if len(data.y.shape) > 1:
             # We set these manually so that they respect Python's 0 indexing
             # (by default Julia will use y1, y2...)
             jl_y_variable_names = jl_array(
-                [f"y{_subscriptify(i)}" for i in range(y.shape[1])]
+                [f"y{_subscriptify(i)}" for i in range(data.y.shape[1])]
             )
         else:
             jl_y_variable_names = None
@@ -1827,7 +1826,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             return_state=True,
             addprocs_function=cluster_manager,
             heap_size_hint_in_bytes=self.heap_size_hint_in_bytes,
-            progress=progress and self.verbosity > 0 and len(y.shape) == 1,
+            progress=progress and self.verbosity > 0 and len(data.y.shape) == 1,
             verbosity=int(self.verbosity),
         )
         PythonCall.GC.enable()
@@ -1946,10 +1945,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # Perform the search:
         self._run(
-            X=processed_dataset.X,
-            y=processed_dataset.y,
+            processed_dataset,
             mutated_params=mutated_params,
-            weights=processed_dataset.weights,
             seed=seed,
         )
 
