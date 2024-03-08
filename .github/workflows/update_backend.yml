@@ -22,7 +22,7 @@ jobs:
           pip install -r requirements.txt
           python setup.py install
           # Not needed:
-          # python -c 'import octofitterpy; octofitterpy.install()'
+          # python -c 'import pysr; pysr.install()'
 
       - name: "Get SymbolicRegression.jl latest version"
         id: get-latest
@@ -37,14 +37,14 @@ jobs:
         # TODO: we can probably just use a REGEX here to avoid having to install the whole julia packages and stack
         id: get-current
         run: |
-          python -c 'import octofitterpy; print(octofitterpy.version.__octofitter_jl_version__)'
-          echo "version=$(python -c 'import octofitterpy; print(octofitterpy.version.__octofitter_jl_version__)' 2>/dev/null)" >> $GITHUB_OUTPUT
+          python -c 'import pysr; print(pysr.version.__symbolic_regression_jl_version__)'
+          echo "version=$(python -c 'import pysr; print(pysr.version.__symbolic_regression_jl_version__)' 2>/dev/null)" >> $GITHUB_OUTPUT
 
       # If versions are different, we want to take our checked-out version,
       # create a new branch called "update_compat_{...}", where the "..."
       # is a timestamp. We then want to
-      # go to octofitterpy/version.py, bump the patch version of pysr (__version__),
-      # set the version of __octofitter_jl_version__ to the latest
+      # go to pysr/version.py, bump the patch version of pysr (__version__),
+      # set the version of __symbolic_regression_jl_version__ to the latest
       # version of SymbolicRegression.jl, and then commit and push.
       # Finally, we will open a PR from this branch to master.
       - name: "Update versions"
@@ -62,15 +62,15 @@ jobs:
           cat pyproject.toml
 
           # Set new backend julia package version     
-          echo Current octofitterpy/juliapkg.json contents
-          cat octofitterpy/juliapkg.json
+          echo Current pysr/juliapkg.json contents
+          cat pysr/juliapkg.json
           # Assumes your julia package is the first in the list.
-          CURRENT_JL_VERSION_NUMBER=$(perl -nle 'print $1 if /"version"\s*:\s*"(.\d+\.\d+\.\d+)"/' octofitterpy/juliapkg.json | head -n 1)
+          CURRENT_JL_VERSION_NUMBER=$(perl -nle 'print $1 if /"version"\s*:\s*"(.\d+\.\d+\.\d+)"/' pysr/juliapkg.json | head -n 1)
           NEW_JL_VERSION_NUMBER="${{ steps.get-latest.outputs.version }}"
           echo CURRENT_JL_VERSION_NUMBER=$CURRENT_JL_VERSION_NUMBER NEW_JL_VERSION_NUMBER=$NEW_JL_VERSION_NUMBER
-          sed -i.bak  "s/\"version\": \"$CURRENT_JL_VERSION_NUMBER\"/\"version\": \"=$NEW_JL_VERSION_NUMBER\"/" octofitterpy/juliapkg.json
-          echo Updated octofitterpy/juliapkg.json contents
-          cat octofitterpy/juliapkg.json
+          sed -i.bak  "s/\"version\": \"$CURRENT_JL_VERSION_NUMBER\"/\"version\": \"=$NEW_JL_VERSION_NUMBER\"/" pysr/juliapkg.json
+          echo Updated pysr/juliapkg.json contents
+          cat pysr/juliapkg.json
 
       - name: "Create PR"
         uses: peter-evans/create-pull-request@v6
@@ -84,4 +84,4 @@ jobs:
           commit-message: "Update backend version to v${{ steps.get-latest.outputs.version }}"
           add-paths: |
             pyproject.toml
-            octofitterpy/juliapkg.json
+            pysr/juliapkg.json
