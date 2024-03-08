@@ -1,8 +1,11 @@
-name: PySR backend update
+name: pysr backend update
 on:
   schedule:
     - cron: '00 00 * * *'
   workflow_dispatch:
+permissions:
+  pull-requests: write
+  contents: write
 jobs:
   update_compat:
     runs-on: ubuntu-latest
@@ -13,13 +16,13 @@ jobs:
           python-version: 3.9
           cache: pip
 
-      - name: "Install PySR"
+      - name: "Install pysr"
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           python setup.py install
           # Not needed:
-          # python -c 'import pysr; pysr.install()'
+          # python -c 'import octofitterpy; octofitterpy.install()'
 
       - name: "Get SymbolicRegression.jl latest version"
         id: get-latest
@@ -28,34 +31,50 @@ jobs:
           git clone https://github.com/MilesCranmer/SymbolicRegression.jl
           cd SymbolicRegression.jl
           echo "version=$(git describe --tags --abbrev=0 | sed 's/^v//')" >> $GITHUB_OUTPUT
+          echo "version=$(git describe --tags --abbrev=0 | sed 's/^v//')"
 
-      - name: "Get SymbolicRegression.jl version used in PySR"
+      - name: "Get SymbolicRegression.jl version used in pysr"
+        # TODO: we can probably just use a REGEX here to avoid having to install the whole julia packages and stack
         id: get-current
         run: |
-          echo "version=$(python -c 'import pysr; print(pysr.version.__symbolic_regression_jl_version__)' 2>/dev/null)" >> $GITHUB_OUTPUT
+          python -c 'import octofitterpy; print(octofitterpy.version.__octofitter_jl_version__)'
+          echo "version=$(python -c 'import octofitterpy; print(octofitterpy.version.__octofitter_jl_version__)' 2>/dev/null)" >> $GITHUB_OUTPUT
 
       # If versions are different, we want to take our checked-out version,
       # create a new branch called "update_compat_{...}", where the "..."
       # is a timestamp. We then want to
-      # go to pysr/version.py, bump the patch version of PySR (__version__),
-      # set the version of __symbolic_regression_jl_version__ to the latest
+      # go to octofitterpy/version.py, bump the patch version of pysr (__version__),
+      # set the version of __octofitter_jl_version__ to the latest
       # version of SymbolicRegression.jl, and then commit and push.
       # Finally, we will open a PR from this branch to master.
       - name: "Update versions"
         if: ${{ steps.get-latest.outputs.version != steps.get-current.outputs.version }}
         run: |
-          # Bump PySR patch number:
-          CURRENT_PYSR_PATCH_VERSION=$(python -c 'import pysr; print(pysr.version.__version__.split(".")[-1], end="")' 2>/dev/null)
-          NEW_PYSR_PATCH_VERSION=$((CURRENT_PYSR_PATCH_VERSION + 1))
-          sed -i "s/^__version__ = .*/__version__ = \"$(python -c 'import pysr; print(".".join(pysr.version.__version__.split(".")[:-1]), end="")' 2>/dev/null).${NEW_PYSR_PATCH_VERSION}\"/" pysr/version.py
+          # Bump python package patch number
+          echo Current pyproject.toml contents
+          cat pyproject.toml
+          CURRENT_PY_VERSION_NUMBER=$(perl -nle 'print $1 if /version\s*=\s*"(\d+\.\d+)\.\d+"/' pyproject.toml)
+          CURRENT_PY_PATCH_NUMBER=$(perl -nle 'print $1 if /version\s*=\s*"\d+\.\d+\.(\d+)"/' pyproject.toml)
+          NEW_PY_PATCH_NUMBER=$((CURRENT_PY_PATCH_NUMBER + 1))
+          echo CURRENT_PY_VERSION_NUMBER=$CURRENT_PY_VERSION_NUMBER CURRENT_PY_PATCH_NUMBER=$CURRENT_PY_PATCH_NUMBER NEW_PY_PATCH_NUMBER=$NEW_PY_PATCH_NUMBER
+          sed -i.bak  "s/version = .*/version = \"$CURRENT_PY_VERSION_NUMBER.$NEW_PY_PATCH_NUMBER\"/" pyproject.toml
+          echo Updated pyproject.toml contents
+          cat pyproject.toml
 
-          # Set SymbolicRegression.jl version:
-          sed -i "s/^__symbolic_regression_jl_version__ = .*/__symbolic_regression_jl_version__ = \"${{ steps.get-latest.outputs.version }}\"/" pysr/version.py
+          # Set new backend julia package version     
+          echo Current octofitterpy/juliapkg.json contents
+          cat octofitterpy/juliapkg.json
+          # Assumes your julia package is the first in the list.
+          CURRENT_JL_VERSION_NUMBER=$(perl -nle 'print $1 if /"version"\s*:\s*"(.\d+\.\d+\.\d+)"/' octofitterpy/juliapkg.json | head -n 1)
+          NEW_JL_VERSION_NUMBER="${{ steps.get-latest.outputs.version }}"
+          echo CURRENT_JL_VERSION_NUMBER=$CURRENT_JL_VERSION_NUMBER NEW_JL_VERSION_NUMBER=$NEW_JL_VERSION_NUMBER
+          sed -i.bak  "s/\"version\": \"$CURRENT_JL_VERSION_NUMBER\"/\"version\": \"=$NEW_JL_VERSION_NUMBER\"/" octofitterpy/juliapkg.json
+          echo Updated octofitterpy/juliapkg.json contents
+          cat octofitterpy/juliapkg.json
 
       - name: "Create PR"
         uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ secrets.REPO_SCOPED_TOKEN }}
           title: "Automated update to backend: v${{ steps.get-latest.outputs.version }}"
           body: |
             This PR was automatically generated by the GitHub Action `.github/workflows/update-backend.yml`
@@ -63,4 +82,6 @@ jobs:
             It updates the backend version to v${{ steps.get-latest.outputs.version }}. For a full description of the changes, see the backend changelog: [v${{ steps.get-latest.outputs.version }}](https://github.com/MilesCranmer/SymbolicRegression.jl/releases/tag/v${{ steps.get-latest.outputs.version }}).
           delete-branch: true
           commit-message: "Update backend version to v${{ steps.get-latest.outputs.version }}"
-          add-paths: pysr/version.py
+          add-paths: |
+            pyproject.toml
+            octofitterpy/juliapkg.json
