@@ -19,10 +19,7 @@ jobs:
       - name: "Install dependencies"
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
           pip install tomlkit
-          pip install .
-          python -c 'import pysr'
 
       - name: "Get SymbolicRegression.jl latest version"
         id: get-latest
@@ -32,17 +29,16 @@ jobs:
           cd SymbolicRegression.jl
           echo "version=$(git describe --tags --match='v*' --abbrev=0 | sed 's/^v//')" >> $GITHUB_OUTPUT
 
-      - name: "Get SymbolicRegression.jl version currently used in PySR"
-        id: get-current
-        run: |
-          # TODO: Use juliacall to get this instead of setting in version.py
-          echo "version=$(python -c 'import pysr; print(pysr.version.__symbolic_regression_jl_version__)' 2>/dev/null)" >> $GITHUB_OUTPUT
-
       - name: "Update SymbolicRegression.jl version in PySR"
-        if: ${{ steps.get-latest.outputs.version != steps.get-current.outputs.version }}
         run: |
-          python .github/workflows/bump_version.py
-          python .github/workflows/update_jl_version.py ${{ steps.get-latest.outputs.version }}
+          python .github/workflows/update_backend_version.py ${{ steps.get-latest.outputs.version }}
+
+      - name: "Restore changes if no diff to `pysr/juliapkg.json`"
+        run: |
+          if git diff --quiet pysr/juliapkg.json; then
+            echo "No changes to pysr/juliapkg.json. Restoring changes."
+            git restore pyproject.toml
+          fi
 
       - name: "Create PR if necessary"
         uses: peter-evans/create-pull-request@v6
