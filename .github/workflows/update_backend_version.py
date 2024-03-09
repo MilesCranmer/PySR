@@ -6,6 +6,8 @@ import tomlkit
 
 new_backend_version = sys.argv[1]
 
+assert not new_backend_version.startswith("v"), "Version should not start with 'v'"
+
 pyproject_toml = Path(__file__).parent / ".." / ".." / "pyproject.toml"
 juliapkg_json = Path(__file__).parent / ".." / ".." / "pysr" / "juliapkg.json"
 
