@@ -15,8 +15,8 @@ with open(pyproject_toml) as toml_file:
 with open(juliapkg_json) as f:
     juliapkg_data = json.load(f)
 
-major, minor, patch = pyproject_data["tool"]["poetry"]["version"].split(".")
-pyproject_data["tool"]["poetry"]["version"] = f"{major}.{minor}.{int(patch)+1}"
+major, minor, patch, *dev = pyproject_data["project"]["version"].split(".")
+pyproject_data["project"]["version"] = f"{major}.{minor}.{int(patch)+1}"
 
 juliapkg_data["packages"]["SymbolicRegression"]["version"] = f"={new_backend_version}"
 
