@@ -27,3 +27,5 @@ with open(pyproject_toml, "w") as toml_file:
 
 with open(juliapkg_json, "w") as f:
     json.dump(juliapkg_data, f, indent=4)
+    # Ensure ends with newline
+    f.write("\n")
