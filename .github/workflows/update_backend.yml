@@ -13,13 +13,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.9
+          python-version: 3.12
           cache: pip
 
-      - name: "Install PySR"
+      - name: "Install dependencies"
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install toml json
           pip install .
           python -c 'import pysr'
 
@@ -29,43 +30,21 @@ jobs:
           cd $(mktemp -d)
           git clone https://github.com/MilesCranmer/SymbolicRegression.jl
           cd SymbolicRegression.jl
-          echo "version=$(git describe --tags --abbrev=0 | sed 's/^v//')" >> $GITHUB_OUTPUT
+          echo "version=$(git describe --tags --match='v*' --abbrev=0 | sed 's/^v//')" >> $GITHUB_OUTPUT
 
-      - name: "Get SymbolicRegression.jl version used in PySR"
+      - name: "Get SymbolicRegression.jl version currently used in PySR"
         id: get-current
         run: |
+          # TODO: Use juliacall to get this instead of setting in version.py
           echo "version=$(python -c 'import pysr; print(pysr.version.__symbolic_regression_jl_version__)' 2>/dev/null)" >> $GITHUB_OUTPUT
 
-      # If versions are different, we want to take our checked-out version,
-      # create a new branch called "update_compat_{...}", where the "..."
-      # is a timestamp. We then want to
-      # go to pysr/version.py, bump the patch version of PySR (__version__),
-      # set the version of __symbolic_regression_jl_version__ to the latest
-      # version of SymbolicRegression.jl, and then commit and push.
-      # Finally, we will open a PR from this branch to master.
-      - name: "Update versions"
+      - name: "Update SymbolicRegression.jl version in PySR"
         if: ${{ steps.get-latest.outputs.version != steps.get-current.outputs.version }}
         run: |
-          CURRENT_PY_VERSION_NUMBER=$(perl -nle 'print $1 if /version\s*=\s*"(\d+\.\d+)\.\d+"/' pyproject.toml)
-          CURRENT_PY_PATCH_NUMBER=$(perl -nle 'print $1 if /version\s*=\s*"\d+\.\d+\.(\d+)"/' pyproject.toml)
-          NEW_PY_PATCH_NUMBER=$((CURRENT_PY_PATCH_NUMBER + 1))
-          echo CURRENT_PY_VERSION_NUMBER=$CURRENT_PY_VERSION_NUMBER CURRENT_PY_PATCH_NUMBER=$CURRENT_PY_PATCH_NUMBER NEW_PY_PATCH_NUMBER=$NEW_PY_PATCH_NUMBER
-          sed -i.bak  "s/version = .*/version = \"$CURRENT_PY_VERSION_NUMBER.$NEW_PY_PATCH_NUMBER\"/" pyproject.toml
-          echo Updated pyproject.toml contents
-          cat pyproject.toml
+          python .github/workflows/bump_version.py
+          python .github/workflows/update_jl_version.py ${{ steps.get-latest.outputs.version }}
 
-          # Set new backend julia package version
-          echo Current pysr/juliapkg.json contents
-          cat pysr/juliapkg.json
-          # Assumes your julia package is the first in the list.
-          CURRENT_JL_VERSION_NUMBER=$(perl -nle 'print $1 if /"version"\s*:\s*"(.\d+\.\d+\.\d+)"/' pysr/juliapkg.json | head -n 1)
-          NEW_JL_VERSION_NUMBER="${{ steps.get-latest.outputs.version }}"
-          echo CURRENT_JL_VERSION_NUMBER=$CURRENT_JL_VERSION_NUMBER NEW_JL_VERSION_NUMBER=$NEW_JL_VERSION_NUMBER
-          sed -i.bak  "s/\"version\": \"$CURRENT_JL_VERSION_NUMBER\"/\"version\": \"=$NEW_JL_VERSION_NUMBER\"/" pysr/juliapkg.json
-          echo Updated pysr/juliapkg.json contents
-          cat pysr/juliapkg.json
-
-      - name: "Create PR"
+      - name: "Create PR if necessary"
         uses: peter-evans/create-pull-request@v6
         with:
           title: "Automated update to backend: v${{ steps.get-latest.outputs.version }}"
