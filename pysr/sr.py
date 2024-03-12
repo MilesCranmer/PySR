@@ -771,16 +771,16 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     ```
     """
 
-    # equations_ : pandas.DataFrame | list[pandas.DataFrame]
-    # n_features_in_ : int
-    # feature_names_in_ : ndarray of shape (`n_features_in_`,)
-    # display_feature_names_in_ : ndarray of shape (`n_features_in_`,)
     # X_units_ : list[str] of length n_features
     # y_units_ : str | list[str] of length n_out
-    # nout_ : int
     # selection_mask_ : list[int]
     # tempdir_ : Path
     # equation_file_ : str | None
+    equations_: pd.DataFrame | list[pd.DataFrame] | None
+    n_features_in_: int
+    feature_names_in_: np.ndarray
+    display_feature_names_in_: np.ndarray
+    nout_: int
     julia_state_stream_: np.ndarray | None
     julia_options_stream_: np.ndarray | None
     show_pickle_warnings_: bool
