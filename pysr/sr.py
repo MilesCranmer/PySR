@@ -119,7 +119,7 @@ class ValidatedDataset:
     y: np.ndarray
     Xresampled: np.ndarray | None
     weights: np.ndarray | None
-    variable_names: np.ndarray | None
+    variable_names: np.ndarray
     X_units: list[str] | None
     y_units: str | list[str] | None
 
@@ -1005,7 +1005,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         binary_operators: list[str] | None = None,
         unary_operators: list[str] | None = None,
         n_features_in: int | None = None,
-        feature_names_in: list[str] | np.ndarray | None = None,
+        feature_names_in: list[str] | None = None,
         selection_mask: list[bool] | None = None,
         nout: int = 1,
         **pysr_kwargs,
@@ -1027,7 +1027,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         n_features_in : int
             Number of features passed to the model.
             Not needed if loading from a pickle file.
-        feature_names_in : list[str] | np.ndarray
+        feature_names_in : list[str]
             Names of the features passed to the model.
             Not needed if loading from a pickle file.
         selection_mask : list[bool]
@@ -1098,8 +1098,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             )
         else:
             assert len(feature_names_in) == n_features_in
-            model.feature_names_in_ = feature_names_in
-            model.display_feature_names_in_ = feature_names_in
+            model.feature_names_in_ = np.array(feature_names_in)
+            model.display_feature_names_in_ = np.array(feature_names_in)
 
         if selection_mask is None:
             model.selection_mask_ = np.ones(n_features_in, dtype=bool)
@@ -1498,7 +1498,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self.feature_names_in_ = np.array(feature_names_in_)
             self.display_feature_names_in_ = self.feature_names_in_
 
-        variable_names = self.feature_names_in_
+        out_variable_names = self.feature_names_in_
 
         # Handle multioutput data
         if len(y.shape) == 1 or (len(y.shape) == 2 and y.shape[1] == 1):
@@ -1516,7 +1516,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             y=y,
             Xresampled=Xresampled,
             weights=weights,
-            variable_names=variable_names,
+            variable_names=out_variable_names,
             X_units=X_units,
             y_units=y_units,
         )
