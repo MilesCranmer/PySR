@@ -22,7 +22,6 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import Literal
 
-
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
@@ -33,7 +32,7 @@ from .denoising import denoise, multi_denoise
 from .deprecated import DEPRECATED_KWARGS
 from .export_jax import sympy2jax
 from .export_latex import sympy2latex, sympy2latextable, sympy2multilatextable
-from .export_numpy import sympy2numpy
+from .export_numpy import CallableEquation, sympy2numpy
 from .export_sympy import assert_valid_sympy_symbol, create_sympy_symbols, pysr2sympy
 from .export_torch import sympy2torch
 from .feature_selection import run_feature_selection
@@ -771,6 +770,21 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     array([-1.15907818, -1.15907818, -1.15907818, -1.15907818, -1.15907818])
     ```
     """
+
+    # equations_ : pandas.DataFrame | list[pandas.DataFrame]
+    # n_features_in_ : int
+    # feature_names_in_ : ndarray of shape (`n_features_in_`,)
+    # display_feature_names_in_ : ndarray of shape (`n_features_in_`,)
+    # X_units_ : list[str] of length n_features
+    # y_units_ : str | list[str] of length n_out
+    # nout_ : int
+    # selection_mask_ : list[int]
+    # tempdir_ : Path
+    # equation_file_ : str | None
+    julia_state_stream_: np.ndarray | None
+    julia_options_stream_: np.ndarray | None
+    show_pickle_warnings_: bool
+    equation_file_contents_: list[pd.DataFrame] | None
 
     def __init__(
         self,
@@ -2037,11 +2051,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         X = self._validate_data(X, reset=False)
 
         try:
-            if self.nout_ > 1:
+            if isinstance(best_equation, list):
+                assert self.nout_ > 1
                 return np.stack(
                     [eq["lambda_format"](X) for eq in best_equation], axis=1
                 )
-            return best_equation["lambda_format"](X)
+            else:
+                assert self.nout_ == 1
+                return np.array(best_equation["lambda_format"](X))
         except Exception as error:
             raise ValueError(
                 "Failed to evaluate the expression. "
@@ -2236,8 +2253,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         extra_jax_mappings = self.extra_jax_mappings
         extra_torch_mappings = self.extra_torch_mappings
         if extra_jax_mappings is not None:
-            for value in extra_jax_mappings.values():
-                if not isinstance(value, str):
+            for jax_value in extra_jax_mappings.values():
+                if not isinstance(jax_value, str):
                     raise ValueError(
                         "extra_jax_mappings must have keys that are strings! "
                         "e.g., {sympy.sqrt: 'jnp.sqrt'}."
@@ -2245,8 +2262,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         else:
             extra_jax_mappings = {}
         if extra_torch_mappings is not None:
-            for value in extra_torch_mappings.values():
-                if not callable(value):
+            for torch_value in extra_torch_mappings.values():
+                if not callable(torch_value):
                     raise ValueError(
                         "extra_torch_mappings must be callable functions! "
                         "e.g., {sympy.sqrt: torch.sqrt}."
