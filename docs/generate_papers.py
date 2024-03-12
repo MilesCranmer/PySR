@@ -35,11 +35,16 @@ with open(output_file, "w") as f:
         abstract = paper["abstract"]
         image_file = paper["image"]
 
+        if image_file.startswith("http"):
+            absolute_image_file = image_file
+        else:
+            absolute_image_file = f"images/{image_file}"
+
         # Begin:
         paper_snippet = f"""
 
 <figure markdown>
-![](images/{image_file}){{ width="500"}}
+![]({absolute_image_file}){{ width="500"}}
 <figcaption>
 <!-- Large font: -->
 <h2>
