@@ -157,7 +157,7 @@ class ProcessedDataset:
     X: np.ndarray
     y: np.ndarray
     weights: np.ndarray | None
-    variable_names: np.ndarray | None
+    variable_names: np.ndarray
     X_units: list[str] | None
     y_units: str | list[str] | None
 
