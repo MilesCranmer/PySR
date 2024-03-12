@@ -847,7 +847,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         update_verbosity: int | None = None,
         print_precision: int = 5,
         progress: bool = True,
-        equation_file: str | None = None,
+        equation_file: str | Path | None = None,
         temp_equation_file: bool = False,
         tempdir: str | None = None,
         delete_tempfiles: bool = True,
@@ -1015,7 +1015,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        equation_file : str
+        equation_file : str | Path
             Path to a pickle file containing a saved model, or a csv file
             containing equations.
         binary_operators : list[str]
@@ -1027,7 +1027,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         n_features_in : int
             Number of features passed to the model.
             Not needed if loading from a pickle file.
-        feature_names_in : list[str]
+        feature_names_in : list[str] | np.ndarray
             Names of the features passed to the model.
             Not needed if loading from a pickle file.
         selection_mask : list[bool]
@@ -1058,7 +1058,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             assert unary_operators is None
             assert n_features_in is None
             with open(pkl_filename, "rb") as f:
-                model = pkl.load(f)
+                model: "PySRRegressor" = pkl.load(f)
             # Change equation_file_ to be in the same dir as the pickle file
             base_dir = os.path.dirname(pkl_filename)
             base_equation_file = os.path.basename(model.equation_file_)
@@ -1305,17 +1305,17 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # Cast tempdir string as a Path object
         self.tempdir_ = Path(tempfile.mkdtemp(dir=self.tempdir))
         if self.temp_equation_file:
-            self.equation_file_ = self.tempdir_ / "hall_of_fame.csv"
+            self.equation_file_ = str(self.tempdir_ / "hall_of_fame.csv")
         elif self.equation_file is None:
             if self.warm_start and (
-                hasattr(self, "equation_file_") and self.equation_file_
+                hasattr(self, "equation_file_") and self.equation_file_ is not None
             ):
                 pass
             else:
                 date_time = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")[:-3]
                 self.equation_file_ = "hall_of_fame_" + date_time + ".csv"
         else:
-            self.equation_file_ = self.equation_file
+            self.equation_file_ = str(self.equation_file)
         self.equation_file_contents_ = None
 
     def _validate_and_set_init_params(self) -> dict[str, Any]:
@@ -2174,9 +2174,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             if self.nout_ > 1:
                 all_outputs = []
                 for i in range(1, self.nout_ + 1):
-                    cur_filename = str(self.equation_file_) + f".out{i}" + ".bkup"
+                    cur_filename = self.equation_file_ + f".out{i}" + ".bkup"
                     if not os.path.exists(cur_filename):
-                        cur_filename = str(self.equation_file_) + f".out{i}"
+                        cur_filename = self.equation_file_ + f".out{i}"
                     with open(cur_filename, "r", encoding="utf-8") as f:
                         buf = f.read()
                     buf = _preprocess_julia_floats(buf)
@@ -2185,9 +2185,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
                     all_outputs.append(df)
             else:
-                filename = str(self.equation_file_) + ".bkup"
+                filename = self.equation_file_ + ".bkup"
                 if not os.path.exists(filename):
-                    filename = str(self.equation_file_)
+                    filename = self.equation_file_
                 with open(filename, "r", encoding="utf-8") as f:
                     buf = f.read()
                 buf = _preprocess_julia_floats(buf)
