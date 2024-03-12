@@ -594,7 +594,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         search evaluation. Certain operators may not be supported.
         Does not support 16-bit precision floats.
         Default is `False`.
-    precision : int
+    precision : Literal[16, 32, 64]
         What precision to use for the data. By default this is `32`
         (float32), but you can select `64` or `16` as well, giving
         you 64 or 16 bits of floating point precision, respectively.
@@ -852,7 +852,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         batch_size: int = 50,
         fast_cycle: bool = False,
         turbo: bool = False,
-        precision: int = 32,
+        precision: Literal[16, 32, 64] = 32,
         enable_autodiff: bool = False,
         random_state=None,
         deterministic: bool = False,
