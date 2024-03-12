@@ -774,8 +774,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     # X_units_ : list[str] of length n_features
     # y_units_ : str | list[str] of length n_out
     # selection_mask_ : list[int]
-    # tempdir_ : Path
-    # equation_file_ : str | None
+    tempdir_: Path
+    equation_file_: str
     equations_: pd.DataFrame | list[pd.DataFrame] | None
     n_features_in_: int
     feature_names_in_: np.ndarray
@@ -1073,10 +1073,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             assert n_features_in is None
             with open(pkl_filename, "rb") as f:
                 model: "PySRRegressor" = pkl.load(f)
+
             # Change equation_file_ to be in the same dir as the pickle file
-            base_dir = os.path.dirname(pkl_filename)
-            base_equation_file = os.path.basename(model.equation_file_)
-            model.equation_file_ = os.path.join(base_dir, base_equation_file)
+            base_dir = str(os.path.dirname(pkl_filename))
+            base_equation_file = str(os.path.basename(model.equation_file_))
+            model.equation_file_ = str(os.path.join(base_dir, base_equation_file))
 
             # Update any parameters if necessary, such as
             # extra_sympy_mappings:
