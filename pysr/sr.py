@@ -771,18 +771,18 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     ```
     """
 
-    # X_units_ : list[str] of length n_features
-    # y_units_ : str | list[str] of length n_out
-    # selection_mask_ : list[int]
+    X_units_: list[str] | None
+    y_units_: str | list[str] | None
+    selection_mask_: np.ndarray[Any, np.dtype[np.bool_]] | None
     tempdir_: Path
     equation_file_: str
     equations_: pd.DataFrame | list[pd.DataFrame] | None
     n_features_in_: int
-    feature_names_in_: np.ndarray
-    display_feature_names_in_: np.ndarray
+    feature_names_in_: np.ndarray[Any, np.dtype[np.str_]]
+    display_feature_names_in_: np.ndarray[Any, np.dtype[np.str_]]
     nout_: int
-    julia_state_stream_: np.ndarray | None
-    julia_options_stream_: np.ndarray | None
+    julia_state_stream_: np.ndarray[Any, np.dtype[np.uint8]] | None
+    julia_options_stream_: np.ndarray[Any, np.dtype[np.uint8]] | None
     show_pickle_warnings_: bool
     equation_file_contents_: list[pd.DataFrame] | None
 
@@ -1020,7 +1020,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         unary_operators: list[str] | None = None,
         n_features_in: int | None = None,
         feature_names_in: list[str] | None = None,
-        selection_mask: list[bool] | None = None,
+        selection_mask: list[bool] | np.ndarray | None = None,
         nout: int = 1,
         **pysr_kwargs,
     ) -> "PySRRegressor":
@@ -1119,7 +1119,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if selection_mask is None:
             model.selection_mask_ = np.ones(n_features_in, dtype=bool)
         else:
-            model.selection_mask_ = selection_mask
+            model.selection_mask_ = np.array(selection_mask)
 
         model.refresh(checkpoint_file=equation_file)
 
@@ -1570,6 +1570,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 Xresampled = Xresampled[:, self.selection_mask_]
 
             # Reduce variable_names to selection
+            assert self.selection_mask_ is not None
             variable_names = np.array([variable_names[i] for i in self.selection_mask_])
 
             if X_units is not None:
@@ -2002,7 +2003,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        X : ndarray | pandas.DataFrame
+        X : ndarray | pandas.DataFrame | list[list]
             Training data of shape `(n_samples, n_features)`.
         index : int | list[int]
             If you want to compute the output of an expression using a
