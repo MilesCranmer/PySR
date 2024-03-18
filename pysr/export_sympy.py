@@ -1,4 +1,5 @@
 """Define utilities to export to sympy"""
+
 from typing import Callable, Dict, List, Optional
 
 import sympy
