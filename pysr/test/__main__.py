@@ -1,4 +1,5 @@
 """CLI for running PySR's test suite."""
+
 import argparse
 
 from . import *
