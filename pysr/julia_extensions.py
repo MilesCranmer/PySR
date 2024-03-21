@@ -3,7 +3,7 @@
 from .julia_import import jl
 
 
-def load_required_packages(*, turbo=False, enable_autodiff=False):
+def load_required_packages(*, turbo=False, enable_autodiff=False, cluster_manager=None):
     if turbo:
         load_package("LoopVectorization")
     if enable_autodiff:
