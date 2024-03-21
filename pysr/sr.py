@@ -32,6 +32,7 @@ from .export_numpy import sympy2numpy
 from .export_sympy import assert_valid_sympy_symbol, create_sympy_symbols, pysr2sympy
 from .export_torch import sympy2torch
 from .feature_selection import run_feature_selection
+from .julia_extensions import load_required_packages
 from .julia_helpers import (
     PythonCall,
     _escape_filename,
@@ -1603,6 +1604,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             str(self.early_stop_condition)
             if self.early_stop_condition is not None
             else "nothing"
+        )
+
+        load_required_packages(
+            turbo=turbo,
+            enable_autodiff=enable_autodiff,
+            cluster_manager=cluster_manager
         )
 
         mutation_weights = SymbolicRegression.MutationWeights(
