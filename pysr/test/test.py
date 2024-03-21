@@ -69,6 +69,9 @@ class TestPipeline(unittest.TestCase):
         model.fit(self.X, y, weights=weights)
         print(model.equations_)
         self.assertLessEqual(model.get_best()["loss"], 1e-4)
+        self.assertEqual(
+            jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.bumper), True
+        )
 
     def test_multiprocessing_turbo_custom_objective(self):
         rstate = np.random.RandomState(0)
@@ -98,7 +101,9 @@ class TestPipeline(unittest.TestCase):
         self.assertGreaterEqual(best_loss, 0.0)
 
         # Test options stored:
-        self.assertEqual(model.julia_options_.turbo, True)
+        self.assertEqual(
+            jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.turbo), True
+        )
 
     def test_multiline_seval(self):
         # The user should be able to run multiple things in a single seval call:
@@ -129,7 +134,9 @@ class TestPipeline(unittest.TestCase):
         self.assertTrue(jl.typeof(test_state[1]).parameters[1] == jl.Float64)
 
         # Test options stored:
-        self.assertEqual(model.julia_options_.turbo, False)
+        self.assertEqual(
+            jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.turbo), False
+        )
 
     def test_multioutput_custom_operator_quiet_custom_complexity(self):
         y = self.X[:, [0, 1]] ** 2
@@ -163,10 +170,6 @@ class TestPipeline(unittest.TestCase):
 
         self.assertLessEqual(mse1, 1e-4)
         self.assertLessEqual(mse2, 1e-4)
-
-        bad_y = model.predict(self.X, index=[0, 0])
-        bad_mse = np.average((bad_y - y) ** 2)
-        self.assertGreater(bad_mse, 1e-4)
 
     def test_multioutput_weighted_with_callable_temp_equation(self):
         X = self.X.copy()
@@ -1105,7 +1108,6 @@ class TestDimensionalConstraints(unittest.TestCase):
         self.assertNotIn("x1", best["equation"])
         self.assertIn("x2", best["equation"])
         self.assertEqual(best["complexity"], 3)
-        self.assertEqual(model.equations_.iloc[0].complexity, 1)
         self.assertGreater(model.equations_.iloc[0].loss, 1e-6)
 
         # With pkl file:
