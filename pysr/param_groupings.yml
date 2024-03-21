@@ -74,6 +74,7 @@
   - precision
   - fast_cycle
   - turbo
+  - bumper
   - enable_autodiff
 - Determinism:
   - random_state

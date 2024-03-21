@@ -58,12 +58,13 @@ class TestPipeline(unittest.TestCase):
         model.fit(self.X, y, variable_names=["c1", "c2", "c3", "c4", "c5"])
         self.assertIn("c1", model.equations_.iloc[-1]["equation"])
 
-    def test_linear_relation_weighted(self):
+    def test_linear_relation_weighted_bumper(self):
         y = self.X[:, 0]
         weights = np.ones_like(y)
         model = PySRRegressor(
             **self.default_test_kwargs,
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
+            bumper=True,
         )
         model.fit(self.X, y, weights=weights)
         print(model.equations_)

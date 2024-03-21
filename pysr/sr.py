@@ -484,6 +484,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         search evaluation. Certain operators may not be supported.
         Does not support 16-bit precision floats.
         Default is `False`.
+    bumper: bool
+        (Experimental) Whether to use Bumper.jl to speed up the search
+        evaluation. Does not support 16-bit precision floats.
+        Default is `False`.
     precision : int
         What precision to use for the data. By default this is `32`
         (float32), but you can select `64` or `16` as well, giving
@@ -727,6 +731,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         batch_size: int = 50,
         fast_cycle: bool = False,
         turbo: bool = False,
+        bumper: bool = False,
         precision: int = 32,
         enable_autodiff: bool = False,
         random_state=None,
@@ -822,6 +827,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.batch_size = batch_size
         self.fast_cycle = fast_cycle
         self.turbo = turbo
+        self.bumper = bumper
         self.precision = precision
         self.enable_autodiff = enable_autodiff
         self.random_state = random_state
@@ -1609,6 +1615,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         load_required_packages(
             turbo=self.turbo,
+            bumper=self.bumper,
             enable_autodiff=self.enable_autodiff,
             cluster_manager=cluster_manager,
         )
@@ -1654,6 +1661,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             maxdepth=maxdepth,
             fast_cycle=self.fast_cycle,
             turbo=self.turbo,
+            bumper=self.bumper,
             enable_autodiff=self.enable_autodiff,
             migration=self.migration,
             hof_migration=self.hof_migration,

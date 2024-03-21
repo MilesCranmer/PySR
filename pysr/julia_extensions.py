@@ -8,6 +8,8 @@ def load_required_packages(
 ):
     if turbo:
         load_package("LoopVectorization", "bdcacae8-1622-11e9-2a5c-532679323890")
+    if bumper:
+        load_package("Bumper", "8ce10254-0962-460f-a3d8-1f77fea1446e")
     if enable_autodiff:
         load_package("Zygote", "e88e6eb3-aa80-5325-afca-941959d7151f")
     if cluster_manager is not None:
