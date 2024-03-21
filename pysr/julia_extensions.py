@@ -12,7 +12,8 @@ def load_required_packages(*, turbo=False, enable_autodiff=False):
 
 
 def load_package(package_name):
-    jl.seval(f"""
+    jl.seval(
+        f"""
         try
             using {package_name}
         catch e
@@ -21,5 +22,6 @@ def load_package(package_name):
             Pkg.add("{package_name}")
             using {package_name}
         end
-    """)
+    """
+    )
     return None

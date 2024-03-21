@@ -1609,7 +1609,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         load_required_packages(
             turbo=turbo,
             enable_autodiff=enable_autodiff,
-            cluster_manager=cluster_manager
+            cluster_manager=cluster_manager,
         )
 
         mutation_weights = SymbolicRegression.MutationWeights(
