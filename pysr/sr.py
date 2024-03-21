@@ -1608,8 +1608,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         )
 
         load_required_packages(
-            turbo=turbo,
-            enable_autodiff=enable_autodiff,
+            turbo=self.turbo,
+            enable_autodiff=self.enable_autodiff,
             cluster_manager=cluster_manager,
         )
 
