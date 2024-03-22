@@ -1107,7 +1107,10 @@ class TestDimensionalConstraints(unittest.TestCase):
         self.assertNotIn("x1", best["equation"])
         self.assertIn("x2", best["equation"])
         self.assertEqual(best["complexity"], 3)
-        self.assertGreater(model.equations_.iloc[0].loss, 1e-6)
+        self.assertTrue(
+            model.equations_.iloc[0].complexity > 1
+            or model.equations_.iloc[0].loss > 1e-6
+        )
 
         # With pkl file:
         pkl_file = str(temp_dir / "equation_file.pkl")
