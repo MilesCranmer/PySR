@@ -293,7 +293,7 @@ class TestPipeline(unittest.TestCase):
         model.fit(self.X, y, variable_names=["exec", "hash", "x3", "x4", "x5"])
         self.assertLessEqual(model.get_best()[1]["loss"], 1e-2)
         self.assertLessEqual(model.get_best()[1]["loss"], 1e-2)
-        self.assertIn("exec", model.latex()[1])
+        self.assertIn("exec", model.latex()[0])
         self.assertIn("hash", model.latex()[1])
 
     def test_pandas_resample_with_nested_constraints(self):
