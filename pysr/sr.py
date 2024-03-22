@@ -1271,9 +1271,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 f"PySR currently only supports the following optimizer algorithms: {VALID_OPTIMIZER_ALGORITHMS}"
             )
 
+        progress = self.progress
         # 'Mutable' parameter validation
-        buffer_available = "buffer" in sys.stdout.__dir__()
-        # Params and their default values, if None is given:
+        #  (Params and their default values, if None is given:)
         default_param_mapping = {
             "binary_operators": "+ * - /".split(" "),
             "unary_operators": [],
@@ -1282,7 +1282,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             "multithreading": self.procs != 0 and self.cluster_manager is None,
             "batch_size": 1,
             "update_verbosity": int(self.verbosity),
-            "progress": buffer_available,
+            "progress": progress,
         }
         packed_modified_params = {}
         for parameter, default_value in default_param_mapping.items():
@@ -1301,7 +1301,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                         "`batch_size` has been increased to equal one."
                     )
                     parameter_value = 1
-                elif parameter == "progress" and not buffer_available:
+                elif (
+                    parameter == "progress"
+                    and parameter_value
+                    and "buffer" not in sys.stdout.__dir__()
+                ):
                     warnings.warn(
                         "Note: it looks like you are running in Jupyter. "
                         "The progress bar will be turned off."
