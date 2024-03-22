@@ -37,17 +37,6 @@ else:
 
 from juliacall import Main as jl  # type: ignore
 
-# Overwrite the seval function to use Meta.parseall
-# instead of Meta.parse.
-jl.seval("using PythonCall: PythonCall, Py, pyconvert")
-jl.seval(
-    """function PythonCall.pyjlmodule_seval(self::Module, expr::Py)
-    e = Meta.parseall(strip(pyconvert(String, expr)))
-    Py(Base.eval(self, e))
-end"""
-)
-# ^TODO: Overwrite this once PythonCall.jl is updated:
-
 jl_version = (jl.VERSION.major, jl.VERSION.minor, jl.VERSION.patch)
 
 # Next, automatically load the juliacall extension if we're in a Jupyter notebook

@@ -56,7 +56,6 @@ A selection of these and other valid operators are stated below.
 - `round`
 - `floor`
 - `ceil`
-- `round`
 - `sign`
 
 ## Custom
