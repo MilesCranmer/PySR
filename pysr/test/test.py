@@ -272,7 +272,7 @@ class TestPipeline(unittest.TestCase):
         regressor = PySRRegressor(warm_start=True, max_evals=10)
         regressor.fit(self.X, y)
 
-    def test_noisy(self):
+    def test_noisy_builtin_variable_names(self):
         y = self.X[:, [0, 1]] ** 2 + self.rstate.randn(self.X.shape[0], 1) * 0.05
         model = PySRRegressor(
             # Test that passing a single operator works:
@@ -289,9 +289,12 @@ class TestPipeline(unittest.TestCase):
         model.set_params(model_selection="best")
         # Also try without a temp equation file:
         model.set_params(temp_equation_file=False)
-        model.fit(self.X, y)
+        # We also test builtin variable names
+        model.fit(self.X, y, variable_names=["exec", "hash", "x3", "x4", "x5"])
         self.assertLessEqual(model.get_best()[1]["loss"], 1e-2)
         self.assertLessEqual(model.get_best()[1]["loss"], 1e-2)
+        self.assertIn("exec", model.latex()[0])
+        self.assertIn("hash", model.latex()[1])
 
     def test_pandas_resample_with_nested_constraints(self):
         X = pd.DataFrame(
