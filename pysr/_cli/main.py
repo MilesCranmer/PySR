@@ -1,3 +1,4 @@
+import fnmatch
 import sys
 import unittest
 import warnings
@@ -52,7 +53,14 @@ TEST_OPTIONS = {"main", "jax", "torch", "cli", "dev", "startup"}
 
 @pysr.command("test")
 @click.argument("tests", nargs=1)
-def _tests(tests):
+@click.option(
+    "-k",
+    "expressions",
+    multiple=True,
+    type=str,
+    help="Filter expressions to select specific tests.",
+)
+def _tests(tests, expressions):
     """Run parts of the PySR test suite.
 
     Choose from main, jax, torch, cli, dev, and startup. You can give multiple tests, separated by commas.
@@ -78,11 +86,16 @@ def _tests(tests):
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()
     for test_case in test_cases:
-        suite.addTests(loader.loadTestsFromTestCase(test_case))
+        loaded_tests = loader.loadTestsFromTestCase(test_case)
+        for test in loaded_tests:
+            if len(expressions) == 0 or any(
+                fnmatch.fnmatch(test.id(), "*" + expression + "*")
+                for expression in expressions
+            ):
+                suite.addTest(test)
+
     runner = unittest.TextTestRunner()
     results = runner.run(suite)
-    # Normally unittest would run this, but here we have
-    # to do it manually to get the exit code.
 
     if not results.wasSuccessful():
         sys.exit(1)
