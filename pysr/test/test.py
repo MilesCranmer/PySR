@@ -1029,9 +1029,8 @@ class TestDimensionalConstraints(unittest.TestCase):
         for i in range(2):
             self.assertGreater(model.get_best()[i]["complexity"], 2)
             self.assertLess(model.get_best()[i]["loss"], 1e-6)
-            self.assertGreater(
-                model.equations_[i].query("complexity <= 2").loss.min(), 1e-6
-            )
+            simple_eqs = model.equations_[i].query("complexity <= 2")
+            self.assertTrue(len(simple_eqs) == 0 or simple_eqs.loss.min() > 1e-6)
 
     def test_unit_checks(self):
         """This just checks the number of units passed"""
