@@ -1129,8 +1129,8 @@ class TestDimensionalConstraints(unittest.TestCase):
 
         # Try warm start, but with no units provided (should
         # be a different dataset, and thus different result):
-        model.fit(X, y)
         model.early_stop_condition = "(l, c) -> l < 1e-6 && c == 1"
+        model.fit(X, y)
         self.assertEqual(model.equations_.iloc[0].complexity, 1)
         self.assertLess(model.equations_.iloc[0].loss, 1e-6)
 
