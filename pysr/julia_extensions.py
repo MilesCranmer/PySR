@@ -22,7 +22,7 @@ def load_required_packages(
         load_package("ClusterManagers", "34f1f09b-3a8b-5176-ab39-66d58a4d544e")
 
 
-def isinstalled(uuid_s: str) -> bool:
+def isinstalled(uuid_s: str):
     return jl.haskey(Pkg.dependencies(), jl.Base.UUID(uuid_s))
 
 
