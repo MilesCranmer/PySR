@@ -703,7 +703,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         weight_do_nothing: float = 0.21,
         weight_mutate_constant: float = 0.048,
         weight_mutate_operator: float = 0.47,
-        weight_swap_operands: float = 0.0,
+        weight_swap_operands: float = 0.1,
         weight_randomize: float = 0.00023,
         weight_simplify: float = 0.0020,
         weight_optimize: float = 0.0,
