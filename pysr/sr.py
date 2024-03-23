@@ -1,4 +1,5 @@
 """Define the PySRRegressor scikit-learn interface."""
+
 import copy
 import os
 import pickle as pkl
@@ -32,6 +33,7 @@ from .export_numpy import sympy2numpy
 from .export_sympy import assert_valid_sympy_symbol, create_sympy_symbols, pysr2sympy
 from .export_torch import sympy2torch
 from .feature_selection import run_feature_selection
+from .julia_extensions import load_required_packages
 from .julia_helpers import (
     PythonCall,
     _escape_filename,
@@ -482,6 +484,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         search evaluation. Certain operators may not be supported.
         Does not support 16-bit precision floats.
         Default is `False`.
+    bumper: bool
+        (Experimental) Whether to use Bumper.jl to speed up the search
+        evaluation. Does not support 16-bit precision floats.
+        Default is `False`.
     precision : int
         What precision to use for the data. By default this is `32`
         (float32), but you can select `64` or `16` as well, giving
@@ -697,7 +703,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         weight_do_nothing: float = 0.21,
         weight_mutate_constant: float = 0.048,
         weight_mutate_operator: float = 0.47,
-        weight_swap_operands: float = 0.0,
+        weight_swap_operands: float = 0.1,
         weight_randomize: float = 0.00023,
         weight_simplify: float = 0.0020,
         weight_optimize: float = 0.0,
@@ -725,6 +731,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         batch_size: int = 50,
         fast_cycle: bool = False,
         turbo: bool = False,
+        bumper: bool = False,
         precision: int = 32,
         enable_autodiff: bool = False,
         random_state=None,
@@ -820,6 +827,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.batch_size = batch_size
         self.fast_cycle = fast_cycle
         self.turbo = turbo
+        self.bumper = bumper
         self.precision = precision
         self.enable_autodiff = enable_autodiff
         self.random_state = random_state
@@ -1263,9 +1271,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 f"PySR currently only supports the following optimizer algorithms: {VALID_OPTIMIZER_ALGORITHMS}"
             )
 
+        progress = self.progress
         # 'Mutable' parameter validation
-        buffer_available = "buffer" in sys.stdout.__dir__()
-        # Params and their default values, if None is given:
+        #  (Params and their default values, if None is given:)
         default_param_mapping = {
             "binary_operators": "+ * - /".split(" "),
             "unary_operators": [],
@@ -1274,7 +1282,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             "multithreading": self.procs != 0 and self.cluster_manager is None,
             "batch_size": 1,
             "update_verbosity": int(self.verbosity),
-            "progress": buffer_available,
+            "progress": progress,
         }
         packed_modified_params = {}
         for parameter, default_value in default_param_mapping.items():
@@ -1293,7 +1301,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                         "`batch_size` has been increased to equal one."
                     )
                     parameter_value = 1
-                elif parameter == "progress" and not buffer_available:
+                elif (
+                    parameter == "progress"
+                    and parameter_value
+                    and "buffer" not in sys.stdout.__dir__()
+                ):
                     warnings.warn(
                         "Note: it looks like you are running in Jupyter. "
                         "The progress bar will be turned off."
@@ -1605,6 +1617,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             else "nothing"
         )
 
+        load_required_packages(
+            turbo=self.turbo,
+            bumper=self.bumper,
+            enable_autodiff=self.enable_autodiff,
+            cluster_manager=cluster_manager,
+        )
+
         mutation_weights = SymbolicRegression.MutationWeights(
             mutate_constant=self.weight_mutate_constant,
             mutate_operator=self.weight_mutate_operator,
@@ -1646,15 +1665,16 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             maxdepth=maxdepth,
             fast_cycle=self.fast_cycle,
             turbo=self.turbo,
+            bumper=self.bumper,
             enable_autodiff=self.enable_autodiff,
             migration=self.migration,
             hof_migration=self.hof_migration,
             fraction_replaced_hof=self.fraction_replaced_hof,
             should_simplify=self.should_simplify,
             should_optimize_constants=self.should_optimize_constants,
-            warmup_maxsize_by=0.0
-            if self.warmup_maxsize_by is None
-            else self.warmup_maxsize_by,
+            warmup_maxsize_by=(
+                0.0 if self.warmup_maxsize_by is None else self.warmup_maxsize_by
+            ),
             use_frequency=self.use_frequency,
             use_frequency_in_tournament=self.use_frequency_in_tournament,
             adaptive_parsimony_scaling=self.adaptive_parsimony_scaling,
@@ -1736,9 +1756,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             ),
             y_variable_names=jl_y_variable_names,
             X_units=jl_array(self.X_units_),
-            y_units=jl_array(self.y_units_)
-            if isinstance(self.y_units_, list)
-            else self.y_units_,
+            y_units=(
+                jl_array(self.y_units_)
+                if isinstance(self.y_units_, list)
+                else self.y_units_
+            ),
             options=options,
             numprocs=cprocs,
             parallelism=parallelism,

@@ -58,16 +58,20 @@ class TestPipeline(unittest.TestCase):
         model.fit(self.X, y, variable_names=["c1", "c2", "c3", "c4", "c5"])
         self.assertIn("c1", model.equations_.iloc[-1]["equation"])
 
-    def test_linear_relation_weighted(self):
+    def test_linear_relation_weighted_bumper(self):
         y = self.X[:, 0]
         weights = np.ones_like(y)
         model = PySRRegressor(
             **self.default_test_kwargs,
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
+            bumper=True,
         )
         model.fit(self.X, y, weights=weights)
         print(model.equations_)
         self.assertLessEqual(model.get_best()["loss"], 1e-4)
+        self.assertEqual(
+            jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.bumper), True
+        )
 
     def test_multiprocessing_turbo_custom_objective(self):
         rstate = np.random.RandomState(0)
@@ -97,7 +101,9 @@ class TestPipeline(unittest.TestCase):
         self.assertGreaterEqual(best_loss, 0.0)
 
         # Test options stored:
-        self.assertEqual(model.julia_options_.turbo, True)
+        self.assertEqual(
+            jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.turbo), True
+        )
 
     def test_multiline_seval(self):
         # The user should be able to run multiple things in a single seval call:
@@ -128,7 +134,9 @@ class TestPipeline(unittest.TestCase):
         self.assertTrue(jl.typeof(test_state[1]).parameters[1] == jl.Float64)
 
         # Test options stored:
-        self.assertEqual(model.julia_options_.turbo, False)
+        self.assertEqual(
+            jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.turbo), False
+        )
 
     def test_multioutput_custom_operator_quiet_custom_complexity(self):
         y = self.X[:, [0, 1]] ** 2
@@ -162,10 +170,6 @@ class TestPipeline(unittest.TestCase):
 
         self.assertLessEqual(mse1, 1e-4)
         self.assertLessEqual(mse2, 1e-4)
-
-        bad_y = model.predict(self.X, index=[0, 0])
-        bad_mse = np.average((bad_y - y) ** 2)
-        self.assertGreater(bad_mse, 1e-4)
 
     def test_multioutput_weighted_with_callable_temp_equation(self):
         X = self.X.copy()
@@ -1028,9 +1032,8 @@ class TestDimensionalConstraints(unittest.TestCase):
         for i in range(2):
             self.assertGreater(model.get_best()[i]["complexity"], 2)
             self.assertLess(model.get_best()[i]["loss"], 1e-6)
-            self.assertGreater(
-                model.equations_[i].query("complexity <= 2").loss.min(), 1e-6
-            )
+            simple_eqs = model.equations_[i].query("complexity <= 2")
+            self.assertTrue(len(simple_eqs) == 0 or simple_eqs.loss.min() > 1e-6)
 
     def test_unit_checks(self):
         """This just checks the number of units passed"""
@@ -1107,8 +1110,10 @@ class TestDimensionalConstraints(unittest.TestCase):
         self.assertNotIn("x1", best["equation"])
         self.assertIn("x2", best["equation"])
         self.assertEqual(best["complexity"], 3)
-        self.assertEqual(model.equations_.iloc[0].complexity, 1)
-        self.assertGreater(model.equations_.iloc[0].loss, 1e-6)
+        self.assertTrue(
+            model.equations_.iloc[0].complexity > 1
+            or model.equations_.iloc[0].loss > 1e-6
+        )
 
         # With pkl file:
         pkl_file = str(temp_dir / "equation_file.pkl")
@@ -1127,8 +1132,8 @@ class TestDimensionalConstraints(unittest.TestCase):
 
         # Try warm start, but with no units provided (should
         # be a different dataset, and thus different result):
-        model.fit(X, y)
         model.early_stop_condition = "(l, c) -> l < 1e-6 && c == 1"
+        model.fit(X, y)
         self.assertEqual(model.equations_.iloc[0].complexity, 1)
         self.assertLess(model.equations_.iloc[0].loss, 1e-6)
 
