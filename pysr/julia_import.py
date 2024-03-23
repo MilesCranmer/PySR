@@ -63,3 +63,6 @@ elif autoload_extensions not in {"no", "yes", ""}:
 
 jl.seval("using SymbolicRegression")
 SymbolicRegression = jl.SymbolicRegression
+
+jl.seval("using Pkg: Pkg")
+Pkg = jl.Pkg

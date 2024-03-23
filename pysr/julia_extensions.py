@@ -1,10 +1,16 @@
 """This file installs and loads extensions for SymbolicRegression."""
 
-from .julia_import import jl
+from typing import Optional
+
+from .julia_import import Pkg, jl
 
 
 def load_required_packages(
-    *, turbo=False, bumper=False, enable_autodiff=False, cluster_manager=None
+    *,
+    turbo: bool = False,
+    bumper: bool = False,
+    enable_autodiff: bool = False,
+    cluster_manager: Optional[str] = None,
 ):
     if turbo:
         load_package("LoopVectorization", "bdcacae8-1622-11e9-2a5c-532679323890")
@@ -16,17 +22,15 @@ def load_required_packages(
         load_package("ClusterManagers", "34f1f09b-3a8b-5176-ab39-66d58a4d544e")
 
 
-def load_package(package_name, uuid):
-    jl.seval(
-        f"""
-        try
-            using {package_name}
-        catch e
-            isa(e, ArgumentError) || throw(e)
-            using Pkg: Pkg
-            Pkg.add(name="{package_name}", uuid="{uuid}")
-            using {package_name}
-        end
-    """
-    )
+def isinstalled(uuid_s: str) -> bool:
+    return jl.haskey(Pkg.dependencies(), jl.Base.UUID(uuid_s))
+
+
+def load_package(package_name: str, uuid_s: str) -> None:
+    if not isinstalled(uuid_s):
+        Pkg.add(name=package_name, uuid=uuid_s)
+
+    # TODO: Protect against loading the same symbol from two packages,
+    #       maybe with a @gensym here.
+    jl.seval(f"using {package_name}")
     return None
