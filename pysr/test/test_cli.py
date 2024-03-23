@@ -61,7 +61,8 @@ def get_runtests():
                   tests, separated by commas.
 
                 Options:
-                  --help  Show this message and exit.
+                  -k TEXT  Filter expressions to select specific tests.
+                  --help   Show this message and exit.
                 """
             )
             result = self.cli_runner.invoke(pysr, ["test", "--help"])
