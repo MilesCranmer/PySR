@@ -137,15 +137,22 @@ class TestStartup(unittest.TestCase):
             self.skipTest("Julia version too old")
         if platform.system() == "Windows":
             self.skipTest("Notebook test incompatible with Windows")
+
+        notebook_file = Path(__file__).parent / "test_nb.ipynb"
+        sanitize_file = Path(__file__).parent / "nb_sanitize.cfg"
+
+        if not (notebook_file.exists() and sanitize_file.exists()):
+            self.skipTest("Files not available for testing")
+
         result = subprocess.run(
             [
                 sys.executable,
                 "-m",
                 "pytest",
                 "--nbval",
-                str(Path(__file__).parent / "test_nb.ipynb"),
+                str(notebook_file),
                 "--nbval-sanitize-with",
-                str(Path(__file__).parent / "nb_sanitize.cfg"),
+                str(sanitize_file),
             ],
             env=os.environ,
         )
