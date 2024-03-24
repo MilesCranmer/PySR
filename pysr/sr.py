@@ -388,7 +388,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Default is `0.47`.
     weight_swap_operands : float
         Relative likehood for swapping operands in binary operators.
-        Default is `0.0`.
+        Default is `0.1`.
     weight_randomize : float
         Relative likelihood for mutation to completely delete and then
         randomly generate the equation
