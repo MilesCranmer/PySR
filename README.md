@@ -84,7 +84,7 @@ conda install -c conda-forge pysr
 ```
 
 
-### Docker
+### Dockerfile
 
 You can also use the `Dockerfile` to install PySR in a docker container
 
@@ -314,9 +314,14 @@ docker build -t pysr .
 ```
 
 This builds an image called `pysr` for your system's architecture,
-which also contains IPython.
+which also contains IPython. You can select a specific version
+of Python and Julia with:
 
-You can then run this with:
+```bash
+docker build -t pysr --build-arg JLVERSION=1.10.0 --build-arg PYVERSION=3.11.6 .
+```
+
+You can then run with this dockerfile using:
 
 ```bash
 docker run -it --rm -v "$PWD:/data" pysr ipython
