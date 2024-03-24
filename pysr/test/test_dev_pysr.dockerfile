@@ -33,14 +33,12 @@ ADD ./pysr/_cli/*.py /pysr/pysr/_cli/
 
 RUN mkdir /pysr/pysr/test
 
-RUN pip3 install --no-cache-dir .
-
 # Now, we create a custom version of SymbolicRegression.jl
 # First, we get the version from juliapkg.json:
-RUN python3 -c 'import json; print(json.load(open("/pysr/pysr/juliapkg.json", "r"))["packages"]["SymbolicRegression"]["version"])' > /pysr/sr_version
+RUN python3 -c 'import json; print(json.load(open("/pysr/pysr/juliapkg.json", "r"))["packages"]["SymbolicRegression"]["rev"])' > /pysr/sr_version
 
-# Remove any = or ^ or ~ from the version:
-RUN cat /pysr/sr_version | sed 's/[\^=~]//g' > /pysr/sr_version_processed
+# Remove v from the version:
+RUN cat /pysr/sr_version | sed 's/^v//g' > /pysr/sr_version_processed
 
 # Now, we check out the version of SymbolicRegression.jl that PySR is using:
 RUN git clone -b "v$(cat /pysr/sr_version_processed)" --single-branch https://github.com/MilesCranmer/SymbolicRegression.jl /srjl
@@ -53,5 +51,5 @@ RUN sed -i 's/module SymbolicRegression/module SymbolicRegression\n__test_functi
 ADD ./pysr/test/generate_dev_juliapkg.py /generate_dev_juliapkg.py
 RUN python3 /generate_dev_juliapkg.py /pysr/pysr/juliapkg.json /srjl
 
-# Precompile
-RUN python3 -c 'import pysr'
+# Install and pre-compile
+RUN pip3 install --no-cache-dir . && python3 -c 'import pysr'
