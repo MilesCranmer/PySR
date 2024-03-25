@@ -289,11 +289,6 @@ model = PySRRegressor(
     # ^ Start from where left off.
     bumper=True,
     # ^ Faster evaluation (experimental)
-    julia_project=None,
-    # ^ Can set to the path of a folder containing the
-    # "SymbolicRegression.jl" repo, for custom modifications.
-    update=False,
-    # ^ Don't update Julia packages
     extra_sympy_mappings={"cos2": lambda x: sympy.cos(x)**2},
     # extra_torch_mappings={sympy.cos: torch.cos},
     # ^ Not needed as cos already defined, but this
