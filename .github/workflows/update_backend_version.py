@@ -20,7 +20,7 @@ with open(juliapkg_json) as f:
 major, minor, patch, *dev = pyproject_data["project"]["version"].split(".")
 pyproject_data["project"]["version"] = f"{major}.{minor}.{int(patch)+1}"
 
-juliapkg_data["packages"]["SymbolicRegression"]["rev"] = f"v{new_backend_version}"
+juliapkg_data["packages"]["SymbolicRegression"]["version"] = f"={new_backend_version}"
 
 with open(pyproject_toml, "w") as toml_file:
     toml_file.write(tomlkit.dumps(pyproject_data))
