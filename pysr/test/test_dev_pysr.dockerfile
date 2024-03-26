@@ -35,10 +35,10 @@ RUN mkdir /pysr/pysr/test
 
 # Now, we create a custom version of SymbolicRegression.jl
 # First, we get the version from juliapkg.json:
-RUN python3 -c 'import json; print(json.load(open("/pysr/pysr/juliapkg.json", "r"))["packages"]["SymbolicRegression"]["rev"])' > /pysr/sr_version
+RUN python3 -c 'import json; print(json.load(open("/pysr/pysr/juliapkg.json", "r"))["packages"]["SymbolicRegression"]["version"])' > /pysr/sr_version
 
-# Remove v from the version:
-RUN cat /pysr/sr_version | sed 's/^v//g' > /pysr/sr_version_processed
+# Remove any = or ^ or ~ from the version:
+RUN cat /pysr/sr_version | sed 's/[\^=~]//g' > /pysr/sr_version_processed
 
 # Now, we check out the version of SymbolicRegression.jl that PySR is using:
 RUN git clone -b "v$(cat /pysr/sr_version_processed)" --single-branch https://github.com/MilesCranmer/SymbolicRegression.jl /srjl
