@@ -9,11 +9,10 @@ path_to_srjl = sys.argv[2]
 with open(juliapkg_json, "r") as f:
     juliapkg = json.load(f)
 
-juliapkg["packages"]["SymbolicRegression"] = {
-    "uuid": juliapkg["packages"]["SymbolicRegression"]["uuid"],
-    "path": path_to_srjl,
-    "dev": True,
-}
+del juliapkg["packages"]["SymbolicRegression"]["rev"]
+del juliapkg["packages"]["SymbolicRegression"]["url"]
+juliapkg["packages"]["SymbolicRegression"]["path"] = path_to_srjl
+juliapkg["packages"]["SymbolicRegression"]["dev"] = True
 
 with open(juliapkg_json, "w") as f:
     json.dump(juliapkg, f, indent=4)
