@@ -52,6 +52,16 @@ def _greet_dispatch(
     binary_operators,
     unary_operators,
     plot_update_delay,
+    parsimony,
+    populations,
+    population_size,
+    ncycles_per_iteration,
+    elementwise_loss,
+    adaptive_parsimony_scaling,
+    optimizer_algorithm,
+    optimizer_iterations,
+    batching,
+    batch_size,
 ):
     """Load data, then spawn a process to run the greet function."""
     if file_input is not None:
@@ -96,6 +106,16 @@ def _greet_dispatch(
                 binary_operators=binary_operators,
                 unary_operators=unary_operators,
                 equation_file=equation_file,
+                parsimony=parsimony,
+                populations=populations,
+                population_size=population_size,
+                ncycles_per_iteration=ncycles_per_iteration,
+                elementwise_loss=elementwise_loss,
+                adaptive_parsimony_scaling=adaptive_parsimony_scaling,
+                optimizer_algorithm=optimizer_algorithm,
+                optimizer_iterations=optimizer_iterations,
+                batching=batching,
+                batch_size=batch_size,
             ),
         )
         process.start()
@@ -140,22 +160,14 @@ def greet(
     *,
     X,
     y,
-    niterations: int,
-    maxsize: int,
-    binary_operators: list,
-    unary_operators: list,
-    equation_file: Union[str, Path],
+    **pysr_kwargs,
 ):
     import pysr
 
     model = pysr.PySRRegressor(
         progress=False,
-        maxsize=maxsize,
-        niterations=niterations,
-        binary_operators=binary_operators,
-        unary_operators=unary_operators,
         timeout_in_seconds=1000,
-        equation_file=equation_file,
+        **pysr_kwargs,
     )
     model.fit(X, y)
 
@@ -230,21 +242,78 @@ def _settings_layout():
         )
         maxsize = gr.Slider(
             minimum=7,
-            maximum=35,
+            maximum=100,
             value=20,
             label="Maximum Complexity",
             step=1,
         )
-        force_run = gr.Checkbox(
-            value=False,
-            label="Ignore Warnings",
+        parsimony = gr.Number(
+            value=0.0032,
+            label="Parsimony Coefficient",
         )
+    with gr.Tab("Advanced Settings"):
+        populations = gr.Slider(
+            minimum=2,
+            maximum=100,
+            value=15,
+            label="Number of Populations",
+            step=1,
+        )
+        population_size = gr.Slider(
+            minimum=2,
+            maximum=1000,
+            value=33,
+            label="Population Size",
+            step=1,
+        )
+        ncycles_per_iteration = gr.Number(
+            value=550,
+            label="Cycles per Iteration",
+        )
+        elementwise_loss = gr.Radio(
+            ["L2DistLoss()", "L1DistLoss()", "LogitDistLoss()", "HuberLoss()"],
+            value="L2DistLoss()",
+            label="Loss Function",
+        )
+        adaptive_parsimony_scaling = gr.Number(
+            value=20.0,
+            label="Adaptive Parsimony Scaling",
+        )
+        optimizer_algorithm = gr.Radio(
+            ["BFGS", "NelderMead"],
+            value="BFGS",
+            label="Optimizer Algorithm",
+        )
+        optimizer_iterations = gr.Slider(
+            minimum=1,
+            maximum=100,
+            value=8,
+            label="Optimizer Iterations",
+            step=1,
+        )
+        # Bool:
+        batching = gr.Checkbox(
+            value=False,
+            label="Batching",
+        )
+        batch_size = gr.Slider(
+            minimum=2,
+            maximum=1000,
+            value=50,
+            label="Batch Size",
+            step=1,
+        )
+
     with gr.Tab("Gradio Settings"):
         plot_update_delay = gr.Slider(
             minimum=1,
             maximum=100,
             value=3,
             label="Plot Update Delay",
+        )
+        force_run = gr.Checkbox(
+            value=False,
+            label="Ignore Warnings",
         )
     return dict(
         binary_operators=binary_operators,
@@ -253,6 +322,16 @@ def _settings_layout():
         maxsize=maxsize,
         force_run=force_run,
         plot_update_delay=plot_update_delay,
+        parsimony=parsimony,
+        populations=populations,
+        population_size=population_size,
+        ncycles_per_iteration=ncycles_per_iteration,
+        elementwise_loss=elementwise_loss,
+        adaptive_parsimony_scaling=adaptive_parsimony_scaling,
+        optimizer_algorithm=optimizer_algorithm,
+        optimizer_iterations=optimizer_iterations,
+        batching=batching,
+        batch_size=batch_size,
     )
 
 
@@ -292,6 +371,16 @@ def main():
                     "binary_operators",
                     "unary_operators",
                     "plot_update_delay",
+                    "parsimony",
+                    "populations",
+                    "population_size",
+                    "ncycles_per_iteration",
+                    "elementwise_loss",
+                    "adaptive_parsimony_scaling",
+                    "optimizer_algorithm",
+                    "optimizer_iterations",
+                    "batching",
+                    "batch_size",
                 ]
             ],
             outputs=blocks["df"],
