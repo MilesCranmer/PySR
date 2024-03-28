@@ -11,9 +11,16 @@ RUN apt-get update && \
         libgl1-mesa-glx \
         libglib2.0-0 \
         libpython3-dev \
+        libfreetype6-dev \
+        pkg-config \
+        libfontconfig1 \
+        fontconfig \
         && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+COPY fonts/*.ttf /usr/local/share/fonts/
+RUN fc-cache -f -v
 
 WORKDIR /code
 
