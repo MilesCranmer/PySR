@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import traceback as tb
 import numpy as np
+from pysr import PySRRegressor
 from argparse import ArgumentParser
 
 # Args:
@@ -34,37 +35,25 @@ if __name__ == "__main__":
     filename = args.filename
     maxsize = args.maxsize
 
-    os.environ["PATH"] += ":/home/user/.local/bin/"
 
-    try:
-        import pysr
-        from julia.api import JuliaInfo
+    df = pd.read_csv(filename)
+    y = np.array(df[col_to_fit])
+    X = df.drop([col_to_fit], axis=1)
 
-        info = JuliaInfo.load(julia="/home/user/.local/bin/julia")
-        from julia import Main as _Main
+    model = PySRRegressor(
+        progress=False,
+        verbosity=0,
+        maxsize=maxsize,
+        niterations=niterations,
+        binary_operators=binary_operators,
+        unary_operators=unary_operators,
+    )
+    model.fit(X, y)
 
-        pysr.sr.Main = _Main
-
-        from pysr import PySRRegressor
-
-        df = pd.read_csv(filename)
-        y = np.array(df[col_to_fit])
-        X = df.drop([col_to_fit], axis=1)
-
-        model = PySRRegressor(
-            update=False,
-            progress=False,
-            maxsize=maxsize,
-            niterations=niterations,
-            binary_operators=binary_operators,
-            unary_operators=unary_operators,
-        )
-        model.fit(X, y)
-
-        df = model.equations_[["equation", "loss", "complexity"]]
-        # Convert all columns to string type:
-        df = df.astype(str)
-        error_message = (
+    df = model.equations_[["equation", "loss", "complexity"]]
+    # Convert all columns to string type:
+    df = df.astype(str)
+    error_message = (
             "Success!\n"
             f"You may run the model locally (faster) with "
             f"the following parameters:"
@@ -76,10 +65,6 @@ model = PySRRegressor(
     maxsize={maxsize},
 )
 model.fit(X, y)""")
-    except Exception as e:
-        error_message = tb.format_exc()
-        # Dump to file:
-        df = empty_df
 
     df.to_csv("pysr_output.csv", index=False)
     with open("error.log", "w") as f:

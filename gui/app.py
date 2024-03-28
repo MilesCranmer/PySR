@@ -11,8 +11,6 @@ empty_df = pd.DataFrame(
     }
 )
 
-os.system("bash install_pysr.sh")
-
 
 def greet(
     file_obj: tempfile._TemporaryFileWrapper,
