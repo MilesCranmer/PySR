@@ -214,7 +214,7 @@ def _data_layout():
 def _settings_layout():
     with gr.Tab("Basic Settings"):
         binary_operators = gr.CheckboxGroup(
-            choices=["+", "-", "*", "/", "^"],
+            choices=["+", "-", "*", "/", "^", "max", "min", "mod", "cond"],
             label="Binary Operators",
             value=["+", "-", "*", "/"],
         )
@@ -229,6 +229,18 @@ def _settings_layout():
                 "sqrt",
                 "abs",
                 "tan",
+                "sinh",
+                "cosh",
+                "tanh",
+                "atan",
+                "asinh",
+                "acosh",
+                "erf",
+                "relu",
+                "round",
+                "floor",
+                "ceil",
+                "sign",
             ],
             label="Unary Operators",
             value=["sin"],
