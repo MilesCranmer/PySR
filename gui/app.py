@@ -75,7 +75,6 @@ def greet(
 
     model = pysr.PySRRegressor(
         progress=False,
-        verbosity=0,
         maxsize=maxsize,
         niterations=niterations,
         binary_operators=binary_operators,
