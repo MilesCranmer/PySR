@@ -1,7 +1,7 @@
 import gradio as gr
 import numpy as np
 import pandas as pd
-import pysr
+import multiprocessing as mp
 import tempfile
 from typing import Optional
 
@@ -35,26 +35,22 @@ def generate_data(s: str, num_points: int, noise_level: float):
     return pd.DataFrame({"x": x}), y_noisy
 
 
-def greet(
-    file_obj: Optional[tempfile._TemporaryFileWrapper],
-    test_equation: str,
-    num_points: int,
-    noise_level: float,
-    niterations: int,
-    maxsize: int,
-    binary_operators: list,
-    unary_operators: list,
-    seed: int,
-    force_run: bool,
+def _greet_dispatch(
+    file_input,
+    force_run,
+    test_equation,
+    num_points,
+    noise_level,
+    niterations,
+    maxsize,
+    binary_operators,
+    unary_operators,
+    seed,
 ):
-    if file_obj is not None:
-        if len(binary_operators) == 0 and len(unary_operators) == 0:
-            return (
-                empty_df,
-                "Please select at least one operator!",
-            )
+    """Load data, then spawn a process to run the greet function."""
+    if file_input is not None:
         # Look at some statistics of the file:
-        df = pd.read_csv(file_obj)
+        df = pd.read_csv(file_input)
         if len(df) == 0:
             return (
                 empty_df,
@@ -78,10 +74,44 @@ def greet(
         y = np.array(df[col_to_fit])
         X = df.drop([col_to_fit], axis=1)
     else:
+        # X, y = generate_data(block["test_equation"], block["num_points"], block["noise_level"])
         X, y = generate_data(test_equation, num_points, noise_level)
 
+    queue = mp.Queue()
+    process = mp.Process(
+        target=greet,
+        kwargs=dict(
+            X=X,
+            y=y,
+            queue=queue,
+            niterations=niterations,
+            maxsize=maxsize,
+            binary_operators=binary_operators,
+            unary_operators=unary_operators,
+            seed=seed,
+        ),
+    )
+    process.start()
+    output = queue.get()
+    process.join()
+    return output
+
+
+def greet(
+    *,
+    queue: mp.Queue,
+    X,
+    y,
+    niterations: int,
+    maxsize: int,
+    binary_operators: list,
+    unary_operators: list,
+    seed: int,
+):
+    import pysr
+
     model = pysr.PySRRegressor(
-        bumper=True,
+        progress=False,
         maxsize=maxsize,
         niterations=niterations,
         binary_operators=binary_operators,
@@ -94,25 +124,11 @@ def greet(
     )
     model.fit(X, y)
 
-    df = model.equations_[["equation", "loss", "complexity"]]
+    df = model.equations_[["complexity", "loss", "equation"]]
     # Convert all columns to string type:
-    df = df.astype(str)
-    msg = (
-        "Success!\n"
-        f"You may run the model locally (faster) with "
-        f"the following parameters:"
-        + f"""
-model = PySRRegressor(
-    niterations={niterations},
-    binary_operators={str(binary_operators)},
-    unary_operators={str(unary_operators)},
-    maxsize={maxsize},
-)
-model.fit(X, y)"""
-    )
+    queue.put(df)
 
-    df.to_csv("pysr_output.csv", index=False)
-    return df, msg
+    return 0
 
 
 def _data_layout():
@@ -218,18 +234,18 @@ def main():
 
             with gr.Column():
                 blocks["df"] = gr.Dataframe(
-                    headers=["Equation", "Loss", "Complexity"],
-                    datatype=["str", "number", "number"],
+                    headers=["complexity", "loss", "equation"],
+                    datatype=["number", "number", "str"],
                 )
                 blocks["run"] = gr.Button()
-                blocks["error_log"] = gr.Textbox(label="Error Log")
 
         blocks["run"].click(
-            greet,
+            _greet_dispatch,
             inputs=[
                 blocks[k]
                 for k in [
                     "file_input",
+                    "force_run",
                     "test_equation",
                     "num_points",
                     "noise_level",
@@ -238,10 +254,9 @@ def main():
                     "binary_operators",
                     "unary_operators",
                     "seed",
-                    "force_run",
                 ]
             ],
-            outputs=[blocks["df"], blocks["error_log"]],
+            outputs=[blocks["df"]],
         )
 
         # Any update to the equation choice will trigger a replot:
