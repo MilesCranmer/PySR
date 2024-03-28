@@ -156,10 +156,6 @@ def greet(
         binary_operators=binary_operators,
         unary_operators=unary_operators,
         timeout_in_seconds=1000,
-        multithreading=False,
-        procs=0,
-        deterministic=True,
-        random_state=seed,
         equation_file=equation_file,
     )
     model.fit(X, y)
