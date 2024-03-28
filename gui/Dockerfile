@@ -1,5 +1,5 @@
 FROM julia:1.10.0 AS jl
-FROM python:3.9
+FROM python:3.12
 
 COPY --from=jl /usr/local/julia /usr/local/julia
 ENV PATH="/usr/local/julia/bin:${PATH}"
