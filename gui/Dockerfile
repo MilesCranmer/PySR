@@ -33,7 +33,7 @@ RUN python -m venv /home/user/.venv
 RUN /home/user/.venv/bin/python -m pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
 # Install Julia dependencies
-RUN source /home/user/.venv/bin/python -c "import pysr"
+RUN /home/user/.venv/bin/python -c "import pysr"
 
 WORKDIR $HOME/app
 COPY --chown=user . $HOME/app
