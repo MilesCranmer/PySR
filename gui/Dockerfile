@@ -22,6 +22,8 @@ COPY ./requirements.txt /code/requirements.txt
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
 # Install Julia:
+RUN curl -fsSL https://install.julialang.org | sh -s -- -y --default-channel=1.10.0
+# Install Julia dependencies
 RUN python -c "import pysr"
 
 COPY . .
