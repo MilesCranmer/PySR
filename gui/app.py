@@ -57,10 +57,10 @@ def greet(
             f"The column to predict, {col_to_fit}, is not in the file!"
             f"I found {df.columns}.",
         )
-    if len(df) > 1000 and not force_run:
+    if len(df) > 10_000 and not force_run:
         return (
             empty_df,
-            "You have uploaded a file with more than 2000 rows. "
+            "You have uploaded a file with more than 10,000 rows. "
             "This will take very long to run. "
             "Please upload a subsample of the data, "
             "or check the box 'Ignore Warnings'.",
