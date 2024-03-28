@@ -198,7 +198,7 @@ def _data_layout():
     with gr.Tab("Upload Data"):
         file_input = gr.File(label="Upload a CSV File")
         gr.Markdown(
-            "The rightmost column of your CSV file be used as the target variable."
+            "The rightmost column of your CSV file will be used as the target variable."
         )
 
     return dict(
