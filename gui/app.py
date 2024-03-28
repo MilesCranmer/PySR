@@ -19,12 +19,13 @@ empty_df = pd.DataFrame(
 )
 
 test_equations = [
-    "sin(x) + cos(2*x) + tan(x/3)",
+    "sin(2*x)/x + 0.1*x"
 ]
 
 
 def generate_data(s: str, num_points: int, noise_level: float, data_seed: int):
-    x = np.linspace(0, 10, num_points)
+    rstate = np.random.RandomState(data_seed)
+    x = rstate.uniform(-10, 10, num_points)
     for (k, v) in {
         "sin": "np.sin",
         "cos": "np.cos",
@@ -35,7 +36,6 @@ def generate_data(s: str, num_points: int, noise_level: float, data_seed: int):
     }.items():
         s = s.replace(k, v)
     y = eval(s)
-    rstate = np.random.RandomState(data_seed)
     noise = rstate.normal(0, noise_level, y.shape)
     y_noisy = y + noise
     return pd.DataFrame({"x": x}), y_noisy
@@ -101,30 +101,37 @@ def _greet_dispatch(
             ),
         )
         process.start()
+        last_yield_time = None
         while process.is_alive():
             if equation_file_bkup.exists():
                 try:
                     # First, copy the file to a the copy file
                     equation_file_copy = base / "hall_of_fame_copy.csv"
                     os.system(f"cp {equation_file_bkup} {equation_file_copy}")
-                    df = pd.read_csv(equation_file_copy)
+                    equations = pd.read_csv(equation_file_copy)
                     # Ensure it is pareto dominated, with more complex expressions
                     # having higher loss. Otherwise remove those rows.
                     # TODO: Not sure why this occurs; could be the result of a late copy?
-                    df.sort_values("Complexity", ascending=True, inplace=True)
-                    df.reset_index(inplace=True)
+                    equations.sort_values("Complexity", ascending=True, inplace=True)
+                    equations.reset_index(inplace=True)
                     bad_idx = []
                     min_loss = None
-                    for i in df.index:
-                        if min_loss is None or df.loc[i, "Loss"] < min_loss:
-                            min_loss = float(df.loc[i, "Loss"])
+                    for i in equations.index:
+                        if min_loss is None or equations.loc[i, "Loss"] < min_loss:
+                            min_loss = float(equations.loc[i, "Loss"])
                         else:
                             bad_idx.append(i)
-                    df.drop(index=bad_idx, inplace=True)
-                    yield df[["Complexity", "Loss", "Equation"]]
+                    equations.drop(index=bad_idx, inplace=True)
+
+                    while last_yield_time is not None and time.time() - last_yield_time < 1:
+                        time.sleep(0.1)
+
+                    yield equations[["Complexity", "Loss", "Equation"]]
+
+                    last_yield_time = time.time()
                 except pd.errors.EmptyDataError:
                     pass
-            time.sleep(1)
+
 
         process.join()
 
@@ -163,31 +170,23 @@ def greet(
 def _data_layout():
     with gr.Tab("Example Data"):
         # Plot of the example data:
-        example_plot = gr.ScatterPlot(
-            x="x",
-            y="y",
-            tooltip=["x", "y"],
-            x_lim=[0, 10],
-            y_lim=[-5, 5],
-            width=350,
-            height=300,
-        )
+        example_plot = gr.Plot()
         test_equation = gr.Radio(
             test_equations, value=test_equations[0], label="Test Equation"
         )
         num_points = gr.Slider(
             minimum=10,
             maximum=1000,
-            value=100,
+            value=200,
             label="Number of Data Points",
             step=1,
         )
-        noise_level = gr.Slider(minimum=0, maximum=1, value=0.1, label="Noise Level")
+        noise_level = gr.Slider(minimum=0, maximum=1, value=0.05, label="Noise Level")
         data_seed = gr.Number(value=0, label="Random Seed")
     with gr.Tab("Upload Data"):
         file_input = gr.File(label="Upload a CSV File")
         gr.Markdown(
-            "Upload a CSV file with the data to fit. The last column will be used as the target variable."
+            "The rightmost column of your CSV file be used as the target variable."
         )
 
     return dict(
@@ -219,7 +218,7 @@ def _settings_layout():
             "tan",
         ],
         label="Unary Operators",
-        value=[],
+        value=["sin"],
     )
     niterations = gr.Slider(
         minimum=1,
@@ -304,42 +303,16 @@ def main():
         for eqn_component in eqn_components:
             eqn_component.change(replot, eqn_components, blocks["example_plot"])
 
+
         # Update plot when dataframe is updated:
         blocks["df"].change(
             replot_pareto,
             inputs=[blocks["df"], blocks["maxsize"]],
             outputs=[blocks["pareto"]],
         )
+        demo.load(replot, eqn_components, blocks["example_plot"])
 
     demo.launch(debug=True)
-
-
-def replot(test_equation, num_points, noise_level, data_seed):
-    X, y = generate_data(test_equation, num_points, noise_level, data_seed)
-    df = pd.DataFrame({"x": X["x"], "y": y})
-    return df
-
-def replot_pareto(df, maxsize):
-    # Matplotlib log-log plot of loss vs complexity:
-    fig, ax = plt.subplots(figsize=(5, 5))
-
-    ax.set_xlabel('Complexity', fontsize=14)
-    ax.set_ylabel('Loss', fontsize=14)
-    if len(df) == 0 or 'Equation' not in df.columns:
-        return fig
-
-    ax.loglog(df['Complexity'], df['Loss'], marker='o', linestyle='-', color='b')
-    ax.set_xlim(1, maxsize + 1)
-    # Set ylim to next power of 2:
-    ytop = 2 ** (np.ceil(np.log2(df['Loss'].max())))
-    ybottom = 2 ** (np.floor(np.log2(df['Loss'].min() + 1e-20)))
-    ax.set_ylim(ybottom, ytop)
-    ax.grid(True, which="both", ls="--", linewidth=0.5)
-    fig.tight_layout()
-    ax.tick_params(axis='both', which='major', labelsize=12)
-    ax.tick_params(axis='both', which='minor', labelsize=10)
-
-    return fig
 
 def replot_pareto(df, maxsize):
     plt.rcParams['font.family'] = 'IBM Plex Mono'
@@ -374,6 +347,30 @@ def replot_pareto(df, maxsize):
     fig.tight_layout(pad=2)
 
     return fig
+
+def replot(test_equation, num_points, noise_level, data_seed):
+    X, y = generate_data(test_equation, num_points, noise_level, data_seed)
+    x = X["x"]
+
+    plt.rcParams['font.family'] = 'IBM Plex Mono'
+    fig, ax = plt.subplots(figsize=(6, 6), dpi=100)
+
+    ax.scatter(x, y, alpha=0.7, edgecolors='w', s=50)
+
+    ax.grid(True, which="major", linestyle='--', linewidth=0.5, color='gray', alpha=0.7)
+    ax.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray', alpha=0.5)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['bottom'].set_color('gray')
+    ax.spines['left'].set_color('gray')
+    ax.tick_params(axis='both', which='major', labelsize=12, direction='out', length=6)
+    ax.tick_params(axis='both', which='minor', labelsize=10, direction='out', length=4)
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+
+    fig.tight_layout()
+    return fig
+
 
 if __name__ == "__main__":
     main()
