@@ -1,7 +1,8 @@
+FROM julia:1.10.0 AS jl
 FROM python:3.9
 
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+COPY --from=jl /usr/local/julia /usr/local/julia
+ENV PATH="/usr/local/julia/bin:${PATH}"
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -21,9 +22,6 @@ COPY ./requirements.txt /code/requirements.txt
 # Install Python dependencies:
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
-# Install Julia:
-RUN curl -fsSL https://install.julialang.org | sh -s -- -y --default-channel=1.10.0
-ENV PYTHON_JULIACALL_BINDIR="/root/.julia/bin"
 # Install Julia dependencies
 RUN python -c "import pysr"
 
