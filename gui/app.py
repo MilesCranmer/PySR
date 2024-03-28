@@ -44,6 +44,7 @@ def greet(
     maxsize: int,
     binary_operators: list,
     unary_operators: list,
+    seed: int,
     force_run: bool,
 ):
     if file_obj is not None:
@@ -86,6 +87,10 @@ def greet(
         binary_operators=binary_operators,
         unary_operators=unary_operators,
         timeout_in_seconds=1000,
+        multithreading=False,
+        procs=0,
+        deterministic=True,
+        random_state=seed,
     )
     model.fit(X, y)
 
@@ -183,6 +188,10 @@ def _settings_layout():
         label="Maximum Complexity",
         step=1,
     )
+    seed = gr.Number(
+        value=0,
+        label="Random Seed",
+    )
     force_run = gr.Checkbox(
         value=False,
         label="Ignore Warnings",
@@ -193,6 +202,7 @@ def _settings_layout():
         niterations=niterations,
         maxsize=maxsize,
         force_run=force_run,
+        seed=seed,
     )
 
 
@@ -227,6 +237,7 @@ def main():
                     "maxsize",
                     "binary_operators",
                     "unary_operators",
+                    "seed",
                     "force_run",
                 ]
             ],
@@ -242,7 +253,7 @@ def main():
         for eqn_component in eqn_components:
             eqn_component.change(replot, eqn_components, blocks["example_plot"])
 
-    demo.launch()
+    demo.launch(debug=True)
 
 
 def replot(test_equation, num_points, noise_level):

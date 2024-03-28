@@ -48,4 +48,5 @@ ENV GRADIO_ALLOW_FLAGGING=never \
 	GRADIO_THEME=huggingface \
 	SYSTEM=spaces
 
+ENV JULIA_NUM_THREADS=1
 CMD ["/bin/bash", "-l", "-c", "/home/user/.venv/bin/python /home/user/app/app.py"]
