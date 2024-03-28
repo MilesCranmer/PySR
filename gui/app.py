@@ -107,28 +107,28 @@ def main():
         fn=greet,
         description="Symbolic Regression with PySR. Watch search progress by clicking 'See logs'!",
         inputs=[
-            gr.inputs.File(label="Upload a CSV File"),
-            gr.inputs.Textbox(label="Column to Predict", placeholder="y"),
-            gr.inputs.Slider(
+            gr.File(label="Upload a CSV File"),
+            gr.Textbox(label="Column to Predict", placeholder="y"),
+            gr.Slider(
                 minimum=1,
                 maximum=1000,
-                default=40,
+                value=40,
                 label="Number of Iterations",
                 step=1,
             ),
-            gr.inputs.Slider(
+            gr.Slider(
                 minimum=7,
                 maximum=35,
-                default=20,
+                value=20,
                 label="Maximum Complexity",
                 step=1,
             ),
-            gr.inputs.CheckboxGroup(
+            gr.CheckboxGroup(
                 choices=["+", "-", "*", "/", "^"],
                 label="Binary Operators",
-                default=["+", "-", "*", "/"],
+                value=["+", "-", "*", "/"],
             ),
-            gr.inputs.CheckboxGroup(
+            gr.CheckboxGroup(
                 choices=[
                     "sin",
                     "cos",
@@ -141,16 +141,16 @@ def main():
                     "tan",
                 ],
                 label="Unary Operators",
-                default=[],
+                value=[],
             ),
-            gr.inputs.Checkbox(
-                default=False,
+            gr.Checkbox(
+                value=False,
                 label="Ignore Warnings",
             ),
         ],
         outputs=[
             "dataframe",
-            gr.outputs.Textbox(label="Error Log"),
+            gr.Textbox(label="Error Log"),
         ],
     )
     # Add file to the demo:

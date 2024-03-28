@@ -23,6 +23,7 @@ COPY ./requirements.txt /code/requirements.txt
 RUN useradd -m -u 1000 user
 # Switch to the "user" user
 USER user
+WORKDIR /home/user/
 # Set home to the user's home directory
 ENV HOME=/home/user
 ENV PATH=/home/user/.local/bin:$PATH
@@ -34,9 +35,10 @@ RUN /home/user/.venv/bin/python -m pip install --no-cache-dir --upgrade -r /code
 
 # Install and pre-compile Julia dependencies,
 # including the Bumper extension
+RUN /home/user/.venv/bin/python -c "import pysr"
 RUN /home/user/.venv/bin/python -c "import pysr; pysr.PySRRegressor(bumper=True, verbosity=0, progress=False, max_evals=1).fit([[1]], [1])"
 
-WORKDIR $HOME/app
+WORKDIR /home/user/app
 COPY --chown=user . $HOME/app
 
 EXPOSE 7860
