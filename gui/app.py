@@ -1,9 +1,14 @@
 import gradio as gr
 import numpy as np
+import os
 import pandas as pd
+import time
 import multiprocessing as mp
+from matplotlib import pyplot as plt
+plt.ioff()
 import tempfile
-from typing import Optional
+from typing import Optional, Union
+from pathlib import Path
 
 empty_df = pd.DataFrame(
     {
@@ -18,7 +23,7 @@ test_equations = [
 ]
 
 
-def generate_data(s: str, num_points: int, noise_level: float):
+def generate_data(s: str, num_points: int, noise_level: float, data_seed: int):
     x = np.linspace(0, 10, num_points)
     for (k, v) in {
         "sin": "np.sin",
@@ -30,7 +35,8 @@ def generate_data(s: str, num_points: int, noise_level: float):
     }.items():
         s = s.replace(k, v)
     y = eval(s)
-    noise = np.random.normal(0, noise_level, y.shape)
+    rstate = np.random.RandomState(data_seed)
+    noise = rstate.normal(0, noise_level, y.shape)
     y_noisy = y + noise
     return pd.DataFrame({"x": x}), y_noisy
 
@@ -41,6 +47,7 @@ def _greet_dispatch(
     test_equation,
     num_points,
     noise_level,
+    data_seed,
     niterations,
     maxsize,
     binary_operators,
@@ -74,32 +81,56 @@ def _greet_dispatch(
         y = np.array(df[col_to_fit])
         X = df.drop([col_to_fit], axis=1)
     else:
-        # X, y = generate_data(block["test_equation"], block["num_points"], block["noise_level"])
-        X, y = generate_data(test_equation, num_points, noise_level)
+        X, y = generate_data(test_equation, num_points, noise_level, data_seed)
 
-    queue = mp.Queue()
-    process = mp.Process(
-        target=greet,
-        kwargs=dict(
-            X=X,
-            y=y,
-            queue=queue,
-            niterations=niterations,
-            maxsize=maxsize,
-            binary_operators=binary_operators,
-            unary_operators=unary_operators,
-            seed=seed,
-        ),
-    )
-    process.start()
-    output = queue.get()
-    process.join()
-    return output
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        base = Path(tmpdirname)
+        equation_file = base / "hall_of_fame.csv"
+        equation_file_bkup = base / "hall_of_fame.csv.bkup"
+        process = mp.Process(
+            target=greet,
+            kwargs=dict(
+                X=X,
+                y=y,
+                niterations=niterations,
+                maxsize=maxsize,
+                binary_operators=binary_operators,
+                unary_operators=unary_operators,
+                seed=seed,
+                equation_file=equation_file,
+            ),
+        )
+        process.start()
+        while process.is_alive():
+            if equation_file_bkup.exists():
+                try:
+                    # First, copy the file to a the copy file
+                    equation_file_copy = base / "hall_of_fame_copy.csv"
+                    os.system(f"cp {equation_file_bkup} {equation_file_copy}")
+                    df = pd.read_csv(equation_file_copy)
+                    # Ensure it is pareto dominated, with more complex expressions
+                    # having higher loss. Otherwise remove those rows.
+                    # TODO: Not sure why this occurs; could be the result of a late copy?
+                    df.sort_values("Complexity", ascending=True, inplace=True)
+                    df.reset_index(inplace=True)
+                    bad_idx = []
+                    min_loss = None
+                    for i in df.index:
+                        if min_loss is None or df.loc[i, "Loss"] < min_loss:
+                            min_loss = float(df.loc[i, "Loss"])
+                        else:
+                            bad_idx.append(i)
+                    df.drop(index=bad_idx, inplace=True)
+                    yield df[["Complexity", "Loss", "Equation"]]
+                except pd.errors.EmptyDataError:
+                    pass
+            time.sleep(1)
+
+        process.join()
 
 
 def greet(
     *,
-    queue: mp.Queue,
     X,
     y,
     niterations: int,
@@ -107,6 +138,7 @@ def greet(
     binary_operators: list,
     unary_operators: list,
     seed: int,
+    equation_file: Union[str, Path],
 ):
     import pysr
 
@@ -121,12 +153,9 @@ def greet(
         procs=0,
         deterministic=True,
         random_state=seed,
+        equation_file=equation_file,
     )
     model.fit(X, y)
-
-    df = model.equations_[["complexity", "loss", "equation"]]
-    # Convert all columns to string type:
-    queue.put(df)
 
     return 0
 
@@ -154,6 +183,7 @@ def _data_layout():
             step=1,
         )
         noise_level = gr.Slider(minimum=0, maximum=1, value=0.1, label="Noise Level")
+        data_seed = gr.Number(value=0, label="Random Seed")
     with gr.Tab("Upload Data"):
         file_input = gr.File(label="Upload a CSV File")
         gr.Markdown(
@@ -165,6 +195,7 @@ def _data_layout():
         test_equation=test_equation,
         num_points=num_points,
         noise_level=noise_level,
+        data_seed=data_seed,
         example_plot=example_plot,
     )
 
@@ -233,6 +264,7 @@ def main():
                     blocks = {**blocks, **_settings_layout()}
 
             with gr.Column():
+                blocks["pareto"] = gr.Plot()
                 blocks["df"] = gr.Dataframe(
                     headers=["complexity", "loss", "equation"],
                     datatype=["number", "number", "str"],
@@ -249,6 +281,7 @@ def main():
                     "test_equation",
                     "num_points",
                     "noise_level",
+                    "data_seed",
                     "niterations",
                     "maxsize",
                     "binary_operators",
@@ -256,7 +289,7 @@ def main():
                     "seed",
                 ]
             ],
-            outputs=[blocks["df"]],
+            outputs=blocks["df"],
         )
 
         # Any update to the equation choice will trigger a replot:
@@ -264,18 +297,47 @@ def main():
             blocks["test_equation"],
             blocks["num_points"],
             blocks["noise_level"],
+            blocks["data_seed"],
         ]
         for eqn_component in eqn_components:
             eqn_component.change(replot, eqn_components, blocks["example_plot"])
 
+        # Update plot when dataframe is updated:
+        blocks["df"].change(
+            replot_pareto,
+            inputs=[blocks["df"], blocks["maxsize"]],
+            outputs=[blocks["pareto"]],
+        )
+
     demo.launch(debug=True)
 
 
-def replot(test_equation, num_points, noise_level):
-    X, y = generate_data(test_equation, num_points, noise_level)
+def replot(test_equation, num_points, noise_level, data_seed):
+    X, y = generate_data(test_equation, num_points, noise_level, data_seed)
     df = pd.DataFrame({"x": X["x"], "y": y})
     return df
 
+def replot_pareto(df, maxsize):
+    # Matplotlib log-log plot of loss vs complexity:
+    fig, ax = plt.subplots(figsize=(5, 5))
+
+    ax.set_xlabel('Complexity', fontsize=14)
+    ax.set_ylabel('Loss', fontsize=14)
+    if len(df) == 0 or 'Equation' not in df.columns:
+        return fig
+
+    ax.loglog(df['Complexity'], df['Loss'], marker='o', linestyle='-', color='b')
+    ax.set_xlim(1, maxsize + 1)
+    # Set ylim to next power of 2:
+    ytop = 2 ** (np.ceil(np.log2(df['Loss'].max())))
+    ybottom = 2 ** (np.floor(np.log2(df['Loss'].min() + 1e-20)))
+    ax.set_ylim(ybottom, ytop)
+    ax.grid(True, which="both", ls="--", linewidth=0.5)
+    fig.tight_layout()
+    ax.tick_params(axis='both', which='major', labelsize=12)
+    ax.tick_params(axis='both', which='minor', labelsize=10)
+
+    return fig
 
 if __name__ == "__main__":
     main()
