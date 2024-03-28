@@ -14,60 +14,76 @@ empty_df = pd.DataFrame(
     }
 )
 
+test_equations = {
+    "Complex Polynomial": "3*x^3 + 2*x^2 - x + sin(x)",
+    "Exponential and Logarithmic": "exp(-x) + log(x+1)",
+    "Trigonometric Polynomial": "sin(x) + cos(2*x) + tan(x/3)",
+    "Mixed Functions": "sqrt(x)*exp(-x) + cos(pi*x)",
+    "Rational Function": "(x^2 + 1) / (x - 2)",
+}
+
+
+def generate_data(equation: str, num_points: int, noise_level: float):
+    x = np.linspace(-10, 10, num_points)
+    s = test_equations[equation]
+    for (k, v) in {
+        "sin": "np.sin",
+        "cos": "np.cos",
+        "exp": "np.exp",
+        "log": "np.log",
+        "tan": "np.tan",
+        "^": "**",
+    }.items():
+        s = s.replace(k, v)
+    y = eval(s)
+    noise = np.random.normal(0, noise_level, y.shape)
+    y_noisy = y + noise
+    return pd.DataFrame({"x": x}), y_noisy
+
 
 def greet(
     file_obj: Optional[tempfile._TemporaryFileWrapper],
-    col_to_fit: str,
+    test_equation: str,
+    num_points: int,
+    noise_level: float,
     niterations: int,
     maxsize: int,
     binary_operators: list,
     unary_operators: list,
     force_run: bool,
 ):
-    if col_to_fit == "":
-        return (
-            empty_df,
-            "Please enter a column to predict!",
-        )
-    if len(binary_operators) == 0 and len(unary_operators) == 0:
-        return (
-            empty_df,
-            "Please select at least one operator!",
-        )
-    if file_obj is None:
-        return (
-            empty_df,
-            "Please upload a CSV file!",
-        )
-    # Look at some statistics of the file:
-    df = pd.read_csv(file_obj)
-    if len(df) == 0:
-        return (
-            empty_df,
-            "The file is empty!",
-        )
-    if len(df.columns) == 1:
-        return (
-            empty_df,
-            "The file has only one column!",
-        )
-    if col_to_fit not in df.columns:
-        return (
-            empty_df,
-            f"The column to predict, {col_to_fit}, is not in the file!"
-            f"I found {df.columns}.",
-        )
-    if len(df) > 10_000 and not force_run:
-        return (
-            empty_df,
-            "You have uploaded a file with more than 10,000 rows. "
-            "This will take very long to run. "
-            "Please upload a subsample of the data, "
-            "or check the box 'Ignore Warnings'.",
-        )
+    if file_obj is not None:
+        if len(binary_operators) == 0 and len(unary_operators) == 0:
+            return (
+                empty_df,
+                "Please select at least one operator!",
+            )
+        # Look at some statistics of the file:
+        df = pd.read_csv(file_obj)
+        if len(df) == 0:
+            return (
+                empty_df,
+                "The file is empty!",
+            )
+        if len(df.columns) == 1:
+            return (
+                empty_df,
+                "The file has only one column!",
+            )
+        if len(df) > 10_000 and not force_run:
+            return (
+                empty_df,
+                "You have uploaded a file with more than 10,000 rows. "
+                "This will take very long to run. "
+                "Please upload a subsample of the data, "
+                "or check the box 'Ignore Warnings'.",
+            )
 
-    y = np.array(df[col_to_fit])
-    X = df.drop([col_to_fit], axis=1)
+        col_to_fit = df.columns[-1]
+        y = np.array(df[col_to_fit])
+        X = df.drop([col_to_fit], axis=1)
+    else:
+        X, y = generate_data(test_equation, num_points, noise_level)
 
     model = pysr.PySRRegressor(
         bumper=True,
@@ -106,7 +122,15 @@ def main():
         description="Symbolic Regression with PySR. Watch search progress by following the logs.",
         inputs=[
             gr.File(label="Upload a CSV File"),
-            gr.Textbox(label="Column to Predict", placeholder="y"),
+            gr.Radio(list(test_equations.keys()), label="Test Equation"),
+            gr.Slider(
+                minimum=10,
+                maximum=1000,
+                value=100,
+                label="Number of Data Points",
+                step=1,
+            ),
+            gr.Slider(minimum=0, maximum=1, value=0.1, label="Noise Level"),
             gr.Slider(
                 minimum=1,
                 maximum=1000,
