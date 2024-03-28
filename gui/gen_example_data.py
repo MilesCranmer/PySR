@@ -1,5 +1,5 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 rand_between = lambda a, b, size: np.random.rand(*size) * (b - a) + a
 

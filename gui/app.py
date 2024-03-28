@@ -1,14 +1,14 @@
+import multiprocessing as mp
+import os
+import time
+
 import gradio as gr
 import numpy as np
-import os
 import pandas as pd
-import time
-import multiprocessing as mp
 from matplotlib import pyplot as plt
 
 plt.ioff()
 import tempfile
-from typing import Optional, Union
 from pathlib import Path
 
 empty_df = pd.DataFrame(
@@ -25,7 +25,7 @@ test_equations = ["sin(2*x)/x + 0.1*x"]
 def generate_data(s: str, num_points: int, noise_level: float, data_seed: int):
     rstate = np.random.RandomState(data_seed)
     x = rstate.uniform(-10, 10, num_points)
-    for (k, v) in {
+    for k, v in {
         "sin": "np.sin",
         "cos": "np.cos",
         "exp": "np.exp",
