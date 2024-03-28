@@ -207,14 +207,12 @@ def main():
                     blocks = {**blocks, **_settings_layout()}
 
             with gr.Column():
-                with gr.Row():
-                    blocks["df"] = gr.Dataframe(
-                        headers=["Equation", "Loss", "Complexity"],
-                        datatype=["str", "number", "number"],
-                    )
-                    blocks["error_log"] = gr.Textbox(label="Error Log")
-                with gr.Row():
-                    blocks["run"] = gr.Button()
+                blocks["df"] = gr.Dataframe(
+                    headers=["Equation", "Loss", "Complexity"],
+                    datatype=["str", "number", "number"],
+                )
+                blocks["run"] = gr.Button()
+                blocks["error_log"] = gr.Textbox(label="Error Log")
 
         blocks["run"].click(
             greet,
