@@ -83,20 +83,22 @@ def greet(
     # Convert all columns to string type:
     df = df.astype(str)
     msg = (
-            "Success!\n"
-            f"You may run the model locally (faster) with "
-            f"the following parameters:"
-            +f"""
+        "Success!\n"
+        f"You may run the model locally (faster) with "
+        f"the following parameters:"
+        + f"""
 model = PySRRegressor(
     niterations={niterations},
     binary_operators={str(binary_operators)},
     unary_operators={str(unary_operators)},
     maxsize={maxsize},
 )
-model.fit(X, y)""")
+model.fit(X, y)"""
+    )
 
     df.to_csv("pysr_output.csv", index=False)
     return df, msg
+
 
 def main():
     demo = gr.Interface(
