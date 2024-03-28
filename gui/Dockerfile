@@ -23,6 +23,7 @@ RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
 # Install Julia:
 RUN curl -fsSL https://install.julialang.org | sh -s -- -y --default-channel=1.10.0
+RUN ln -s /root/.julia/bin/julia /usr/local/bin/julia
 # Install Julia dependencies
 RUN python -c "import pysr"
 
