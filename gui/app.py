@@ -166,19 +166,22 @@ def greet(
 def _data_layout():
     with gr.Tab("Example Data"):
         # Plot of the example data:
-        example_plot = gr.Plot()
-        test_equation = gr.Radio(
-            test_equations, value=test_equations[0], label="Test Equation"
-        )
-        num_points = gr.Slider(
-            minimum=10,
-            maximum=1000,
-            value=200,
-            label="Number of Data Points",
-            step=1,
-        )
-        noise_level = gr.Slider(minimum=0, maximum=1, value=0.05, label="Noise Level")
-        data_seed = gr.Number(value=0, label="Random Seed")
+        with gr.Row():
+            with gr.Column():
+                example_plot = gr.Plot()
+            with gr.Column():
+                test_equation = gr.Radio(
+                    test_equations, value=test_equations[0], label="Test Equation"
+                )
+                num_points = gr.Slider(
+                    minimum=10,
+                    maximum=1000,
+                    value=200,
+                    label="Number of Data Points",
+                    step=1,
+                )
+                noise_level = gr.Slider(minimum=0, maximum=1, value=0.05, label="Noise Level")
+                data_seed = gr.Number(value=0, label="Random Seed")
     with gr.Tab("Upload Data"):
         file_input = gr.File(label="Upload a CSV File")
         gr.Markdown(
@@ -353,18 +356,22 @@ def replot(test_equation, num_points, noise_level, data_seed):
 
     ax.scatter(x, y, alpha=0.7, edgecolors='w', s=50)
 
-    ax.grid(True, which="major", linestyle='--', linewidth=0.5, color='gray', alpha=0.7)
-    ax.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray', alpha=0.5)
+    ax.grid(True, which="both", ls="--", linewidth=0.5, color='gray', alpha=0.5)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
-    ax.spines['bottom'].set_color('gray')
-    ax.spines['left'].set_color('gray')
-    ax.tick_params(axis='both', which='major', labelsize=12, direction='out', length=6)
-    ax.tick_params(axis='both', which='minor', labelsize=10, direction='out', length=4)
+
+    # Range-frame the plot
+    for direction in ['bottom', 'left']:
+        ax.spines[direction].set_position(('outward', 10))
+
+    # Delete far ticks
+    ax.tick_params(axis='both', which='major', labelsize=10, direction='out', length=5)
+    ax.tick_params(axis='both', which='minor', labelsize=8, direction='out', length=3)
+
     ax.set_xlabel("x")
     ax.set_ylabel("y")
+    fig.tight_layout(pad=2)
 
-    fig.tight_layout()
     return fig
 
 
