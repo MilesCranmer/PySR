@@ -28,15 +28,14 @@ ENV HOME=/home/user
 ENV PATH=/home/user/.local/bin:$PATH
 
 # Install Python dependencies in a virtual environment
-RUN python -m venv /home/user/.venv
-RUN source /home/user/.venv/bin/activate && pip install --no-cache-dir --upgrade -r /code/requirements.txt
+RUN /home/user/.venv/bin/python -m pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
 # Install Julia dependencies
-RUN source /home/user/.venv/bin/activate && python -c "import pysr"
+RUN source /home/user/.venv/bin/python -c "import pysr"
 
 WORKDIR $HOME/app
 COPY --chown=user . $HOME/app
 
 EXPOSE 7860
 
-CMD ["/bin/bash", "-c", "source /home/user/.venv/bin/activate && python /home/user/app/app.py"]
+CMD ["/bin/bash", "-l", "-c", "/home/user/.venv/bin/python /home/user/app/app.py"]
