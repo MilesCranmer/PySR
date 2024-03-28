@@ -5,6 +5,7 @@ import pandas as pd
 import time
 import multiprocessing as mp
 from matplotlib import pyplot as plt
+
 plt.ioff()
 import tempfile
 from typing import Optional, Union
@@ -18,9 +19,7 @@ empty_df = pd.DataFrame(
     }
 )
 
-test_equations = [
-    "sin(2*x)/x + 0.1*x"
-]
+test_equations = ["sin(2*x)/x + 0.1*x"]
 
 
 def generate_data(s: str, num_points: int, noise_level: float, data_seed: int):
@@ -52,7 +51,7 @@ def _greet_dispatch(
     maxsize,
     binary_operators,
     unary_operators,
-    seed,
+    plot_update_delay,
 ):
     """Load data, then spawn a process to run the greet function."""
     if file_input is not None:
@@ -96,7 +95,6 @@ def _greet_dispatch(
                 maxsize=maxsize,
                 binary_operators=binary_operators,
                 unary_operators=unary_operators,
-                seed=seed,
                 equation_file=equation_file,
             ),
         )
@@ -123,7 +121,10 @@ def _greet_dispatch(
                             bad_idx.append(i)
                     equations.drop(index=bad_idx, inplace=True)
 
-                    while last_yield_time is not None and time.time() - last_yield_time < 1:
+                    while (
+                        last_yield_time is not None
+                        and time.time() - last_yield_time < plot_update_delay
+                    ):
                         time.sleep(0.1)
 
                     yield equations[["Complexity", "Loss", "Equation"]]
@@ -131,7 +132,6 @@ def _greet_dispatch(
                     last_yield_time = time.time()
                 except pd.errors.EmptyDataError:
                     pass
-
 
         process.join()
 
@@ -144,7 +144,6 @@ def greet(
     maxsize: int,
     binary_operators: list,
     unary_operators: list,
-    seed: int,
     equation_file: Union[str, Path],
 ):
     import pysr
@@ -180,7 +179,9 @@ def _data_layout():
                     label="Number of Data Points",
                     step=1,
                 )
-                noise_level = gr.Slider(minimum=0, maximum=1, value=0.05, label="Noise Level")
+                noise_level = gr.Slider(
+                    minimum=0, maximum=1, value=0.05, label="Noise Level"
+                )
                 data_seed = gr.Number(value=0, label="Random Seed")
     with gr.Tab("Upload Data"):
         file_input = gr.File(label="Upload a CSV File")
@@ -199,55 +200,59 @@ def _data_layout():
 
 
 def _settings_layout():
-    binary_operators = gr.CheckboxGroup(
-        choices=["+", "-", "*", "/", "^"],
-        label="Binary Operators",
-        value=["+", "-", "*", "/"],
-    )
-    unary_operators = gr.CheckboxGroup(
-        choices=[
-            "sin",
-            "cos",
-            "exp",
-            "log",
-            "square",
-            "cube",
-            "sqrt",
-            "abs",
-            "tan",
-        ],
-        label="Unary Operators",
-        value=["sin"],
-    )
-    niterations = gr.Slider(
-        minimum=1,
-        maximum=1000,
-        value=40,
-        label="Number of Iterations",
-        step=1,
-    )
-    maxsize = gr.Slider(
-        minimum=7,
-        maximum=35,
-        value=20,
-        label="Maximum Complexity",
-        step=1,
-    )
-    seed = gr.Number(
-        value=0,
-        label="Random Seed",
-    )
-    force_run = gr.Checkbox(
-        value=False,
-        label="Ignore Warnings",
-    )
+    with gr.Tab("Basic Settings"):
+        binary_operators = gr.CheckboxGroup(
+            choices=["+", "-", "*", "/", "^"],
+            label="Binary Operators",
+            value=["+", "-", "*", "/"],
+        )
+        unary_operators = gr.CheckboxGroup(
+            choices=[
+                "sin",
+                "cos",
+                "exp",
+                "log",
+                "square",
+                "cube",
+                "sqrt",
+                "abs",
+                "tan",
+            ],
+            label="Unary Operators",
+            value=["sin"],
+        )
+        niterations = gr.Slider(
+            minimum=1,
+            maximum=1000,
+            value=40,
+            label="Number of Iterations",
+            step=1,
+        )
+        maxsize = gr.Slider(
+            minimum=7,
+            maximum=35,
+            value=20,
+            label="Maximum Complexity",
+            step=1,
+        )
+        force_run = gr.Checkbox(
+            value=False,
+            label="Ignore Warnings",
+        )
+    with gr.Tab("Gradio Settings"):
+        plot_update_delay = gr.Slider(
+            minimum=1,
+            maximum=100,
+            value=3,
+            label="Plot Update Delay",
+        )
     return dict(
         binary_operators=binary_operators,
         unary_operators=unary_operators,
         niterations=niterations,
         maxsize=maxsize,
         force_run=force_run,
-        seed=seed,
+        plot_update_delay=plot_update_delay,
     )
 
 
@@ -286,7 +291,7 @@ def main():
                     "maxsize",
                     "binary_operators",
                     "unary_operators",
-                    "seed",
+                    "plot_update_delay",
                 ]
             ],
             outputs=blocks["df"],
@@ -302,7 +307,6 @@ def main():
         for eqn_component in eqn_components:
             eqn_component.change(replot, eqn_components, blocks["example_plot"])
 
-
         # Update plot when dataframe is updated:
         blocks["df"].change(
             replot_pareto,
@@ -313,60 +317,70 @@ def main():
 
     demo.launch(debug=True)
 
+
 def replot_pareto(df, maxsize):
-    plt.rcParams['font.family'] = 'IBM Plex Mono'
+    plt.rcParams["font.family"] = "IBM Plex Mono"
     fig, ax = plt.subplots(figsize=(6, 6), dpi=100)
 
-    if len(df) == 0 or 'Equation' not in df.columns:
+    if len(df) == 0 or "Equation" not in df.columns:
         return fig
 
     # Plotting the data
-    ax.loglog(df['Complexity'], df['Loss'], marker='o', linestyle='-', color='#333f48', linewidth=1.5, markersize=6)
+    ax.loglog(
+        df["Complexity"],
+        df["Loss"],
+        marker="o",
+        linestyle="-",
+        color="#333f48",
+        linewidth=1.5,
+        markersize=6,
+    )
 
     # Set the axis limits
     ax.set_xlim(0.5, maxsize + 1)
-    ytop = 2 ** (np.ceil(np.log2(df['Loss'].max())))
-    ybottom = 2 ** (np.floor(np.log2(df['Loss'].min() + 1e-20)))
+    ytop = 2 ** (np.ceil(np.log2(df["Loss"].max())))
+    ybottom = 2 ** (np.floor(np.log2(df["Loss"].min() + 1e-20)))
     ax.set_ylim(ybottom, ytop)
 
-    ax.grid(True, which="both", ls="--", linewidth=0.5, color='gray', alpha=0.5)
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
+    ax.grid(True, which="both", ls="--", linewidth=0.5, color="gray", alpha=0.5)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
 
     # Range-frame the plot
-    for direction in ['bottom', 'left']:
-        ax.spines[direction].set_position(('outward', 10))
+    for direction in ["bottom", "left"]:
+        ax.spines[direction].set_position(("outward", 10))
 
     # Delete far ticks
-    ax.tick_params(axis='both', which='major', labelsize=10, direction='out', length=5)
-    ax.tick_params(axis='both', which='minor', labelsize=8, direction='out', length=3)
+    ax.tick_params(axis="both", which="major", labelsize=10, direction="out", length=5)
+    ax.tick_params(axis="both", which="minor", labelsize=8, direction="out", length=3)
 
-    ax.set_xlabel('Complexity')
-    ax.set_ylabel('Loss')
+    ax.set_xlabel("Complexity")
+    ax.set_ylabel("Loss")
     fig.tight_layout(pad=2)
 
     return fig
+
 
 def replot(test_equation, num_points, noise_level, data_seed):
     X, y = generate_data(test_equation, num_points, noise_level, data_seed)
     x = X["x"]
 
-    plt.rcParams['font.family'] = 'IBM Plex Mono'
+    plt.rcParams["font.family"] = "IBM Plex Mono"
     fig, ax = plt.subplots(figsize=(6, 6), dpi=100)
 
-    ax.scatter(x, y, alpha=0.7, edgecolors='w', s=50)
+    ax.scatter(x, y, alpha=0.7, edgecolors="w", s=50)
 
-    ax.grid(True, which="both", ls="--", linewidth=0.5, color='gray', alpha=0.5)
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
+    ax.grid(True, which="both", ls="--", linewidth=0.5, color="gray", alpha=0.5)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
 
     # Range-frame the plot
-    for direction in ['bottom', 'left']:
-        ax.spines[direction].set_position(('outward', 10))
+    for direction in ["bottom", "left"]:
+        ax.spines[direction].set_position(("outward", 10))
 
     # Delete far ticks
-    ax.tick_params(axis='both', which='major', labelsize=10, direction='out', length=5)
-    ax.tick_params(axis='both', which='minor', labelsize=8, direction='out', length=3)
+    ax.tick_params(axis="both", which="major", labelsize=10, direction="out", length=5)
+    ax.tick_params(axis="both", which="minor", labelsize=8, direction="out", length=3)
 
     ax.set_xlabel("x")
     ax.set_ylabel("y")
