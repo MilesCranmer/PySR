@@ -66,9 +66,6 @@ def greet(
             "or check the box 'Ignore Warnings'.",
         )
 
-    binary_operators = str(binary_operators).replace("'", '"')
-    unary_operators = str(unary_operators).replace("'", '"')
-
     y = np.array(df[col_to_fit])
     X = df.drop([col_to_fit], axis=1)
 
