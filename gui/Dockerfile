@@ -27,6 +27,7 @@ USER user
 ENV HOME=/home/user
 ENV PATH=/home/user/.local/bin:$PATH
 
+RUN python -m venv /home/user/.venv
 
 # Install Python dependencies in a virtual environment
 RUN /home/user/.venv/bin/python -m pip install --no-cache-dir --upgrade -r /code/requirements.txt
