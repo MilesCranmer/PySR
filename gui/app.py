@@ -1,6 +1,5 @@
 import gradio as gr
 import numpy as np
-import os
 import pandas as pd
 import pysr
 import tempfile
@@ -14,18 +13,13 @@ empty_df = pd.DataFrame(
     }
 )
 
-test_equations = {
-    "Complex Polynomial": "3*x^3 + 2*x^2 - x + sin(x)",
-    "Exponential and Logarithmic": "exp(-x) + log(x+1)",
-    "Trigonometric Polynomial": "sin(x) + cos(2*x) + tan(x/3)",
-    "Mixed Functions": "sqrt(x)*exp(-x) + cos(pi*x)",
-    "Rational Function": "(x^2 + 1) / (x - 2)",
-}
+test_equations = [
+    "sin(x) + cos(2*x) + tan(x/3)",
+]
 
 
-def generate_data(equation: str, num_points: int, noise_level: float):
-    x = np.linspace(-10, 10, num_points)
-    s = test_equations[equation]
+def generate_data(s: str, num_points: int, noise_level: float):
+    x = np.linspace(0, 10, num_points)
     for (k, v) in {
         "sin": "np.sin",
         "cos": "np.cos",
@@ -117,67 +111,114 @@ model.fit(X, y)"""
 
 
 def main():
-    demo = gr.Interface(
-        fn=greet,
-        description="Symbolic Regression with PySR. Watch search progress by following the logs.",
-        inputs=[
-            gr.File(label="Upload a CSV File"),
-            gr.Radio(list(test_equations.keys()), label="Test Equation"),
-            gr.Slider(
-                minimum=10,
-                maximum=1000,
-                value=100,
-                label="Number of Data Points",
-                step=1,
-            ),
-            gr.Slider(minimum=0, maximum=1, value=0.1, label="Noise Level"),
-            gr.Slider(
-                minimum=1,
-                maximum=1000,
-                value=40,
-                label="Number of Iterations",
-                step=1,
-            ),
-            gr.Slider(
-                minimum=7,
-                maximum=35,
-                value=20,
-                label="Maximum Complexity",
-                step=1,
-            ),
-            gr.CheckboxGroup(
-                choices=["+", "-", "*", "/", "^"],
-                label="Binary Operators",
-                value=["+", "-", "*", "/"],
-            ),
-            gr.CheckboxGroup(
-                choices=[
-                    "sin",
-                    "cos",
-                    "exp",
-                    "log",
-                    "square",
-                    "cube",
-                    "sqrt",
-                    "abs",
-                    "tan",
-                ],
-                label="Unary Operators",
-                value=[],
-            ),
-            gr.Checkbox(
-                value=False,
-                label="Ignore Warnings",
-            ),
-        ],
-        outputs=[
-            "dataframe",
-            gr.Textbox(label="Error Log"),
-        ],
-    )
-    # Add file to the demo:
+    with gr.Blocks() as demo:
+        with gr.Row():
+            with gr.Column():
+                with gr.Row():
+                    with gr.Tab("Example Data"):
+                        # Plot of the example data:
+                        example_plot = gr.ScatterPlot(
+                            x="x",
+                            y="y",
+                            tooltip=["x", "y"],
+                            x_lim=[0, 10],
+                            y_lim=[-5, 5],
+                            width=350,
+                            height=300,
+                        )
+                        test_equation = gr.Radio(
+                            test_equations,
+                            value=test_equations[0],
+                            label="Test Equation"
+                        )
+                        num_points = gr.Slider(
+                            minimum=10,
+                            maximum=1000,
+                            value=100,
+                            label="Number of Data Points",
+                            step=1,
+                        )
+                        noise_level = gr.Slider(
+                            minimum=0, maximum=1, value=0.1, label="Noise Level"
+                        )
+                    with gr.Tab("Upload Data"):
+                        file_input = gr.File(label="Upload a CSV File")
+                with gr.Row():
+                    binary_operators = gr.CheckboxGroup(
+                        choices=["+", "-", "*", "/", "^"],
+                        label="Binary Operators",
+                        value=["+", "-", "*", "/"],
+                    )
+                    unary_operators = gr.CheckboxGroup(
+                        choices=[
+                            "sin",
+                            "cos",
+                            "exp",
+                            "log",
+                            "square",
+                            "cube",
+                            "sqrt",
+                            "abs",
+                            "tan",
+                        ],
+                        label="Unary Operators",
+                        value=[],
+                    )
+                    niterations = gr.Slider(
+                        minimum=1,
+                        maximum=1000,
+                        value=40,
+                        label="Number of Iterations",
+                        step=1,
+                    )
+                    maxsize = gr.Slider(
+                        minimum=7,
+                        maximum=35,
+                        value=20,
+                        label="Maximum Complexity",
+                        step=1,
+                    )
+                    force_run = gr.Checkbox(
+                        value=False,
+                        label="Ignore Warnings",
+                    )
+
+            with gr.Column():
+                with gr.Row():
+                    df = gr.Dataframe(
+                        headers=["Equation", "Loss", "Complexity"],
+                        datatype=["str", "number", "number"],
+                    )
+                    error_log = gr.Textbox(label="Error Log")
+                with gr.Row():
+                    run_button = gr.Button()
+
+        run_button.click(
+            greet,
+            inputs=[
+                file_input,
+                test_equation,
+                num_points,
+                noise_level,
+                niterations,
+                maxsize,
+                binary_operators,
+                unary_operators,
+                force_run,
+            ],
+            outputs=[df, error_log],
+        )
+
+        # Any update to the equation choice will trigger a replot:
+        for eqn_component in [test_equation, num_points, noise_level]:
+            eqn_component.change(replot, [test_equation, num_points, noise_level], example_plot)
 
     demo.launch()
+
+def replot(test_equation, num_points, noise_level):
+    X, y = generate_data(test_equation, num_points, noise_level)
+    df = pd.DataFrame({"x": X["x"], "y": y})
+    return df
 
 
 if __name__ == "__main__":
