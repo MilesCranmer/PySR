@@ -40,7 +40,7 @@ def greet(
             "Please upload a CSV file!",
         )
     # Look at some statistics of the file:
-    df = pd.read_csv(file_obj.name)
+    df = pd.read_csv(file_obj)
     if len(df) == 0:
         return (
             empty_df,
@@ -69,7 +69,6 @@ def greet(
     binary_operators = str(binary_operators).replace("'", '"')
     unary_operators = str(unary_operators).replace("'", '"')
 
-    df = pd.read_csv(file_obj)
     y = np.array(df[col_to_fit])
     X = df.drop([col_to_fit], axis=1)
 
@@ -79,6 +78,7 @@ def greet(
         niterations=niterations,
         binary_operators=binary_operators,
         unary_operators=unary_operators,
+        timeout_in_seconds=1000,
     )
     model.fit(X, y)
 
