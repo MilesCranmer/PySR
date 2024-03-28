@@ -1,7 +1,10 @@
 import gradio as gr
+import numpy as np
 import os
-import tempfile
 import pandas as pd
+import pysr
+import tempfile
+from typing import Optional
 
 empty_df = pd.DataFrame(
     {
@@ -13,7 +16,7 @@ empty_df = pd.DataFrame(
 
 
 def greet(
-    file_obj: tempfile._TemporaryFileWrapper,
+    file_obj: Optional[tempfile._TemporaryFileWrapper],
     col_to_fit: str,
     niterations: int,
     maxsize: int,
@@ -65,19 +68,39 @@ def greet(
 
     binary_operators = str(binary_operators).replace("'", '"')
     unary_operators = str(unary_operators).replace("'", '"')
-    os.system(
-        f"python run_pysr_and_save.py "
-        f"--niterations {niterations} "
-        f"--maxsize {maxsize} "
-        f"--binary_operators '{binary_operators}' "
-        f"--unary_operators '{unary_operators}' "
-        f"--col_to_fit {col_to_fit} "
-        f"--filename {file_obj.name}"
-    )
-    df = pd.read_csv("pysr_output.csv")
-    error_log = open("error.log", "r").read()
-    return df, error_log
 
+    df = pd.read_csv(file_obj)
+    y = np.array(df[col_to_fit])
+    X = df.drop([col_to_fit], axis=1)
+
+    model = pysr.PySRRegressor(
+        progress=False,
+        verbosity=0,
+        maxsize=maxsize,
+        niterations=niterations,
+        binary_operators=binary_operators,
+        unary_operators=unary_operators,
+    )
+    model.fit(X, y)
+
+    df = model.equations_[["equation", "loss", "complexity"]]
+    # Convert all columns to string type:
+    df = df.astype(str)
+    msg = (
+            "Success!\n"
+            f"You may run the model locally (faster) with "
+            f"the following parameters:"
+            +f"""
+model = PySRRegressor(
+    niterations={niterations},
+    binary_operators={str(binary_operators)},
+    unary_operators={str(unary_operators)},
+    maxsize={maxsize},
+)
+model.fit(X, y)""")
+
+    df.to_csv("pysr_output.csv", index=False)
+    return df, msg
 
 def main():
     demo = gr.Interface(
