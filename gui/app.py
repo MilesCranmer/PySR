@@ -110,111 +110,142 @@ model.fit(X, y)"""
     return df, msg
 
 
+def _data_layout():
+    with gr.Tab("Example Data"):
+        # Plot of the example data:
+        example_plot = gr.ScatterPlot(
+            x="x",
+            y="y",
+            tooltip=["x", "y"],
+            x_lim=[0, 10],
+            y_lim=[-5, 5],
+            width=350,
+            height=300,
+        )
+        test_equation = gr.Radio(
+            test_equations, value=test_equations[0], label="Test Equation"
+        )
+        num_points = gr.Slider(
+            minimum=10,
+            maximum=1000,
+            value=100,
+            label="Number of Data Points",
+            step=1,
+        )
+        noise_level = gr.Slider(minimum=0, maximum=1, value=0.1, label="Noise Level")
+    with gr.Tab("Upload Data"):
+        file_input = gr.File(label="Upload a CSV File")
+        gr.Markdown(
+            "Upload a CSV file with the data to fit. The last column will be used as the target variable."
+        )
+
+    return dict(
+        file_input=file_input,
+        test_equation=test_equation,
+        num_points=num_points,
+        noise_level=noise_level,
+        example_plot=example_plot,
+    )
+
+
+def _settings_layout():
+    binary_operators = gr.CheckboxGroup(
+        choices=["+", "-", "*", "/", "^"],
+        label="Binary Operators",
+        value=["+", "-", "*", "/"],
+    )
+    unary_operators = gr.CheckboxGroup(
+        choices=[
+            "sin",
+            "cos",
+            "exp",
+            "log",
+            "square",
+            "cube",
+            "sqrt",
+            "abs",
+            "tan",
+        ],
+        label="Unary Operators",
+        value=[],
+    )
+    niterations = gr.Slider(
+        minimum=1,
+        maximum=1000,
+        value=40,
+        label="Number of Iterations",
+        step=1,
+    )
+    maxsize = gr.Slider(
+        minimum=7,
+        maximum=35,
+        value=20,
+        label="Maximum Complexity",
+        step=1,
+    )
+    force_run = gr.Checkbox(
+        value=False,
+        label="Ignore Warnings",
+    )
+    return dict(
+        binary_operators=binary_operators,
+        unary_operators=unary_operators,
+        niterations=niterations,
+        maxsize=maxsize,
+        force_run=force_run,
+    )
+
+
 def main():
+    blocks = {}
     with gr.Blocks() as demo:
         with gr.Row():
             with gr.Column():
                 with gr.Row():
-                    with gr.Tab("Example Data"):
-                        # Plot of the example data:
-                        example_plot = gr.ScatterPlot(
-                            x="x",
-                            y="y",
-                            tooltip=["x", "y"],
-                            x_lim=[0, 10],
-                            y_lim=[-5, 5],
-                            width=350,
-                            height=300,
-                        )
-                        test_equation = gr.Radio(
-                            test_equations,
-                            value=test_equations[0],
-                            label="Test Equation"
-                        )
-                        num_points = gr.Slider(
-                            minimum=10,
-                            maximum=1000,
-                            value=100,
-                            label="Number of Data Points",
-                            step=1,
-                        )
-                        noise_level = gr.Slider(
-                            minimum=0, maximum=1, value=0.1, label="Noise Level"
-                        )
-                    with gr.Tab("Upload Data"):
-                        file_input = gr.File(label="Upload a CSV File")
-                        gr.Markdown("Upload a CSV file with the data to fit. The last column will be used as the target variable.")
+                    blocks = {**blocks, **_data_layout()}
                 with gr.Row():
-                    binary_operators = gr.CheckboxGroup(
-                        choices=["+", "-", "*", "/", "^"],
-                        label="Binary Operators",
-                        value=["+", "-", "*", "/"],
-                    )
-                    unary_operators = gr.CheckboxGroup(
-                        choices=[
-                            "sin",
-                            "cos",
-                            "exp",
-                            "log",
-                            "square",
-                            "cube",
-                            "sqrt",
-                            "abs",
-                            "tan",
-                        ],
-                        label="Unary Operators",
-                        value=[],
-                    )
-                    niterations = gr.Slider(
-                        minimum=1,
-                        maximum=1000,
-                        value=40,
-                        label="Number of Iterations",
-                        step=1,
-                    )
-                    maxsize = gr.Slider(
-                        minimum=7,
-                        maximum=35,
-                        value=20,
-                        label="Maximum Complexity",
-                        step=1,
-                    )
-                    force_run = gr.Checkbox(
-                        value=False,
-                        label="Ignore Warnings",
-                    )
+                    blocks = {**blocks, **_settings_layout()}
 
             with gr.Column():
                 with gr.Row():
-                    df = gr.Dataframe(
+                    blocks["df"] = gr.Dataframe(
                         headers=["Equation", "Loss", "Complexity"],
                         datatype=["str", "number", "number"],
                     )
-                    error_log = gr.Textbox(label="Error Log")
+                    blocks["error_log"] = gr.Textbox(label="Error Log")
                 with gr.Row():
-                    run_button = gr.Button()
+                    blocks["run"] = gr.Button()
 
-        run_button.click(
+        blocks["run"].click(
             greet,
             inputs=[
-                file_input,
-                test_equation,
-                num_points,
-                noise_level,
-                niterations,
-                maxsize,
-                binary_operators,
-                unary_operators,
-                force_run,
+                blocks[k]
+                for k in [
+                    "file_input",
+                    "test_equation",
+                    "num_points",
+                    "noise_level",
+                    "niterations",
+                    "maxsize",
+                    "binary_operators",
+                    "unary_operators",
+                    "force_run",
+                ]
             ],
-            outputs=[df, error_log],
+            outputs=[blocks["df"], blocks["error_log"]],
         )
 
         # Any update to the equation choice will trigger a replot:
-        for eqn_component in [test_equation, num_points, noise_level]:
-            eqn_component.change(replot, [test_equation, num_points, noise_level], example_plot)
+        eqn_components = [
+            blocks["test_equation"],
+            blocks["num_points"],
+            blocks["noise_level"],
+        ]
+        for eqn_component in eqn_components:
+            eqn_component.change(replot, eqn_components, blocks["example_plot"])
 
     demo.launch()
+
 
 def replot(test_equation, num_points, noise_level):
     X, y = generate_data(test_equation, num_points, noise_level)
