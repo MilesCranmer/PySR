@@ -74,7 +74,6 @@ def greet(
     X = df.drop([col_to_fit], axis=1)
 
     model = pysr.PySRRegressor(
-        progress=False,
         bumper=True,
         maxsize=maxsize,
         niterations=niterations,
@@ -105,7 +104,7 @@ model.fit(X, y)""")
 def main():
     demo = gr.Interface(
         fn=greet,
-        description="Symbolic Regression with PySR. Watch search progress by clicking 'See logs'!",
+        description="Symbolic Regression with PySR. Watch search progress by following the logs.",
         inputs=[
             gr.File(label="Upload a CSV File"),
             gr.Textbox(label="Column to Predict", placeholder="y"),
