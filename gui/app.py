@@ -143,6 +143,7 @@ def main():
                         )
                     with gr.Tab("Upload Data"):
                         file_input = gr.File(label="Upload a CSV File")
+                        gr.Markdown("Upload a CSV file with the data to fit. The last column will be used as the target variable.")
                 with gr.Row():
                     binary_operators = gr.CheckboxGroup(
                         choices=["+", "-", "*", "/", "^"],
