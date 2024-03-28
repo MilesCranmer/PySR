@@ -29,4 +29,4 @@ COPY . .
 
 EXPOSE 7860
 
-CMD ["python", "app.py"]
+CMD ["python", "-X", "juliacall-home=/usr/local/julia/bin", "app.py"]
