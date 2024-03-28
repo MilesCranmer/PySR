@@ -32,8 +32,9 @@ RUN python -m venv /home/user/.venv
 # Install Python dependencies in a virtual environment
 RUN /home/user/.venv/bin/python -m pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
-# Install Julia dependencies
-RUN /home/user/.venv/bin/python -c "import pysr"
+# Install and pre-compile Julia dependencies,
+# including the Bumper extension
+RUN /home/user/.venv/bin/python -c "import pysr; pysr.PySRRegressor(bumper=True, verbosity=0, progress=False, max_evals=1).fit([[1]], [1])"
 
 WORKDIR $HOME/app
 COPY --chown=user . $HOME/app
