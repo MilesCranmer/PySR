@@ -42,5 +42,10 @@ WORKDIR /home/user/app
 COPY --chown=user . $HOME/app
 
 EXPOSE 7860
+ENV GRADIO_ALLOW_FLAGGING=never \
+	GRADIO_NUM_PORTS=1 \
+	GRADIO_SERVER_NAME=0.0.0.0 \
+	GRADIO_THEME=huggingface \
+	SYSTEM=spaces
 
 CMD ["/bin/bash", "-l", "-c", "/home/user/.venv/bin/python /home/user/app/app.py"]
