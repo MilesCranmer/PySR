@@ -19,22 +19,36 @@ RUN mkdir -p /usr/local/share/fonts/IBM_Plex_Mono && \
     rm /tmp/IBM_Plex_Mono.zip
 RUN fc-cache -f -v
 
-WORKDIR /pysr
+# Set up a new user named "user" with user ID 1000
+RUN useradd -m -u 1000 user
+USER user
+WORKDIR /home/user/
+ENV HOME=/home/user
+ENV PATH=/home/user/.local/bin:$PATH
+
+RUN python -m venv $HOME/.venv
+
+ENV PYTHON="${HOME}/.venv/bin/python"
+ENV PIP="${PYTHON} -m pip"
+
+WORKDIR $HOME/pysr
 
 # Install all requirements, and then PySR itself
-ADD ./requirements.txt /pysr/requirements.txt
-RUN pip3 install --no-cache-dir -r /pysr/requirements.txt
+COPY --chown=user ./requirements.txt $HOME/pysr/requirements.txt
+RUN $PIP install --no-cache-dir -r $HOME/pysr/requirements.txt
 
-ADD ./gui/requirements.txt /pysr/gui/requirements.txt
-RUN pip3 install --no-cache-dir -r /pysr/gui/requirements.txt
+COPY --chown=user ./gui/requirements.txt $HOME/pysr/gui/requirements.txt
+RUN $PIP install --no-cache-dir -r $HOME/pysr/gui/requirements.txt
 
-ADD ./pyproject.toml /pysr/pyproject.toml
-ADD ./setup.py /pysr/setup.py
-ADD ./pysr /pysr/pysr
-RUN pip3 install --no-cache-dir .
+COPY --chown=user ./pyproject.toml $HOME/pysr/pyproject.toml
+COPY --chown=user ./setup.py $HOME/pysr/setup.py
+COPY --chown=user ./pysr $HOME/pysr/pysr
+RUN $PIP install --no-cache-dir .
 
 # Install Julia pre-requisites:
-RUN python3 -c 'import pysr'
+RUN $PYTHON -c 'import pysr'
+
+COPY --chown=user ./gui/app.py $HOME/pysr/gui/app.py
 
 EXPOSE 7860
 ENV GRADIO_ALLOW_FLAGGING=never \
@@ -43,11 +57,9 @@ ENV GRADIO_ALLOW_FLAGGING=never \
 	GRADIO_THEME=huggingface \
 	SYSTEM=spaces
 
-ADD ./gui/app.py /pysr/gui/app.py
-
 # metainformation
 LABEL org.opencontainers.image.authors = "Miles Cranmer"
 LABEL org.opencontainers.image.source = "https://github.com/MilesCranmer/PySR"
 LABEL org.opencontainers.image.licenses = "Apache License 2.0"
 
-CMD ["python3", "/pysr/gui/app.py"]
+CMD ["/home/user/.venv/bin/python", "/home/user/pysr/gui/app.py"]
