@@ -1,7 +1,7 @@
 # This builds a dockerfile containing a working copy of PySR
 # with all pre-requisites installed.
 
-ARG JLVERSION=1.9.4
+ARG JLVERSION=1.10.0
 ARG PYVERSION=3.11.6
 ARG BASE_IMAGE=bullseye
 
