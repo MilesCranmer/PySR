@@ -12,47 +12,22 @@ FROM python:${PYVERSION}-${BASE_IMAGE}
 COPY --from=jl /usr/local/julia /usr/local/julia
 ENV PATH="/usr/local/julia/bin:${PATH}"
 
-# Install dependencies for GUI:
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        build-essential \
-        git \
-        libgl1-mesa-glx \
-        libglib2.0-0 \
-        libpython3-dev \
-        libfreetype6-dev \
-        pkg-config \
-        libfontconfig1 \
-        fontconfig \
-        curl \
-        unzip \
-        && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# Install IPython and other useful libraries:
-RUN pip install --no-cache-dir ipython matplotlib
-
-WORKDIR /pysr
-
-# Caches install (https://stackoverflow.com/questions/25305788/how-to-avoid-reinstalling-packages-when-building-docker-image-for-python-project)
-ADD ./requirements.txt /pysr/requirements.txt
-RUN pip3 install --no-cache-dir -r /pysr/requirements.txt
-
-################################################################################
-## GUI setup
-# Install IBM Plex Mono font (so our plots look Gradio-style)
+# Install font used for GUI
 RUN mkdir -p /usr/local/share/fonts/IBM_Plex_Mono && \
     curl -L https://github.com/IBM/plex/releases/download/v6.4.0/IBM-Plex-Mono.zip -o /tmp/IBM_Plex_Mono.zip && \
     unzip /tmp/IBM_Plex_Mono.zip -d /usr/local/share/fonts/IBM_Plex_Mono && \
     rm /tmp/IBM_Plex_Mono.zip
 RUN fc-cache -f -v
+
+WORKDIR /pysr
+
+# Install all requirements, and then PySR itself
+ADD ./requirements.txt /pysr/requirements.txt
+RUN pip3 install --no-cache-dir -r /pysr/requirements.txt
+
 ADD ./gui/requirements.txt /pysr/gui/requirements.txt
 RUN pip3 install --no-cache-dir -r /pysr/gui/requirements.txt
-################################################################################
 
-# Install PySR:
-# We do a minimal copy so it doesn't need to rerun at every file change:
 ADD ./pyproject.toml /pysr/pyproject.toml
 ADD ./setup.py /pysr/setup.py
 ADD ./pysr /pysr/pysr
