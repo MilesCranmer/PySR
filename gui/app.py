@@ -350,12 +350,17 @@ def main():
                     blocks = {**blocks, **_settings_layout()}
 
             with gr.Column():
-                blocks["pareto"] = gr.Plot()
+                with gr.Tab("Pareto Front"):
+                    blocks["pareto"] = gr.Plot()
+                with gr.Tab("Predictions"):
+                    blocks["predictions_plot"] = gr.Plot()
+
                 blocks["df"] = gr.Dataframe(
                     headers=["complexity", "loss", "equation"],
                     datatype=["number", "number", "str"],
                     wrap=True,
-                    column_widths=[100, 100, 300],
+                    column_widths=[75, 75, 200],
+                    interactive=False,
                 )
                 blocks["run"] = gr.Button()
 
