@@ -15,11 +15,17 @@ RUN apt-get update && \
         pkg-config \
         libfontconfig1 \
         fontconfig \
+        curl \
+        unzip \
         && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-COPY fonts/*.ttf /usr/local/share/fonts/
+# Install IBM Plex Mono font (so our plots look Gradio-style)
+RUN mkdir -p /usr/local/share/fonts/IBM_Plex_Mono && \
+    curl -L https://github.com/IBM/plex/releases/download/v6.4.0/IBM-Plex-Mono.zip -o /tmp/IBM_Plex_Mono.zip && \
+    unzip /tmp/IBM_Plex_Mono.zip -d /usr/local/share/fonts/IBM_Plex_Mono && \
+    rm /tmp/IBM_Plex_Mono.zip
 RUN fc-cache -f -v
 
 WORKDIR /code
