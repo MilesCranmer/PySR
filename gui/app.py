@@ -1,6 +1,8 @@
 import multiprocessing as mp
 import os
+import tempfile
 import time
+from pathlib import Path
 
 import gradio as gr
 import numpy as np
@@ -8,10 +10,15 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 plt.ioff()
-import tempfile
-from pathlib import Path
+plt.rcParams["font.family"] = [
+    "IBM Plex Mono",
+    # Fallback fonts:
+    "DejaVu Sans Mono",
+    "Courier New",
+    "monospace",
+]
 
-empty_df = pd.DataFrame(
+empty_df = lambda: pd.DataFrame(
     {
         "equation": [],
         "loss": [],
@@ -69,17 +76,17 @@ def _greet_dispatch(
         df = pd.read_csv(file_input)
         if len(df) == 0:
             return (
-                empty_df,
+                empty_df(),
                 "The file is empty!",
             )
         if len(df.columns) == 1:
             return (
-                empty_df,
+                empty_df(),
                 "The file has only one column!",
             )
         if len(df) > 10_000 and not force_run:
             return (
-                empty_df,
+                empty_df(),
                 "You have uploaded a file with more than 10,000 rows. "
                 "This will take very long to run. "
                 "Please upload a subsample of the data, "
@@ -417,7 +424,6 @@ def main():
 
 
 def replot_pareto(df, maxsize):
-    plt.rcParams["font.family"] = "IBM Plex Mono"
     fig, ax = plt.subplots(figsize=(6, 6), dpi=100)
 
     if len(df) == 0 or "Equation" not in df.columns:
