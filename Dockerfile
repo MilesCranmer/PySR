@@ -30,6 +30,7 @@ RUN python -m venv $HOME/.venv
 
 ENV PYTHON="${HOME}/.venv/bin/python"
 ENV PIP="${PYTHON} -m pip"
+ENV PATH="${HOME}/.venv/bin:${PATH}"
 
 WORKDIR $HOME/pysr
 
