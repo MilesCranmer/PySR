@@ -50,6 +50,7 @@ sympy_mappings = {
     "round": lambda x: sympy.ceiling(x - 0.5),
     "max": lambda x, y: sympy.Piecewise((y, x < y), (x, True)),
     "min": lambda x, y: sympy.Piecewise((x, x < y), (y, True)),
+    "greater": lambda x, y: sympy.Piecewise((1.0, x > y), (0.0, True)),
     "cond": lambda x, y: sympy.Piecewise((y, x > 0), (0.0, True)),
     "logical_or": lambda x, y: sympy.Piecewise((1.0, (x > 0) | (y > 0)), (0.0, True)),
     "logical_and": lambda x, y: sympy.Piecewise((1.0, (x > 0) & (y > 0)), (0.0, True)),
