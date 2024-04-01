@@ -2,7 +2,7 @@ import gradio as gr
 
 from .data import test_equations
 from .plots import replot, replot_pareto
-from .processing import process
+from .processing import processing
 
 
 def _data_layout():
@@ -196,7 +196,7 @@ def main():
                 blocks["run"] = gr.Button()
 
         blocks["run"].click(
-            process,
+            processing,
             inputs=[
                 blocks[k]
                 for k in [

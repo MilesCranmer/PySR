@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from .data import generate_data
+from .data import generate_data, read_csv
 
 EMPTY_DF = lambda: pd.DataFrame(
     {
@@ -18,7 +18,7 @@ EMPTY_DF = lambda: pd.DataFrame(
 )
 
 
-def process(
+def processing(
     file_input,
     force_run,
     test_equation,
@@ -43,30 +43,10 @@ def process(
 ):
     """Load data, then spawn a process to run the greet function."""
     if file_input is not None:
-        # Look at some statistics of the file:
-        df = pd.read_csv(file_input)
-        if len(df) == 0:
-            return (
-                EMPTY_DF(),
-                "The file is empty!",
-            )
-        if len(df.columns) == 1:
-            return (
-                EMPTY_DF(),
-                "The file has only one column!",
-            )
-        if len(df) > 10_000 and not force_run:
-            return (
-                EMPTY_DF(),
-                "You have uploaded a file with more than 10,000 rows. "
-                "This will take very long to run. "
-                "Please upload a subsample of the data, "
-                "or check the box 'Ignore Warnings'.",
-            )
-
-        col_to_fit = df.columns[-1]
-        y = np.array(df[col_to_fit])
-        X = df.drop([col_to_fit], axis=1)
+        try:
+            X, y = read_csv(file_input, force_run)
+        except ValueError as e:
+            return (EMPTY_DF(), str(e))
     else:
         X, y = generate_data(test_equation, num_points, noise_level, data_seed)
 

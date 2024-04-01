@@ -20,3 +20,25 @@ def generate_data(s: str, num_points: int, noise_level: float, data_seed: int):
     noise = rstate.normal(0, noise_level, y.shape)
     y_noisy = y + noise
     return pd.DataFrame({"x": x}), y_noisy
+
+
+def read_csv(file_input: str, force_run: bool):
+    # Look at some statistics of the file:
+    df = pd.read_csv(file_input)
+    if len(df) == 0:
+        raise ValueError("The file is empty!")
+    if len(df.columns) == 1:
+        raise ValueError("The file has only one column!")
+    if len(df) > 10_000 and not force_run:
+        raise ValueError(
+            "You have uploaded a file with more than 10,000 rows. "
+            "This will take very long to run. "
+            "Please upload a subsample of the data, "
+            "or check the box 'Ignore Warnings'.",
+        )
+
+    col_to_fit = df.columns[-1]
+    y = np.array(df[col_to_fit])
+    X = df.drop([col_to_fit], axis=1)
+
+    return X, y
