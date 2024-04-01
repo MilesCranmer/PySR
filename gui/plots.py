@@ -1,30 +1,20 @@
 import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
+
+plt.ioff()
+plt.rcParams["font.family"] = [
+    "IBM Plex Mono",
+    # Fallback fonts:
+    "DejaVu Sans Mono",
+    "Courier New",
+    "monospace",
+]
 
 from .data import generate_data
 
-FIRST_LOAD = True
-
-
-def get_plt():
-    from matplotlib import pyplot as plt
-
-    if FIRST_LOAD:
-        plt.ioff()
-        plt.rcParams["font.family"] = [
-            "IBM Plex Mono",
-            # Fallback fonts:
-            "DejaVu Sans Mono",
-            "Courier New",
-            "monospace",
-        ]
-
-    FIRST_LOAD = False
-    return plt
-
 
 def replot_pareto(df: pd.DataFrame, maxsize: int):
-    plt = get_plt()
     fig, ax = plt.subplots(figsize=(6, 6), dpi=100)
 
     if len(df) == 0 or "Equation" not in df.columns:
@@ -70,7 +60,6 @@ def replot(test_equation, num_points, noise_level, data_seed):
     X, y = generate_data(test_equation, num_points, noise_level, data_seed)
     x = X["x"]
 
-    plt = get_plt()
     plt.rcParams["font.family"] = "IBM Plex Mono"
     fig, ax = plt.subplots(figsize=(6, 6), dpi=100)
 

@@ -1,17 +1,11 @@
+import gradio as gr
+
 from .data import test_equations
 from .plots import replot, replot_pareto
 from .processing import processing
 
 
-def get_gr():
-    import gradio as gr
-
-    return gr
-
-
 def _data_layout():
-    gr = get_gr()
-
     with gr.Tab("Example Data"):
         # Plot of the example data:
         with gr.Row():
@@ -49,8 +43,6 @@ def _data_layout():
 
 
 def _settings_layout():
-    gr = get_gr()
-
     with gr.Tab("Basic Settings"):
         binary_operators = gr.CheckboxGroup(
             choices=["+", "-", "*", "/", "^", "max", "min", "mod", "cond"],
@@ -179,8 +171,6 @@ def _settings_layout():
 
 
 def main():
-    gr = get_gr()
-
     blocks = {}
     with gr.Blocks() as demo:
         with gr.Row():
@@ -255,3 +245,7 @@ def main():
         demo.load(replot, eqn_components, blocks["example_plot"])
 
     demo.launch(debug=True)
+
+
+if __name__ == "__main__":
+    main()

@@ -5,7 +5,6 @@ import warnings
 
 import click
 
-from ..gui import main as gui_main
 from ..test import (
     get_runtests_cli,
     runtests,
@@ -47,11 +46,6 @@ def _install(julia_project, quiet, precompile):
     warnings.warn(
         "This command is deprecated. Julia dependencies are now installed at first import."
     )
-
-
-@pysr.command("gui", help="Start a Gradio-based GUI.")
-def _gui():
-    gui_main()
 
 
 TEST_OPTIONS = {"main", "jax", "torch", "cli", "dev", "startup"}
