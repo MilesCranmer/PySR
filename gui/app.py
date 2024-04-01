@@ -1,8 +1,7 @@
 import gradio as gr
-
-from .data import test_equations
-from .plots import replot, replot_pareto
-from .processing import processing
+from data import test_equations
+from plots import replot, replot_pareto
+from processing import processing
 
 
 def _data_layout():
@@ -234,13 +233,16 @@ def main():
             blocks["data_seed"],
         ]
         for eqn_component in eqn_components:
-            eqn_component.change(replot, eqn_components, blocks["example_plot"])
+            eqn_component.change(
+                replot, eqn_components, blocks["example_plot"], show_progress=False
+            )
 
         # Update plot when dataframe is updated:
         blocks["df"].change(
             replot_pareto,
             inputs=[blocks["df"], blocks["maxsize"]],
             outputs=[blocks["pareto"]],
+            show_progress=False,
         )
         demo.load(replot, eqn_components, blocks["example_plot"])
 

@@ -11,7 +11,7 @@ plt.rcParams["font.family"] = [
     "monospace",
 ]
 
-from .data import generate_data
+from data import generate_data
 
 
 def replot_pareto(df: pd.DataFrame, maxsize: int):

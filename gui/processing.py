@@ -6,8 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
-from .data import generate_data, read_csv
+from data import generate_data, read_csv
 
 EMPTY_DF = lambda: pd.DataFrame(
     {
