@@ -7,6 +7,7 @@ from typing import Callable
 
 import pandas as pd
 from data import generate_data, read_csv
+from plots import plot_predictions
 
 EMPTY_DF = lambda: pd.DataFrame(
     {
@@ -188,7 +189,10 @@ def processing(
                 )
             )
             out = PERSISTENT_READER.out_queue.get()
+            predictions = out["ypred"]
             equations = out["equations"]
-            yield equations[["Complexity", "Loss", "Equation"]]
+            yield equations[["Complexity", "Loss", "Equation"]], plot_predictions(
+                y, predictions
+            )
 
         time.sleep(0.1)

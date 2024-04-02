@@ -61,6 +61,20 @@ def plot_example_data(test_equation, num_points, noise_level, data_seed):
     return fig
 
 
+def plot_predictions(y, ypred):
+    fig, ax = plt.subplots(figsize=(6, 6), dpi=100)
+
+    ax.scatter(y, ypred, alpha=0.7, edgecolors="w", s=50)
+
+    stylize_axis(ax)
+
+    ax.set_xlabel("true")
+    ax.set_ylabel("prediction")
+    fig.tight_layout(pad=2)
+
+    return fig
+
+
 def stylize_axis(ax):
     ax.grid(True, which="both", ls="--", linewidth=0.5, color="gray", alpha=0.5)
     ax.spines["top"].set_visible(False)

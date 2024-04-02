@@ -222,7 +222,8 @@ def main():
                     "batch_size",
                 ]
             ],
-            outputs=blocks["df"],
+            outputs=[blocks["df"], blocks["predictions_plot"]],
+            show_progress=True,
         )
 
         # Any update to the equation choice will trigger a plot_example_data:
