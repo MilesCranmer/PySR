@@ -3,6 +3,7 @@ import os
 import tempfile
 import time
 from pathlib import Path
+from typing import Callable
 
 import pandas as pd
 from data import generate_data, read_csv
@@ -37,8 +38,6 @@ def pysr_fit(queue: mp.Queue, out_queue: mp.Queue):
 
 
 def pysr_predict(queue: mp.Queue, out_queue: mp.Queue):
-    import numpy as np
-
     import pysr
 
     while True:
@@ -49,7 +48,7 @@ def pysr_predict(queue: mp.Queue, out_queue: mp.Queue):
 
         X = args["X"]
         equation_file = str(args["equation_file"])
-        complexity = args["complexity"]
+        index = args["index"]
 
         equation_file_pkl = equation_file.replace(".csv", ".pkl")
         equation_file_bkup = equation_file + ".bkup"
@@ -66,31 +65,29 @@ def pysr_predict(queue: mp.Queue, out_queue: mp.Queue):
         except pd.errors.EmptyDataError:
             continue
 
-        index = np.abs(model.equations_.complexity - complexity).argmin
         ypred = model.predict(X, index)
 
-        out_queue.put(ypred)
+        # Rename the columns to uppercase
+        equations = model.equations_[["complexity", "loss", "equation"]].copy()
+
+        # Remove any row that has worse loss than previous row:
+        equations = equations[equations["loss"].cummin() == equations["loss"]]
+        # TODO: Why is this needed? Are rows not being removed?
+
+        equations.columns = ["Complexity", "Loss", "Equation"]
+        out_queue.put(dict(ypred=ypred, equations=equations))
 
 
-class PySRProcess:
-    def __init__(self):
-        self.queue = mp.Queue()
-        self.out_queue = mp.Queue()
-        self.process = mp.Process(target=pysr_fit, args=(self.queue, self.out_queue))
-        self.process.start()
-
-
-class PySRReaderProcess:
-    def __init__(self):
-        self.queue = mp.Queue()
-        self.out_queue = mp.Queue()
-        self.process = mp.Process(
-            target=pysr_predict, args=(self.queue, self.out_queue)
-        )
+class ProcessWrapper:
+    def __init__(self, target: Callable[[mp.Queue, mp.Queue], None]):
+        self.queue = mp.Queue(maxsize=1)
+        self.out_queue = mp.Queue(maxsize=1)
+        self.process = mp.Process(target=target, args=(self.queue, self.out_queue))
         self.process.start()
 
 
 PERSISTENT_WRITER = None
+PERSISTENT_READER = None
 
 
 def processing(
@@ -118,9 +115,15 @@ def processing(
 ):
     """Load data, then spawn a process to run the greet function."""
     global PERSISTENT_WRITER
+    global PERSISTENT_READER
+
     if PERSISTENT_WRITER is None:
-        print("Starting PySR process")
-        PERSISTENT_WRITER = PySRProcess()
+        print("Starting PySR fit process")
+        PERSISTENT_WRITER = ProcessWrapper(pysr_fit)
+
+    if PERSISTENT_READER is None:
+        print("Starting PySR predict process")
+        PERSISTENT_READER = ProcessWrapper(pysr_predict)
 
     if file_input is not None:
         try:
@@ -130,67 +133,62 @@ def processing(
     else:
         X, y = generate_data(test_equation, num_points, noise_level, data_seed)
 
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        base = Path(tmpdirname)
-        equation_file = base / "hall_of_fame.csv"
-        equation_file_bkup = base / "hall_of_fame.csv.bkup"
-        # Check if queue is empty, if not, kill the process
-        # and start a new one
-        if not PERSISTENT_WRITER.queue.empty():
-            print("Restarting PySR process")
-            if PERSISTENT_WRITER.process.is_alive():
-                PERSISTENT_WRITER.process.terminate()
-                PERSISTENT_WRITER.process.join()
+    tmpdirname = tempfile.mkdtemp()
+    base = Path(tmpdirname)
+    equation_file = base / "hall_of_fame.csv"
+    # Check if queue is empty, if not, kill the process
+    # and start a new one
+    if not PERSISTENT_WRITER.queue.empty():
+        print("Restarting PySR fit process")
+        if PERSISTENT_WRITER.process.is_alive():
+            PERSISTENT_WRITER.process.terminate()
+            PERSISTENT_WRITER.process.join()
 
-            PERSISTENT_WRITER = PySRProcess()
-        # Write these to queue instead:
-        PERSISTENT_WRITER.queue.put(
-            dict(
-                X=X,
-                y=y,
-                kwargs=dict(
-                    niterations=niterations,
-                    maxsize=maxsize,
-                    binary_operators=binary_operators,
-                    unary_operators=unary_operators,
-                    equation_file=equation_file,
-                    parsimony=parsimony,
-                    populations=populations,
-                    population_size=population_size,
-                    ncycles_per_iteration=ncycles_per_iteration,
-                    elementwise_loss=elementwise_loss,
-                    adaptive_parsimony_scaling=adaptive_parsimony_scaling,
-                    optimizer_algorithm=optimizer_algorithm,
-                    optimizer_iterations=optimizer_iterations,
-                    batching=batching,
-                    batch_size=batch_size,
-                ),
-            )
+        PERSISTENT_WRITER = ProcessWrapper(pysr_fit)
+
+    if not PERSISTENT_READER.queue.empty():
+        print("Restarting PySR predict process")
+        if PERSISTENT_READER.process.is_alive():
+            PERSISTENT_READER.process.terminate()
+            PERSISTENT_READER.process.join()
+
+        PERSISTENT_READER = ProcessWrapper(pysr_predict)
+
+    PERSISTENT_WRITER.queue.put(
+        dict(
+            X=X,
+            y=y,
+            kwargs=dict(
+                niterations=niterations,
+                maxsize=maxsize,
+                binary_operators=binary_operators,
+                unary_operators=unary_operators,
+                equation_file=equation_file,
+                parsimony=parsimony,
+                populations=populations,
+                population_size=population_size,
+                ncycles_per_iteration=ncycles_per_iteration,
+                elementwise_loss=elementwise_loss,
+                adaptive_parsimony_scaling=adaptive_parsimony_scaling,
+                optimizer_algorithm=optimizer_algorithm,
+                optimizer_iterations=optimizer_iterations,
+                batching=batching,
+                batch_size=batch_size,
+            ),
         )
-        while PERSISTENT_WRITER.out_queue.empty():
-            if equation_file_bkup.exists():
-                # First, copy the file to a the copy file
-                equation_file_copy = base / "hall_of_fame_copy.csv"
-                os.system(f"cp {equation_file_bkup} {equation_file_copy}")
-                try:
-                    equations = pd.read_csv(equation_file_copy)
-                except pd.errors.EmptyDataError:
-                    continue
+    )
+    while PERSISTENT_WRITER.out_queue.empty():
+        if equation_file.exists():
+            # First, copy the file to a the copy file
+            PERSISTENT_READER.queue.put(
+                dict(
+                    X=X,
+                    equation_file=equation_file,
+                    index=-1,
+                )
+            )
+            out = PERSISTENT_READER.out_queue.get()
+            equations = out["equations"]
+            yield equations[["Complexity", "Loss", "Equation"]]
 
-                # Ensure it is pareto dominated, with more complex expressions
-                # having higher loss. Otherwise remove those rows.
-                # TODO: Not sure why this occurs; could be the result of a late copy?
-                equations.sort_values("Complexity", ascending=True, inplace=True)
-                equations.reset_index(inplace=True)
-                bad_idx = []
-                min_loss = None
-                for i in equations.index:
-                    if min_loss is None or equations.loc[i, "Loss"] < min_loss:
-                        min_loss = float(equations.loc[i, "Loss"])
-                    else:
-                        bad_idx.append(i)
-                equations.drop(index=bad_idx, inplace=True)
-
-                yield equations[["Complexity", "Loss", "Equation"]]
-
-            time.sleep(0.1)
+        time.sleep(0.1)
