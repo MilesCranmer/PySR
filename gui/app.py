@@ -1,6 +1,6 @@
 import gradio as gr
 from data import test_equations
-from plots import replot, replot_pareto
+from plots import plot_example_data, plot_pareto_curve
 from processing import processing
 
 
@@ -225,7 +225,7 @@ def main():
             outputs=blocks["df"],
         )
 
-        # Any update to the equation choice will trigger a replot:
+        # Any update to the equation choice will trigger a plot_example_data:
         eqn_components = [
             blocks["test_equation"],
             blocks["num_points"],
@@ -234,17 +234,20 @@ def main():
         ]
         for eqn_component in eqn_components:
             eqn_component.change(
-                replot, eqn_components, blocks["example_plot"], show_progress=False
+                plot_example_data,
+                eqn_components,
+                blocks["example_plot"],
+                show_progress=False,
             )
 
         # Update plot when dataframe is updated:
         blocks["df"].change(
-            replot_pareto,
+            plot_pareto_curve,
             inputs=[blocks["df"], blocks["maxsize"]],
             outputs=[blocks["pareto"]],
             show_progress=False,
         )
-        demo.load(replot, eqn_components, blocks["example_plot"])
+        demo.load(plot_example_data, eqn_components, blocks["example_plot"])
 
     demo.launch(debug=True)
 

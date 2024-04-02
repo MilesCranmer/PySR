@@ -14,7 +14,7 @@ plt.rcParams["font.family"] = [
 from data import generate_data
 
 
-def replot_pareto(df: pd.DataFrame, maxsize: int):
+def plot_pareto_curve(df: pd.DataFrame, maxsize: int):
     fig, ax = plt.subplots(figsize=(6, 6), dpi=100)
 
     if len(df) == 0 or "Equation" not in df.columns:
@@ -56,7 +56,7 @@ def replot_pareto(df: pd.DataFrame, maxsize: int):
     return fig
 
 
-def replot(test_equation, num_points, noise_level, data_seed):
+def plot_example_data(test_equation, num_points, noise_level, data_seed):
     X, y = generate_data(test_equation, num_points, noise_level, data_seed)
     x = X["x"]
 
