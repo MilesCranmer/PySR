@@ -36,11 +36,57 @@ def pysr_fit(queue: mp.Queue, out_queue: mp.Queue):
         out_queue.put(None)
 
 
+def pysr_predict(queue: mp.Queue, out_queue: mp.Queue):
+    import numpy as np
+
+    import pysr
+
+    while True:
+        args = queue.get()
+
+        if args is None:
+            break
+
+        X = args["X"]
+        equation_file = str(args["equation_file"])
+        complexity = args["complexity"]
+
+        equation_file_pkl = equation_file.replace(".csv", ".pkl")
+        equation_file_bkup = equation_file + ".bkup"
+
+        equation_file_copy = equation_file.replace(".csv", "_copy.csv")
+        equation_file_pkl_copy = equation_file.replace(".csv", "_copy.pkl")
+
+        # TODO: See if there is way to get lock on file
+        os.system(f"cp {equation_file_bkup} {equation_file_copy}")
+        os.system(f"cp {equation_file_pkl} {equation_file_pkl_copy}")
+
+        try:
+            model = pysr.PySRRegressor.from_file(equation_file_pkl_copy, verbosity=0)
+        except pd.errors.EmptyDataError:
+            continue
+
+        index = np.abs(model.equations_.complexity - complexity).argmin
+        ypred = model.predict(X, index)
+
+        out_queue.put(ypred)
+
+
 class PySRProcess:
     def __init__(self):
         self.queue = mp.Queue()
         self.out_queue = mp.Queue()
         self.process = mp.Process(target=pysr_fit, args=(self.queue, self.out_queue))
+        self.process.start()
+
+
+class PySRReaderProcess:
+    def __init__(self):
+        self.queue = mp.Queue()
+        self.out_queue = mp.Queue()
+        self.process = mp.Process(
+            target=pysr_predict, args=(self.queue, self.out_queue)
+        )
         self.process.start()
 
 
@@ -121,36 +167,30 @@ def processing(
                 ),
             )
         )
-        last_yield_time = None
         while PERSISTENT_WRITER.out_queue.empty():
             if equation_file_bkup.exists():
+                # First, copy the file to a the copy file
+                equation_file_copy = base / "hall_of_fame_copy.csv"
+                os.system(f"cp {equation_file_bkup} {equation_file_copy}")
                 try:
-                    # First, copy the file to a the copy file
-                    equation_file_copy = base / "hall_of_fame_copy.csv"
-                    os.system(f"cp {equation_file_bkup} {equation_file_copy}")
                     equations = pd.read_csv(equation_file_copy)
-                    # Ensure it is pareto dominated, with more complex expressions
-                    # having higher loss. Otherwise remove those rows.
-                    # TODO: Not sure why this occurs; could be the result of a late copy?
-                    equations.sort_values("Complexity", ascending=True, inplace=True)
-                    equations.reset_index(inplace=True)
-                    bad_idx = []
-                    min_loss = None
-                    for i in equations.index:
-                        if min_loss is None or equations.loc[i, "Loss"] < min_loss:
-                            min_loss = float(equations.loc[i, "Loss"])
-                        else:
-                            bad_idx.append(i)
-                    equations.drop(index=bad_idx, inplace=True)
-
-                    while (
-                        last_yield_time is not None
-                        and time.time() - last_yield_time < plot_update_delay
-                    ):
-                        time.sleep(0.1)
-
-                    yield equations[["Complexity", "Loss", "Equation"]]
-
-                    last_yield_time = time.time()
                 except pd.errors.EmptyDataError:
-                    pass
+                    continue
+
+                # Ensure it is pareto dominated, with more complex expressions
+                # having higher loss. Otherwise remove those rows.
+                # TODO: Not sure why this occurs; could be the result of a late copy?
+                equations.sort_values("Complexity", ascending=True, inplace=True)
+                equations.reset_index(inplace=True)
+                bad_idx = []
+                min_loss = None
+                for i in equations.index:
+                    if min_loss is None or equations.loc[i, "Loss"] < min_loss:
+                        min_loss = float(equations.loc[i, "Loss"])
+                    else:
+                        bad_idx.append(i)
+                equations.drop(index=bad_idx, inplace=True)
+
+                yield equations[["Complexity", "Loss", "Equation"]]
+
+            time.sleep(0.1)
