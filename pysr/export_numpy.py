@@ -1,4 +1,5 @@
 """Code for exporting discovered expressions to numpy"""
+
 import warnings
 
 import numpy as np

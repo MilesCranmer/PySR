@@ -1,4 +1,5 @@
 """Functions to help export PySR equations to LaTeX."""
+
 from typing import List, Optional, Tuple
 
 import pandas as pd
