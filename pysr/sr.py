@@ -1057,15 +1057,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Handle pickle serialization for PySRRegressor.
 
         The Scikit-learn standard requires estimators to be serializable via
-        `pickle.dumps()`. However, `PyCall.jlwrap` does not support pickle
-        serialization.
-
-        Thus, for `PySRRegressor` to support pickle serialization, the
-        `julia_state_stream_` attribute must be hidden from pickle. This will
-        prevent the `warm_start` of any model that is loaded via `pickle.loads()`,
-        but does allow all other attributes of a fitted `PySRRegressor` estimator
-        to be serialized. Note: Jax and Torch format equations are also removed
-        from the pickled instance.
+        `pickle.dumps()`. However, some attributes do not support pickling
+        and need to be hidden, such as the JAX and Torch representations.
         """
         state = self.__dict__
         show_pickle_warning = not (
