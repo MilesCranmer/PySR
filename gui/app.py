@@ -3,6 +3,8 @@ from data import test_equations
 from plots import plot_example_data, plot_pareto_curve
 from processing import processing
 
+GLOBAL_SETTINGS = dict(theme="default")
+
 
 def _data_layout():
     with gr.Tab("Example Data"):
@@ -170,8 +172,9 @@ def _settings_layout():
 
 
 def main():
+    global GLOBAL_SETTINGS
     blocks = {}
-    with gr.Blocks() as demo:
+    with gr.Blocks(**GLOBAL_SETTINGS) as demo:
         with gr.Row():
             with gr.Column():
                 with gr.Row():
