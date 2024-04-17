@@ -282,13 +282,11 @@ def create_processing_function(interface: AppInterface, ignore=[]):
     return f
 
 
-class App:
-    def __init__(self, theme="default") -> None:
-        with gr.Blocks(theme=theme) as demo:
-            self.interface = AppInterface(demo)
-
-            demo.launch(debug=True)
+def main():
+    with gr.Blocks(theme="default") as demo:
+        _ = AppInterface(demo)
+        demo.launch(debug=True)
 
 
 if __name__ == "__main__":
-    app = App()
+    main()
