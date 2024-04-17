@@ -92,6 +92,7 @@ PERSISTENT_READER = None
 
 
 def processing(
+    *,
     file_input,
     force_run,
     test_equation,
@@ -113,6 +114,7 @@ def processing(
     optimizer_iterations,
     batching,
     batch_size,
+    **kwargs,
 ):
     """Load data, then spawn a process to run the greet function."""
     global PERSISTENT_WRITER

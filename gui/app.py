@@ -1,56 +1,78 @@
+from collections import OrderedDict
+
 import gradio as gr
-from data import test_equations
+import numpy as np
+from data import TEST_EQUATIONS
+from gradio.components.base import Component
 from plots import plot_example_data, plot_pareto_curve
 from processing import processing
 
-GLOBAL_SETTINGS = dict(theme="default")
 
-
-def _data_layout():
-    with gr.Tab("Example Data"):
-        # Plot of the example data:
+class ExampleData:
+    def __init__(self, demo: gr.Blocks) -> None:
         with gr.Row():
+            # Plot of the example data:
             with gr.Column():
-                example_plot = gr.Plot()
+                self.example_plot = gr.Plot()
             with gr.Column():
-                test_equation = gr.Radio(
-                    test_equations, value=test_equations[0], label="Test Equation"
+                self.test_equation = gr.Radio(
+                    TEST_EQUATIONS, value=TEST_EQUATIONS[0], label="Test Equation"
                 )
-                num_points = gr.Slider(
+                self.num_points = gr.Slider(
                     minimum=10,
                     maximum=1000,
                     value=200,
                     label="Number of Data Points",
                     step=1,
                 )
-                noise_level = gr.Slider(
+                self.noise_level = gr.Slider(
                     minimum=0, maximum=1, value=0.05, label="Noise Level"
                 )
-                data_seed = gr.Number(value=0, label="Random Seed")
-    with gr.Tab("Upload Data"):
-        file_input = gr.File(label="Upload a CSV File")
-        gr.Markdown(
+                self.data_seed = gr.Number(value=0, label="Random Seed")
+
+        # Set up plotting:
+
+        eqn_components = [
+            self.test_equation,
+            self.num_points,
+            self.noise_level,
+            self.data_seed,
+        ]
+        for eqn_component in eqn_components:
+            eqn_component.change(
+                plot_example_data,
+                eqn_components,
+                self.example_plot,
+                show_progress=False,
+            )
+
+        demo.load(plot_example_data, eqn_components, self.example_plot)
+
+
+class UploadData:
+    def __init__(self) -> None:
+        self.file_input = gr.File(label="Upload a CSV File")
+        self.label = gr.Markdown(
             "The rightmost column of your CSV file will be used as the target variable."
         )
 
-    return dict(
-        file_input=file_input,
-        test_equation=test_equation,
-        num_points=num_points,
-        noise_level=noise_level,
-        data_seed=data_seed,
-        example_plot=example_plot,
-    )
+
+class Data:
+    def __init__(self, demo: gr.Blocks) -> None:
+        with gr.Tab("Example Data"):
+            self.example_data = ExampleData(demo)
+        with gr.Tab("Upload Data"):
+            self.upload_data = UploadData()
 
 
-def _settings_layout():
-    with gr.Tab("Basic Settings"):
-        binary_operators = gr.CheckboxGroup(
+class BasicSettings:
+    def __init__(self) -> None:
+        self.binary_operators = gr.CheckboxGroup(
             choices=["+", "-", "*", "/", "^", "max", "min", "mod", "cond"],
             label="Binary Operators",
             value=["+", "-", "*", "/"],
         )
-        unary_operators = gr.CheckboxGroup(
+        self.unary_operators = gr.CheckboxGroup(
             choices=[
                 "sin",
                 "cos",
@@ -69,58 +91,61 @@ def _settings_layout():
             label="Unary Operators",
             value=["sin"],
         )
-        niterations = gr.Slider(
+        self.niterations = gr.Slider(
             minimum=1,
             maximum=1000,
             value=40,
             label="Number of Iterations",
             step=1,
         )
-        maxsize = gr.Slider(
+        self.maxsize = gr.Slider(
             minimum=7,
             maximum=100,
             value=20,
             label="Maximum Complexity",
             step=1,
         )
-        parsimony = gr.Number(
+        self.parsimony = gr.Number(
             value=0.0032,
             label="Parsimony Coefficient",
         )
-    with gr.Tab("Advanced Settings"):
-        populations = gr.Slider(
+
+
+class AdvancedSettings:
+    def __init__(self) -> None:
+        self.populations = gr.Slider(
             minimum=2,
             maximum=100,
             value=15,
             label="Number of Populations",
             step=1,
         )
-        population_size = gr.Slider(
+        self.population_size = gr.Slider(
             minimum=2,
             maximum=1000,
             value=33,
             label="Population Size",
             step=1,
         )
-        ncycles_per_iteration = gr.Number(
+        self.ncycles_per_iteration = gr.Number(
             value=550,
             label="Cycles per Iteration",
         )
-        elementwise_loss = gr.Radio(
+        self.elementwise_loss = gr.Radio(
             ["L2DistLoss()", "L1DistLoss()", "LogitDistLoss()", "HuberLoss()"],
             value="L2DistLoss()",
             label="Loss Function",
         )
-        adaptive_parsimony_scaling = gr.Number(
+        self.adaptive_parsimony_scaling = gr.Number(
             value=20.0,
             label="Adaptive Parsimony Scaling",
         )
-        optimizer_algorithm = gr.Radio(
+        self.optimizer_algorithm = gr.Radio(
             ["BFGS", "NelderMead"],
             value="BFGS",
             label="Optimizer Algorithm",
         )
-        optimizer_iterations = gr.Slider(
+        self.optimizer_iterations = gr.Slider(
             minimum=1,
             maximum=100,
             value=8,
@@ -128,11 +153,11 @@ def _settings_layout():
             step=1,
         )
         # Bool:
-        batching = gr.Checkbox(
+        self.batching = gr.Checkbox(
             value=False,
             label="Batching",
         )
-        batch_size = gr.Slider(
+        self.batch_size = gr.Slider(
             minimum=2,
             maximum=1000,
             value=50,
@@ -140,121 +165,122 @@ def _settings_layout():
             step=1,
         )
 
-    with gr.Tab("Gradio Settings"):
-        plot_update_delay = gr.Slider(
+
+class GradioSettings:
+    def __init__(self) -> None:
+        self.plot_update_delay = gr.Slider(
             minimum=1,
             maximum=100,
             value=3,
             label="Plot Update Delay",
         )
-        force_run = gr.Checkbox(
+        self.force_run = gr.Checkbox(
             value=False,
             label="Ignore Warnings",
         )
-    return dict(
-        binary_operators=binary_operators,
-        unary_operators=unary_operators,
-        niterations=niterations,
-        maxsize=maxsize,
-        force_run=force_run,
-        plot_update_delay=plot_update_delay,
-        parsimony=parsimony,
-        populations=populations,
-        population_size=population_size,
-        ncycles_per_iteration=ncycles_per_iteration,
-        elementwise_loss=elementwise_loss,
-        adaptive_parsimony_scaling=adaptive_parsimony_scaling,
-        optimizer_algorithm=optimizer_algorithm,
-        optimizer_iterations=optimizer_iterations,
-        batching=batching,
-        batch_size=batch_size,
-    )
 
 
-def main():
-    global GLOBAL_SETTINGS
-    blocks = {}
-    with gr.Blocks(**GLOBAL_SETTINGS) as demo:
+class Settings:
+    def __init__(self):
+        with gr.Tab("Basic Settings"):
+            self.basic_settings = BasicSettings()
+        with gr.Tab("Advanced Settings"):
+            self.advanced_settings = AdvancedSettings()
+        with gr.Tab("Gradio Settings"):
+            self.gradio_settings = GradioSettings()
+
+
+class Results:
+    def __init__(self):
+        with gr.Tab("Pareto Front"):
+            self.pareto = gr.Plot()
+        with gr.Tab("Predictions"):
+            self.predictions_plot = gr.Plot()
+
+        self.df = gr.Dataframe(
+            headers=["complexity", "loss", "equation"],
+            datatype=["number", "number", "str"],
+            wrap=True,
+            column_widths=[75, 75, 200],
+            interactive=False,
+        )
+
+
+def flatten_attributes(component_group, absolute_name: str, d=None) -> OrderedDict:
+    if d is None:
+        d = OrderedDict()
+
+    if not hasattr(component_group, "__dict__"):
+        return d
+
+    for name, elem in component_group.__dict__.items():
+        new_absolute_name = absolute_name + "." + name
+        if name.startswith("_"):
+            # Private attribute
+            continue
+        elif elem in component_group.__dict__.values():
+            # Don't duplicate any tiems
+            continue
+        elif isinstance(elem, Component):
+            # Only add components to dict
+            d[new_absolute_name] = elem
+        else:
+            d = flatten_attributes(elem, new_absolute_name, d=d)
+
+    return d
+
+
+class AppInterface:
+    def __init__(self, demo: gr.Blocks) -> None:
         with gr.Row():
             with gr.Column():
                 with gr.Row():
-                    blocks = {**blocks, **_data_layout()}
+                    self.data = Data(demo)
                 with gr.Row():
-                    blocks = {**blocks, **_settings_layout()}
-
+                    self.settings = Settings()
             with gr.Column():
-                with gr.Tab("Pareto Front"):
-                    blocks["pareto"] = gr.Plot()
-                with gr.Tab("Predictions"):
-                    blocks["predictions_plot"] = gr.Plot()
+                self.results = Results()
+                self.run = gr.Button()
 
-                blocks["df"] = gr.Dataframe(
-                    headers=["complexity", "loss", "equation"],
-                    datatype=["number", "number", "str"],
-                    wrap=True,
-                    column_widths=[75, 75, 200],
-                    interactive=False,
-                )
-                blocks["run"] = gr.Button()
+        # Update plot when dataframe is updated:
+        self.results.df.change(
+            plot_pareto_curve,
+            inputs=[self.results.df, self.settings.basic_settings.maxsize],
+            outputs=[self.results.pareto],
+            show_progress=False,
+        )
 
-        blocks["run"].click(
-            processing,
-            inputs=[
-                blocks[k]
-                for k in [
-                    "file_input",
-                    "force_run",
-                    "test_equation",
-                    "num_points",
-                    "noise_level",
-                    "data_seed",
-                    "niterations",
-                    "maxsize",
-                    "binary_operators",
-                    "unary_operators",
-                    "plot_update_delay",
-                    "parsimony",
-                    "populations",
-                    "population_size",
-                    "ncycles_per_iteration",
-                    "elementwise_loss",
-                    "adaptive_parsimony_scaling",
-                    "optimizer_algorithm",
-                    "optimizer_iterations",
-                    "batching",
-                    "batch_size",
-                ]
-            ],
-            outputs=[blocks["df"], blocks["predictions_plot"]],
+        self.run.click(
+            create_processing_function(self, ignore=["df", "predictions_plot"]),
+            inputs=list(flatten_attributes(self, "interface").values()),
+            outputs=[self.results.df, self.results.predictions_plot],
             show_progress=True,
         )
 
-        # Any update to the equation choice will trigger a plot_example_data:
-        eqn_components = [
-            blocks["test_equation"],
-            blocks["num_points"],
-            blocks["noise_level"],
-            blocks["data_seed"],
-        ]
-        for eqn_component in eqn_components:
-            eqn_component.change(
-                plot_example_data,
-                eqn_components,
-                blocks["example_plot"],
-                show_progress=False,
-            )
 
-        # Update plot when dataframe is updated:
-        blocks["df"].change(
-            plot_pareto_curve,
-            inputs=[blocks["df"], blocks["maxsize"]],
-            outputs=[blocks["pareto"]],
-            show_progress=False,
-        )
-        demo.load(plot_example_data, eqn_components, blocks["example_plot"])
+def create_processing_function(interface: AppInterface, ignore=[]):
+    d = flatten_attributes(interface, "interface")
+    keys = [k.split(".")[-1] for k in d.keys()]
+    keys = [k for k in keys if k not in ignore]
+    _, idx, counts = np.unique(keys, return_index=True, return_counts=True)
+    if np.any(counts > 1):
+        raise AssertionError("Bad keys: " + ",".join(np.array(keys)[idx[counts > 1]]))
 
-    demo.launch(debug=True)
+    def f(components):
+        n = len(components)
+        assert n == len(keys)
+        return processing(**{keys[i]: components[i] for i in range(n)})
+
+    return f
+
+
+class App:
+    def __init__(self, theme="default") -> None:
+        with gr.Blocks(theme=theme) as demo:
+            self.interface = AppInterface(demo)
+
+            demo.launch(debug=True)
 
 
 if __name__ == "__main__":
-    main()
+    app = App()

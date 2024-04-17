@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-test_equations = ["sin(2*x)/x + 0.1*x"]
+TEST_EQUATIONS = ["sin(2*x)/x + 0.1*x"]
 
 
 def generate_data(s: str, num_points: int, noise_level: float, data_seed: int):
