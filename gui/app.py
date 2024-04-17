@@ -206,10 +206,9 @@ class Results:
         )
 
 
-def flatten_attributes(component_group, absolute_name: str, d=None) -> OrderedDict:
-    if d is None:
-        d = OrderedDict()
-
+def flatten_attributes(
+    component_group, absolute_name: str, d: OrderedDict
+) -> OrderedDict:
     if not hasattr(component_group, "__dict__"):
         return d
 
@@ -218,14 +217,14 @@ def flatten_attributes(component_group, absolute_name: str, d=None) -> OrderedDi
         if name.startswith("_"):
             # Private attribute
             continue
-        elif elem in component_group.__dict__.values():
+        elif elem in d.values():
             # Don't duplicate any tiems
             continue
         elif isinstance(elem, Component):
             # Only add components to dict
             d[new_absolute_name] = elem
         else:
-            d = flatten_attributes(elem, new_absolute_name, d=d)
+            flatten_attributes(elem, new_absolute_name, d)
 
     return d
 
@@ -250,26 +249,35 @@ class AppInterface:
             show_progress=False,
         )
 
+        ignore = ["df", "predictions_plot"]
         self.run.click(
-            create_processing_function(self, ignore=["df", "predictions_plot"]),
-            inputs=list(flatten_attributes(self, "interface").values()),
+            create_processing_function(self, ignore=ignore),
+            inputs=[
+                v
+                for k, v in flatten_attributes(self, "interface", OrderedDict()).items()
+                if last_part(k) not in ignore
+            ],
             outputs=[self.results.df, self.results.predictions_plot],
             show_progress=True,
         )
 
 
+def last_part(k: str) -> str:
+    return k.split(".")[-1]
+
+
 def create_processing_function(interface: AppInterface, ignore=[]):
-    d = flatten_attributes(interface, "interface")
-    keys = [k.split(".")[-1] for k in d.keys()]
-    keys = [k for k in keys if k not in ignore]
+    d = flatten_attributes(interface, "interface", OrderedDict())
+    keys = [k for k in map(last_part, d.keys()) if k not in ignore]
     _, idx, counts = np.unique(keys, return_index=True, return_counts=True)
     if np.any(counts > 1):
         raise AssertionError("Bad keys: " + ",".join(np.array(keys)[idx[counts > 1]]))
 
-    def f(components):
+    def f(*components):
         n = len(components)
         assert n == len(keys)
-        return processing(**{keys[i]: components[i] for i in range(n)})
+        for output in processing(**{keys[i]: components[i] for i in range(n)}):
+            yield output
 
     return f
 
