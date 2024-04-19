@@ -10,25 +10,23 @@ from processing import processing
 
 class ExampleData:
     def __init__(self, demo: gr.Blocks) -> None:
-        with gr.Row():
-            # Plot of the example data:
-            with gr.Column():
-                self.example_plot = gr.Plot()
-            with gr.Column():
-                self.test_equation = gr.Radio(
-                    TEST_EQUATIONS, value=TEST_EQUATIONS[0], label="Test Equation"
-                )
-                self.num_points = gr.Slider(
-                    minimum=10,
-                    maximum=1000,
-                    value=200,
-                    label="Number of Data Points",
-                    step=1,
-                )
-                self.noise_level = gr.Slider(
-                    minimum=0, maximum=1, value=0.05, label="Noise Level"
-                )
-                self.data_seed = gr.Number(value=0, label="Random Seed")
+        with gr.Column():
+            self.example_plot = gr.Plot()
+        with gr.Column():
+            self.test_equation = gr.Radio(
+                TEST_EQUATIONS, value=TEST_EQUATIONS[0], label="Test Equation"
+            )
+            self.num_points = gr.Slider(
+                minimum=10,
+                maximum=1000,
+                value=200,
+                label="Number of Data Points",
+                step=1,
+            )
+            self.noise_level = gr.Slider(
+                minimum=0, maximum=1, value=0.05, label="Noise Level"
+            )
+            self.data_seed = gr.Number(value=0, label="Random Seed")
 
         # Set up plotting:
 
