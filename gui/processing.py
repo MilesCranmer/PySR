@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 from typing import Callable
 
+import numpy as np
 import pandas as pd
 from data import generate_data, read_csv
 from plots import plot_predictions
@@ -89,8 +90,11 @@ class ProcessWrapper:
         self.process.start()
 
 
-PERSISTENT_WRITER = None
-PERSISTENT_READER = None
+ACTIVE_PROCESS = None
+
+
+def _random_string():
+    return "".join(list(np.random.choice("abcdefghijklmnopqrstuvwxyz".split(), 16)))
 
 
 def processing(
@@ -118,17 +122,17 @@ def processing(
     batch_size,
     **kwargs,
 ):
+    # random string:
+    global ACTIVE_PROCESS
+    cur_process = _random_string()
+    ACTIVE_PROCESS = cur_process
+
     """Load data, then spawn a process to run the greet function."""
-    global PERSISTENT_WRITER
-    global PERSISTENT_READER
+    print("Starting PySR fit process")
+    writer = ProcessWrapper(pysr_fit)
 
-    if PERSISTENT_WRITER is None:
-        print("Starting PySR fit process")
-        PERSISTENT_WRITER = ProcessWrapper(pysr_fit)
-
-    if PERSISTENT_READER is None:
-        print("Starting PySR predict process")
-        PERSISTENT_READER = ProcessWrapper(pysr_predict)
+    print("Starting PySR predict process")
+    reader = ProcessWrapper(pysr_predict)
 
     if file_input is not None:
         try:
@@ -143,23 +147,23 @@ def processing(
     equation_file = base / "hall_of_fame.csv"
     # Check if queue is empty, if not, kill the process
     # and start a new one
-    if not PERSISTENT_WRITER.queue.empty():
+    if not writer.queue.empty():
         print("Restarting PySR fit process")
-        if PERSISTENT_WRITER.process.is_alive():
-            PERSISTENT_WRITER.process.terminate()
-            PERSISTENT_WRITER.process.join()
+        if writer.process.is_alive():
+            writer.process.terminate()
+            writer.process.join()
 
-        PERSISTENT_WRITER = ProcessWrapper(pysr_fit)
+        writer = ProcessWrapper(pysr_fit)
 
-    if not PERSISTENT_READER.queue.empty():
+    if not reader.queue.empty():
         print("Restarting PySR predict process")
-        if PERSISTENT_READER.process.is_alive():
-            PERSISTENT_READER.process.terminate()
-            PERSISTENT_READER.process.join()
+        if reader.process.is_alive():
+            reader.process.terminate()
+            reader.process.join()
 
-        PERSISTENT_READER = ProcessWrapper(pysr_predict)
+        reader = ProcessWrapper(pysr_predict)
 
-    PERSISTENT_WRITER.queue.put(
+    writer.queue.put(
         dict(
             X=X,
             y=y,
@@ -191,20 +195,20 @@ def processing(
 
     yield last_yield
 
-    while PERSISTENT_WRITER.out_queue.empty():
+    while writer.out_queue.empty():
         if (
             equation_file.exists()
             and Path(str(equation_file).replace(".csv", ".pkl")).exists()
         ):
             # First, copy the file to a the copy file
-            PERSISTENT_READER.queue.put(
+            reader.queue.put(
                 dict(
                     X=X,
                     equation_file=equation_file,
                     index=-1,
                 )
             )
-            out = PERSISTENT_READER.out_queue.get()
+            out = reader.out_queue.get()
             predictions = out["ypred"]
             equations = out["equations"]
             last_yield = (
@@ -214,6 +218,19 @@ def processing(
             )
             yield last_yield
 
+        if cur_process != ACTIVE_PROCESS:
+            # Kill both reader and writer
+            writer.process.terminate()
+            reader.process.terminate()
+            return
+
         time.sleep(0.1)
 
     yield (*last_yield[:-1], "Done")
+    return
+
+
+def stop():
+    global ACTIVE_PROCESS
+    ACTIVE_PROCESS = None
+    return

@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -10,6 +12,7 @@ plt.rcParams["font.family"] = [
     "Courier New",
     "monospace",
 ]
+logging.getLogger("matplotlib.font_manager").disabled = True
 
 from data import generate_data
 

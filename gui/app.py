@@ -5,7 +5,7 @@ import numpy as np
 from data import TEST_EQUATIONS
 from gradio.components.base import Component
 from plots import plot_example_data, plot_pareto_curve
-from processing import processing
+from processing import processing, stop
 
 
 class ExampleData:
@@ -239,6 +239,7 @@ class AppInterface:
             with gr.Column():
                 self.results = Results()
                 self.run = gr.Button()
+                self.stop = gr.Button(value="Stop")
 
         # Update plot when dataframe is updated:
         self.results.df.change(
@@ -263,6 +264,7 @@ class AppInterface:
             ],
             show_progress=True,
         )
+        self.stop.click(stop)
 
 
 def last_part(k: str) -> str:
