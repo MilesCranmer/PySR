@@ -134,7 +134,7 @@ def processing(
         try:
             X, y = read_csv(file_input, force_run)
         except ValueError as e:
-            return (EMPTY_DF(), str(e))
+            return (EMPTY_DF(), plot_predictions([], []), str(e))
     else:
         X, y = generate_data(test_equation, num_points, noise_level, data_seed)
 
