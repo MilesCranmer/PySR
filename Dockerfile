@@ -49,7 +49,7 @@ RUN $PIP install --no-cache-dir .
 # Install Julia pre-requisites:
 RUN $PYTHON -c 'import pysr'
 
-COPY --chown=user ./gui/app.py $HOME/pysr/gui/app.py
+COPY --chown=user ./gui/*.py $HOME/pysr/gui/
 
 EXPOSE 7860
 ENV GRADIO_ALLOW_FLAGGING=never \
