@@ -10,9 +10,9 @@ from processing import processing, stop
 
 class ExampleData:
     def __init__(self, demo: gr.Blocks) -> None:
-        with gr.Column():
+        with gr.Column(scale=1):
             self.example_plot = gr.Plot()
-        with gr.Column():
+        with gr.Column(scale=1):
             self.test_equation = gr.Radio(
                 TEST_EQUATIONS, value=TEST_EQUATIONS[0], label="Test Equation"
             )
@@ -231,15 +231,18 @@ def flatten_attributes(
 class AppInterface:
     def __init__(self, demo: gr.Blocks) -> None:
         with gr.Row():
-            with gr.Column():
+            with gr.Column(scale=2):
                 with gr.Row():
                     self.data = Data(demo)
                 with gr.Row():
                     self.settings = Settings()
-            with gr.Column():
+            with gr.Column(scale=2):
                 self.results = Results()
-                self.run = gr.Button()
-                self.stop = gr.Button(value="Stop")
+                with gr.Row():
+                    with gr.Column(scale=1):
+                        self.stop = gr.Button(value="Stop")
+                    with gr.Column(scale=1, min_width=200):
+                        self.run = gr.Button()
 
         # Update plot when dataframe is updated:
         self.results.df.change(
