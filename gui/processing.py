@@ -220,13 +220,14 @@ def processing(
 
         if cur_process != ACTIVE_PROCESS:
             # Kill both reader and writer
-            writer.process.terminate()
-            reader.process.terminate()
+            writer.process.kill()
+            reader.process.kill()
+            yield (*last_yield[:-1], "Stopped.")
             return
 
         time.sleep(0.1)
 
-    yield (*last_yield[:-1], "Done")
+    yield (*last_yield[:-1], "Done.")
     return
 
 
