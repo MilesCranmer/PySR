@@ -182,6 +182,15 @@ def processing(
             ),
         )
     )
+
+    last_yield = (
+        pd.DataFrame({"Complexity": [], "Loss": [], "Equation": []}),
+        plot_predictions([], []),
+        "Started!",
+    )
+
+    yield last_yield
+
     while PERSISTENT_WRITER.out_queue.empty():
         if (
             equation_file.exists()
@@ -198,8 +207,13 @@ def processing(
             out = PERSISTENT_READER.out_queue.get()
             predictions = out["ypred"]
             equations = out["equations"]
-            yield equations[["Complexity", "Loss", "Equation"]], plot_predictions(
-                y, predictions
+            last_yield = (
+                equations[["Complexity", "Loss", "Equation"]],
+                plot_predictions(y, predictions),
+                "Running...",
             )
+            yield last_yield
 
         time.sleep(0.1)
+
+    yield (*last_yield[:-1], "Done")

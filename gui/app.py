@@ -202,6 +202,8 @@ class Results:
             interactive=False,
         )
 
+        self.messages = gr.Textbox(label="Messages", value="", interactive=False)
+
 
 def flatten_attributes(
     component_group, absolute_name: str, d: OrderedDict
@@ -246,7 +248,7 @@ class AppInterface:
             show_progress=False,
         )
 
-        ignore = ["df", "predictions_plot"]
+        ignore = ["df", "predictions_plot", "pareto", "messages"]
         self.run.click(
             create_processing_function(self, ignore=ignore),
             inputs=[
@@ -254,7 +256,11 @@ class AppInterface:
                 for k, v in flatten_attributes(self, "interface", OrderedDict()).items()
                 if last_part(k) not in ignore
             ],
-            outputs=[self.results.df, self.results.predictions_plot],
+            outputs=[
+                self.results.df,
+                self.results.predictions_plot,
+                self.results.messages,
+            ],
             show_progress=True,
         )
 
