@@ -39,8 +39,6 @@ def pysr_fit(queue: mp.Queue, out_queue: mp.Queue):
 
 
 def pysr_predict(queue: mp.Queue, out_queue: mp.Queue):
-    import pysr
-
     while True:
         args = queue.get()
 
@@ -60,6 +58,10 @@ def pysr_predict(queue: mp.Queue, out_queue: mp.Queue):
         # TODO: See if there is way to get lock on file
         os.system(f"cp {equation_file_bkup} {equation_file_copy}")
         os.system(f"cp {equation_file_pkl} {equation_file_pkl_copy}")
+
+        # Note that we import pysr late in this process to avoid
+        # pre-compiling the code in two places at once
+        import pysr
 
         try:
             model = pysr.PySRRegressor.from_file(equation_file_pkl_copy, verbosity=0)
@@ -181,7 +183,10 @@ def processing(
         )
     )
     while PERSISTENT_WRITER.out_queue.empty():
-        if equation_file.exists():
+        if (
+            equation_file.exists()
+            and Path(str(equation_file).replace(".csv", ".pkl")).exists()
+        ):
             # First, copy the file to a the copy file
             PERSISTENT_READER.queue.put(
                 dict(

@@ -150,7 +150,6 @@ class AdvancedSettings:
             label="Optimizer Iterations",
             step=1,
         )
-        # Bool:
         self.batching = gr.Checkbox(
             value=False,
             label="Batching",
