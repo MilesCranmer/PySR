@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pysr"
-version = "0.18.2"
+version = "0.18.3"
 authors = [
     {name = "Miles Cranmer", email = "miles.cranmer@gmail.com"},
 ]
@@ -29,3 +29,9 @@ dependencies = {file = "requirements.txt"}
 
 [tool.isort]
 profile = "black"
+
+[tool.rye]
+dev-dependencies = [
+    "pre-commit>=3.7.0",
+    "ipython>=8.23.0",
+]
