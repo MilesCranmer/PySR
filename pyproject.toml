@@ -29,3 +29,9 @@ dependencies = {file = "requirements.txt"}
 
 [tool.isort]
 profile = "black"
+
+[tool.rye]
+dev-dependencies = [
+    "pre-commit>=3.7.0",
+    "ipython>=8.23.0",
+]
