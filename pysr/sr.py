@@ -21,9 +21,12 @@ else:
 
 import numpy as np
 import pandas as pd
+from numpy import ndarray
+from numpy.typing import NDArray
 from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
 from sklearn.utils import check_array, check_consistent_length, check_random_state
-from sklearn.utils.validation import _check_feature_names_in, check_is_fitted
+from sklearn.utils.validation import _check_feature_names_in  # type: ignore
+from sklearn.utils.validation import check_is_fitted
 
 from .denoising import denoise, multi_denoise
 from .deprecated import DEPRECATED_KWARGS
@@ -179,6 +182,21 @@ VALID_OPTIMIZER_ALGORITHMS = ["BFGS", "NelderMead"]
 
 
 class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
+    equations_: Optional[Union[pd.DataFrame, List[pd.DataFrame]]]
+    n_features_in_: int
+    feature_names_in_: ArrayLike[str]
+    display_feature_names_in_: ArrayLike[str]
+    X_units_: Optional[ArrayLike[str]]
+    y_units_: Optional[Union[str, ArrayLike[str]]]
+    nout_: int
+    selection_mask_: Optional[NDArray[np.bool_]]
+    tempdir_: Path
+    equation_file_: Union[str, Path]
+    julia_state_stream_: Optional[NDArray[np.uint8]]
+    julia_options_stream_: Optional[NDArray[np.uint8]]
+    equation_file_contents_: Optional[List[pd.DataFrame]]
+    show_pickle_warnings_: bool
+
     """
     High-performance symbolic regression algorithm.
 
@@ -603,22 +621,17 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Units of each variable in the training dataset, `y`.
     nout_ : int
         Number of output dimensions.
-    selection_mask_ : list[int] of length `select_k_features`
-        List of indices for input features that are selected when
-        `select_k_features` is set.
+    selection_mask_ : ndarray of shape (`n_features_in_`,)
+        Mask of which features of `X` to use when `select_k_features` is set.
     tempdir_ : Path
         Path to the temporary equations directory.
-    equation_file_ : str
+    equation_file_ : Union[str, Path]
         Output equation file name produced by the julia backend.
     julia_state_stream_ : ndarray
         The serialized state for the julia SymbolicRegression.jl backend (after fitting),
         stored as an array of uint8, produced by Julia's Serialization.serialize function.
-    julia_state_
-        The deserialized state.
     julia_options_stream_ : ndarray
         The serialized julia options, stored as an array of uint8,
-    julia_options_
-        The deserialized julia options.
     equation_file_contents_ : list[pandas.DataFrame]
         Contents of the equation file output by the Julia backend.
     show_pickle_warnings_ : bool
@@ -926,7 +939,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Names of the features passed to the model.
             Not needed if loading from a pickle file.
         selection_mask : list[bool]
-            If using select_k_features, you must pass `model.selection_mask_` here.
+            If using `select_k_features`, you must pass `model.selection_mask_` here.
             Not needed if loading from a pickle file.
         nout : int
             Number of outputs of the model.
@@ -1124,10 +1137,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
     @property
     def julia_options_(self):
+        """The deserialized julia options."""
         return jl_deserialize(self.julia_options_stream_)
 
     @property
     def julia_state_(self):
+        """The deserialized state."""
         return jl_deserialize(self.julia_state_stream_)
 
     @property
@@ -1140,7 +1155,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         )
         return self.julia_state_
 
-    def get_best(self, index=None):
+    def get_best(self, index=None) -> Union[pd.Series, List[pd.Series]]:
         """
         Get best equation using `model_selection`.
 
@@ -1316,7 +1331,15 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
     def _validate_and_set_fit_params(
         self, X, y, Xresampled, weights, variable_names, X_units, y_units
-    ):
+    ) -> Tuple[
+        ndarray,
+        ndarray,
+        Optional[ndarray],
+        Optional[ndarray],
+        ndarray,
+        Optional[ArrayLike[str]],
+        Optional[Union[str, ArrayLike[str]]],
+    ]:
         """
         Validate the parameters passed to the :term`fit` method.
 
@@ -1336,7 +1359,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Weight array of the same shape as `y`.
             Each element is how to weight the mean-square-error loss
             for that particular element of y.
-        variable_names : list[str] of length n_features
+        variable_names : ndarray of length n_features
             Names of each variable in the training dataset, `X`.
         X_units : list[str] of length n_features
             Units of each variable in the training dataset, `X`.
@@ -1392,7 +1415,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if weights is not None:
             weights = check_array(weights, ensure_2d=False)
             check_consistent_length(weights, y)
-        X, y = self._validate_data(X=X, y=y, reset=True, multi_output=True)
+        X, y = self._validate_data_X_y(X, y)
         self.feature_names_in_ = _safe_check_feature_names_in(
             self, variable_names, generate_names=False
         )
@@ -1402,10 +1425,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self.display_feature_names_in_ = np.array(
                 [f"x{_subscriptify(i)}" for i in range(X.shape[1])]
             )
+            variable_names = self.feature_names_in_
         else:
             self.display_feature_names_in_ = self.feature_names_in_
-
-        variable_names = self.feature_names_in_
+            variable_names = self.feature_names_in_
 
         # Handle multioutput data
         if len(y.shape) == 1 or (len(y.shape) == 2 and y.shape[1] == 1):
@@ -1419,6 +1442,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.y_units_ = copy.deepcopy(y_units)
 
         return X, y, Xresampled, weights, variable_names, X_units, y_units
+
+    def _validate_data_X_y(self, X, y) -> Tuple[ndarray, ndarray]:
+        return self._validate_data(X=X, y=y, reset=True, multi_output=True)  # type: ignore
+
+    def _validate_data_X(self, X) -> Tuple[ndarray]:
+        return self._validate_data(X=X, reset=False)  # type: ignore
 
     def _pre_transform_training_data(
         self, X, y, Xresampled, variable_names, X_units, y_units, random_state
@@ -1489,7 +1518,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 self.X_units_ = copy.deepcopy(X_units)
 
             # Re-perform data validation and feature name updating
-            X, y = self._validate_data(X=X, y=y, reset=True, multi_output=True)
+            X, y = self._validate_data_X_y(X, y)
             # Update feature names with selected variable names
             self.feature_names_in_ = _check_feature_names_in(self, variable_names)
             self.display_feature_names_in_ = self.feature_names_in_
@@ -1506,7 +1535,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         return X, y, variable_names, X_units, y_units
 
-    def _run(self, X, y, mutated_params, weights, seed):
+    def _run(self, X, y, mutated_params, weights, seed: int):
         """
         Run the symbolic regression fitting process on the julia backend.
 
@@ -1784,9 +1813,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         y,
         Xresampled=None,
         weights=None,
-        variable_names: Optional[List[str]] = None,
-        X_units: Optional[List[str]] = None,
-        y_units: Optional[List[str]] = None,
+        variable_names: Optional[ArrayLike[str]] = None,
+        X_units: Optional[ArrayLike[str]] = None,
+        y_units: Optional[Union[str, ArrayLike[str]]] = None,
     ) -> "PySRRegressor":
         """
         Search for equations to fit the dataset and store them in `self.equations_`.
@@ -2003,7 +2032,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # reordered/reindexed to match those of the transformed (denoised and
         # feature selected) X in fit.
         X = X.reindex(columns=self.feature_names_in_)
-        X = self._validate_data(X, reset=False)
+        X = self._validate_data_X(X)
 
         try:
             if isinstance(best_equation, list):
