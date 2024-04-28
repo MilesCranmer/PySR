@@ -1848,9 +1848,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self.X_units_ = None
             self.y_units_ = None
 
-        random_state = check_random_state(self.random_state)  # For np random
-        seed = random_state.get_state()[1][0]  # For julia random
-
         self._setup_equation_file()
 
         mutated_params = self._validate_and_set_init_params()
@@ -1877,6 +1874,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 "is enough to find a functional form with symbolic regression. "
                 "More datapoints will lower the search speed."
             )
+
+        random_state = check_random_state(self.random_state)  # For np random
+        seed = random_state.randint(0, 2**32)  # For julia random
 
         # Pre transformations (feature selection and denoising)
         X, y, variable_names, X_units, y_units = self._pre_transform_training_data(
