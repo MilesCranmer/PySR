@@ -1910,7 +1910,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             )
 
         random_state = check_random_state(self.random_state)  # For np random
-        seed = random_state.randint(0, 2**32)  # For julia random
+        seed = random_state.randint(0, 2**31 - 1)  # For julia random
 
         # Pre transformations (feature selection and denoising)
         X, y, variable_names, X_units, y_units = self._pre_transform_training_data(
@@ -1962,7 +1962,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         return self
 
-    def refresh(self, checkpoint_file=None):
+    def refresh(self, checkpoint_file=None) -> None:
         """
         Update self.equations_ with any new options passed.
 
