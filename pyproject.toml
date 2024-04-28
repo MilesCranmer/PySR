@@ -34,4 +34,5 @@ profile = "black"
 dev-dependencies = [
     "pre-commit>=3.7.0",
     "ipython>=8.23.0",
+    "mypy>=1.10.0",
 ]
