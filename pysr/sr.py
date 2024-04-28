@@ -2169,10 +2169,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.set_params(output_torch_format=True)
         self.refresh()
         best_equation = self.get_best(index=index)
-        if isinstance(best_equation, pd.Series):
-            return best_equation["torch_format"]
-        else:
+        if isinstance(best_equation, list):
             return [eq["torch_format"] for eq in best_equation]
+        else:
+            return best_equation["torch_format"]
 
     def _read_equation_file(self):
         """Read the hall of fame file created by `SymbolicRegression.jl`."""
