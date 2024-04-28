@@ -1179,8 +1179,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Raised when an invalid model selection strategy is provided.
         """
         check_is_fitted(self, attributes=["equations_"])
-        if self.equations_ is None:
-            raise ValueError("No equations have been generated yet.")
 
         if index is not None:
             if isinstance(self.equations_, list):
@@ -1188,17 +1186,22 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     index, list
                 ), "With multiple output features, index must be a list."
                 return [eq.iloc[i] for eq, i in zip(self.equations_, index)]
-            return self.equations_.iloc[index]
+            elif isinstance(self.equations_, pd.DataFrame):
+                return self.equations_.iloc[index]
+            else:
+                raise ValueError("No equations have been generated yet.")
 
         if isinstance(self.equations_, list):
             return [
                 eq.loc[idx_model_selection(eq, self.model_selection)]
                 for eq in self.equations_
             ]
-        else:
+        elif isinstance(self.equations_, pd.DataFrame):
             return self.equations_.loc[
                 idx_model_selection(self.equations_, self.model_selection)
             ]
+        else:
+            raise ValueError("No equations have been generated yet.")
 
     def _setup_equation_file(self):
         """
