@@ -183,21 +183,6 @@ VALID_OPTIMIZER_ALGORITHMS = ["BFGS", "NelderMead"]
 
 
 class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
-    equations_: Optional[Union[pd.DataFrame, List[pd.DataFrame]]]
-    n_features_in_: int
-    feature_names_in_: ArrayLike[str]
-    display_feature_names_in_: ArrayLike[str]
-    X_units_: Optional[ArrayLike[str]]
-    y_units_: Optional[Union[str, ArrayLike[str]]]
-    nout_: int
-    selection_mask_: Optional[NDArray[np.bool_]]
-    tempdir_: Path
-    equation_file_: Union[str, Path]
-    julia_state_stream_: Optional[NDArray[np.uint8]]
-    julia_options_stream_: Optional[NDArray[np.uint8]]
-    equation_file_contents_: Optional[List[pd.DataFrame]]
-    show_pickle_warnings_: bool
-
     """
     High-performance symbolic regression algorithm.
 
@@ -678,6 +663,21 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     array([-1.15907818, -1.15907818, -1.15907818, -1.15907818, -1.15907818])
     ```
     """
+
+    equations_: Optional[Union[pd.DataFrame, List[pd.DataFrame]]]
+    n_features_in_: int
+    feature_names_in_: ArrayLike[str]
+    display_feature_names_in_: ArrayLike[str]
+    X_units_: Optional[ArrayLike[str]]
+    y_units_: Optional[Union[str, ArrayLike[str]]]
+    nout_: int
+    selection_mask_: Optional[NDArray[np.bool_]]
+    tempdir_: Path
+    equation_file_: Union[str, Path]
+    julia_state_stream_: Optional[NDArray[np.uint8]]
+    julia_options_stream_: Optional[NDArray[np.uint8]]
+    equation_file_contents_: Optional[List[pd.DataFrame]]
+    show_pickle_warnings_: bool
 
     def __init__(
         self,
