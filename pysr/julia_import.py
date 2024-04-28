@@ -1,6 +1,7 @@
 import os
 import sys
 import warnings
+from typing import Any
 
 # Check if JuliaCall is already loaded, and if so, warn the user
 # about the relevant environment variables. If not loaded,
@@ -36,6 +37,9 @@ else:
 
 
 from juliacall import Main as jl  # type: ignore
+
+jl: Any = jl  # type: ignore
+
 
 jl_version = (jl.VERSION.major, jl.VERSION.minor, jl.VERSION.patch)
 
