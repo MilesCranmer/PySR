@@ -47,6 +47,7 @@ from .julia_helpers import (
 )
 from .julia_import import SymbolicRegression, jl
 from .utils import (
+    ArrayLike,
     _csv_filename_to_pkl_filename,
     _preprocess_julia_floats,
     _safe_check_feature_names_in,
@@ -1037,7 +1038,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             all_equations = equations
 
         for i, equations in enumerate(all_equations):
-            selected = ["" for _ in range(len(equations))]
+            selected = pd.Series([""] * len(equations), index=equations.index)
             chosen_row = idx_model_selection(equations, self.model_selection)
             selected[chosen_row] = ">>>>"
             repr_equations = pd.DataFrame(
@@ -1191,12 +1192,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         if isinstance(self.equations_, list):
             return [
-                eq.iloc[idx_model_selection(eq, self.model_selection)]
+                eq.loc[idx_model_selection(eq, self.model_selection)]
                 for eq in self.equations_
             ]
-        return self.equations_.iloc[
-            idx_model_selection(self.equations_, self.model_selection)
-        ]
+        else:
+            return self.equations_.loc[
+                idx_model_selection(self.equations_, self.model_selection)
+            ]
 
     def _setup_equation_file(self):
         """
