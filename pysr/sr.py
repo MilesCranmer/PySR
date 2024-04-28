@@ -2006,11 +2006,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         X = self._validate_data(X, reset=False)
 
         try:
-            if self.nout_ > 1:
+            if isinstance(best_equation, list):
+                assert self.nout_ > 1
                 return np.stack(
                     [eq["lambda_format"](X) for eq in best_equation], axis=1
                 )
-            return best_equation["lambda_format"](X)
+            else:
+                return best_equation["lambda_format"](X)
         except Exception as error:
             raise ValueError(
                 "Failed to evaluate the expression. "
@@ -2040,9 +2042,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         """
         self.refresh()
         best_equation = self.get_best(index=index)
-        if self.nout_ > 1:
+        if isinstance(best_equation, list):
+            assert self.nout_ > 1
             return [eq["sympy_format"] for eq in best_equation]
-        return best_equation["sympy_format"]
+        else:
+            return best_equation["sympy_format"]
 
     def latex(self, index=None, precision=3):
         """
@@ -2102,9 +2106,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.set_params(output_jax_format=True)
         self.refresh()
         best_equation = self.get_best(index=index)
-        if self.nout_ > 1:
+        if isinstance(best_equation, list):
+            assert self.nout_ > 1
             return [eq["jax_format"] for eq in best_equation]
-        return best_equation["jax_format"]
+        else:
+            return best_equation["jax_format"]
 
     def pytorch(self, index=None):
         """
@@ -2132,9 +2138,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.set_params(output_torch_format=True)
         self.refresh()
         best_equation = self.get_best(index=index)
-        if self.nout_ > 1:
+        if isinstance(best_equation, pd.Series):
+            return best_equation["torch_format"]
+        else:
             return [eq["torch_format"] for eq in best_equation]
-        return best_equation["torch_format"]
 
     def _read_equation_file(self):
         """Read the hall of fame file created by `SymbolicRegression.jl`."""
@@ -2233,10 +2240,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             lastComplexity = 0
             sympy_format = []
             lambda_format = []
-            if self.output_jax_format:
-                jax_format = []
-            if self.output_torch_format:
-                torch_format = []
+            jax_format = []
+            torch_format = []
 
             for _, eqn_row in output.iterrows():
                 eqn = pysr2sympy(
@@ -2348,7 +2353,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         """
         self.refresh()
 
-        if self.nout_ > 1:
+        if isinstance(self.equations_, list):
             if indices is not None:
                 assert isinstance(indices, list)
                 assert isinstance(indices[0], list)
@@ -2357,13 +2362,18 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             table_string = sympy2multilatextable(
                 self.equations_, indices=indices, precision=precision, columns=columns
             )
-        else:
+        elif isinstance(self.equations_, pd.DataFrame):
             if indices is not None:
                 assert isinstance(indices, list)
                 assert isinstance(indices[0], int)
 
             table_string = sympy2latextable(
                 self.equations_, indices=indices, precision=precision, columns=columns
+            )
+        else:
+            raise ValueError(
+                "Invalid type for equations_ to pass to `latex_table`. "
+                "Expected a DataFrame or a list of DataFrames."
             )
 
         preamble_string = [
