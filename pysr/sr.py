@@ -31,7 +31,12 @@ from sklearn.utils.validation import check_is_fitted
 from .denoising import denoise, multi_denoise
 from .deprecated import DEPRECATED_KWARGS
 from .export_jax import sympy2jax
-from .export_latex import sympy2latex, sympy2latextable, sympy2multilatextable
+from .export_latex import (
+    sympy2latex,
+    sympy2latextable,
+    sympy2multilatextable,
+    with_preamble,
+)
 from .export_numpy import sympy2numpy
 from .export_sympy import assert_valid_sympy_symbol, create_sympy_symbols, pysr2sympy
 from .export_torch import sympy2torch
@@ -2410,14 +2415,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 "Expected a DataFrame or a list of DataFrames."
             )
 
-        preamble_string = [
-            r"\usepackage{breqn}",
-            r"\usepackage{booktabs}",
-            "",
-            "...",
-            "",
-        ]
-        return "\n".join(preamble_string + [table_string])
+        return with_preamble(table_string)
 
 
 def idx_model_selection(equations: pd.DataFrame, model_selection: str):
