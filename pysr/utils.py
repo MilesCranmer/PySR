@@ -3,11 +3,11 @@ import re
 from pathlib import Path
 from typing import Any, List, TypeVar, Union
 
-from numpy.typing import NDArray
+from numpy import ndarray
 from sklearn.utils.validation import _check_feature_names_in  # type: ignore
 
 T = TypeVar("T", bound=Any)
-ArrayLike = Union[NDArray[T], List[T]]
+ArrayLike = Union[ndarray, List[T]]
 
 
 def _csv_filename_to_pkl_filename(csv_filename: Union[str, Path]) -> Union[str, Path]:
