@@ -428,7 +428,7 @@ the evaluation, as we simply evaluated each argument and divided the result) int
 `((2.3554819 + -0.3554746) - (x1 * (x0 * x0)))` and
 `(-1.0000019 - (x2 * x2))`, meaning that our discovered equation is
 equal to:
-$\frac{x_0^2 x_1 - 2.0000073}{x_2^2 - 1.0000019}$, which
+$\frac{x_0^2 x_1 - 2.0000073}{x_2^2 + 1.0000019}$, which
 is nearly the same as the true equation!
 
 ## 10. Dimensional constraints
