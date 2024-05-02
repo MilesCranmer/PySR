@@ -1,3 +1,11 @@
+import juliapkg
+
+juliapkg.require_julia("~1.6.7, ~1.7, ~1.8, ~1.9, =1.10.0, ^1.10.3")
+juliapkg.add(
+    "SymbolicRegression", "8254be44-1295-4e6a-a16d-46603ac705cb", version="=0.24.4"
+)
+juliapkg.add("Serialization", "9e88b42a-f829-5b0c-bbe9-9e923198166b", version="1")
+
 # This must be imported as early as possible to prevent
 # library linking issues caused by numpy/pytorch/etc. importing
 # old libraries:
@@ -18,7 +26,6 @@ __all__ = [
     "sklearn_monkeypatch",
     "sympy2jax",
     "sympy2torch",
-    "Problem",
     "install",
     "PySRRegressor",
     "best",
