@@ -118,10 +118,6 @@ class TestStartup(unittest.TestCase):
                 code="import juliacall; import pysr",
                 msg="juliacall module already imported.",
             ),
-            dict(
-                code='import os; os.environ["PYSR_AUTOLOAD_EXTENSIONS"] = "foo"; import pysr',
-                msg="PYSR_AUTOLOAD_EXTENSIONS environment variable is set",
-            ),
         ]
         for warning_test in warning_tests:
             result = subprocess.run(
