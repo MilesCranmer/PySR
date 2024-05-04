@@ -14,6 +14,7 @@
     - loss_function
     - model_selection
     - dimensional_constraint_penalty
+    - dimensionless_constants_only
   - Working with Complexities:
     - parsimony
     - constraints

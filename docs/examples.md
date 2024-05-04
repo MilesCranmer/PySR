@@ -520,6 +520,8 @@ a constant `"2.6353e-22[m s⁻²]"`.
 
 Note that this expression has a large dynamic range so may be difficult to find. Consider searching with a larger `niterations` if needed.
 
+Note that you can also search for exclusively dimensionless constants by settings
+`dimensionless_constants_only` to `true`.
 
 ## 11. Additional features
 

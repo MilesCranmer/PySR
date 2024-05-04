@@ -30,7 +30,7 @@ jobs:
     strategy:
       matrix:
         julia-version: ['1']
-        python-version: ['3.11']
+        python-version: ['3.12']
         os: [macos-latest]
 
     steps:
