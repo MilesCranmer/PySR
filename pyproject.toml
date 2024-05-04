@@ -22,6 +22,7 @@ dynamic = ["dependencies"]
 [tool.setuptools]
 packages = ["pysr", "pysr._cli", "pysr.test"]
 include-package-data = false
+package-data = {pysr = ["juliapkg.json"]}
 
 [tool.setuptools.dynamic]
 dependencies = {file = "requirements.txt"}
