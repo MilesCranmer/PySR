@@ -32,10 +32,17 @@ def _load_cluster_manager(cluster_manager: str):
     return jl.seval(f"addprocs_{cluster_manager}")
 
 
-def jl_array(x):
+def jl_array(x, dtype=None):
     if x is None:
         return None
-    return jl_convert(jl.Array, x)
+    elif dtype is None:
+        return jl_convert(jl.Array, x)
+    else:
+        return jl_convert(jl.Array[dtype], x)
+
+
+def jl_is_function(f):
+    return jl.seval("op -> op isa Function")(f)
 
 
 def jl_serialize(obj: Any) -> NDArray[np.uint8]:
