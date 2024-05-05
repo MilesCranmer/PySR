@@ -337,6 +337,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     dimensional_constraint_penalty : float
         Additive penalty for if dimensional analysis of an expression fails.
         By default, this is `1000.0`.
+    dimensionless_constants_only : bool
+        Whether to only search for dimensionless constants, if using units.
+        Default is `False`.
     use_frequency : bool
         Whether to measure the frequency of complexities, and use that
         instead of parsimony to explore equation space. Will naturally
@@ -707,6 +710,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         complexity_of_variables: Union[int, float] = 1,
         parsimony: float = 0.0032,
         dimensional_constraint_penalty: Optional[float] = None,
+        dimensionless_constants_only: bool = False,
         use_frequency: bool = True,
         use_frequency_in_tournament: bool = True,
         adaptive_parsimony_scaling: float = 20.0,
@@ -802,6 +806,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.complexity_of_variables = complexity_of_variables
         self.parsimony = parsimony
         self.dimensional_constraint_penalty = dimensional_constraint_penalty
+        self.dimensionless_constants_only = dimensionless_constants_only
         self.use_frequency = use_frequency
         self.use_frequency_in_tournament = use_frequency_in_tournament
         self.adaptive_parsimony_scaling = adaptive_parsimony_scaling
@@ -1693,6 +1698,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             # These have the same name:
             parsimony=self.parsimony,
             dimensional_constraint_penalty=self.dimensional_constraint_penalty,
+            dimensionless_constants_only=self.dimensionless_constants_only,
             alpha=self.alpha,
             maxdepth=maxdepth,
             fast_cycle=self.fast_cycle,
