@@ -1,10 +1,14 @@
 """Functions for initializing the Julia environment and installing deps."""
 
+from typing import Any, Callable, cast
+
 import numpy as np
 from juliacall import convert as jl_convert  # type: ignore
 
 from .deprecated import init_julia, install
 from .julia_import import jl
+
+jl_convert = cast(Callable[[Any, Any], Any], jl_convert)
 
 jl.seval("using Serialization: Serialization")
 jl.seval("using PythonCall: PythonCall")

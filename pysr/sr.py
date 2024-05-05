@@ -679,7 +679,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     X_units_: Optional[ArrayLike[str]]
     y_units_: Optional[Union[str, ArrayLike[str]]]
     nout_: int
-    selection_mask_: Optional[NDArray[np.bool_]]
+    selection_mask_: Optional[NDArray[np.intp]]
     tempdir_: Path
     equation_file_: Union[str, Path]
     julia_state_stream_: Optional[NDArray[np.uint8]]
@@ -921,12 +921,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         cls,
         equation_file,
         *,
-        binary_operators=None,
-        unary_operators=None,
-        n_features_in=None,
-        feature_names_in=None,
-        selection_mask=None,
-        nout=1,
+        binary_operators: Optional[List[str]] = None,
+        unary_operators: Optional[List[str]] = None,
+        n_features_in: Optional[int] = None,
+        feature_names_in: Optional[ArrayLike[str]] = None,
+        selection_mask: Optional[NDArray[np.intp]] = None,
+        nout: int = 1,
         **pysr_kwargs,
     ):
         """
@@ -949,7 +949,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         feature_names_in : list[str]
             Names of the features passed to the model.
             Not needed if loading from a pickle file.
-        selection_mask : list[bool]
+        selection_mask : NDArray[np.intp]
             If using `select_k_features`, you must pass `model.selection_mask_` here.
             Not needed if loading from a pickle file.
         nout : int
@@ -1021,7 +1021,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             model.display_feature_names_in_ = feature_names_in
 
         if selection_mask is None:
-            model.selection_mask_ = np.ones(n_features_in, dtype=bool)
+            model.selection_mask_ = np.arange(n_features_in, dtype=np.intp)
         else:
             model.selection_mask_ = selection_mask
 
@@ -1197,19 +1197,22 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 ), "With multiple output features, index must be a list."
                 return [eq.iloc[i] for eq, i in zip(self.equations_, index)]
             elif isinstance(self.equations_, pd.DataFrame):
-                return self.equations_.iloc[index]
+                return cast(pd.Series, self.equations_.iloc[index])
             else:
                 raise ValueError("No equations have been generated yet.")
 
         if isinstance(self.equations_, list):
             return [
-                eq.loc[idx_model_selection(eq, self.model_selection)]
+                cast(pd.Series, eq.loc[idx_model_selection(eq, self.model_selection)])
                 for eq in self.equations_
             ]
         elif isinstance(self.equations_, pd.DataFrame):
-            return self.equations_.loc[
-                idx_model_selection(self.equations_, self.model_selection)
-            ]
+            return cast(
+                pd.Series,
+                self.equations_.loc[
+                    idx_model_selection(self.equations_, self.model_selection)
+                ],
+            )
         else:
             raise ValueError("No equations have been generated yet.")
 
@@ -1351,7 +1354,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         ndarray,
         Optional[ndarray],
         Optional[ndarray],
-        ndarray,
+        ArrayLike[str],
         Optional[ArrayLike[str]],
         Optional[Union[str, ArrayLike[str]]],
     ]:
@@ -1459,13 +1462,22 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         return X, y, Xresampled, weights, variable_names, X_units, y_units
 
     def _validate_data_X_y(self, X, y) -> Tuple[ndarray, ndarray]:
-        return self._validate_data(X=X, y=y, reset=True, multi_output=True)  # type: ignore
+        raw_out = self._validate_data(X=X, y=y, reset=True, multi_output=True)  # type: ignore
+        return cast(Tuple[ndarray, ndarray], raw_out)
 
     def _validate_data_X(self, X) -> Tuple[ndarray]:
-        return self._validate_data(X=X, reset=False)  # type: ignore
+        raw_out = self._validate_data(X=X, reset=False)  # type: ignore
+        return cast(Tuple[ndarray], raw_out)
 
     def _pre_transform_training_data(
-        self, X, y, Xresampled, variable_names, X_units, y_units, random_state
+        self,
+        X: ndarray,
+        y: ndarray,
+        Xresampled: Union[ndarray, None],
+        variable_names: ArrayLike[str],
+        X_units: Union[ArrayLike[str], None],
+        y_units: Union[ArrayLike[str], str, None],
+        random_state: np.random.RandomState,
     ):
         """
         Transform the training data before fitting the symbolic regressor.
@@ -1474,12 +1486,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        X : ndarray | pandas.DataFrame
+        X : ndarray
             Training data of shape (n_samples, n_features).
-        y : ndarray | pandas.DataFrame
+        y : ndarray
             Target values of shape (n_samples,) or (n_samples, n_targets).
             Will be cast to X's dtype if necessary.
-        Xresampled : ndarray | pandas.DataFrame
+        Xresampled : ndarray | None
             Resampled training data, of shape `(n_resampled, n_features)`,
             used for denoising.
         variable_names : list[str]
@@ -1517,24 +1529,27 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         """
         # Feature selection transformation
         if self.select_k_features:
-            self.selection_mask_ = run_feature_selection(
+            selection_mask = run_feature_selection(
                 X, y, self.select_k_features, random_state=random_state
             )
-            X = X[:, self.selection_mask_]
+            X = X[:, selection_mask]
 
             if Xresampled is not None:
-                Xresampled = Xresampled[:, self.selection_mask_]
+                Xresampled = Xresampled[:, selection_mask]
 
             # Reduce variable_names to selection
-            variable_names = [variable_names[i] for i in self.selection_mask_]
+            variable_names = cast(
+                ArrayLike[str], [variable_names[i] for i in selection_mask]
+            )
 
             if X_units is not None:
-                X_units = [X_units[i] for i in self.selection_mask_]
+                X_units = cast(ArrayLike[str], [X_units[i] for i in selection_mask])
                 self.X_units_ = copy.deepcopy(X_units)
 
             # Re-perform data validation and feature name updating
             X, y = self._validate_data_X_y(X, y)
             # Update feature names with selected variable names
+            self.selection_mask_ = selection_mask
             self.feature_names_in_ = _check_feature_names_in(self, variable_names)
             self.display_feature_names_in_ = self.feature_names_in_
             print(f"Using features {self.feature_names_in_}")
