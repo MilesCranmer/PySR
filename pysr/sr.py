@@ -1610,14 +1610,15 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         unary_operators = runtime_params.unary_operators
         maxdepth = runtime_params.maxdepth
         constraints = runtime_params.constraints
-        nested_constraints = self.nested_constraints
-        complexity_of_operators = self.complexity_of_operators
         multithreading = runtime_params.multithreading
-        cluster_manager = self.cluster_manager
         batch_size = runtime_params.batch_size
         update_verbosity = runtime_params.update_verbosity
         progress = runtime_params.progress
         warmup_maxsize_by = runtime_params.warmup_maxsize_by
+
+        nested_constraints = self.nested_constraints
+        complexity_of_operators = self.complexity_of_operators
+        cluster_manager = self.cluster_manager
 
         # Start julia backend processes
         if not already_ran and update_verbosity != 0:
