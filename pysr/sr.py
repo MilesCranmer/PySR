@@ -57,7 +57,7 @@ from .utils import (
     _subscriptify,
 )
 
-already_ran = False
+ALREADY_RAN = False
 
 
 def _process_constraints(binary_operators, unary_operators, constraints):
@@ -1602,7 +1602,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         """
         # Need to be global as we don't want to recreate/reinstate julia for
         # every new instance of PySRRegressor
-        global already_ran
+        global ALREADY_RAN
 
         # These are the parameters which may be modified from the ones
         # specified in init, so we define them here locally:
@@ -1621,7 +1621,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         cluster_manager = self.cluster_manager
 
         # Start julia backend processes
-        if not already_ran and update_verbosity != 0:
+        if not ALREADY_RAN and update_verbosity != 0:
             print("Compiling Julia backend...")
 
         if cluster_manager is not None:
@@ -1854,7 +1854,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if self.delete_tempfiles:
             shutil.rmtree(self.tempdir_)
 
-        already_ran = True
+        ALREADY_RAN = True
 
         return self
 
