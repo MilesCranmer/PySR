@@ -819,16 +819,18 @@ class TestHelpMessages(unittest.TestCase):
         with self.assertRaises(TypeError) as cm:
             model = PySRRegressor(ncyclesperiterationn=5)
 
-        self.assertIn("ncyclesperiterationn is not a valid keyword", str(cm.exception))
+        self.assertIn(
+            "`ncyclesperiterationn` is not a valid keyword", str(cm.exception)
+        )
         self.assertIn("Did you mean", str(cm.exception))
-        self.assertIn("ncycles_per_iteration or", str(cm.exception))
-        self.assertIn("niteration", str(cm.exception))
+        self.assertIn("`ncycles_per_iteration`, ", str(cm.exception))
+        self.assertIn("`niterations`", str(cm.exception))
 
         # Farther matches (this might need to be changed)
         with self.assertRaises(TypeError) as cm:
             model = PySRRegressor(operators=["+", "-"])
 
-        self.assertIn("unary_operators or binary_operators", str(cm.exception))
+        self.assertIn("`unary_operators`, `binary_operators`", str(cm.exception))
 
 
 TRUE_PREAMBLE = "\n".join(

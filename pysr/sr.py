@@ -884,15 +884,15 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     updated_kwarg_name = DEPRECATED_KWARGS[k]
                     setattr(self, updated_kwarg_name, v)
                     warnings.warn(
-                        f"{k} has been renamed to {updated_kwarg_name} in PySRRegressor. "
+                        f"`{k}` has been renamed to `{updated_kwarg_name}` in PySRRegressor. "
                         "Please use that instead.",
                         FutureWarning,
                     )
                 # Handle kwargs that have been moved to the fit method
                 elif k in ["weights", "variable_names", "Xresampled"]:
                     warnings.warn(
-                        f"{k} is a data dependant parameter so should be passed when fit is called. "
-                        f"Ignoring parameter; please pass {k} during the call to fit instead.",
+                        f"`{k}` is a data-dependent parameter and should be passed when fit is called. "
+                        f"Ignoring parameter; please pass `{k}` during the call to fit instead.",
                         FutureWarning,
                     )
                 elif k == "julia_project":
@@ -910,9 +910,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     )
                 else:
                     suggested_keywords = _suggest_keywords(PySRRegressor, k)
-                    err_msg = f"{k} is not a valid keyword argument for PySRRegressor."
+                    err_msg = (
+                        f"`{k}` is not a valid keyword argument for PySRRegressor."
+                    )
                     if len(suggested_keywords) > 0:
-                        err_msg += f" Did you mean {' or '.join(suggested_keywords)}?"
+                        err_msg += f" Did you mean {', '.join(map(lambda s: f'`{s}`', suggested_keywords))}?"
                     raise TypeError(err_msg)
 
     @classmethod
