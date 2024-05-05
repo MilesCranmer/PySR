@@ -14,7 +14,7 @@ def run_feature_selection(
     y: ndarray,
     select_k_features: int,
     random_state: Optional[np.random.RandomState] = None,
-) -> NDArray[np.intp]:
+) -> NDArray[np.bool_]:
     """
     Find most important features.
 
@@ -32,7 +32,7 @@ def run_feature_selection(
     selector = SelectFromModel(
         clf, threshold=-np.inf, max_features=select_k_features, prefit=True
     )
-    return cast(NDArray[np.intp], selector.get_support(indices=True))
+    return cast(NDArray[np.bool_], selector.get_support(indices=False))
 
 
 # Function has not been removed only due to usage in module tests

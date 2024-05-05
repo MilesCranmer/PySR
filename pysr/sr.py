@@ -674,7 +674,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     X_units_: Optional[ArrayLike[str]]
     y_units_: Optional[Union[str, ArrayLike[str]]]
     nout_: int
-    selection_mask_: Optional[NDArray[np.intp]]
+    selection_mask_: Optional[NDArray[np.bool_]]
     tempdir_: Path
     equation_file_: Union[str, Path]
     julia_state_stream_: Optional[NDArray[np.uint8]]
@@ -920,7 +920,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         unary_operators: Optional[List[str]] = None,
         n_features_in: Optional[int] = None,
         feature_names_in: Optional[ArrayLike[str]] = None,
-        selection_mask: Optional[NDArray[np.intp]] = None,
+        selection_mask: Optional[NDArray[np.bool_]] = None,
         nout: int = 1,
         **pysr_kwargs,
     ):
@@ -944,7 +944,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         feature_names_in : list[str]
             Names of the features passed to the model.
             Not needed if loading from a pickle file.
-        selection_mask : NDArray[np.intp]
+        selection_mask : NDArray[np.bool_]
             If using `select_k_features`, you must pass `model.selection_mask_` here.
             Not needed if loading from a pickle file.
         nout : int
@@ -1016,7 +1016,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             model.display_feature_names_in_ = feature_names_in
 
         if selection_mask is None:
-            model.selection_mask_ = np.arange(n_features_in, dtype=np.intp)
+            model.selection_mask_ = np.ones(n_features_in, dtype=np.bool_)
         else:
             model.selection_mask_ = selection_mask
 
@@ -1534,11 +1534,19 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
             # Reduce variable_names to selection
             variable_names = cast(
-                ArrayLike[str], [variable_names[i] for i in selection_mask]
+                ArrayLike[str],
+                [
+                    variable_names[i]
+                    for i in range(len(variable_names))
+                    if selection_mask[i]
+                ],
             )
 
             if X_units is not None:
-                X_units = cast(ArrayLike[str], [X_units[i] for i in selection_mask])
+                X_units = cast(
+                    ArrayLike[str],
+                    [X_units[i] for i in range(len(X_units)) if selection_mask[i]],
+                )
                 self.X_units_ = copy.deepcopy(X_units)
 
             # Re-perform data validation and feature name updating
