@@ -15,7 +15,12 @@ from .. import PySRRegressor, install, jl
 from ..export_latex import sympy2latex
 from ..feature_selection import _handle_feature_selection, run_feature_selection
 from ..julia_helpers import init_julia
-from ..sr import _check_assertions, _process_constraints, idx_model_selection
+from ..sr import (
+    _check_assertions,
+    _process_constraints,
+    _suggest_keywords,
+    idx_model_selection,
+)
 from ..utils import _csv_filename_to_pkl_filename
 from .params import (
     DEFAULT_NCYCLES,
@@ -805,9 +810,10 @@ class TestHelpMessages(unittest.TestCase):
                 print("Failed", opt["kwargs"])
 
     def test_suggest_keywords(self):
-        model = PySRRegressor()
         # Easy
-        self.assertEqual(model._suggest_keywords("loss_function"), ["loss_function"])
+        self.assertEqual(
+            _suggest_keywords(PySRRegressor, "loss_function"), ["loss_function"]
+        )
 
         # More complex, and with error
         with self.assertRaises(TypeError) as cm:

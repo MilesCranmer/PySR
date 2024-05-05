@@ -909,7 +909,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                         FutureWarning,
                     )
                 else:
-                    suggested_keywords = self._suggest_keywords(k)
+                    suggested_keywords = _suggest_keywords(PySRRegressor, k)
                     err_msg = f"{k} is not a valid keyword argument for PySRRegressor."
                     if len(suggested_keywords) > 0:
                         err_msg += f" Did you mean {' or '.join(suggested_keywords)}?"
@@ -1995,15 +1995,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         return self
 
-    def _suggest_keywords(self, k: str) -> List[str]:
-        valid_keywords = [
-            param
-            for param in inspect.signature(self.__init__).parameters
-            if param not in ["self", "kwargs"]
-        ]
-        suggestions = difflib.get_close_matches(k, valid_keywords, n=3)
-        return suggestions
-
     def refresh(self, checkpoint_file=None) -> None:
         """
         Update self.equations_ with any new options passed.
@@ -2453,6 +2444,16 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             )
 
         return with_preamble(table_string)
+
+
+def _suggest_keywords(cls, k: str) -> List[str]:
+    valid_keywords = [
+        param
+        for param in inspect.signature(cls.__init__).parameters
+        if param not in ["self", "kwargs"]
+    ]
+    suggestions = difflib.get_close_matches(k, valid_keywords, n=3)
+    return suggestions
 
 
 def idx_model_selection(equations: pd.DataFrame, model_selection: str):
