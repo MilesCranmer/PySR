@@ -41,8 +41,8 @@ def jl_array(x, dtype=None):
         return jl_convert(jl.Array[dtype], x)
 
 
-def jl_is_function(f):
-    return jl.seval("op -> op isa Function")(f)
+def jl_is_function(f) -> bool:
+    return cast(bool, jl.seval("op -> op isa Function")(f))
 
 
 def jl_serialize(obj: Any) -> NDArray[np.uint8]:

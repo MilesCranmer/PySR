@@ -431,6 +431,16 @@ class TestPipeline(unittest.TestCase):
         )
         np.testing.assert_allclose(model.predict(self.X), model3.predict(self.X))
 
+    def test_jl_function_error(self):
+        # TODO: Move this to better class
+        with self.assertRaises(ValueError) as cm:
+            PySRRegressor(unary_operators=["1"]).fit([[1]], [1])
+
+        self.assertIn(
+            "When building `unary_operators`, `'1'` did not return a Julia function",
+            str(cm.exception),
+        )
+
 
 def manually_create_model(equations, feature_names=None):
     if feature_names is None:

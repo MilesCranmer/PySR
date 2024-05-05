@@ -13,7 +13,7 @@ from datetime import datetime
 from io import StringIO
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Callable, Dict, List, Literal, Optional, Tuple, Union, cast
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union, cast
 
 import numpy as np
 import pandas as pd
@@ -44,6 +44,7 @@ from .julia_helpers import (
     _load_cluster_manager,
     jl_array,
     jl_deserialize,
+    jl_is_function,
     jl_serialize,
 )
 from .julia_import import SymbolicRegression, jl
@@ -1695,11 +1696,25 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             optimize=self.weight_optimize,
         )
 
+        jl_binary_operators: list[Any] = []
+        jl_unary_operators: list[Any] = []
+        for input_list, output_list, name in [
+            (binary_operators, jl_binary_operators, "binary"),
+            (unary_operators, jl_unary_operators, "unary"),
+        ]:
+            for op in input_list:
+                jl_op = jl.seval(op)
+                if not jl_is_function(jl_op):
+                    raise ValueError(
+                        f"When building `{name}_operators`, `'{op}'` did not return a Julia function"
+                    )
+                output_list.append(jl_op)
+
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/OptionsStruct.jl
         options = SymbolicRegression.Options(
-            binary_operators=jl.seval(str(binary_operators).replace("'", "")),
-            unary_operators=jl.seval(str(unary_operators).replace("'", "")),
+            binary_operators=jl_array(jl_binary_operators, dtype=jl.Function),
+            unary_operators=jl_array(jl_unary_operators, dtype=jl.Function),
             bin_constraints=jl_array(bin_constraints),
             una_constraints=jl_array(una_constraints),
             complexity_of_operators=complexity_of_operators,
