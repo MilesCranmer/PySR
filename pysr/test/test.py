@@ -804,6 +804,26 @@ class TestHelpMessages(unittest.TestCase):
                 model.get_best()
                 print("Failed", opt["kwargs"])
 
+    def test_suggest_keywords(self):
+        model = PySRRegressor()
+        # Easy
+        self.assertEqual(model._suggest_keywords("loss_function"), ["loss_function"])
+
+        # More complex, and with error
+        with self.assertRaises(TypeError) as cm:
+            model = PySRRegressor(ncyclesperiterationn=5)
+
+        self.assertIn("ncyclesperiterationn is not a valid keyword", str(cm.exception))
+        self.assertIn("Did you mean", str(cm.exception))
+        self.assertIn("ncycles_per_iteration or", str(cm.exception))
+        self.assertIn("niteration", str(cm.exception))
+
+        # Farther matches (this might need to be changed)
+        with self.assertRaises(TypeError) as cm:
+            model = PySRRegressor(operators=["+", "-"])
+
+        self.assertIn("unary_operators or binary_operators", str(cm.exception))
+
 
 TRUE_PREAMBLE = "\n".join(
     [

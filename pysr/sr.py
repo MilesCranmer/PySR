@@ -1,6 +1,8 @@
 """Define the PySRRegressor scikit-learn interface."""
 
 import copy
+import difflib
+import inspect
 import os
 import pickle as pkl
 import re
@@ -907,9 +909,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                         FutureWarning,
                     )
                 else:
-                    raise TypeError(
-                        f"{k} is not a valid keyword argument for PySRRegressor."
-                    )
+                    suggested_keywords = self._suggest_keywords(k)
+                    err_msg = f"{k} is not a valid keyword argument for PySRRegressor."
+                    if len(suggested_keywords) > 0:
+                        err_msg += f" Did you mean {' or '.join(suggested_keywords)}?"
+                    raise TypeError(err_msg)
 
     @classmethod
     def from_file(
@@ -1990,6 +1994,15 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self._checkpoint()
 
         return self
+
+    def _suggest_keywords(self, k: str) -> List[str]:
+        valid_keywords = [
+            param
+            for param in inspect.signature(self.__init__).parameters
+            if param not in ["self", "kwargs"]
+        ]
+        suggestions = difflib.get_close_matches(k, valid_keywords, n=3)
+        return suggestions
 
     def refresh(self, checkpoint_file=None) -> None:
         """
