@@ -1697,8 +1697,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             optimize=self.weight_optimize,
         )
 
-        jl_binary_operators: list[Any] = []
-        jl_unary_operators: list[Any] = []
+        jl_binary_operators: List[Any] = []
+        jl_unary_operators: List[Any] = []
         for input_list, output_list, name in [
             (binary_operators, jl_binary_operators, "binary"),
             (unary_operators, jl_unary_operators, "unary"),
