@@ -8,6 +8,7 @@ import shutil
 import sys
 import tempfile
 import warnings
+from dataclasses import dataclass, fields
 from datetime import datetime
 from io import StringIO
 from multiprocessing import cpu_count
@@ -48,6 +49,7 @@ from .julia_helpers import (
 from .julia_import import SymbolicRegression, jl
 from .utils import (
     ArrayLike,
+    PathLike,
     _csv_filename_to_pkl_filename,
     _preprocess_julia_floats,
     _safe_check_feature_names_in,
@@ -180,6 +182,21 @@ def _check_assertions(
 
 # Class validation constants
 VALID_OPTIMIZER_ALGORITHMS = ["BFGS", "NelderMead"]
+
+
+@dataclass
+class _DynamicallySetParams:
+    """Defines some parameters that are set at runtime."""
+
+    binary_operators: List[str]
+    unary_operators: List[str]
+    maxdepth: int
+    constraints: Dict[str, str]
+    multithreading: bool
+    batch_size: int
+    update_verbosity: int
+    progress: bool
+    warmup_maxsize_by: float
 
 
 class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
@@ -676,7 +693,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     nout_: int
     selection_mask_: Union[NDArray[np.bool_], None]
     tempdir_: Path
-    equation_file_: Union[str, Path]
+    equation_file_: PathLike
     julia_state_stream_: Union[NDArray[np.uint8], None]
     julia_options_stream_: Union[NDArray[np.uint8], None]
     equation_file_contents_: Union[List[pd.DataFrame], None]
@@ -914,7 +931,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     @classmethod
     def from_file(
         cls,
-        equation_file,
+        equation_file: PathLike,
         *,
         binary_operators: Optional[List[str]] = None,
         unary_operators: Optional[List[str]] = None,
@@ -929,7 +946,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        equation_file : str
+        equation_file : str or Path
             Path to a pickle file containing a saved model, or a csv file
             containing equations.
         binary_operators : list[str]
@@ -996,7 +1013,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # TODO: copy .bkup file if exists.
         model = cls(
-            equation_file=equation_file,
+            equation_file=str(equation_file),
             binary_operators=binary_operators,
             unary_operators=unary_operators,
             **pysr_kwargs,
@@ -1191,25 +1208,21 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     index, list
                 ), "With multiple output features, index must be a list."
                 return [eq.iloc[i] for eq, i in zip(self.equations_, index)]
-            elif isinstance(self.equations_, pd.DataFrame):
-                return cast(pd.Series, self.equations_.iloc[index])
             else:
-                raise ValueError("No equations have been generated yet.")
+                equations_ = cast(pd.DataFrame, self.equations_)
+                return cast(pd.Series, equations_.iloc[index])
 
         if isinstance(self.equations_, list):
             return [
                 cast(pd.Series, eq.loc[idx_model_selection(eq, self.model_selection)])
                 for eq in self.equations_
             ]
-        elif isinstance(self.equations_, pd.DataFrame):
+        else:
+            equations_ = cast(pd.DataFrame, self.equations_)
             return cast(
                 pd.Series,
-                self.equations_.loc[
-                    idx_model_selection(self.equations_, self.model_selection)
-                ],
+                equations_.loc[idx_model_selection(equations_, self.model_selection)],
             )
-        else:
-            raise ValueError("No equations have been generated yet.")
 
     def _setup_equation_file(self):
         """
@@ -1234,7 +1247,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self.equation_file_ = self.equation_file
         self.equation_file_contents_ = None
 
-    def _validate_and_set_init_params(self):
+    def _validate_and_modify_params(self) -> _DynamicallySetParams:
         """
         Ensure parameters passed at initialization are valid.
 
@@ -1292,55 +1305,36 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 f"PySR currently only supports the following optimizer algorithms: {VALID_OPTIMIZER_ALGORITHMS}"
             )
 
-        progress = self.progress
-        # 'Mutable' parameter validation
-        #  (Params and their default values, if None is given:)
-        default_param_mapping = {
-            "binary_operators": "+ * - /".split(" "),
-            "unary_operators": [],
-            "maxdepth": self.maxsize,
-            "constraints": {},
-            "multithreading": self.procs != 0 and self.cluster_manager is None,
-            "batch_size": 1,
-            "update_verbosity": int(self.verbosity),
-            "progress": progress,
-        }
-        packed_modified_params = {}
-        for parameter, default_value in default_param_mapping.items():
-            parameter_value = getattr(self, parameter)
-            if parameter_value is None:
-                parameter_value = default_value
-            else:
-                # Special cases such as when binary_operators is a string
-                if parameter in ["binary_operators", "unary_operators"] and isinstance(
-                    parameter_value, str
-                ):
-                    parameter_value = [parameter_value]
-                elif parameter == "batch_size" and parameter_value < 1:
-                    warnings.warn(
-                        "Given `batch_size` must be greater than or equal to one. "
-                        "`batch_size` has been increased to equal one."
-                    )
-                    parameter_value = 1
-                elif (
-                    parameter == "progress"
-                    and parameter_value
-                    and "buffer" not in sys.stdout.__dir__()
-                ):
-                    warnings.warn(
-                        "Note: it looks like you are running in Jupyter. "
-                        "The progress bar will be turned off."
-                    )
-                    parameter_value = False
-            packed_modified_params[parameter] = parameter_value
-
-        assert (
-            len(packed_modified_params["binary_operators"])
-            + len(packed_modified_params["unary_operators"])
-            > 0
+        param_container = _DynamicallySetParams(
+            binary_operators=["+", "*", "-", "/"],
+            unary_operators=[],
+            maxdepth=self.maxsize,
+            constraints={},
+            multithreading=self.procs != 0 and self.cluster_manager is None,
+            batch_size=1,
+            update_verbosity=int(self.verbosity),
+            progress=self.progress,
+            warmup_maxsize_by=0.0,
         )
 
-        return packed_modified_params
+        for param_name in map(lambda x: x.name, fields(_DynamicallySetParams)):
+            user_param_value = getattr(self, param_name)
+            if user_param_value is None:
+                # Leave as the default in DynamicallySetParams
+                ...
+            else:
+                # If user has specified it, we will override the default.
+                # However, there are some special cases to mutate it:
+                new_param_value = _mutate_parameter(param_name, user_param_value)
+                setattr(param_container, param_name, new_param_value)
+        # TODO: This should just be part of the __init__ of _DynamicallySetParams
+
+        assert (
+            len(param_container.binary_operators) > 0
+            or len(param_container.unary_operators) > 0
+        ), "At least one operator must be provided."
+
+        return param_container
 
     def _validate_and_set_fit_params(
         self, X, y, Xresampled, weights, variable_names, X_units, y_units
@@ -1568,20 +1562,27 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         return X, y, variable_names, X_units, y_units
 
-    def _run(self, X, y, mutated_params, weights, seed: int):
+    def _run(
+        self,
+        X: ndarray,
+        y: ndarray,
+        runtime_params: _DynamicallySetParams,
+        weights: Optional[ndarray],
+        seed: int,
+    ):
         """
         Run the symbolic regression fitting process on the julia backend.
 
         Parameters
         ----------
-        X : ndarray | pandas.DataFrame
+        X : ndarray
             Training data of shape `(n_samples, n_features)`.
-        y : ndarray | pandas.DataFrame
+        y : ndarray
             Target values of shape `(n_samples,)` or `(n_samples, n_targets)`.
             Will be cast to `X`'s dtype if necessary.
-        mutated_params : dict[str, Any]
-            Dictionary of mutated versions of some parameters passed in __init__.
-        weights : ndarray | pandas.DataFrame
+        runtime_params : DynamicallySetParams
+            Dynamically set versions of some parameters passed in __init__.
+        weights : ndarray | None
             Weight array of the same shape as `y`.
             Each element is how to weight the mean-square-error loss
             for that particular element of y.
@@ -1604,17 +1605,18 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # These are the parameters which may be modified from the ones
         # specified in init, so we define them here locally:
-        binary_operators = mutated_params["binary_operators"]
-        unary_operators = mutated_params["unary_operators"]
-        maxdepth = mutated_params["maxdepth"]
-        constraints = mutated_params["constraints"]
+        binary_operators = runtime_params.binary_operators
+        unary_operators = runtime_params.unary_operators
+        maxdepth = runtime_params.maxdepth
+        constraints = runtime_params.constraints
         nested_constraints = self.nested_constraints
         complexity_of_operators = self.complexity_of_operators
-        multithreading = mutated_params["multithreading"]
+        multithreading = runtime_params.multithreading
         cluster_manager = self.cluster_manager
-        batch_size = mutated_params["batch_size"]
-        update_verbosity = mutated_params["update_verbosity"]
-        progress = mutated_params["progress"]
+        batch_size = runtime_params.batch_size
+        update_verbosity = runtime_params.update_verbosity
+        progress = runtime_params.progress
+        warmup_maxsize_by = runtime_params.warmup_maxsize_by
 
         # Start julia backend processes
         if not already_ran and update_verbosity != 0:
@@ -1656,6 +1658,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 complexity_of_operators_str += f"({k}) => {v}, "
             complexity_of_operators_str += ")"
             complexity_of_operators = jl.seval(complexity_of_operators_str)
+        # TODO: Refactor this into helper function
 
         custom_loss = jl.seval(
             str(self.elementwise_loss)
@@ -1728,9 +1731,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             fraction_replaced_hof=self.fraction_replaced_hof,
             should_simplify=self.should_simplify,
             should_optimize_constants=self.should_optimize_constants,
-            warmup_maxsize_by=(
-                0.0 if self.warmup_maxsize_by is None else self.warmup_maxsize_by
-            ),
+            warmup_maxsize_by=warmup_maxsize_by,
             use_frequency=self.use_frequency,
             use_frequency_in_tournament=self.use_frequency_in_tournament,
             adaptive_parsimony_scaling=self.adaptive_parsimony_scaling,
@@ -1913,7 +1914,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         self._setup_equation_file()
 
-        mutated_params = self._validate_and_set_init_params()
+        runtime_params = self._validate_and_modify_params()
 
         (
             X,
@@ -1939,7 +1940,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             )
 
         random_state = check_random_state(self.random_state)  # For np random
-        seed = random_state.randint(0, 2**31 - 1)  # For julia random
+        seed = cast(int, random_state.randint(0, 2**31 - 1))  # For julia random
 
         # Pre transformations (feature selection and denoising)
         X, y, variable_names, X_units, y_units = self._pre_transform_training_data(
@@ -1982,7 +1983,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self._checkpoint()
 
         # Perform the search:
-        self._run(X, y, mutated_params, weights=weights, seed=seed)
+        self._run(X, y, runtime_params, weights=weights, seed=seed)
 
         # Then, after fit, we save again, so the pickle file contains
         # the equations:
@@ -1991,7 +1992,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         return self
 
-    def refresh(self, checkpoint_file=None) -> None:
+    def refresh(self, checkpoint_file: Optional[PathLike] = None) -> None:
         """
         Update self.equations_ with any new options passed.
 
@@ -2000,11 +2001,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        checkpoint_file : str
+        checkpoint_file : str or Path
             Path to checkpoint hall of fame file to be loaded.
             The default will use the set `equation_file_`.
         """
-        if checkpoint_file:
+        if checkpoint_file is not None:
             self.equation_file_ = checkpoint_file
             self.equation_file_contents_ = None
         check_is_fitted(self, attributes=["equation_file_"])
@@ -2457,3 +2458,30 @@ def idx_model_selection(equations: pd.DataFrame, model_selection: str):
             f"{model_selection} is not a valid model selection strategy."
         )
     return chosen_idx
+
+
+def _mutate_parameter(param_name: str, param_value):
+    if param_name in ["binary_operators", "unary_operators"] and isinstance(
+        param_value, str
+    ):
+        return [param_value]
+
+    if param_name == "batch_size" and param_value < 1:
+        warnings.warn(
+            "Given `batch_size` must be greater than or equal to one. "
+            "`batch_size` has been increased to equal one."
+        )
+        return 1
+
+    if (
+        param_name == "progress"
+        and param_value == True
+        and "buffer" not in sys.stdout.__dir__()
+    ):
+        warnings.warn(
+            "Note: it looks like you are running in Jupyter. "
+            "The progress bar will be turned off."
+        )
+        return False
+
+    return param_value
