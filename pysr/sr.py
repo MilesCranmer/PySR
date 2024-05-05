@@ -2056,7 +2056,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             if self.selection_mask_ is not None:
                 # RangeIndex enforces column order allowing columns to
                 # be correctly filtered with self.selection_mask_
-                X = X.iloc[:, self.selection_mask_]
+                X = X[X.columns[self.selection_mask_]]
             X.columns = self.feature_names_in_
         # Without feature information, CallableEquation/lambda_format equations
         # require that the column order of X matches that of the X used during
