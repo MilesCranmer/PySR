@@ -54,9 +54,9 @@ def _initialize_torch():
                     )
             return expr, cond
 
-def if_then_else(*conds):
-    a, b, c = conds
-    return torch.where(a, torch.where(b, True, False), torch.where(c, True, False))
+        def if_then_else(*conds):
+            a, b, c = conds
+            return torch.where(a, torch.where(b, True, False), torch.where(c, True, False))
 
         def piecewise(*expr_conds):
             output = None
