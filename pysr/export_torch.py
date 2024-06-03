@@ -84,9 +84,9 @@ def _initialize_torch():
                         output = torch.where(cond, expr, torch.zeros_like(expr))
                     else:
                         output += torch.where(
-                            cond & ~already_used, expr, torch.zeros_like(expr)
+                            cond.bool() & ~already_used, expr, torch.zeros_like(expr)
                         )
-                        already_used = already_used | cond
+                        already_used = already_used | cond.bool()
             return output
 
         # TODO: Add test that makes sure tensors are on the same device
@@ -144,6 +144,7 @@ def _initialize_torch():
             sympy.logic.boolalg.BooleanFalse: (lambda: False),
             sympy.functions.elementary.piecewise.ExprCondPair: expr_cond_pair,
             sympy.Piecewise: piecewise,
+            sympy.logic.boolalg.ITE: if_then_else,
         }
 
         class _Node(torch.nn.Module):
