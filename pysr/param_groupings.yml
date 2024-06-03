@@ -8,12 +8,13 @@
     - niterations
     - populations
     - population_size
-    - ncyclesperiteration
+    - ncycles_per_iteration
   - The Objective:
-    - loss
-    - full_objective
+    - elementwise_loss
+    - loss_function
     - model_selection
     - dimensional_constraint_penalty
+    - dimensionless_constants_only
   - Working with Complexities:
     - parsimony
     - constraints
@@ -33,6 +34,7 @@
     - weight_do_nothing
     - weight_mutate_constant
     - weight_mutate_operator
+    - weight_swap_operands
     - weight_randomize
     - weight_simplify
     - weight_optimize
@@ -67,11 +69,13 @@
   - procs
   - multithreading
   - cluster_manager
+  - heap_size_hint_in_bytes
   - batching
   - batch_size
   - precision
   - fast_cycle
   - turbo
+  - bumper
   - enable_autodiff
 - Determinism:
   - random_state
@@ -86,9 +90,7 @@
   - temp_equation_file
   - tempdir
   - delete_tempfiles
-  - julia_project
   - update
-  - julia_kwargs
 - Exporting the Results:
   - equation_file
   - output_jax_format

@@ -1,30 +1,32 @@
-import setuptools
+import os
 
-try:
-    with open("README.md", "r", encoding="utf8") as fh:
-        long_description = fh.read()
-except FileNotFoundError:
-    long_description = ""
+from setuptools import setup
 
-exec(open("pysr/version.py").read())
+if os.path.exists(".git"):
+    kwargs = {
+        "use_scm_version": {
+            "write_to": "pysr/version.py",
+        },
+        "setup_requires": ["setuptools", "setuptools_scm"],
+    }
+else:
+    # Read from pyproject.toml directly
+    import re
 
-setuptools.setup(
-    name="pysr",
-    version=__version__,
-    author="Miles Cranmer",
-    author_email="miles.cranmer@gmail.com",
-    description="Simple and efficient symbolic regression",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    url="https://github.com/MilesCranmer/pysr",
-    # Read from requirements.txt:
-    install_requires=open("requirements.txt").read().splitlines(),
-    packages=setuptools.find_packages(),
-    package_data={"pysr": ["../Project.toml", "../datasets/*"]},
-    include_package_data=False,
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "Operating System :: OS Independent",
-    ],
-    python_requires=">=3.7",
-)
+    with open(os.path.join(os.path.dirname(__file__), "pyproject.toml")) as f:
+        data = f.read()
+        # Find the version
+        version = re.search(r'version = "(.*)"', data).group(1)
+
+    # Write the version to version.py
+    with open(os.path.join(os.path.dirname(__file__), "pysr", "version.py"), "w") as f:
+        f.write(f'__version__ = "{version}"')
+
+    kwargs = {
+        "use_scm_version": False,
+        "version": version,
+    }
+
+
+# Build options are managed in pyproject.toml
+setup(**kwargs)

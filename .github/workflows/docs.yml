@@ -10,6 +10,7 @@ on:
       - 'docs/**'
       - 'setup.py'
       - 'README.md'
+      - 'mkdocs.yml'
   workflow_dispatch:
 
 jobs:
@@ -20,16 +21,16 @@ jobs:
         shell: bash
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: "Set up Python"
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.9
           cache: pip
       - name: "Install packages for docs building"
         run: pip install -r docs/requirements.txt
       - name: "Install PySR"
-        run: pip install -e .
+        run: pip install . && python -c 'import pysr'
       - name: "Build API docs"
         run: cd docs && ./gen_docs.sh
       - name: "Deploy documentation"

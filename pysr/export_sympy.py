@@ -1,4 +1,5 @@
 """Define utilities to export to sympy"""
+
 from typing import Callable, Dict, List, Optional
 
 import sympy
@@ -50,11 +51,18 @@ sympy_mappings = {
     "round": lambda x: sympy.ceiling(x - 0.5),
     "max": lambda x, y: sympy.Piecewise((y, x < y), (x, True)),
     "min": lambda x, y: sympy.Piecewise((x, x < y), (y, True)),
+    "greater": lambda x, y: sympy.Piecewise((1.0, x > y), (0.0, True)),
     "cond": lambda x, y: sympy.Piecewise((y, x > 0), (0.0, True)),
     "logical_or": lambda x, y: sympy.Piecewise((1.0, (x > 0) | (y > 0)), (0.0, True)),
     "logical_and": lambda x, y: sympy.Piecewise((1.0, (x > 0) & (y > 0)), (0.0, True)),
     "relu": lambda x: sympy.Piecewise((0.0, x < 0), (x, True)),
 }
+
+
+def create_sympy_symbols_map(
+    feature_names_in: List[str],
+) -> Dict[str, sympy.Symbol]:
+    return {variable: sympy.Symbol(variable) for variable in feature_names_in}
 
 
 def create_sympy_symbols(
@@ -64,10 +72,16 @@ def create_sympy_symbols(
 
 
 def pysr2sympy(
-    equation: str, *, extra_sympy_mappings: Optional[Dict[str, Callable]] = None
+    equation: str,
+    *,
+    feature_names_in: Optional[List[str]] = None,
+    extra_sympy_mappings: Optional[Dict[str, Callable]] = None,
 ):
+    if feature_names_in is None:
+        feature_names_in = []
     local_sympy_mappings = {
-        **(extra_sympy_mappings if extra_sympy_mappings else {}),
+        **create_sympy_symbols_map(feature_names_in),
+        **(extra_sympy_mappings if extra_sympy_mappings is not None else {}),
         **sympy_mappings,
     }
 

@@ -234,3 +234,14 @@ papers:
     abstract: "Electron transfer is the most elementary process in nature, but the existing electron transfer rules are seldom applied to high-pressure situations, such as in the deep Earth. Here we show a deep learning model to obtain the electronegativity of 96 elements under arbitrary pressure, and a regressed unified formula to quantify its relationship with pressure and electronic configuration. The relative work function of minerals is further predicted by electronegativity, presenting a decreasing trend with pressure because of pressure-induced electron delocalization. Using the work function as the case study of electronegativity, it reveals that the driving force behind directional electron transfer results from the enlarged work function difference between compounds with pressure. This well explains the deep high-conductivity anomalies, and helps discover the redox reactivity between widespread Fe(II)-bearing minerals and water during ongoing subduction. Our results give an insight into the fundamental physicochemical properties of elements and their compounds under pressure"
     image: electronnegativity_introduction.jpg
     date: 2023-03-31
+  - title: Discovering interpretable models of scientific image data with deep learning
+    authors:
+      - Christopher J. Soelistyo (1)
+      - Alan R. Lowe (1, 2)
+    affiliations:
+      1: The Alan Turing Institute
+      2: University College London
+    link: https://arxiv.org/abs/2402.03115
+    abstract: "How can we find interpretable, domain-appropriate models of natural phenomena given some complex, raw data such as images? Can we use such models to derive scientific insight from the data? In this paper, we propose some methods for achieving this. In particular, we implement disentangled representation learning, sparse deep neural network training and symbolic regression, and assess their usefulness in forming interpretable models of complex image data. We demonstrate their relevance to the field of bioimaging using a well-studied test problem of classifying cell states in microscopy data. We find that such methods can produce highly parsimonious models that achieve ~98% of the accuracy of black-box benchmark models, with a tiny fraction of the complexity. We explore the utility of such interpretable models in producing scientific explanations of the underlying biological phenomenon."
+    image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/master/images/cell_state_classification.jpg
+    date: 2024-02-05

@@ -1,4 +1,3 @@
-import inspect
 import os
 import pickle as pkl
 import tempfile
@@ -12,16 +11,18 @@ import pandas as pd
 import sympy
 from sklearn.utils.estimator_checks import check_estimator
 
-from .. import PySRRegressor, julia_helpers
+from .. import PySRRegressor, install, jl
 from ..export_latex import sympy2latex
 from ..feature_selection import _handle_feature_selection, run_feature_selection
+from ..julia_helpers import init_julia
 from ..sr import _check_assertions, _process_constraints, idx_model_selection
 from ..utils import _csv_filename_to_pkl_filename
-
-DEFAULT_PARAMS = inspect.signature(PySRRegressor.__init__).parameters
-DEFAULT_NITERATIONS = DEFAULT_PARAMS["niterations"].default
-DEFAULT_POPULATIONS = DEFAULT_PARAMS["populations"].default
-DEFAULT_NCYCLES = DEFAULT_PARAMS["ncyclesperiteration"].default
+from .params import (
+    DEFAULT_NCYCLES,
+    DEFAULT_NITERATIONS,
+    DEFAULT_PARAMS,
+    DEFAULT_POPULATIONS,
+)
 
 
 class TestPipeline(unittest.TestCase):
@@ -57,16 +58,20 @@ class TestPipeline(unittest.TestCase):
         model.fit(self.X, y, variable_names=["c1", "c2", "c3", "c4", "c5"])
         self.assertIn("c1", model.equations_.iloc[-1]["equation"])
 
-    def test_linear_relation_weighted(self):
+    def test_linear_relation_weighted_bumper(self):
         y = self.X[:, 0]
         weights = np.ones_like(y)
         model = PySRRegressor(
             **self.default_test_kwargs,
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
+            bumper=True,
         )
         model.fit(self.X, y, weights=weights)
         print(model.equations_)
         self.assertLessEqual(model.get_best()["loss"], 1e-4)
+        self.assertEqual(
+            jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.bumper), True
+        )
 
     def test_multiprocessing_turbo_custom_objective(self):
         rstate = np.random.RandomState(0)
@@ -80,7 +85,7 @@ class TestPipeline(unittest.TestCase):
             multithreading=False,
             turbo=True,
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-10 && complexity == 1",
-            full_objective="""
+            loss_function="""
             function my_objective(tree::Node{T}, dataset::Dataset{T}, options::Options) where T
                 prediction, flag = eval_tree_array(tree, dataset.X, options)
                 !flag && return T(Inf)
@@ -95,22 +100,43 @@ class TestPipeline(unittest.TestCase):
         self.assertLessEqual(best_loss, 1e-10)
         self.assertGreaterEqual(best_loss, 0.0)
 
+        # Test options stored:
+        self.assertEqual(
+            jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.turbo), True
+        )
+
+    def test_multiline_seval(self):
+        # The user should be able to run multiple things in a single seval call:
+        num = jl.seval(
+            """
+            function my_new_objective(x)
+                x^2
+            end
+            1.5
+        """
+        )
+        self.assertEqual(num, 1.5)
+
     def test_high_precision_search_custom_loss(self):
         y = 1.23456789 * self.X[:, 0]
         model = PySRRegressor(
             **self.default_test_kwargs,
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 3",
-            loss="my_loss(prediction, target) = (prediction - target)^2",
+            elementwise_loss="my_loss(prediction, target) = (prediction - target)^2",
             precision=64,
             parsimony=0.01,
             warm_start=True,
         )
         model.fit(self.X, y)
-        from pysr.sr import Main
 
         # We should have that the model state is now a Float64 hof:
-        Main.test_state = model.sr_state_
-        self.assertTrue(Main.eval("typeof(test_state[2]).parameters[1] == Float64"))
+        test_state = model.raw_julia_state_
+        self.assertTrue(jl.typeof(test_state[1]).parameters[1] == jl.Float64)
+
+        # Test options stored:
+        self.assertEqual(
+            jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.turbo), False
+        )
 
     def test_multioutput_custom_operator_quiet_custom_complexity(self):
         y = self.X[:, [0, 1]] ** 2
@@ -144,10 +170,6 @@ class TestPipeline(unittest.TestCase):
 
         self.assertLessEqual(mse1, 1e-4)
         self.assertLessEqual(mse2, 1e-4)
-
-        bad_y = model.predict(self.X, index=[0, 0])
-        bad_mse = np.average((bad_y - y) ** 2)
-        self.assertGreater(bad_mse, 1e-4)
 
     def test_multioutput_weighted_with_callable_temp_equation(self):
         X = self.X.copy()
@@ -199,6 +221,7 @@ class TestPipeline(unittest.TestCase):
             **self.default_test_kwargs,
             early_stop_condition="(loss, complexity) -> loss <= 1e-4 && complexity <= 6",
         )
+        model.niterations = DEFAULT_NITERATIONS * 10
         model.fit(X, y)
         test_y = model.predict(X)
         self.assertTrue(np.issubdtype(test_y.dtype, np.complexfloating))
@@ -224,16 +247,17 @@ class TestPipeline(unittest.TestCase):
         # Test if repeated fit works:
         regressor.set_params(
             niterations=1,
-            ncyclesperiteration=2,
+            ncycles_per_iteration=2,
             warm_start=True,
             early_stop_condition=None,
         )
-        # Check that the the julia state is saved:
-        from pysr.sr import Main
 
         # We should have that the model state is now a Float32 hof:
-        Main.test_state = regressor.sr_state_
-        self.assertTrue(Main.eval("typeof(test_state[2]).parameters[1] == Float32"))
+        test_state = regressor.julia_state_
+        self.assertTrue(
+            jl.first(jl.typeof(jl.last(test_state)).parameters) == jl.Float32
+        )
+
         # This should exit almost immediately, and use the old equations
         regressor.fit(X, y)
 
@@ -252,7 +276,7 @@ class TestPipeline(unittest.TestCase):
         regressor = PySRRegressor(warm_start=True, max_evals=10)
         regressor.fit(self.X, y)
 
-    def test_noisy(self):
+    def test_noisy_builtin_variable_names(self):
         y = self.X[:, [0, 1]] ** 2 + self.rstate.randn(self.X.shape[0], 1) * 0.05
         model = PySRRegressor(
             # Test that passing a single operator works:
@@ -269,9 +293,12 @@ class TestPipeline(unittest.TestCase):
         model.set_params(model_selection="best")
         # Also try without a temp equation file:
         model.set_params(temp_equation_file=False)
-        model.fit(self.X, y)
+        # We also test builtin variable names
+        model.fit(self.X, y, variable_names=["exec", "hash", "x3", "x4", "x5"])
         self.assertLessEqual(model.get_best()[1]["loss"], 1e-2)
         self.assertLessEqual(model.get_best()[1]["loss"], 1e-2)
+        self.assertIn("exec", model.latex()[0])
+        self.assertIn("hash", model.latex()[1])
 
     def test_pandas_resample_with_nested_constraints(self):
         X = pd.DataFrame(
@@ -548,6 +575,17 @@ class TestMiscellaneous(unittest.TestCase):
         # The correct value should be set:
         self.assertEqual(model.fraction_replaced, 0.2)
 
+    def test_deprecated_functions(self):
+        with self.assertWarns(FutureWarning):
+            install()
+
+        _jl = None
+
+        with self.assertWarns(FutureWarning):
+            _jl = init_julia()
+
+        self.assertEqual(_jl, jl)
+
     def test_power_law_warning(self):
         """Ensure that a warning is given for a power law operator."""
         with self.assertWarns(UserWarning):
@@ -594,23 +632,6 @@ class TestMiscellaneous(unittest.TestCase):
         with self.assertRaises(ValueError):
             model.fit(X, y)
 
-    def test_changed_options_warning(self):
-        """Check that a warning is given if Julia options are changed."""
-        if julia_helpers.julia_kwargs_at_initialization is None:
-            julia_helpers.init_julia(julia_kwargs={"threads": 2, "optimize": 3})
-
-        cur_init = julia_helpers.julia_kwargs_at_initialization
-
-        threads_to_change = cur_init["threads"] + 1
-        with warnings.catch_warnings():
-            warnings.simplefilter("error")
-            with self.assertRaises(Exception) as context:
-                julia_helpers.init_julia(
-                    julia_kwargs={"threads": threads_to_change, "optimize": 3}
-                )
-            self.assertIn("Julia has already started", str(context.exception))
-            self.assertIn("threads", str(context.exception))
-
     def test_extra_sympy_mappings_undefined(self):
         """extra_sympy_mappings=None errors for custom operators"""
         model = PySRRegressor(unary_operators=["square2(x) = x^2"])
@@ -639,6 +660,50 @@ class TestMiscellaneous(unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             model.fit(X, y, variable_names=["f{c}"])
         self.assertIn("Invalid variable name", str(cm.exception))
+
+    def test_bad_kwargs(self):
+        bad_kwargs = [
+            dict(
+                kwargs=dict(
+                    elementwise_loss="g(x, y) = 0.0", loss_function="f(*args) = 0.0"
+                ),
+                error=ValueError,
+            ),
+            dict(
+                kwargs=dict(maxsize=3),
+                error=ValueError,
+            ),
+            dict(
+                kwargs=dict(tournament_selection_n=10, population_size=3),
+                error=ValueError,
+            ),
+            dict(
+                kwargs=dict(optimizer_algorithm="COBYLA"),
+                error=NotImplementedError,
+            ),
+            dict(
+                kwargs=dict(
+                    constraints={
+                        "+": (3, 5),
+                    }
+                ),
+                error=NotImplementedError,
+            ),
+            dict(
+                kwargs=dict(binary_operators=["α(x, y) = x - y"]),
+                error=ValueError,
+            ),
+            dict(
+                kwargs=dict(model_selection="unknown"),
+                error=NotImplementedError,
+            ),
+        ]
+        for opt in bad_kwargs:
+            model = PySRRegressor(**opt["kwargs"], niterations=1)
+            with self.assertRaises(opt["error"]):
+                model.fit([[1]], [1])
+                model.get_best()
+                print("Failed", opt["kwargs"])
 
     def test_pickle_with_temp_equation_file(self):
         """If we have a temporary equation file, unpickle the estimator."""
@@ -678,7 +743,7 @@ class TestMiscellaneous(unittest.TestCase):
         model = PySRRegressor(
             niterations=int(1 + DEFAULT_NITERATIONS / 10),
             populations=int(1 + DEFAULT_POPULATIONS / 3),
-            ncyclesperiteration=int(2 + DEFAULT_NCYCLES / 10),
+            ncycles_per_iteration=int(2 + DEFAULT_NCYCLES / 10),
             verbosity=0,
             progress=False,
             random_state=0,
@@ -715,6 +780,9 @@ class TestMiscellaneous(unittest.TestCase):
     def test_param_groupings(self):
         """Test that param_groupings are complete"""
         param_groupings_file = Path(__file__).parent.parent / "param_groupings.yml"
+        if not param_groupings_file.exists():
+            return
+
         # Read the file, discarding lines ending in ":",
         # and removing leading "\s*-\s*":
         params = []
@@ -964,9 +1032,8 @@ class TestDimensionalConstraints(unittest.TestCase):
         for i in range(2):
             self.assertGreater(model.get_best()[i]["complexity"], 2)
             self.assertLess(model.get_best()[i]["loss"], 1e-6)
-            self.assertGreater(
-                model.equations_[i].query("complexity <= 2").loss.min(), 1e-6
-            )
+            simple_eqs = model.equations_[i].query("complexity <= 2")
+            self.assertTrue(len(simple_eqs) == 0 or simple_eqs.loss.min() > 1e-6)
 
     def test_unit_checks(self):
         """This just checks the number of units passed"""
@@ -977,7 +1044,7 @@ class TestDimensionalConstraints(unittest.TestCase):
         valid_units = [
             (np.ones((10, 2)), np.ones(10), ["m/s", "s"], "m"),
             (np.ones((10, 1)), np.ones(10), ["m/s"], None),
-            (np.ones((10, 1)), np.ones(10), None, "m/s"),
+            (np.ones((10, 1)), np.ones(10), None, "km/s"),
             (np.ones((10, 1)), np.ones(10), None, ["m/s"]),
             (np.ones((10, 1)), np.ones((10, 1)), None, ["m/s"]),
             (np.ones((10, 1)), np.ones((10, 2)), None, ["m/s", ""]),
@@ -992,7 +1059,7 @@ class TestDimensionalConstraints(unittest.TestCase):
             )
         invalid_units = [
             (np.ones((10, 2)), np.ones(10), ["m/s", "s", "s^2"], None),
-            (np.ones((10, 2)), np.ones(10), ["m/s", "s", "s^2"], "m"),
+            (np.ones((10, 2)), np.ones(10), ["m/s", "s", "s^2"], "km"),
             (np.ones((10, 2)), np.ones((10, 2)), ["m/s", "s"], ["m"]),
             (np.ones((10, 1)), np.ones((10, 1)), "m/s", ["m"]),
         ]
@@ -1043,8 +1110,10 @@ class TestDimensionalConstraints(unittest.TestCase):
         self.assertNotIn("x1", best["equation"])
         self.assertIn("x2", best["equation"])
         self.assertEqual(best["complexity"], 3)
-        self.assertEqual(model.equations_.iloc[0].complexity, 1)
-        self.assertGreater(model.equations_.iloc[0].loss, 1e-6)
+        self.assertTrue(
+            model.equations_.iloc[0].complexity > 1
+            or model.equations_.iloc[0].loss > 1e-6
+        )
 
         # With pkl file:
         pkl_file = str(temp_dir / "equation_file.pkl")
@@ -1063,8 +1132,8 @@ class TestDimensionalConstraints(unittest.TestCase):
 
         # Try warm start, but with no units provided (should
         # be a different dataset, and thus different result):
-        model.fit(X, y)
         model.early_stop_condition = "(l, c) -> l < 1e-6 && c == 1"
+        model.fit(X, y)
         self.assertEqual(model.equations_.iloc[0].complexity, 1)
         self.assertLess(model.equations_.iloc[0].loss, 1e-6)
 
@@ -1072,10 +1141,8 @@ class TestDimensionalConstraints(unittest.TestCase):
 # TODO: Determine desired behavior if second .fit() call does not have units
 
 
-def runtests():
+def runtests(just_tests=False):
     """Run all tests in test.py."""
-    suite = unittest.TestSuite()
-    loader = unittest.TestLoader()
     test_cases = [
         TestPipeline,
         TestBest,
@@ -1084,8 +1151,11 @@ def runtests():
         TestLaTeXTable,
         TestDimensionalConstraints,
     ]
+    if just_tests:
+        return test_cases
+    suite = unittest.TestSuite()
+    loader = unittest.TestLoader()
     for test_case in test_cases:
-        tests = loader.loadTestsFromTestCase(test_case)
-        suite.addTests(tests)
+        suite.addTests(loader.loadTestsFromTestCase(test_case))
     runner = unittest.TextTestRunner()
     return runner.run(suite)

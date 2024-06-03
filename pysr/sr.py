@@ -1,4 +1,5 @@
 """Define the PySRRegressor scikit-learn interface."""
+
 import copy
 import os
 import pickle as pkl
@@ -11,7 +12,12 @@ from datetime import datetime
 from io import StringIO
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import List, Optional
+from typing import Callable, Dict, List, Optional, Tuple, Union
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
 
 import numpy as np
 import pandas as pd
@@ -20,30 +26,29 @@ from sklearn.utils import check_array, check_consistent_length, check_random_sta
 from sklearn.utils.validation import _check_feature_names_in, check_is_fitted
 
 from .denoising import denoise, multi_denoise
-from .deprecated import make_deprecated_kwargs_for_pysr_regressor
+from .deprecated import DEPRECATED_KWARGS
 from .export_jax import sympy2jax
 from .export_latex import sympy2latex, sympy2latextable, sympy2multilatextable
 from .export_numpy import sympy2numpy
 from .export_sympy import assert_valid_sympy_symbol, create_sympy_symbols, pysr2sympy
 from .export_torch import sympy2torch
 from .feature_selection import run_feature_selection
+from .julia_extensions import load_required_packages
 from .julia_helpers import (
+    PythonCall,
     _escape_filename,
-    _load_backend,
     _load_cluster_manager,
-    _process_julia_project,
-    _update_julia_project,
-    init_julia,
-    is_julia_version_greater_eq,
+    jl_array,
+    jl_deserialize,
+    jl_serialize,
 )
+from .julia_import import SymbolicRegression, jl
 from .utils import (
     _csv_filename_to_pkl_filename,
     _preprocess_julia_floats,
     _safe_check_feature_names_in,
     _subscriptify,
 )
-
-Main = None  # TODO: Rename to more descriptive name like "julia_runtime"
 
 already_ran = False
 
@@ -87,7 +92,6 @@ def _process_constraints(binary_operators, unary_operators, constraints):
 def _maybe_create_inline_operators(
     binary_operators, unary_operators, extra_sympy_mappings
 ):
-    global Main
     binary_operators = binary_operators.copy()
     unary_operators = unary_operators.copy()
     for op_list in [binary_operators, unary_operators]:
@@ -95,7 +99,7 @@ def _maybe_create_inline_operators(
             is_user_defined_operator = "(" in op
 
             if is_user_defined_operator:
-                Main.eval(op)
+                jl.seval(op)
                 # Cut off from the first non-alphanumeric char:
                 first_non_char = [j for j, char in enumerate(op) if char == "("][0]
                 function_name = op[:first_non_char]
@@ -171,7 +175,7 @@ def _check_assertions(
 
 
 # Class validation constants
-VALID_OPTIMIZER_ALGORITHMS = ["NelderMead", "BFGS"]
+VALID_OPTIMIZER_ALGORITHMS = ["BFGS", "NelderMead"]
 
 
 class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
@@ -266,7 +270,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         arguments are treated the same way, and the max of each
         argument is constrained.
         Default is `None`.
-    loss : str
+    elementwise_loss : str
         String of Julia code specifying an elementwise loss function.
         Can either be a loss from LossFunctions.jl, or your own loss
         written as a function. Examples of custom written losses include:
@@ -282,11 +286,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         `ModifiedHuberLoss()`, `L2MarginLoss()`, `ExpLoss()`,
         `SigmoidLoss()`, `DWDMarginLoss(q)`.
         Default is `"L2DistLoss()"`.
-    full_objective : str
+    loss_function : str
         Alternatively, you can specify the full objective function as
         a snippet of Julia code, including any sort of custom evaluation
         (including symbolic manipulations beforehand), and any sort
-        of loss function or regularizations. The default `full_objective`
+        of loss function or regularizations. The default `loss_function`
         used in SymbolicRegression.jl is roughly equal to:
         ```julia
         function eval_loss(tree, dataset::Dataset{T,L}, options)::L where {T,L}
@@ -324,6 +328,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     dimensional_constraint_penalty : float
         Additive penalty for if dimensional analysis of an expression fails.
         By default, this is `1000.0`.
+    dimensionless_constants_only : bool
+        Whether to only search for dimensionless constants, if using units.
+        Default is `False`.
     use_frequency : bool
         Whether to measure the frequency of complexities, and use that
         instead of parsimony to explore equation space. Will naturally
@@ -352,7 +359,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         takes a loss and complexity as input, for example:
         `"f(loss, complexity) = (loss < 0.1) && (complexity < 10)"`.
         Default is `None`.
-    ncyclesperiteration : int
+    ncycles_per_iteration : int
         Number of total mutations to run, per 10 samples of the
         population, per iteration.
         Default is `550`.
@@ -382,6 +389,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     weight_mutate_operator : float
         Relative likelihood for mutation to swap an operator.
         Default is `0.47`.
+    weight_swap_operands : float
+        Relative likehood for swapping operands in binary operators.
+        Default is `0.1`.
     weight_randomize : float
         Relative likelihood for mutation to completely delete and then
         randomly generate the equation
@@ -393,7 +403,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Constant optimization can also be performed as a mutation, in addition to
         the normal strategy controlled by `optimize_probability` which happens
         every iteration. Using it as a mutation is useful if you want to use
-        a large `ncyclesperiteration`, and may not optimize very often.
+        a large `ncycles_periteration`, and may not optimize very often.
         Default is `0.0`.
     crossover_probability : float
         Absolute probability of crossover-type genetic operation, instead of a mutation.
@@ -455,6 +465,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         "htc". If set to one of these, PySR will run in distributed
         mode, and use `procs` to figure out how many processes to launch.
         Default is `None`.
+    heap_size_hint_in_bytes : int
+        For multiprocessing, this sets the `--heap-size-hint` parameter
+        for new Julia processes. This can be configured when using
+        multi-node distributed compute, to give a hint to each process
+        about how much memory they can use before aggressive garbage
+        collection.
     batching : bool
         Whether to compare population members on small batches during
         evolution. Still uses full dataset for comparing against hall
@@ -470,6 +486,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         (Experimental) Whether to use LoopVectorization.jl to speed up the
         search evaluation. Certain operators may not be supported.
         Does not support 16-bit precision floats.
+        Default is `False`.
+    bumper: bool
+        (Experimental) Whether to use Bumper.jl to speed up the search
+        evaluation. Does not support 16-bit precision floats.
         Default is `False`.
     precision : int
         What precision to use for the data. By default this is `32`
@@ -522,11 +542,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     delete_tempfiles : bool
         Whether to delete the temporary files after finishing.
         Default is `True`.
-    julia_project : str
-        A Julia environment location containing a Project.toml
-        (and potentially the source code for SymbolicRegression.jl).
-        Default gives the Python package directory, where a
-        Project.toml file should be present from the install.
     update: bool
         Whether to automatically update Julia packages when `fit` is called.
         You should make sure that PySR is up-to-date itself first, as
@@ -571,11 +586,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         before passing to the symbolic regression code. None means no
         feature selection; an int means select that many features.
         Default is `None`.
-    julia_kwargs : dict
-        Keyword arguments to pass to `julia.core.Julia(...)` to initialize
-        the Julia runtime. The default, when `None`, is to set `threads` equal
-        to `procs`, and `optimize` to 3.
-        Default is `None`.
     **kwargs : dict
         Supports deprecated keyword arguments. Other arguments will
         result in an error.
@@ -603,12 +613,15 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Path to the temporary equations directory.
     equation_file_ : str
         Output equation file name produced by the julia backend.
-    sr_state_ : tuple[list[PyCall.jlwrap], PyCall.jlwrap]
-        The state for the julia SymbolicRegression.jl backend post fitting.
-    sr_options_ : PyCall.jlwrap
-        The options used by `SymbolicRegression.jl`, created during
-        a call to `.fit`. You may use this to manually call functions
-        in `SymbolicRegression` which take an `::Options` argument.
+    julia_state_stream_ : ndarray
+        The serialized state for the julia SymbolicRegression.jl backend (after fitting),
+        stored as an array of uint8, produced by Julia's Serialization.serialize function.
+    julia_state_
+        The deserialized state.
+    julia_options_stream_ : ndarray
+        The serialized julia options, stored as an array of uint8,
+    julia_options_
+        The deserialized julia options.
     equation_file_contents_ : list[pandas.DataFrame]
         Contents of the equation file output by the Julia backend.
     show_pickle_warnings_ : bool
@@ -633,7 +646,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     ...         "inv(x) = 1/x",  # Custom operator (julia syntax)
     ...     ],
     ...     model_selection="best",
-    ...     loss="loss(x, y) = (x - y)^2",  # Custom loss function (julia syntax)
+    ...     elementwise_loss="loss(x, y) = (x - y)^2",  # Custom loss function (julia syntax)
     ... )
     >>> model.fit(X, y)
     >>> model
@@ -657,89 +670,93 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
     def __init__(
         self,
-        model_selection="best",
+        model_selection: Literal["best", "accuracy", "score"] = "best",
         *,
-        binary_operators=None,
-        unary_operators=None,
-        niterations=40,
-        populations=15,
-        population_size=33,
-        max_evals=None,
-        maxsize=20,
-        maxdepth=None,
-        warmup_maxsize_by=0.0,
-        timeout_in_seconds=None,
-        constraints=None,
-        nested_constraints=None,
-        loss=None,
-        full_objective=None,
-        complexity_of_operators=None,
-        complexity_of_constants=1,
-        complexity_of_variables=1,
-        parsimony=0.0032,
-        dimensional_constraint_penalty=None,
-        use_frequency=True,
-        use_frequency_in_tournament=True,
-        adaptive_parsimony_scaling=20.0,
-        alpha=0.1,
-        annealing=False,
-        early_stop_condition=None,
-        ncyclesperiteration=550,
-        fraction_replaced=0.000364,
-        fraction_replaced_hof=0.035,
-        weight_add_node=0.79,
-        weight_insert_node=5.1,
-        weight_delete_node=1.7,
-        weight_do_nothing=0.21,
-        weight_mutate_constant=0.048,
-        weight_mutate_operator=0.47,
-        weight_randomize=0.00023,
-        weight_simplify=0.0020,
-        weight_optimize=0.0,
-        crossover_probability=0.066,
-        skip_mutation_failures=True,
-        migration=True,
-        hof_migration=True,
-        topn=12,
-        should_simplify=None,
-        should_optimize_constants=True,
-        optimizer_algorithm="BFGS",
-        optimizer_nrestarts=2,
-        optimize_probability=0.14,
-        optimizer_iterations=8,
-        perturbation_factor=0.076,
-        tournament_selection_n=10,
-        tournament_selection_p=0.86,
-        procs=cpu_count(),
-        multithreading=None,
-        cluster_manager=None,
-        batching=False,
-        batch_size=50,
-        fast_cycle=False,
-        turbo=False,
-        precision=32,
-        enable_autodiff=False,
+        binary_operators: Optional[List[str]] = None,
+        unary_operators: Optional[List[str]] = None,
+        niterations: int = 40,
+        populations: int = 15,
+        population_size: int = 33,
+        max_evals: Optional[int] = None,
+        maxsize: int = 20,
+        maxdepth: Optional[int] = None,
+        warmup_maxsize_by: Optional[float] = None,
+        timeout_in_seconds: Optional[float] = None,
+        constraints: Optional[Dict[str, Union[int, Tuple[int, int]]]] = None,
+        nested_constraints: Optional[Dict[str, Dict[str, int]]] = None,
+        elementwise_loss: Optional[str] = None,
+        loss_function: Optional[str] = None,
+        complexity_of_operators: Optional[Dict[str, Union[int, float]]] = None,
+        complexity_of_constants: Union[int, float] = 1,
+        complexity_of_variables: Union[int, float] = 1,
+        parsimony: float = 0.0032,
+        dimensional_constraint_penalty: Optional[float] = None,
+        dimensionless_constants_only: bool = False,
+        use_frequency: bool = True,
+        use_frequency_in_tournament: bool = True,
+        adaptive_parsimony_scaling: float = 20.0,
+        alpha: float = 0.1,
+        annealing: bool = False,
+        early_stop_condition: Optional[Union[float, str]] = None,
+        ncycles_per_iteration: int = 550,
+        fraction_replaced: float = 0.000364,
+        fraction_replaced_hof: float = 0.035,
+        weight_add_node: float = 0.79,
+        weight_insert_node: float = 5.1,
+        weight_delete_node: float = 1.7,
+        weight_do_nothing: float = 0.21,
+        weight_mutate_constant: float = 0.048,
+        weight_mutate_operator: float = 0.47,
+        weight_swap_operands: float = 0.1,
+        weight_randomize: float = 0.00023,
+        weight_simplify: float = 0.0020,
+        weight_optimize: float = 0.0,
+        crossover_probability: float = 0.066,
+        skip_mutation_failures: bool = True,
+        migration: bool = True,
+        hof_migration: bool = True,
+        topn: int = 12,
+        should_simplify: Optional[bool] = None,
+        should_optimize_constants: bool = True,
+        optimizer_algorithm: Literal["BFGS", "NelderMead"] = "BFGS",
+        optimizer_nrestarts: int = 2,
+        optimize_probability: float = 0.14,
+        optimizer_iterations: int = 8,
+        perturbation_factor: float = 0.076,
+        tournament_selection_n: int = 10,
+        tournament_selection_p: float = 0.86,
+        procs: int = cpu_count(),
+        multithreading: Optional[bool] = None,
+        cluster_manager: Optional[
+            Literal["slurm", "pbs", "lsf", "sge", "qrsh", "scyld", "htc"]
+        ] = None,
+        heap_size_hint_in_bytes: Optional[int] = None,
+        batching: bool = False,
+        batch_size: int = 50,
+        fast_cycle: bool = False,
+        turbo: bool = False,
+        bumper: bool = False,
+        precision: int = 32,
+        enable_autodiff: bool = False,
         random_state=None,
-        deterministic=False,
-        warm_start=False,
-        verbosity=1,
-        update_verbosity=None,
-        print_precision=5,
-        progress=True,
-        equation_file=None,
-        temp_equation_file=False,
-        tempdir=None,
-        delete_tempfiles=True,
-        julia_project=None,
-        update=False,
-        output_jax_format=False,
-        output_torch_format=False,
-        extra_sympy_mappings=None,
-        extra_torch_mappings=None,
-        extra_jax_mappings=None,
-        denoise=False,
-        select_k_features=None,
-        julia_kwargs=None,
+        deterministic: bool = False,
+        warm_start: bool = False,
+        verbosity: int = 1,
+        update_verbosity: Optional[int] = None,
+        print_precision: int = 5,
+        progress: bool = True,
+        equation_file: Optional[str] = None,
+        temp_equation_file: bool = False,
+        tempdir: Optional[str] = None,
+        delete_tempfiles: bool = True,
+        update: bool = False,
+        output_jax_format: bool = False,
+        output_torch_format: bool = False,
+        extra_sympy_mappings: Optional[Dict[str, Callable]] = None,
+        extra_torch_mappings: Optional[Dict[Callable, Callable]] = None,
+        extra_jax_mappings: Optional[Dict[Callable, str]] = None,
+        denoise: bool = False,
+        select_k_features: Optional[int] = None,
         **kwargs,
     ):
         # Hyperparameters
@@ -750,7 +767,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.niterations = niterations
         self.populations = populations
         self.population_size = population_size
-        self.ncyclesperiteration = ncyclesperiteration
+        self.ncycles_per_iteration = ncycles_per_iteration
         # - Equation Constraints
         self.maxsize = maxsize
         self.maxdepth = maxdepth
@@ -763,13 +780,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.timeout_in_seconds = timeout_in_seconds
         self.early_stop_condition = early_stop_condition
         # - Loss parameters
-        self.loss = loss
-        self.full_objective = full_objective
+        self.elementwise_loss = elementwise_loss
+        self.loss_function = loss_function
         self.complexity_of_operators = complexity_of_operators
         self.complexity_of_constants = complexity_of_constants
         self.complexity_of_variables = complexity_of_variables
         self.parsimony = parsimony
         self.dimensional_constraint_penalty = dimensional_constraint_penalty
+        self.dimensionless_constants_only = dimensionless_constants_only
         self.use_frequency = use_frequency
         self.use_frequency_in_tournament = use_frequency_in_tournament
         self.adaptive_parsimony_scaling = adaptive_parsimony_scaling
@@ -783,6 +801,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.weight_do_nothing = weight_do_nothing
         self.weight_mutate_constant = weight_mutate_constant
         self.weight_mutate_operator = weight_mutate_operator
+        self.weight_swap_operands = weight_swap_operands
         self.weight_randomize = weight_randomize
         self.weight_simplify = weight_simplify
         self.weight_optimize = weight_optimize
@@ -804,14 +823,16 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # -- Selection parameters
         self.tournament_selection_n = tournament_selection_n
         self.tournament_selection_p = tournament_selection_p
-        # Solver parameters
+        # -- Performance parameters
         self.procs = procs
         self.multithreading = multithreading
         self.cluster_manager = cluster_manager
+        self.heap_size_hint_in_bytes = heap_size_hint_in_bytes
         self.batching = batching
         self.batch_size = batch_size
         self.fast_cycle = fast_cycle
         self.turbo = turbo
+        self.bumper = bumper
         self.precision = precision
         self.enable_autodiff = enable_autodiff
         self.random_state = random_state
@@ -828,7 +849,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.temp_equation_file = temp_equation_file
         self.tempdir = tempdir
         self.delete_tempfiles = delete_tempfiles
-        self.julia_project = julia_project
         self.update = update
         self.output_jax_format = output_jax_format
         self.output_torch_format = output_torch_format
@@ -838,16 +858,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # Pre-modelling transformation
         self.denoise = denoise
         self.select_k_features = select_k_features
-        self.julia_kwargs = julia_kwargs
 
         # Once all valid parameters have been assigned handle the
         # deprecated kwargs
         if len(kwargs) > 0:  # pragma: no cover
-            deprecated_kwargs = make_deprecated_kwargs_for_pysr_regressor()
             for k, v in kwargs.items():
                 # Handle renamed kwargs
-                if k in deprecated_kwargs:
-                    updated_kwarg_name = deprecated_kwargs[k]
+                if k in DEPRECATED_KWARGS:
+                    updated_kwarg_name = DEPRECATED_KWARGS[k]
                     setattr(self, updated_kwarg_name, v)
                     warnings.warn(
                         f"{k} has been renamed to {updated_kwarg_name} in PySRRegressor. "
@@ -859,6 +877,19 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     warnings.warn(
                         f"{k} is a data dependant parameter so should be passed when fit is called. "
                         f"Ignoring parameter; please pass {k} during the call to fit instead.",
+                        FutureWarning,
+                    )
+                elif k == "julia_project":
+                    warnings.warn(
+                        "The `julia_project` parameter has been deprecated. To use a custom "
+                        "julia project, please see `https://astroautomata.com/PySR/backend`.",
+                        FutureWarning,
+                    )
+                elif k == "julia_kwargs":
+                    warnings.warn(
+                        "The `julia_kwargs` parameter has been deprecated. To pass custom "
+                        "keyword arguments to the julia backend, you should use environment variables. "
+                        "See the Julia documentation for more information.",
                         FutureWarning,
                     )
                 else:
@@ -1031,26 +1062,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Handle pickle serialization for PySRRegressor.
 
         The Scikit-learn standard requires estimators to be serializable via
-        `pickle.dumps()`. However, `PyCall.jlwrap` does not support pickle
-        serialization.
-
-        Thus, for `PySRRegressor` to support pickle serialization, the
-        `sr_state_` attribute must be hidden from pickle. This will
-        prevent the `warm_start` of any model that is loaded via `pickle.loads()`,
-        but does allow all other attributes of a fitted `PySRRegressor` estimator
-        to be serialized. Note: Jax and Torch format equations are also removed
-        from the pickled instance.
+        `pickle.dumps()`. However, some attributes do not support pickling
+        and need to be hidden, such as the JAX and Torch representations.
         """
         state = self.__dict__
         show_pickle_warning = not (
             "show_pickle_warnings_" in state and not state["show_pickle_warnings_"]
         )
-        if ("sr_state_" in state or "sr_options_" in state) and show_pickle_warning:
-            warnings.warn(
-                "sr_state_ and sr_options_ cannot be pickled and will be removed from the "
-                "serialized instance. This will prevent a `warm_start` fit of any "
-                "model that is deserialized via `pickle.load()`."
-            )
         state_keys_containing_lambdas = ["extra_sympy_mappings", "extra_torch_mappings"]
         for state_key in state_keys_containing_lambdas:
             if state[state_key] is not None and show_pickle_warning:
@@ -1059,10 +1077,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     "serialized instance. When loading the model, please redefine "
                     f"`{state_key}` at runtime."
                 )
-        state_keys_to_clear = [
-            "sr_state_",
-            "sr_options_",
-        ] + state_keys_containing_lambdas
+        state_keys_to_clear = state_keys_containing_lambdas
         pickled_state = {
             key: (None if key in state_keys_to_clear else value)
             for key, value in state.items()
@@ -1113,12 +1128,22 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         return self.equations_
 
     @property
-    def raw_julia_state_(self):  # pragma: no cover
+    def julia_options_(self):
+        return jl_deserialize(self.julia_options_stream_)
+
+    @property
+    def julia_state_(self):
+        return jl_deserialize(self.julia_state_stream_)
+
+    @property
+    def raw_julia_state_(self):
         warnings.warn(
             "PySRRegressor.raw_julia_state_ is now deprecated. "
-            "Please use PySRRegressor.sr_state_ instead.",
+            "Please use PySRRegressor.julia_state_ instead, or julia_state_stream_ "
+            "for the raw stream of bytes.",
+            FutureWarning,
         )
-        return self.sr_state_
+        return self.julia_state_
 
     def get_best(self, index=None):
         """
@@ -1233,8 +1258,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 "to True and `procs` to 0 will result in non-deterministic searches. "
             )
 
-        if self.loss is not None and self.full_objective is not None:
-            raise ValueError("You cannot set both `loss` and `full_objective`.")
+        if self.elementwise_loss is not None and self.loss_function is not None:
+            raise ValueError(
+                "You cannot set both `elementwise_loss` and `loss_function`."
+            )
 
         # NotImplementedError - Values that could be supported at a later time
         if self.optimizer_algorithm not in VALID_OPTIMIZER_ALGORITHMS:
@@ -1242,9 +1269,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 f"PySR currently only supports the following optimizer algorithms: {VALID_OPTIMIZER_ALGORITHMS}"
             )
 
+        progress = self.progress
         # 'Mutable' parameter validation
-        buffer_available = "buffer" in sys.stdout.__dir__()
-        # Params and their default values, if None is given:
+        #  (Params and their default values, if None is given:)
         default_param_mapping = {
             "binary_operators": "+ * - /".split(" "),
             "unary_operators": [],
@@ -1253,7 +1280,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             "multithreading": self.procs != 0 and self.cluster_manager is None,
             "batch_size": 1,
             "update_verbosity": int(self.verbosity),
-            "progress": buffer_available,
+            "progress": progress,
         }
         packed_modified_params = {}
         for parameter, default_value in default_param_mapping.items():
@@ -1272,7 +1299,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                         "`batch_size` has been increased to equal one."
                     )
                     parameter_value = 1
-                elif parameter == "progress" and not buffer_available:
+                elif (
+                    parameter == "progress"
+                    and parameter_value
+                    and "buffer" not in sys.stdout.__dir__()
+                ):
                     warnings.warn(
                         "Note: it looks like you are running in Jupyter. "
                         "The progress bar will be turned off."
@@ -1285,16 +1316,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             + len(packed_modified_params["unary_operators"])
             > 0
         )
-
-        julia_kwargs = {}
-        if self.julia_kwargs is not None:
-            for key, value in self.julia_kwargs.items():
-                julia_kwargs[key] = value
-        if "optimize" not in julia_kwargs:
-            julia_kwargs["optimize"] = 3
-        if "threads" not in julia_kwargs and packed_modified_params["multithreading"]:
-            julia_kwargs["threads"] = self.procs
-        packed_modified_params["julia_kwargs"] = julia_kwargs
 
         return packed_modified_params
 
@@ -1523,7 +1544,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # Need to be global as we don't want to recreate/reinstate julia for
         # every new instance of PySRRegressor
         global already_ran
-        global Main
 
         # These are the parameters which may be modified from the ones
         # specified in init, so we define them here locally:
@@ -1538,32 +1558,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         batch_size = mutated_params["batch_size"]
         update_verbosity = mutated_params["update_verbosity"]
         progress = mutated_params["progress"]
-        julia_kwargs = mutated_params["julia_kwargs"]
 
         # Start julia backend processes
         if not already_ran and update_verbosity != 0:
             print("Compiling Julia backend...")
 
-        Main = init_julia(self.julia_project, julia_kwargs=julia_kwargs)
-
         if cluster_manager is not None:
-            cluster_manager = _load_cluster_manager(Main, cluster_manager)
-
-        if self.update:
-            _, is_shared = _process_julia_project(self.julia_project)
-            io = "devnull" if update_verbosity == 0 else "stderr"
-            io_arg = (
-                f"io={io}" if is_julia_version_greater_eq(version=(1, 6, 0)) else ""
-            )
-            _update_julia_project(Main, is_shared, io_arg)
-
-        SymbolicRegression = _load_backend(Main)
-
-        Main.plus = Main.eval("(+)")
-        Main.sub = Main.eval("(-)")
-        Main.mult = Main.eval("(*)")
-        Main.pow = Main.eval("(^)")
-        Main.div = Main.eval("(/)")
+            cluster_manager = _load_cluster_manager(cluster_manager)
 
         # TODO(mcranmer): These functions should be part of this class.
         binary_operators, unary_operators = _maybe_create_inline_operators(
@@ -1589,7 +1590,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     nested_constraints_str += f"({inner_k}) => {inner_v}, "
                 nested_constraints_str += "), "
             nested_constraints_str += ")"
-            nested_constraints = Main.eval(nested_constraints_str)
+            nested_constraints = jl.seval(nested_constraints_str)
 
         # Parse dict into Julia Dict for complexities:
         if complexity_of_operators is not None:
@@ -1597,18 +1598,34 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             for k, v in complexity_of_operators.items():
                 complexity_of_operators_str += f"({k}) => {v}, "
             complexity_of_operators_str += ")"
-            complexity_of_operators = Main.eval(complexity_of_operators_str)
+            complexity_of_operators = jl.seval(complexity_of_operators_str)
 
-        custom_loss = Main.eval(self.loss)
-        custom_full_objective = Main.eval(self.full_objective)
+        custom_loss = jl.seval(
+            str(self.elementwise_loss)
+            if self.elementwise_loss is not None
+            else "nothing"
+        )
+        custom_full_objective = jl.seval(
+            str(self.loss_function) if self.loss_function is not None else "nothing"
+        )
 
-        early_stop_condition = Main.eval(
-            str(self.early_stop_condition) if self.early_stop_condition else None
+        early_stop_condition = jl.seval(
+            str(self.early_stop_condition)
+            if self.early_stop_condition is not None
+            else "nothing"
+        )
+
+        load_required_packages(
+            turbo=self.turbo,
+            bumper=self.bumper,
+            enable_autodiff=self.enable_autodiff,
+            cluster_manager=cluster_manager,
         )
 
         mutation_weights = SymbolicRegression.MutationWeights(
             mutate_constant=self.weight_mutate_constant,
             mutate_operator=self.weight_mutate_operator,
+            swap_operands=self.weight_swap_operands,
             add_node=self.weight_add_node,
             insert_node=self.weight_insert_node,
             delete_node=self.weight_delete_node,
@@ -1620,11 +1637,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/OptionsStruct.jl
-        self.sr_options_ = SymbolicRegression.Options(
-            binary_operators=Main.eval(str(binary_operators).replace("'", "")),
-            unary_operators=Main.eval(str(unary_operators).replace("'", "")),
-            bin_constraints=bin_constraints,
-            una_constraints=una_constraints,
+        options = SymbolicRegression.Options(
+            binary_operators=jl.seval(str(binary_operators).replace("'", "")),
+            unary_operators=jl.seval(str(unary_operators).replace("'", "")),
+            bin_constraints=jl_array(bin_constraints),
+            una_constraints=jl_array(una_constraints),
             complexity_of_operators=complexity_of_operators,
             complexity_of_constants=self.complexity_of_constants,
             complexity_of_variables=self.complexity_of_variables,
@@ -1642,22 +1659,26 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             # These have the same name:
             parsimony=self.parsimony,
             dimensional_constraint_penalty=self.dimensional_constraint_penalty,
+            dimensionless_constants_only=self.dimensionless_constants_only,
             alpha=self.alpha,
             maxdepth=maxdepth,
             fast_cycle=self.fast_cycle,
             turbo=self.turbo,
+            bumper=self.bumper,
             enable_autodiff=self.enable_autodiff,
             migration=self.migration,
             hof_migration=self.hof_migration,
             fraction_replaced_hof=self.fraction_replaced_hof,
             should_simplify=self.should_simplify,
             should_optimize_constants=self.should_optimize_constants,
-            warmup_maxsize_by=self.warmup_maxsize_by,
+            warmup_maxsize_by=(
+                0.0 if self.warmup_maxsize_by is None else self.warmup_maxsize_by
+            ),
             use_frequency=self.use_frequency,
             use_frequency_in_tournament=self.use_frequency_in_tournament,
             adaptive_parsimony_scaling=self.adaptive_parsimony_scaling,
             npop=self.population_size,
-            ncycles_per_iteration=self.ncyclesperiteration,
+            ncycles_per_iteration=self.ncycles_per_iteration,
             fraction_replaced=self.fraction_replaced,
             topn=self.topn,
             print_precision=self.print_precision,
@@ -1677,6 +1698,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             define_helper_functions=False,
         )
 
+        self.julia_options_stream_ = jl_serialize(options)
+
         # Convert data to desired precision
         test_X = np.array(X)
         is_complex = np.issubdtype(test_X.dtype, np.complexfloating)
@@ -1687,18 +1710,18 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             np_dtype = {32: np.complex64, 64: np.complex128}[self.precision]
 
         # This converts the data into a Julia array:
-        Main.X = np.array(X, dtype=np_dtype).T
+        jl_X = jl_array(np.array(X, dtype=np_dtype).T)
         if len(y.shape) == 1:
-            Main.y = np.array(y, dtype=np_dtype)
+            jl_y = jl_array(np.array(y, dtype=np_dtype))
         else:
-            Main.y = np.array(y, dtype=np_dtype).T
+            jl_y = jl_array(np.array(y, dtype=np_dtype).T)
         if weights is not None:
             if len(weights.shape) == 1:
-                Main.weights = np.array(weights, dtype=np_dtype)
+                jl_weights = jl_array(np.array(weights, dtype=np_dtype))
             else:
-                Main.weights = np.array(weights, dtype=np_dtype).T
+                jl_weights = jl_array(np.array(weights, dtype=np_dtype).T)
         else:
-            Main.weights = None
+            jl_weights = None
 
         if self.procs == 0 and not multithreading:
             parallelism = "serial"
@@ -1711,33 +1734,45 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             None if parallelism in ["serial", "multithreading"] else int(self.procs)
         )
 
-        y_variable_names = None
         if len(y.shape) > 1:
             # We set these manually so that they respect Python's 0 indexing
             # (by default Julia will use y1, y2...)
-            y_variable_names = [f"y{_subscriptify(i)}" for i in range(y.shape[1])]
+            jl_y_variable_names = jl_array(
+                [f"y{_subscriptify(i)}" for i in range(y.shape[1])]
+            )
+        else:
+            jl_y_variable_names = None
 
-        # Call to Julia backend.
-        # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/SymbolicRegression.jl
-        self.sr_state_ = SymbolicRegression.equation_search(
-            Main.X,
-            Main.y,
-            weights=Main.weights,
+        PythonCall.GC.disable()
+        out = SymbolicRegression.equation_search(
+            jl_X,
+            jl_y,
+            weights=jl_weights,
             niterations=int(self.niterations),
-            variable_names=self.feature_names_in_.tolist(),
-            display_variable_names=self.display_feature_names_in_.tolist(),
-            y_variable_names=y_variable_names,
-            X_units=self.X_units_,
-            y_units=self.y_units_,
-            options=self.sr_options_,
+            variable_names=jl_array([str(v) for v in self.feature_names_in_]),
+            display_variable_names=jl_array(
+                [str(v) for v in self.display_feature_names_in_]
+            ),
+            y_variable_names=jl_y_variable_names,
+            X_units=jl_array(self.X_units_),
+            y_units=(
+                jl_array(self.y_units_)
+                if isinstance(self.y_units_, list)
+                else self.y_units_
+            ),
+            options=options,
             numprocs=cprocs,
             parallelism=parallelism,
-            saved_state=self.sr_state_,
+            saved_state=self.julia_state_,
             return_state=True,
             addprocs_function=cluster_manager,
+            heap_size_hint_in_bytes=self.heap_size_hint_in_bytes,
             progress=progress and self.verbosity > 0 and len(y.shape) == 1,
             verbosity=int(self.verbosity),
         )
+        PythonCall.GC.enable()
+
+        self.julia_state_stream_ = jl_serialize(out)
 
         # Set attributes
         self.equations_ = self.get_hof()
@@ -1801,10 +1836,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Fitted estimator.
         """
         # Init attributes that are not specified in BaseEstimator
-        if self.warm_start and hasattr(self, "sr_state_"):
+        if self.warm_start and hasattr(self, "julia_state_stream_"):
             pass
         else:
-            if hasattr(self, "sr_state_"):
+            if hasattr(self, "julia_state_stream_"):
                 warnings.warn(
                     "The discovered expressions are being reset. "
                     "Please set `warm_start=True` if you wish to continue "
@@ -1814,8 +1849,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self.equations_ = None
             self.nout_ = 1
             self.selection_mask_ = None
-            self.sr_state_ = None
-            self.sr_options_ = None
+            self.julia_state_stream_ = None
+            self.julia_options_stream_ = None
             self.X_units_ = None
             self.y_units_ = None
 
@@ -2212,6 +2247,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             for _, eqn_row in output.iterrows():
                 eqn = pysr2sympy(
                     eqn_row["equation"],
+                    feature_names_in=self.feature_names_in_,
                     extra_sympy_mappings=self.extra_sympy_mappings,
                 )
                 sympy_format.append(eqn)

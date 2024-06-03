@@ -78,11 +78,11 @@ with the equations.
 Each cycle considers every 10-equation subsample (re-sampled for each individual 10,
 unless `fast_cycle` is set in which case the subsamples are separate groups of equations)
 a single time, producing one mutated equation for each.
-The parameter `ncyclesperiteration` defines how many times this
+The parameter `ncycles_per_iteration` defines how many times this
 occurs before the equations are compared to the hall of fame,
 and new equations are migrated from the hall of fame, or from other populations.
 It also controls how slowly annealing occurs. You may find that increasing
-`ncyclesperiteration` results in a higher cycles-per-second, as the head
+`ncycles_per_iteration` results in a higher cycles-per-second, as the head
 worker needs to reduce and distribute new equations less often, and also increases
 diversity. But at the same
 time, a smaller number it might be that migrating equations from the hall of fame helps
@@ -243,7 +243,7 @@ train the parameters within JAX (and is differentiable).
 
 The default loss is mean-square error, and weighted mean-square error.
 One can pass an arbitrary Julia string to define a custom loss, using,
-e.g., `loss="myloss(x, y) = abs(x - y)^1.5"`. For more details,
+e.g., `elementwise_loss="myloss(x, y) = abs(x - y)^1.5"`. For more details,
 see the
 [Losses](https://milescranmer.github.io/SymbolicRegression.jl/dev/losses/)
 page for SymbolicRegression.jl.
@@ -253,26 +253,26 @@ Here are some additional examples:
 abs(x-y) loss
 
 ```python
-PySRRegressor(..., loss="f(x, y) = abs(x - y)^1.5")
+PySRRegressor(..., elementwise_loss="f(x, y) = abs(x - y)^1.5")
 ```
 
 Note that the function name doesn't matter:
 
 ```python
-PySRRegressor(..., loss="loss(x, y) = abs(x * y)")
+PySRRegressor(..., elementwise_loss="loss(x, y) = abs(x * y)")
 ```
 
 With weights:
 
 ```python
-model = PySRRegressor(..., loss="myloss(x, y, w) = w * abs(x - y)")
+model = PySRRegressor(..., elementwise_loss="myloss(x, y, w) = w * abs(x - y)")
 model.fit(..., weights=weights)
 ```
 
 Weights can be used in arbitrary ways:
 
 ```python
-model = PySRRegressor(..., weights=weights, loss="myloss(x, y, w) = abs(x - y)^2/w^2")
+model = PySRRegressor(..., weights=weights, elementwise_loss="myloss(x, y, w) = abs(x - y)^2/w^2")
 model.fit(..., weights=weights)
 ```
 
@@ -280,13 +280,13 @@ Built-in loss (faster) (see [losses](https://astroautomata.com/SymbolicRegressio
 This one computes the L3 norm:
 
 ```python
-PySRRegressor(..., loss="LPDistLoss{3}()")
+PySRRegressor(..., elementwise_loss="LPDistLoss{3}()")
 ```
 
 Can also uses these losses for weighted (weighted-average):
 
 ```python
-model = PySRRegressor(..., weights=weights, loss="LPDistLoss{3}()")
+model = PySRRegressor(..., weights=weights, elementwise_loss="LPDistLoss{3}()")
 model.fit(..., weights=weights)
 ```
 

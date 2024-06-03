@@ -1,4 +1,5 @@
 """Start a hyperoptimization from a single node"""
+
 import pickle as pkl
 import sys
 
@@ -149,6 +150,8 @@ init_vals = [
         weight_mutate_constant=10.0,
         #     weight_mutate_operator=1,
         weight_mutate_operator=1.0,
+        #     weight_swap_operands=1,
+        weight_swap_operands=1.0,
         #     weight_randomize=1,
         weight_randomize=1.0,
         #     weight_simplify=0.002,

@@ -1,4 +1,5 @@
 """Functions to help export PySR equations to LaTeX."""
+
 from typing import List, Optional, Tuple
 
 import pandas as pd
@@ -23,7 +24,7 @@ def sympy2latex(expr, prec=3, full_prec=True, **settings) -> str:
     """Convert sympy expression to LaTeX with custom precision."""
     settings["full_prec"] = full_prec
     printer = PreciseLatexPrinter(settings=settings, prec=prec)
-    return printer.doprint(expr)
+    return str(printer.doprint(expr))
 
 
 def generate_table_environment(

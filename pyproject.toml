@@ -1,2 +1,38 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pysr"
+version = "0.18.4"
+authors = [
+    {name = "Miles Cranmer", email = "miles.cranmer@gmail.com"},
+]
+description = "Simple and efficient symbolic regression"
+readme = {file = "README.md", content-type = "text/markdown"}
+license = {file = "LICENSE"}
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: Apache Software License"
+]
+dynamic = ["dependencies"]
+
+[tool.setuptools]
+packages = ["pysr", "pysr._cli", "pysr.test"]
+include-package-data = false
+package-data = {pysr = ["juliapkg.json"]}
+
+[tool.setuptools.dynamic]
+dependencies = {file = "requirements.txt"}
+
 [tool.isort]
 profile = "black"
+
+[tool.rye]
+dev-dependencies = [
+    "pre-commit>=3.7.0",
+    "ipython>=8.23.0",
+    "ipykernel>=6.29.4",
+]
