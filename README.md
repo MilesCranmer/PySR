@@ -1,3 +1,13 @@
+---
+title: PySR
+emoji: 🌍
+colorFrom: green
+colorTo: indigo
+sdk: docker
+pinned: false
+license: apache-2.0
+---
+
 [//]: # (Logo:)
 
 <div align="center">
