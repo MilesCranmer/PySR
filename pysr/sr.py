@@ -702,7 +702,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     n_features_in_: int
     feature_names_in_: ArrayLike[str]
     display_feature_names_in_: ArrayLike[str]
-    complexity_of_variables_: Union[int, float, List[Union[int, float]]]
+    complexity_of_variables_: Union[int, float, List[Union[int, float]], None]
     X_units_: Union[ArrayLike[str], None]
     y_units_: Union[str, ArrayLike[str], None]
     nout_: int
