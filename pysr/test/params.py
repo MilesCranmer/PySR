@@ -1,6 +1,6 @@
 import inspect
 
-from .. import PySRRegressor
+from pysr import PySRRegressor
 
 DEFAULT_PARAMS = inspect.signature(PySRRegressor.__init__).parameters
 DEFAULT_NITERATIONS = DEFAULT_PARAMS["niterations"].default

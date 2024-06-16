@@ -1,8 +1,6 @@
 """Define the PySRRegressor scikit-learn interface."""
 
 import copy
-import difflib
-import inspect
 import os
 import pickle as pkl
 import re
@@ -57,6 +55,7 @@ from .utils import (
     _preprocess_julia_floats,
     _safe_check_feature_names_in,
     _subscriptify,
+    _suggest_keywords,
 )
 
 ALREADY_RAN = False
@@ -122,7 +121,7 @@ def _maybe_create_inline_operators(
                         "and underscores are allowed."
                     )
                 if (extra_sympy_mappings is None) or (
-                    not function_name in extra_sympy_mappings
+                    function_name not in extra_sympy_mappings
                 ):
                     raise ValueError(
                         f"Custom function {function_name} is not defined in `extra_sympy_mappings`. "
@@ -139,6 +138,7 @@ def _check_assertions(
     X,
     use_custom_variable_names,
     variable_names,
+    complexity_of_variables,
     weights,
     y,
     X_units,
@@ -163,6 +163,13 @@ def _check_assertions(
                     "and underscores are allowed."
                 )
             assert_valid_sympy_symbol(var_name)
+    if (
+        isinstance(complexity_of_variables, list)
+        and len(complexity_of_variables) != X.shape[1]
+    ):
+        raise ValueError(
+            "The number of elements in `complexity_of_variables` must equal the number of features in `X`."
+        )
     if X_units is not None and len(X_units) != X.shape[1]:
         raise ValueError(
             "The number of units in `X_units` must equal the number of features in `X`."
@@ -333,7 +340,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         `idx` argument to the function, which is `nothing`
         for non-batched, and a 1D array of indices for batched.
         Default is `None`.
-    complexity_of_operators : dict[str, float]
+    complexity_of_operators : dict[str, Union[int, float]]
         If you would like to use a complexity other than 1 for an
         operator, specify the complexity here. For example,
         `{"sin": 2, "+": 1}` would give a complexity of 2 for each use
@@ -342,10 +349,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         numbers for a complexity, and the total complexity of a tree
         will be rounded to the nearest integer after computing.
         Default is `None`.
-    complexity_of_constants : float
+    complexity_of_constants : int | float
         Complexity of constants. Default is `1`.
-    complexity_of_variables : float
-        Complexity of variables. Default is `1`.
+    complexity_of_variables : int | float
+        Global complexity of variables. To set different complexities for
+        different variables, pass a list of complexities to the `fit` method
+        with keyword `complexity_of_variables`. You cannot use both.
+        Default is `1`.
     parsimony : float
         Multiplicative factor for how much to punish complexity.
         Default is `0.0032`.
@@ -691,6 +701,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     n_features_in_: int
     feature_names_in_: ArrayLike[str]
     display_feature_names_in_: ArrayLike[str]
+    complexity_of_variables_: Union[int, float, List[Union[int, float]], None]
     X_units_: Union[ArrayLike[str], None]
     y_units_: Union[str, ArrayLike[str], None]
     nout_: int
@@ -722,7 +733,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         loss_function: Optional[str] = None,
         complexity_of_operators: Optional[Dict[str, Union[int, float]]] = None,
         complexity_of_constants: Union[int, float] = 1,
-        complexity_of_variables: Union[int, float] = 1,
+        complexity_of_variables: Optional[Union[int, float]] = None,
         parsimony: float = 0.0032,
         dimensional_constraint_penalty: Optional[float] = None,
         dimensionless_constants_only: bool = False,
@@ -1344,13 +1355,22 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         return param_container
 
     def _validate_and_set_fit_params(
-        self, X, y, Xresampled, weights, variable_names, X_units, y_units
+        self,
+        X,
+        y,
+        Xresampled,
+        weights,
+        variable_names,
+        complexity_of_variables,
+        X_units,
+        y_units,
     ) -> Tuple[
         ndarray,
         ndarray,
         Optional[ndarray],
         Optional[ndarray],
         ArrayLike[str],
+        Union[int, float, List[Union[int, float]]],
         Optional[ArrayLike[str]],
         Optional[Union[str, ArrayLike[str]]],
     ]:
@@ -1375,6 +1395,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             for that particular element of y.
         variable_names : ndarray of length n_features
             Names of each variable in the training dataset, `X`.
+        complexity_of_variables : int | float | list[int | float]
+            Complexity of each variable in the training dataset, `X`.
         X_units : list[str] of length n_features
             Units of each variable in the training dataset, `X`.
         y_units : str | list[str] of length n_out
@@ -1422,6 +1444,22 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 "Please use valid names instead."
             )
 
+        if (
+            complexity_of_variables is not None
+            and self.complexity_of_variables is not None
+        ):
+            raise ValueError(
+                "You cannot set `complexity_of_variables` at both `fit` and `__init__`. "
+                "Pass it at `__init__` to set it to global default, OR use `fit` to set it for "
+                "each variable individually."
+            )
+        elif complexity_of_variables is not None:
+            complexity_of_variables = complexity_of_variables
+        elif self.complexity_of_variables is not None:
+            complexity_of_variables = self.complexity_of_variables
+        else:
+            complexity_of_variables = 1
+
         # Data validation and feature name fetching via sklearn
         # This method sets the n_features_in_ attribute
         if Xresampled is not None:
@@ -1452,10 +1490,20 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         else:
             raise NotImplementedError("y shape not supported!")
 
+        self.complexity_of_variables_ = copy.deepcopy(complexity_of_variables)
         self.X_units_ = copy.deepcopy(X_units)
         self.y_units_ = copy.deepcopy(y_units)
 
-        return X, y, Xresampled, weights, variable_names, X_units, y_units
+        return (
+            X,
+            y,
+            Xresampled,
+            weights,
+            variable_names,
+            complexity_of_variables,
+            X_units,
+            y_units,
+        )
 
     def _validate_data_X_y(self, X, y) -> Tuple[ndarray, ndarray]:
         raw_out = self._validate_data(X=X, y=y, reset=True, multi_output=True)  # type: ignore
@@ -1471,6 +1519,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         y: ndarray,
         Xresampled: Union[ndarray, None],
         variable_names: ArrayLike[str],
+        complexity_of_variables: Union[int, float, List[Union[int, float]]],
         X_units: Union[ArrayLike[str], None],
         y_units: Union[ArrayLike[str], str, None],
         random_state: np.random.RandomState,
@@ -1493,6 +1542,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         variable_names : list[str]
             Names of each variable in the training dataset, `X`.
             Of length `n_features`.
+        complexity_of_variables : int | float | list[int | float]
+            Complexity of each variable in the training dataset, `X`.
         X_units : list[str]
             Units of each variable in the training dataset, `X`.
         y_units : str | list[str]
@@ -1543,6 +1594,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 ],
             )
 
+            if isinstance(complexity_of_variables, list):
+                complexity_of_variables = [
+                    complexity_of_variables[i]
+                    for i in range(len(complexity_of_variables))
+                    if selection_mask[i]
+                ]
+                self.complexity_of_variables_ = copy.deepcopy(complexity_of_variables)
+
             if X_units is not None:
                 X_units = cast(
                     ArrayLike[str],
@@ -1567,7 +1626,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             else:
                 X, y = denoise(X, y, Xresampled=Xresampled, random_state=random_state)
 
-        return X, y, variable_names, X_units, y_units
+        return X, y, variable_names, complexity_of_variables, X_units, y_units
 
     def _run(
         self,
@@ -1624,6 +1683,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         nested_constraints = self.nested_constraints
         complexity_of_operators = self.complexity_of_operators
+        complexity_of_variables = self.complexity_of_variables_
         cluster_manager = self.cluster_manager
 
         # Start julia backend processes
@@ -1667,6 +1727,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             complexity_of_operators_str += ")"
             complexity_of_operators = jl.seval(complexity_of_operators_str)
         # TODO: Refactor this into helper function
+
+        if isinstance(complexity_of_variables, list):
+            complexity_of_variables = jl_array(complexity_of_variables)
 
         custom_loss = jl.seval(
             str(self.elementwise_loss)
@@ -1726,7 +1789,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             una_constraints=jl_array(una_constraints),
             complexity_of_operators=complexity_of_operators,
             complexity_of_constants=self.complexity_of_constants,
-            complexity_of_variables=self.complexity_of_variables,
+            complexity_of_variables=complexity_of_variables,
             nested_constraints=nested_constraints,
             elementwise_loss=custom_loss,
             loss_function=custom_full_objective,
@@ -1871,6 +1934,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Xresampled=None,
         weights=None,
         variable_names: Optional[ArrayLike[str]] = None,
+        complexity_of_variables: Optional[
+            Union[int, float, List[Union[int, float]]]
+        ] = None,
         X_units: Optional[ArrayLike[str]] = None,
         y_units: Optional[Union[str, ArrayLike[str]]] = None,
     ) -> "PySRRegressor":
@@ -1931,6 +1997,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self.selection_mask_ = None
             self.julia_state_stream_ = None
             self.julia_options_stream_ = None
+            self.complexity_of_variables_ = None
             self.X_units_ = None
             self.y_units_ = None
 
@@ -1944,10 +2011,18 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Xresampled,
             weights,
             variable_names,
+            complexity_of_variables,
             X_units,
             y_units,
         ) = self._validate_and_set_fit_params(
-            X, y, Xresampled, weights, variable_names, X_units, y_units
+            X,
+            y,
+            Xresampled,
+            weights,
+            variable_names,
+            complexity_of_variables,
+            X_units,
+            y_units,
         )
 
         if X.shape[0] > 10000 and not self.batching:
@@ -1965,8 +2040,17 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         seed = cast(int, random_state.randint(0, 2**31 - 1))  # For julia random
 
         # Pre transformations (feature selection and denoising)
-        X, y, variable_names, X_units, y_units = self._pre_transform_training_data(
-            X, y, Xresampled, variable_names, X_units, y_units, random_state
+        X, y, variable_names, complexity_of_variables, X_units, y_units = (
+            self._pre_transform_training_data(
+                X,
+                y,
+                Xresampled,
+                variable_names,
+                complexity_of_variables,
+                X_units,
+                y_units,
+                random_state,
+            )
         )
 
         # Warn about large feature counts (still warn if feature count is large
@@ -1993,6 +2077,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             X,
             use_custom_variable_names,
             variable_names,
+            complexity_of_variables,
             weights,
             y,
             X_units,
@@ -2463,16 +2548,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             )
 
         return with_preamble(table_string)
-
-
-def _suggest_keywords(cls, k: str) -> List[str]:
-    valid_keywords = [
-        param
-        for param in inspect.signature(cls.__init__).parameters
-        if param not in ["self", "kwargs"]
-    ]
-    suggestions = difflib.get_close_matches(k, valid_keywords, n=3)
-    return suggestions
 
 
 def idx_model_selection(equations: pd.DataFrame, model_selection: str):

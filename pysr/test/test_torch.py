@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import sympy
 
-from .. import PySRRegressor, sympy2torch
+from pysr import PySRRegressor, sympy2torch
 
 
 class TestTorch(unittest.TestCase):

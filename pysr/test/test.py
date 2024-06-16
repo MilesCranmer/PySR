@@ -11,22 +11,28 @@ import pandas as pd
 import sympy
 from sklearn.utils.estimator_checks import check_estimator
 
-from .. import PySRRegressor, install, jl
-from ..export_latex import sympy2latex
-from ..feature_selection import _handle_feature_selection, run_feature_selection
-from ..julia_helpers import init_julia
-from ..sr import (
+from pysr import PySRRegressor, install, jl
+from pysr.export_latex import sympy2latex
+from pysr.feature_selection import _handle_feature_selection, run_feature_selection
+from pysr.julia_helpers import init_julia
+from pysr.sr import (
     _check_assertions,
     _process_constraints,
     _suggest_keywords,
     idx_model_selection,
 )
-from ..utils import _csv_filename_to_pkl_filename
+from pysr.utils import _csv_filename_to_pkl_filename
+
 from .params import (
     DEFAULT_NCYCLES,
     DEFAULT_NITERATIONS,
     DEFAULT_PARAMS,
     DEFAULT_POPULATIONS,
+)
+
+# Disables local saving:
+os.environ["SYMBOLIC_REGRESSION_IS_TESTING"] = os.environ.get(
+    "SYMBOLIC_REGRESSION_IS_TESTING", "true"
 )
 
 
@@ -176,6 +182,63 @@ class TestPipeline(unittest.TestCase):
         self.assertLessEqual(mse1, 1e-4)
         self.assertLessEqual(mse2, 1e-4)
 
+    def test_custom_variable_complexity(self):
+        for outer in (True, False):
+            for case in (1, 2):
+                y = self.X[:, [0, 1]]
+                if case == 1:
+                    kwargs = dict(complexity_of_variables=[2, 3])
+                elif case == 2:
+                    kwargs = dict(complexity_of_variables=2)
+
+                if outer:
+                    outer_kwargs = kwargs
+                    inner_kwargs = dict()
+                else:
+                    outer_kwargs = dict()
+                    inner_kwargs = kwargs
+
+                model = PySRRegressor(
+                    binary_operators=["+"],
+                    verbosity=0,
+                    **self.default_test_kwargs,
+                    early_stop_condition=(
+                        f"stop_if_{case}(l, c) = l < 1e-8 && c <= {3 if case == 1 else 2}"
+                    ),
+                    **outer_kwargs,
+                )
+                model.fit(self.X[:, [0, 1]], y, **inner_kwargs)
+                self.assertLessEqual(model.get_best()[0]["loss"], 1e-8)
+                self.assertLessEqual(model.get_best()[1]["loss"], 1e-8)
+
+                self.assertEqual(model.get_best()[0]["complexity"], 2)
+                self.assertEqual(
+                    model.get_best()[1]["complexity"], 3 if case == 1 else 2
+                )
+
+    def test_error_message_custom_variable_complexity(self):
+        X = np.ones((10, 2))
+        y = np.ones((10,))
+        model = PySRRegressor()
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, y, complexity_of_variables=[1, 2, 3])
+
+        self.assertIn(
+            "number of elements in `complexity_of_variables`", str(cm.exception)
+        )
+
+    def test_error_message_both_variable_complexity(self):
+        X = np.ones((10, 2))
+        y = np.ones((10,))
+        model = PySRRegressor(complexity_of_variables=[1, 2])
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, y, complexity_of_variables=[1, 2, 3])
+
+        self.assertIn(
+            "You cannot set `complexity_of_variables` at both `fit` and `__init__`.",
+            str(cm.exception),
+        )
+
     def test_multioutput_weighted_with_callable_temp_equation(self):
         X = self.X.copy()
         y = X[:, [0, 1]] ** 2
@@ -313,7 +376,10 @@ class TestPipeline(unittest.TestCase):
                 "unused_feature": self.rstate.randn(500),
             }
         )
-        true_fn = lambda x: np.array(x["T"] + x["x"] ** 2 + 1.323837)
+
+        def true_fn(x):
+            return np.array(x["T"] + x["x"] ** 2 + 1.323837)
+
         y = true_fn(X)
         noise = self.rstate.randn(500) * 0.01
         y = y + noise
@@ -372,13 +438,12 @@ class TestPipeline(unittest.TestCase):
 
     def test_load_model(self):
         """See if we can load a ran model from the equation file."""
-        csv_file_data = """
-        Complexity,Loss,Equation
+        csv_file_data = """Complexity,Loss,Equation
         1,0.19951081,"1.9762075"
         3,0.12717344,"(f0 + 1.4724599)"
         4,0.104823045,"pow_abs(2.2683423, cos(f3))\""""
         # Strip the indents:
-        csv_file_data = "\n".join([l.strip() for l in csv_file_data.split("\n")])
+        csv_file_data = "\n".join([line.strip() for line in csv_file_data.split("\n")])
 
         for from_backup in [False, True]:
             rand_dir = Path(tempfile.mkdtemp())
@@ -430,7 +495,7 @@ class TestPipeline(unittest.TestCase):
             if os.path.exists(file_to_delete):
                 os.remove(file_to_delete)
 
-        pickle_file = rand_dir / "equations.pkl"
+        # pickle_file = rand_dir / "equations.pkl"
         model3 = PySRRegressor.from_file(
             model.equation_file_, extra_sympy_mappings={"sq": lambda x: x**2}
         )
@@ -1081,8 +1146,14 @@ class TestDimensionalConstraints(unittest.TestCase):
         """This just checks the number of units passed"""
         use_custom_variable_names = False
         variable_names = None
+        complexity_of_variables = 1
         weights = None
-        args = (use_custom_variable_names, variable_names, weights)
+        args = (
+            use_custom_variable_names,
+            variable_names,
+            complexity_of_variables,
+            weights,
+        )
         valid_units = [
             (np.ones((10, 2)), np.ones(10), ["m/s", "s"], "m"),
             (np.ones((10, 1)), np.ones(10), ["m/s"], None),

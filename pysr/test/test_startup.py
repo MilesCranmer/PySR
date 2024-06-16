@@ -9,8 +9,9 @@ from pathlib import Path
 
 import numpy as np
 
-from .. import PySRRegressor
-from ..julia_import import jl_version
+from pysr import PySRRegressor
+from pysr.julia_import import jl_version
+
 from .params import DEFAULT_NITERATIONS, DEFAULT_POPULATIONS
 
 

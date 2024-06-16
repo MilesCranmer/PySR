@@ -1,3 +1,5 @@
+import difflib
+import inspect
 import os
 import re
 from pathlib import Path
@@ -61,3 +63,13 @@ def _subscriptify(i: int) -> str:
     For example, 123 -> "₁₂₃".
     """
     return "".join([chr(0x2080 + int(c)) for c in str(i)])
+
+
+def _suggest_keywords(cls, k: str) -> List[str]:
+    valid_keywords = [
+        param
+        for param in inspect.signature(cls.__init__).parameters
+        if param not in ["self", "kwargs"]
+    ]
+    suggestions = difflib.get_close_matches(k, valid_keywords, n=3)
+    return suggestions
