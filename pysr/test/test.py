@@ -199,6 +199,17 @@ class TestPipeline(unittest.TestCase):
             self.assertEqual(model.get_best()[0]["complexity"], 2)
             self.assertEqual(model.get_best()[1]["complexity"], 3 if case == 1 else 2)
 
+    def test_error_message_custom_variable_complexity(self):
+        X = np.ones((10, 2))
+        y = np.ones((10,))
+        model = PySRRegressor()
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, y, complexity_of_variables=[1, 2, 3])
+
+        self.assertIn(
+            "number of elements in `complexity_of_variables`", str(cm.exception)
+        )
+
     def test_multioutput_weighted_with_callable_temp_equation(self):
         X = self.X.copy()
         y = X[:, [0, 1]] ** 2
