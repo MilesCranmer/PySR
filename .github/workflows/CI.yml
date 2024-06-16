@@ -52,7 +52,7 @@ jobs:
         with:
           version: ${{ matrix.julia-version }}
       - name: "Cache Julia"
-        uses: julia-actions/cache@v1
+        uses: julia-actions/cache@v2
         with:
           cache-name: ${{ matrix.os }}-test-${{ matrix.julia-version }}-${{ matrix.python-version }}
           cache-packages: false
@@ -144,7 +144,7 @@ jobs:
           activate-environment: pysr-test
           environment-file: environment.yml
       - name: "Cache Julia"
-        uses: julia-actions/cache@v1
+        uses: julia-actions/cache@v2
         with:
           cache-name: ${{ matrix.os }}-conda-${{ matrix.python-version }}
           cache-packages: false

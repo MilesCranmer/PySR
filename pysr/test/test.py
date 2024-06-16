@@ -15,9 +15,8 @@ from pysr import PySRRegressor, install, jl
 from pysr.export_latex import sympy2latex
 from pysr.feature_selection import _handle_feature_selection, run_feature_selection
 from pysr.julia_helpers import init_julia
-from pysr.sr import _check_assertions, _process_constraints, idx_model_selection
+from pysr.sr import _check_assertions, _process_constraints, _suggest_keywords, idx_model_selection
 from pysr.utils import _csv_filename_to_pkl_filename
-
 from .params import (
     DEFAULT_NCYCLES,
     DEFAULT_NITERATIONS,
@@ -596,6 +595,105 @@ class TestMiscellaneous(unittest.TestCase):
         test_pkl_file = _csv_filename_to_pkl_filename(str(equation_file))
         self.assertEqual(test_pkl_file, str(expected_pkl_file))
 
+    def test_pickle_with_temp_equation_file(self):
+        """If we have a temporary equation file, unpickle the estimator."""
+        model = PySRRegressor(
+            populations=int(1 + DEFAULT_POPULATIONS / 5),
+            temp_equation_file=True,
+            procs=0,
+            multithreading=False,
+        )
+        nout = 3
+        X = np.random.randn(100, 2)
+        y = np.random.randn(100, nout)
+        model.fit(X, y)
+        contents = model.equation_file_contents_.copy()
+
+        y_predictions = model.predict(X)
+
+        equation_file_base = model.equation_file_
+        for i in range(1, nout + 1):
+            assert not os.path.exists(str(equation_file_base) + f".out{i}.bkup")
+
+        with tempfile.NamedTemporaryFile() as pickle_file:
+            pkl.dump(model, pickle_file)
+            pickle_file.seek(0)
+            model2 = pkl.load(pickle_file)
+
+        contents2 = model2.equation_file_contents_
+        cols_to_check = ["equation", "loss", "complexity"]
+        for frame1, frame2 in zip(contents, contents2):
+            pd.testing.assert_frame_equal(frame1[cols_to_check], frame2[cols_to_check])
+
+        y_predictions2 = model2.predict(X)
+        np.testing.assert_array_equal(y_predictions, y_predictions2)
+
+    def test_scikit_learn_compatibility(self):
+        """Test PySRRegressor compatibility with scikit-learn."""
+        model = PySRRegressor(
+            niterations=int(1 + DEFAULT_NITERATIONS / 10),
+            populations=int(1 + DEFAULT_POPULATIONS / 3),
+            ncycles_per_iteration=int(2 + DEFAULT_NCYCLES / 10),
+            verbosity=0,
+            progress=False,
+            random_state=0,
+            deterministic=True,  # Deterministic as tests require this.
+            procs=0,
+            multithreading=False,
+            warm_start=False,
+            temp_equation_file=True,
+        )  # Return early.
+
+        check_generator = check_estimator(model, generate_only=True)
+        exception_messages = []
+        for _, check in check_generator:
+            if check.func.__name__ == "check_complex_data":
+                # We can use complex data, so avoid this check.
+                continue
+            try:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    check(model)
+                print("Passed", check.func.__name__)
+            except Exception:
+                error_message = str(traceback.format_exc())
+                exception_messages.append(
+                    f"{check.func.__name__}:\n" + error_message + "\n"
+                )
+                print("Failed", check.func.__name__, "with:")
+                # Add a leading tab to error message, which
+                # might be multi-line:
+                print("\n".join([(" " * 4) + row for row in error_message.split("\n")]))
+        # If any checks failed don't let the test pass.
+        self.assertEqual(len(exception_messages), 0)
+
+    def test_param_groupings(self):
+        """Test that param_groupings are complete"""
+        param_groupings_file = Path(__file__).parent.parent / "param_groupings.yml"
+        if not param_groupings_file.exists():
+            return
+
+        # Read the file, discarding lines ending in ":",
+        # and removing leading "\s*-\s*":
+        params = []
+        with open(param_groupings_file, "r") as f:
+            for line in f.readlines():
+                if line.strip().endswith(":"):
+                    continue
+                if line.strip().startswith("-"):
+                    params.append(line.strip()[1:].strip())
+
+        regressor_params = [
+            p for p in DEFAULT_PARAMS.keys() if p not in ["self", "kwargs"]
+        ]
+
+        # Check the sets are equal:
+        self.assertSetEqual(set(params), set(regressor_params))
+
+
+class TestHelpMessages(unittest.TestCase):
+    """Test user help messages."""
+
     def test_deprecation(self):
         """Ensure that deprecation works as expected.
 
@@ -738,100 +836,28 @@ class TestMiscellaneous(unittest.TestCase):
                 model.get_best()
                 print("Failed", opt["kwargs"])
 
-    def test_pickle_with_temp_equation_file(self):
-        """If we have a temporary equation file, unpickle the estimator."""
-        model = PySRRegressor(
-            populations=int(1 + DEFAULT_POPULATIONS / 5),
-            temp_equation_file=True,
-            procs=0,
-            multithreading=False,
+    def test_suggest_keywords(self):
+        # Easy
+        self.assertEqual(
+            _suggest_keywords(PySRRegressor, "loss_function"), ["loss_function"]
         )
-        nout = 3
-        X = np.random.randn(100, 2)
-        y = np.random.randn(100, nout)
-        model.fit(X, y)
-        contents = model.equation_file_contents_.copy()
 
-        y_predictions = model.predict(X)
+        # More complex, and with error
+        with self.assertRaises(TypeError) as cm:
+            model = PySRRegressor(ncyclesperiterationn=5)
 
-        equation_file_base = model.equation_file_
-        for i in range(1, nout + 1):
-            assert not os.path.exists(str(equation_file_base) + f".out{i}.bkup")
+        self.assertIn(
+            "`ncyclesperiterationn` is not a valid keyword", str(cm.exception)
+        )
+        self.assertIn("Did you mean", str(cm.exception))
+        self.assertIn("`ncycles_per_iteration`, ", str(cm.exception))
+        self.assertIn("`niterations`", str(cm.exception))
 
-        with tempfile.NamedTemporaryFile() as pickle_file:
-            pkl.dump(model, pickle_file)
-            pickle_file.seek(0)
-            model2 = pkl.load(pickle_file)
+        # Farther matches (this might need to be changed)
+        with self.assertRaises(TypeError) as cm:
+            model = PySRRegressor(operators=["+", "-"])
 
-        contents2 = model2.equation_file_contents_
-        cols_to_check = ["equation", "loss", "complexity"]
-        for frame1, frame2 in zip(contents, contents2):
-            pd.testing.assert_frame_equal(frame1[cols_to_check], frame2[cols_to_check])
-
-        y_predictions2 = model2.predict(X)
-        np.testing.assert_array_equal(y_predictions, y_predictions2)
-
-    def test_scikit_learn_compatibility(self):
-        """Test PySRRegressor compatibility with scikit-learn."""
-        model = PySRRegressor(
-            niterations=int(1 + DEFAULT_NITERATIONS / 10),
-            populations=int(1 + DEFAULT_POPULATIONS / 3),
-            ncycles_per_iteration=int(2 + DEFAULT_NCYCLES / 10),
-            verbosity=0,
-            progress=False,
-            random_state=0,
-            deterministic=True,  # Deterministic as tests require this.
-            procs=0,
-            multithreading=False,
-            warm_start=False,
-            temp_equation_file=True,
-        )  # Return early.
-
-        check_generator = check_estimator(model, generate_only=True)
-        exception_messages = []
-        for _, check in check_generator:
-            if check.func.__name__ == "check_complex_data":
-                # We can use complex data, so avoid this check.
-                continue
-            try:
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore")
-                    check(model)
-                print("Passed", check.func.__name__)
-            except Exception:
-                error_message = str(traceback.format_exc())
-                exception_messages.append(
-                    f"{check.func.__name__}:\n" + error_message + "\n"
-                )
-                print("Failed", check.func.__name__, "with:")
-                # Add a leading tab to error message, which
-                # might be multi-line:
-                print("\n".join([(" " * 4) + row for row in error_message.split("\n")]))
-        # If any checks failed don't let the test pass.
-        self.assertEqual(len(exception_messages), 0)
-
-    def test_param_groupings(self):
-        """Test that param_groupings are complete"""
-        param_groupings_file = Path(__file__).parent.parent / "param_groupings.yml"
-        if not param_groupings_file.exists():
-            return
-
-        # Read the file, discarding lines ending in ":",
-        # and removing leading "\s*-\s*":
-        params = []
-        with open(param_groupings_file, "r") as f:
-            for line in f.readlines():
-                if line.strip().endswith(":"):
-                    continue
-                if line.strip().startswith("-"):
-                    params.append(line.strip()[1:].strip())
-
-        regressor_params = [
-            p for p in DEFAULT_PARAMS.keys() if p not in ["self", "kwargs"]
-        ]
-
-        # Check the sets are equal:
-        self.assertSetEqual(set(params), set(regressor_params))
+        self.assertIn("`unary_operators`, `binary_operators`", str(cm.exception))
 
 
 TRUE_PREAMBLE = "\n".join(
@@ -1187,6 +1213,7 @@ def runtests(just_tests=False):
         TestBest,
         TestFeatureSelection,
         TestMiscellaneous,
+        TestHelpMessages,
         TestLaTeXTable,
         TestDimensionalConstraints,
     ]
