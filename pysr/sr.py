@@ -1,6 +1,8 @@
 """Define the PySRRegressor scikit-learn interface."""
 
 import copy
+import difflib
+import inspect
 import os
 import pickle as pkl
 import re
@@ -900,15 +902,15 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     updated_kwarg_name = DEPRECATED_KWARGS[k]
                     setattr(self, updated_kwarg_name, v)
                     warnings.warn(
-                        f"{k} has been renamed to {updated_kwarg_name} in PySRRegressor. "
+                        f"`{k}` has been renamed to `{updated_kwarg_name}` in PySRRegressor. "
                         "Please use that instead.",
                         FutureWarning,
                     )
                 # Handle kwargs that have been moved to the fit method
                 elif k in ["weights", "variable_names", "Xresampled"]:
                     warnings.warn(
-                        f"{k} is a data dependant parameter so should be passed when fit is called. "
-                        f"Ignoring parameter; please pass {k} during the call to fit instead.",
+                        f"`{k}` is a data-dependent parameter and should be passed when fit is called. "
+                        f"Ignoring parameter; please pass `{k}` during the call to fit instead.",
                         FutureWarning,
                     )
                 elif k == "julia_project":
@@ -925,9 +927,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                         FutureWarning,
                     )
                 else:
-                    raise TypeError(
-                        f"{k} is not a valid keyword argument for PySRRegressor."
+                    suggested_keywords = _suggest_keywords(PySRRegressor, k)
+                    err_msg = (
+                        f"`{k}` is not a valid keyword argument for PySRRegressor."
                     )
+                    if len(suggested_keywords) > 0:
+                        err_msg += f" Did you mean {', '.join(map(lambda s: f'`{s}`', suggested_keywords))}?"
+                    raise TypeError(err_msg)
 
     @classmethod
     def from_file(
@@ -2457,6 +2463,16 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             )
 
         return with_preamble(table_string)
+
+
+def _suggest_keywords(cls, k: str) -> List[str]:
+    valid_keywords = [
+        param
+        for param in inspect.signature(cls.__init__).parameters
+        if param not in ["self", "kwargs"]
+    ]
+    suggestions = difflib.get_close_matches(k, valid_keywords, n=3)
+    return suggestions
 
 
 def idx_model_selection(equations: pd.DataFrame, model_selection: str):
