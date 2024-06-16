@@ -120,7 +120,7 @@ def _maybe_create_inline_operators(
                         "and underscores are allowed."
                     )
                 if (extra_sympy_mappings is None) or (
-                    not function_name in extra_sympy_mappings
+                    function_name not in extra_sympy_mappings
                 ):
                     raise ValueError(
                         f"Custom function {function_name} is not defined in `extra_sympy_mappings`. "

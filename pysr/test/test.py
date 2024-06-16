@@ -11,12 +11,13 @@ import pandas as pd
 import sympy
 from sklearn.utils.estimator_checks import check_estimator
 
-from .. import PySRRegressor, install, jl
-from ..export_latex import sympy2latex
-from ..feature_selection import _handle_feature_selection, run_feature_selection
-from ..julia_helpers import init_julia
-from ..sr import _check_assertions, _process_constraints, idx_model_selection
-from ..utils import _csv_filename_to_pkl_filename
+from pysr import PySRRegressor, install, jl
+from pysr.export_latex import sympy2latex
+from pysr.feature_selection import _handle_feature_selection, run_feature_selection
+from pysr.julia_helpers import init_julia
+from pysr.sr import _check_assertions, _process_constraints, idx_model_selection
+from pysr.utils import _csv_filename_to_pkl_filename
+
 from .params import (
     DEFAULT_NCYCLES,
     DEFAULT_NITERATIONS,
@@ -308,7 +309,10 @@ class TestPipeline(unittest.TestCase):
                 "unused_feature": self.rstate.randn(500),
             }
         )
-        true_fn = lambda x: np.array(x["T"] + x["x"] ** 2 + 1.323837)
+
+        def true_fn(x):
+            return np.array(x["T"] + x["x"] ** 2 + 1.323837)
+
         y = true_fn(X)
         noise = self.rstate.randn(500) * 0.01
         y = y + noise
@@ -373,7 +377,7 @@ class TestPipeline(unittest.TestCase):
         3,0.12717344,"(f0 + 1.4724599)"
         4,0.104823045,"pow_abs(2.2683423, cos(f3))\""""
         # Strip the indents:
-        csv_file_data = "\n".join([l.strip() for l in csv_file_data.split("\n")])
+        csv_file_data = "\n".join([line.strip() for line in csv_file_data.split("\n")])
 
         for from_backup in [False, True]:
             rand_dir = Path(tempfile.mkdtemp())
@@ -425,7 +429,7 @@ class TestPipeline(unittest.TestCase):
             if os.path.exists(file_to_delete):
                 os.remove(file_to_delete)
 
-        pickle_file = rand_dir / "equations.pkl"
+        # pickle_file = rand_dir / "equations.pkl"
         model3 = PySRRegressor.from_file(
             model.equation_file_, extra_sympy_mappings={"sq": lambda x: x**2}
         )

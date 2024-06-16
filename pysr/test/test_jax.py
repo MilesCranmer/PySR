@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import sympy
 
-from .. import PySRRegressor, sympy2jax
+from pysr import PySRRegressor, sympy2jax
 
 
 class TestJAX(unittest.TestCase):
@@ -89,7 +89,10 @@ class TestJAX(unittest.TestCase):
     def test_feature_selection_custom_operators(self):
         rstate = np.random.RandomState(0)
         X = pd.DataFrame({f"k{i}": rstate.randn(2000) for i in range(10, 21)})
-        cos_approx = lambda x: 1 - (x**2) / 2 + (x**4) / 24 + (x**6) / 720
+
+        def cos_approx(x):
+            return 1 - (x**2) / 2 + (x**4) / 24 + (x**6) / 720
+
         y = X["k15"] ** 2 + 2 * cos_approx(X["k20"])
 
         model = PySRRegressor(
