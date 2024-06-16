@@ -30,6 +30,11 @@ from .params import (
     DEFAULT_POPULATIONS,
 )
 
+# Disables local saving:
+os.environ["SYMBOLIC_REGRESSION_IS_TESTING"] = os.environ.get(
+    "SYMBOLIC_REGRESSION_IS_TESTING", "true"
+)
+
 
 class TestPipeline(unittest.TestCase):
     def setUp(self):
