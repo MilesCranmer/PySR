@@ -184,7 +184,7 @@ class TestPipeline(unittest.TestCase):
                 binary_operators=["*", "+"],
                 verbosity=0,
                 **self.default_test_kwargs,
-                early_stop_condition="stop_if(l, c) = l < 1e-4 && c <= 7",
+                early_stop_condition=f"stop_if(l, c) = l < 1e-8 && c <= {7 if case == 1 else 5}",
             )
             if case == 1:
                 complexity_of_variables = [2, 3] + [
