@@ -178,24 +178,27 @@ class TestPipeline(unittest.TestCase):
         self.assertLessEqual(mse2, 1e-4)
 
     def test_custom_variable_complexity(self):
-        y = self.X[:, [0, 1]] ** 2
-        model = PySRRegressor(
-            binary_operators=["*", "+"],
-            verbosity=0,
-            **self.default_test_kwargs,
-            early_stop_condition="stop_if(l, c) = l < 1e-4 && c <= 7",
-        )
-        model.fit(
-            self.X,
-            y,
-            complexity_of_variables=[2, 3] + [100 for _ in range(self.X.shape[1] - 2)],
-        )
-        equations = model.equations_
-        self.assertLessEqual(equations[0].iloc[-1]["loss"], 1e-4)
-        self.assertLessEqual(equations[1].iloc[-1]["loss"], 1e-4)
+        for case in (1, 2):
+            y = self.X[:, [0, 1]] ** 2
+            model = PySRRegressor(
+                binary_operators=["*", "+"],
+                verbosity=0,
+                **self.default_test_kwargs,
+                early_stop_condition="stop_if(l, c) = l < 1e-4 && c <= 7",
+            )
+            if case == 1:
+                complexity_of_variables = [2, 3] + [
+                    100 for _ in range(self.X.shape[1] - 2)
+                ]
+            elif case == 2:
+                complexity_of_variables = 2
+            model.fit(self.X, y, complexity_of_variables=complexity_of_variables)
+            equations = model.equations_
+            self.assertLessEqual(equations[0].iloc[-1]["loss"], 1e-4)
+            self.assertLessEqual(equations[1].iloc[-1]["loss"], 1e-4)
 
-        self.assertEqual(model.get_best()[0]["complexity"], 5)
-        self.assertEqual(model.get_best()[1]["complexity"], 7)
+            self.assertEqual(model.get_best()[0]["complexity"], 5)
+            self.assertEqual(model.get_best()[1]["complexity"], 7 if case == 1 else 5)
 
     def test_multioutput_weighted_with_callable_temp_equation(self):
         X = self.X.copy()
