@@ -183,26 +183,38 @@ class TestPipeline(unittest.TestCase):
         self.assertLessEqual(mse2, 1e-4)
 
     def test_custom_variable_complexity(self):
-        for case in (1, 2):
-            y = self.X[:, [0, 1]]
-            model = PySRRegressor(
-                binary_operators=["+"],
-                verbosity=0,
-                **self.default_test_kwargs,
-                early_stop_condition=f"stop_if_{case}(l, c) = l < 1e-8 && c <= {3 if case == 1 else 2}",
-            )
-            if case == 1:
-                complexity_of_variables = [2, 3]
-            elif case == 2:
-                complexity_of_variables = 2
-            model.fit(
-                self.X[:, [0, 1]], y, complexity_of_variables=complexity_of_variables
-            )
-            self.assertLessEqual(model.get_best()[0]["loss"], 1e-8)
-            self.assertLessEqual(model.get_best()[1]["loss"], 1e-8)
+        for outer in (True, False):
+            for case in (1, 2):
+                y = self.X[:, [0, 1]]
+                if case == 1:
+                    kwargs = dict(complexity_of_variables=[2, 3])
+                elif case == 2:
+                    kwargs = dict(complexity_of_variables=2)
 
-            self.assertEqual(model.get_best()[0]["complexity"], 2)
-            self.assertEqual(model.get_best()[1]["complexity"], 3 if case == 1 else 2)
+                if outer:
+                    outer_kwargs = kwargs
+                    inner_kwargs = dict()
+                else:
+                    outer_kwargs = dict()
+                    inner_kwargs = kwargs
+
+                model = PySRRegressor(
+                    binary_operators=["+"],
+                    verbosity=0,
+                    **self.default_test_kwargs,
+                    early_stop_condition=(
+                        f"stop_if_{case}(l, c) = l < 1e-8 && c <= {3 if case == 1 else 2}"
+                    ),
+                    **outer_kwargs,
+                )
+                model.fit(self.X[:, [0, 1]], y, **inner_kwargs)
+                self.assertLessEqual(model.get_best()[0]["loss"], 1e-8)
+                self.assertLessEqual(model.get_best()[1]["loss"], 1e-8)
+
+                self.assertEqual(model.get_best()[0]["complexity"], 2)
+                self.assertEqual(
+                    model.get_best()[1]["complexity"], 3 if case == 1 else 2
+                )
 
     def test_error_message_custom_variable_complexity(self):
         X = np.ones((10, 2))
@@ -213,6 +225,18 @@ class TestPipeline(unittest.TestCase):
 
         self.assertIn(
             "number of elements in `complexity_of_variables`", str(cm.exception)
+        )
+
+    def test_error_message_both_variable_complexity(self):
+        X = np.ones((10, 2))
+        y = np.ones((10,))
+        model = PySRRegressor(complexity_of_variables=[1, 2])
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, y, complexity_of_variables=[1, 2, 3])
+
+        self.assertIn(
+            "You cannot set `complexity_of_variables` at both `fit` and `__init__`.",
+            str(cm.exception),
         )
 
     def test_multioutput_weighted_with_callable_temp_equation(self):
