@@ -1,8 +1,6 @@
 """Define the PySRRegressor scikit-learn interface."""
 
 import copy
-import difflib
-import inspect
 import os
 import pickle as pkl
 import re
@@ -57,6 +55,7 @@ from .utils import (
     _preprocess_julia_floats,
     _safe_check_feature_names_in,
     _subscriptify,
+    _suggest_keywords,
 )
 
 ALREADY_RAN = False
@@ -2549,16 +2548,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             )
 
         return with_preamble(table_string)
-
-
-def _suggest_keywords(cls, k: str) -> List[str]:
-    valid_keywords = [
-        param
-        for param in inspect.signature(cls.__init__).parameters
-        if param not in ["self", "kwargs"]
-    ]
-    suggestions = difflib.get_close_matches(k, valid_keywords, n=3)
-    return suggestions
 
 
 def idx_model_selection(equations: pd.DataFrame, model_selection: str):
