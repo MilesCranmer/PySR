@@ -15,8 +15,14 @@ from pysr import PySRRegressor, install, jl
 from pysr.export_latex import sympy2latex
 from pysr.feature_selection import _handle_feature_selection, run_feature_selection
 from pysr.julia_helpers import init_julia
-from pysr.sr import _check_assertions, _process_constraints, _suggest_keywords, idx_model_selection
+from pysr.sr import (
+    _check_assertions,
+    _process_constraints,
+    _suggest_keywords,
+    idx_model_selection,
+)
 from pysr.utils import _csv_filename_to_pkl_filename
+
 from .params import (
     DEFAULT_NCYCLES,
     DEFAULT_NITERATIONS,
