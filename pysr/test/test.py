@@ -431,6 +431,16 @@ class TestPipeline(unittest.TestCase):
         )
         np.testing.assert_allclose(model.predict(self.X), model3.predict(self.X))
 
+    def test_jl_function_error(self):
+        # TODO: Move this to better class
+        with self.assertRaises(ValueError) as cm:
+            PySRRegressor(unary_operators=["1"]).fit([[1]], [1])
+
+        self.assertIn(
+            "When building `unary_operators`, `'1'` did not return a Julia function",
+            str(cm.exception),
+        )
+
 
 def manually_create_model(equations, feature_names=None):
     if feature_names is None:
@@ -526,7 +536,7 @@ class TestFeatureSelection(unittest.TestCase):
         X = self.rstate.randn(20000, 5)
         y = X[:, 2] ** 2 + X[:, 3] ** 2
         selected = run_feature_selection(X, y, select_k_features=2)
-        self.assertEqual(sorted(selected), [2, 3])
+        np.testing.assert_array_equal(selected, [False, False, True, True, False])
 
     def test_feature_selection_handler(self):
         X = self.rstate.randn(20000, 5)
@@ -538,8 +548,8 @@ class TestFeatureSelection(unittest.TestCase):
             variable_names=var_names,
             y=y,
         )
-        self.assertTrue((2 in selection) and (3 in selection))
-        selected_var_names = [var_names[i] for i in selection]
+        np.testing.assert_array_equal(selection, [False, False, True, True, False])
+        selected_var_names = [var_names[i] for i in range(5) if selection[i]]
         self.assertEqual(set(selected_var_names), set("x2 x3".split(" ")))
         np.testing.assert_array_equal(
             np.sort(selected_X, axis=1), np.sort(X[:, [2, 3]], axis=1)

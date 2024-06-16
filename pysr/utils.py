@@ -1,10 +1,18 @@
 import os
 import re
+from pathlib import Path
+from typing import Any, List, TypeVar, Union
 
-from sklearn.utils.validation import _check_feature_names_in
+from numpy import ndarray
+from sklearn.utils.validation import _check_feature_names_in  # type: ignore
+
+T = TypeVar("T", bound=Any)
+
+ArrayLike = Union[ndarray, List[T]]
+PathLike = Union[str, Path]
 
 
-def _csv_filename_to_pkl_filename(csv_filename: str) -> str:
+def _csv_filename_to_pkl_filename(csv_filename: PathLike) -> PathLike:
     if os.path.splitext(csv_filename)[1] == ".pkl":
         return csv_filename
 

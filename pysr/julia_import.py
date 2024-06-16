@@ -1,6 +1,8 @@
 import os
 import sys
 import warnings
+from types import ModuleType
+from typing import cast
 
 # Check if JuliaCall is already loaded, and if so, warn the user
 # about the relevant environment variables. If not loaded,
@@ -41,6 +43,9 @@ if autoload_extensions is not None:
     os.environ["PYTHON_JULIACALL_AUTOLOAD_IPYTHON_EXTENSION"] = autoload_extensions
 
 from juliacall import Main as jl  # type: ignore
+
+jl = cast(ModuleType, jl)
+
 
 jl_version = (jl.VERSION.major, jl.VERSION.minor, jl.VERSION.patch)
 
