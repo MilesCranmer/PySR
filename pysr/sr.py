@@ -1394,13 +1394,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Each element is how to weight the mean-square-error loss
             for that particular element of y.
         variable_names : ndarray of length n_features
-            Names of each variable in the training dataset, `X`.
+            Names of each feature in the training dataset, `X`.
         complexity_of_variables : int | float | list[int | float]
-            Complexity of each variable in the training dataset, `X`.
+            Complexity of each feature in the training dataset, `X`.
         X_units : list[str] of length n_features
-            Units of each variable in the training dataset, `X`.
+            Units of each feature in the training dataset, `X`.
         y_units : str | list[str] of length n_out
-            Units of each variable in the training dataset, `y`.
+            Units of each feature in the training dataset, `y`.
 
         Returns
         -------
