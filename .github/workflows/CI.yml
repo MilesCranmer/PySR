@@ -90,7 +90,7 @@ jobs:
       - name: "Coveralls"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COVERALLS_FLAG_NAME: test-${{ matrix.julia-version }}-${{ matrix.python-version }}
+          COVERALLS_FLAG_NAME: test-${{ matrix.julia-version }}-${{ matrix.python-version }}-${{ matrix.test-id }}
           COVERALLS_PARALLEL: true
         run: coveralls --service=github
 
