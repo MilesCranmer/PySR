@@ -391,8 +391,7 @@ class TestPipeline(unittest.TestCase):
 
     def test_load_model(self):
         """See if we can load a ran model from the equation file."""
-        csv_file_data = """
-        Complexity,Loss,Equation
+        csv_file_data = """Complexity,Loss,Equation
         1,0.19951081,"1.9762075"
         3,0.12717344,"(f0 + 1.4724599)"
         4,0.104823045,"pow_abs(2.2683423, cos(f3))\""""
