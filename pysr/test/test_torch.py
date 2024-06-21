@@ -173,6 +173,17 @@ class TestTorch(unittest.TestCase):
             decimal=3,
         )
 
+    def test_issue_656(self):
+        # Should correctly map numeric symbols to floats
+        E_plus_x1 = sympy.exp(1) + sympy.symbols("x1")
+        m = pysr.export_torch.sympy2torch(E_plus_x1, ["x1"])
+        X = np.random.randn(10, 1)
+        np.testing.assert_almost_equal(
+            m(self.torch.tensor(X)).detach().numpy(),
+            np.exp(1) + X[:, 0],
+            decimal=3,
+        )
+
     def test_feature_selection_custom_operators(self):
         rstate = np.random.RandomState(0)
         X = pd.DataFrame({f"k{i}": rstate.randn(2000) for i in range(10, 21)})
