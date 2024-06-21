@@ -5,27 +5,29 @@ import numpy as np
 import pandas as pd
 import sympy
 
+import pysr
 from pysr import PySRRegressor, sympy2jax
 
 
 class TestJAX(unittest.TestCase):
     def setUp(self):
         np.random.seed(0)
+        from jax import numpy as jnp
+
+        self.jnp = jnp
 
     def test_sympy2jax(self):
-        from jax import numpy as jnp
         from jax import random
 
         x, y, z = sympy.symbols("x y z")
         cosx = 1.0 * sympy.cos(x) + y
         key = random.PRNGKey(0)
         X = random.normal(key, (1000, 2))
-        true = 1.0 * jnp.cos(X[:, 0]) + X[:, 1]
+        true = 1.0 * self.jnp.cos(X[:, 0]) + X[:, 1]
         f, params = sympy2jax(cosx, [x, y, z])
-        self.assertTrue(jnp.all(jnp.isclose(f(X, params), true)).item())
+        self.assertTrue(self.jnp.all(self.jnp.isclose(f(X, params), true)).item())
 
     def test_pipeline_pandas(self):
-        from jax import numpy as jnp
 
         X = pd.DataFrame(np.random.randn(100, 10))
         y = np.ones(X.shape[0])
@@ -52,14 +54,12 @@ class TestJAX(unittest.TestCase):
         jformat = model.jax()
 
         np.testing.assert_almost_equal(
-            np.array(jformat["callable"](jnp.array(X), jformat["parameters"])),
+            np.array(jformat["callable"](self.jnp.array(X), jformat["parameters"])),
             np.square(np.cos(X.values[:, 1])),  # Select feature 1
             decimal=3,
         )
 
     def test_pipeline(self):
-        from jax import numpy as jnp
-
         X = np.random.randn(100, 10)
         y = np.ones(X.shape[0])
         model = PySRRegressor(progress=False, max_evals=10000, output_jax_format=True)
@@ -81,8 +81,36 @@ class TestJAX(unittest.TestCase):
         jformat = model.jax()
 
         np.testing.assert_almost_equal(
-            np.array(jformat["callable"](jnp.array(X), jformat["parameters"])),
+            np.array(jformat["callable"](self.jnp.array(X), jformat["parameters"])),
             np.square(np.cos(X[:, 1])),  # Select feature 1
+            decimal=3,
+        )
+
+    def test_avoid_simplification(self):
+        ex = pysr.export_sympy.pysr2sympy(
+            "square(exp(sign(0.44796443))) + 1.5 * x1",
+            feature_names_in=["x1"],
+            extra_sympy_mappings={"square": lambda x: x**2},
+        )
+        f, params = pysr.export_jax.sympy2jax(ex, [sympy.symbols("x1")])
+        key = np.random.RandomState(0)
+        X = key.randn(10, 1)
+        np.testing.assert_almost_equal(
+            np.array(f(self.jnp.array(X), params)),
+            np.square(np.exp(np.sign(0.44796443))) + 1.5 * X[:, 0],
+            decimal=3,
+        )
+
+    def test_issue_656(self):
+        import sympy
+
+        E_plus_x1 = sympy.exp(1) + sympy.symbols("x1")
+        f, params = pysr.export_jax.sympy2jax(E_plus_x1, [sympy.symbols("x1")])
+        key = np.random.RandomState(0)
+        X = key.randn(10, 1)
+        np.testing.assert_almost_equal(
+            np.array(f(self.jnp.array(X), params)),
+            np.exp(1) + X[:, 0],
             decimal=3,
         )
 
