@@ -87,7 +87,7 @@ def pysr2sympy(
         **sympy_mappings,
     }
 
-    return sympify(equation, locals=local_sympy_mappings)
+    return sympify(equation, locals=local_sympy_mappings, evaluate=False)
 
 
 def assert_valid_sympy_symbol(var_name: str) -> None:
