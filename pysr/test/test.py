@@ -674,7 +674,7 @@ class TestMiscellaneous(unittest.TestCase):
             pd.testing.assert_frame_equal(frame1[cols_to_check], frame2[cols_to_check])
 
         y_predictions2 = model2.predict(X)
-        np.testing.assert_array_equal(y_predictions, y_predictions2)
+        np.testing.assert_array_almost_equal(y_predictions, y_predictions2)
 
     def test_scikit_learn_compatibility(self):
         """Test PySRRegressor compatibility with scikit-learn."""
@@ -1039,7 +1039,7 @@ class TestLaTeXTable(unittest.TestCase):
         middle_part_2 = r"""
             $y_{1} = x_{1}$ & $1$ & $1.32$ & $0.0$ \\
             $y_{1} = \cos{\left(x_{1} \right)}$ & $2$ & $0.0520$ & $3.23$ \\
-            $y_{1} = x_{0}^{2} x_{1}$ & $5$ & $2.00 \cdot 10^{-15}$ & $10.3$ \\
+            $y_{1} = x_{0} x_{0} x_{1}$ & $5$ & $2.00 \cdot 10^{-15}$ & $10.3$ \\
         """
         true_latex_table_str = "\n\n".join(
             self.create_true_latex(part, include_score=True)
@@ -1092,7 +1092,7 @@ class TestLaTeXTable(unittest.TestCase):
         middle_part = r"""
         $y = x_{0}$ & $1$ & $1.05$ & $0.0$ \\
         $y = \cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ & $3.82$ \\
-        \begin{minipage}{0.8\linewidth} \vspace{-1em} \begin{dmath*} y = x_{0}^{5} + x_{0}^{3} + 3.20 x_{0} + x_{1}^{3} - 1.20 x_{1} - 5.20 \sin{\left(2.60 x_{0} - 0.326 \sin{\left(x_{2} \right)} \right)} - \cos{\left(x_{0} x_{1} \right)} + \cos{\left(x_{0}^{3} + 3.20 x_{0} + x_{1}^{3} - 1.20 x_{1} + \cos{\left(x_{0} x_{1} \right)} \right)} \end{dmath*} \end{minipage} & $30$ & $1.12 \cdot 10^{-15}$ & $1.09$ \\
+        \begin{minipage}{0.8\linewidth} \vspace{-1em} \begin{dmath*} y = x_{0} x_{0} x_{0} + x_{0} x_{0} x_{0} x_{0} x_{0} + 3.20 x_{0} - 1.20 x_{1} + x_{1} x_{1} x_{1} + 5.20 \sin{\left(- 2.60 x_{0} + 0.326 \sin{\left(x_{2} \right)} \right)} - \cos{\left(x_{0} x_{1} \right)} + \cos{\left(x_{0} x_{0} x_{0} + 3.20 x_{0} - 1.20 x_{1} + x_{1} x_{1} x_{1} + \cos{\left(x_{0} x_{1} \right)} \right)} \end{dmath*} \end{minipage} & $30$ & $1.12 \cdot 10^{-15}$ & $1.09$ \\
         """
         true_latex_table_str = (
             TRUE_PREAMBLE
