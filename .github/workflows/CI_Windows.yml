@@ -3,22 +3,16 @@ name: Windows
 on:
   push:
     branches:
-      - '**'
+      - 'master'
     paths:
-      - 'test/**'
-      - 'pysr/**'
-      - '.github/workflows/CI_Windows.yml'
-      - 'setup.py'
+      - '**'
     tags:
       - 'v*.*.*'
   pull_request:
     branches:
-      - '*'
+      - 'master'
     paths:
-      - 'test/**'
-      - 'pysr/**'
-      - '.github/workflows/CI_Windows.yml'
-      - 'setup.py'
+      - '**'
 
 jobs:
   test:

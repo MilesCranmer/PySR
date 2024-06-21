@@ -5,20 +5,14 @@ on:
     branches:
       - '**'
     paths:
-      - 'test/**'
-      - 'pysr/**'
-      - '.github/workflows/CI.yml'
-      - 'setup.py'
+      - '**'
     tags:
       - 'v*.*.*'
   pull_request:
     branches:
-      - '*'
+      - 'master'
     paths:
-      - 'test/**'
-      - 'pysr/**'
-      - '.github/workflows/CI.yml'
-      - 'setup.py'
+      - '**'
 
 jobs:
   test:
