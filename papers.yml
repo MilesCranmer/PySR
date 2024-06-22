@@ -1,0 +1,247 @@
+# This file stores papers which have used PySR, with
+# information to generate the "Research Showcase"
+
+papers:
+  - title: Discovery of a Planar Black Hole Mass Scaling Relation for Spiral Galaxies
+    authors:
+      - Benjamin L. Davis (1)
+      - Zehao Jin (1)
+    affiliations:
+       1: Center for Astrophysics and Space Science, New York University Abu Dhabi
+    link: https://arxiv.org/abs/2309.08986
+    abstract: Supermassive black holes (SMBHs) are tiny in comparison to the galaxies they inhabit, yet they manage to influence and coevolve along with their hosts. Evidence of this mutual development is observed in the structure and dynamics of galaxies and their correlations with black hole mass ($M_\bullet$). For our study, we focus on relative parameters that are unique to only disk galaxies. As such, we quantify the structure of spiral galaxies via their logarithmic spiral-arm pitch angles ($\phi$) and their dynamics through the maximum rotational velocities of their galactic disks ($v_\mathrm{max}$). In the past, we have studied black hole mass scaling relations between $M_\bullet$ and $\phi$ or $v_\mathrm{max}$, separately. Now, we combine the three parameters into a trivariate $M_\bullet$--$\phi$--$v_\mathrm{max}$ relationship that yields best-in-class accuracy in prediction of black hole masses in spiral galaxies. Because most black hole mass scaling relations have been created from samples of the largest SMBHs within the most massive galaxies, they lack certainty when extrapolated to low-mass spiral galaxies. Thus, it is difficult to confidently use existing scaling relations when trying to identify galaxies that might harbor the elusive class of intermediate-mass black holes (IMBHs). Therefore, we offer our novel relationship as an ideal predictor to search for IMBHs and probe the low-mass end of the black hole mass function by utilizing spiral galaxies. Already with rotational velocities widely available for a large population of galaxies and pitch angles readily measurable from uncalibrated images, we expect that the $M_\bullet$--$\phi$--$v_\mathrm{max}$ fundamental plane will be a useful tool for estimating black hole masses, even at high redshifts.
+    image: Planar_relation.png
+    date: 2023-10-03
+  - title: Interpretable machine learning methods applied to jet background subtraction in heavy-ion collisions
+    authors:
+      - Tanner Mengel (1)
+      - Patrick Steffanic (1)
+      - Charles Hughes (1,2)
+      - Antonio Carlos Oliveira da Silva (1,2)
+      - Christine Nattrass (1)
+    affiliations:
+      1: University of Tennessee, Knoxville
+      2: Iowa State University of Science and Technology
+    link: https://journals.aps.org/prc/abstract/10.1103/PhysRevC.108.L021901
+    abstract: "Jet measurements in heavy ion collisions can provide constraints on the properties of the quark gluon plasma, but the kinematic reach is limited by a large, fluctuating background. We present a novel application of symbolic regression to extract a functional representation of a deep neural network trained to subtract background from jets in heavy ion collisions. We show that the deep neural network is approximately the same as a method using the particle multiplicity in a jet. This demonstrates that interpretable machine learning methods can provide insight into underlying physical processes."
+    image: jet_background_diagram.jpg
+    date: 2023-08-22
+  - title: Data-Driven Equation Discovery of a Cloud Cover Parameterization
+    authors:
+      - Arthur Grundner (1,2)
+      - Tom Beucler (3)
+      - Pierre Gentine (2,3)
+      - Veronika Eyring (1,4)
+    affiliations:
+      1: Institut für Physik der Atmosphäre, Deutsches Zentrum für Luft- und Raumfahrt
+      2: Center for Learning the Earth with Artificial Intelligence And Physics, Columbia University
+      3: Institute of Earth Surface Dynamics, University of Lausanne
+      4: Institute of Environmental Physics, University of Bremen
+    link: https://arxiv.org/abs/2304.08063
+    abstract: "A promising method for improving the representation of clouds in climate models, and hence climate projections, is to develop machine learning-based parameterizations using output from global storm-resolving models. While neural networks can achieve state-of-the-art performance, they are typically climate model-specific, require post-hoc tools for interpretation, and struggle to predict outside of their training distribution. To avoid these limitations, we combine symbolic regression, sequential feature selection, and physical constraints in a hierarchical modeling framework. This framework allows us to discover new equations diagnosing cloud cover from coarse-grained variables of global storm-resolving model simulations. These analytical equations are interpretable by construction and easily transferable to other grids or climate models. Our best equation balances performance and complexity, achieving a performance comparable to that of neural networks ($R^2=0.94$) while remaining simple (with only 13 trainable parameters). It reproduces cloud cover distributions more accurately than the Xu-Randall scheme across all cloud regimes (Hellinger distances $<0.09$), and matches neural networks in condensate-rich regimes. When applied and fine-tuned to the ERA5 reanalysis, the equation exhibits superior transferability to new data compared to all other optimal cloud cover schemes. Our findings demonstrate the effectiveness of symbolic regression in discovering interpretable, physically-consistent, and nonlinear equations to parameterize cloud cover."
+    image: cloud_cover.jpg
+    date: 2023-04-17
+  - title: Modeling assembly bias with machine learning and symbolic regression
+    authors:
+      - Digvijay Wadekar (1)
+      - Francisco Villaescusa-Navarro (2,3)
+      - Shirley Ho (2,3,4)
+      - Laurence Perreault-Levasseur (3,5,6)
+    affiliations:
+      1: New York University
+      2: Princeton University
+      3: Flatiron Institute
+      4: Carnegie Mellon University
+      5: Université de Montréal
+      6: Mila
+    link: https://arxiv.org/abs/2012.00111
+    abstract: "Upcoming 21cm surveys will map the spatial distribution of cosmic neutral hydrogen (HI) over unprecedented volumes. Mock catalogues are needed to fully exploit the potential of these surveys. Standard techniques employed to create these mock catalogs, like Halo Occupation Distribution (HOD), rely on assumptions such as the baryonic properties of dark matter halos only depend on their masses. In this work, we use the state-of-the-art magneto-hydrodynamic simulation IllustrisTNG to show that the HI content of halos exhibits a strong dependence on their local environment. We then use machine learning techniques to show that this effect can be 1) modeled by these algorithms and 2) parametrized in the form of novel analytic equations. We provide physical explanations for this environmental effect and show that ignoring it leads to underprediction of the real-space 21-cm power spectrum at k≳0.05 h/Mpc by ≳10%, which is larger than the expected precision from upcoming surveys on such large scales. Our methodology of combining numerical simulations with machine learning techniques is general, and opens a new direction at modeling and parametrizing the complex physics of assembly bias needed to generate accurate mocks for galaxy and line intensity mapping surveys."
+    image: hi_mass.png
+    date: 2020-11-30
+  - title: Machine Learning the Gravity Equation for International Trade
+    authors:
+      - Sergiy Verstyuk (1)
+      - Michael R. Douglas (1)
+    affiliations:
+      1: Harvard University
+    link: https://papers.ssrn.com/abstract=4053795
+    abstract: Machine learning (ML) is becoming more and more important throughout the mathematical and theoretical sciences. In this work we apply modern ML methods to gravity models of pairwise interactions in international economics. We explain the formulation of graphical neural networks (GNNs), models for graph-structured data that respect the properties of exchangeability and locality. GNNs are a natural and theoretically appealing class of models for international trade, which we demonstrate empirically by fitting them to a large panel of annual-frequency country-level data. We then use a symbolic regression algorithm to turn our fits into interpretable models with performance comparable to state of the art hand-crafted models motivated by economic theory. The resulting symbolic models contain objects resembling market access functions, which were developed in modern structural literature, but in our analysis arise ab initio without being explicitly postulated. Along the way, we also produce several model-consistent and model-agnostic ML-based measures of bilateral trade accessibility.
+    image: economic_theory_gravity.png
+    date: 2022-03-15
+  - title: Back to the Formula -- LHC Edition
+    authors:
+      - Anja Butter (1)
+      - Tilman Plehn (1)
+      - Nathalie Soybelman (1)
+      - Johann Brehmer (2)
+    affiliations:
+      1: Institut fur Theoretische Physik, Universitat Heidelberg
+      2: Center for Data Science, New York University
+    link: https://arxiv.org/abs/2109.10414
+    abstract: While neural networks offer an attractive way to numerically encode functions, actual formulas remain the language of theoretical particle physics. We show how symbolic regression trained on matrix-element information provides, for instance, optimal LHC observables in an easily interpretable form. We introduce the method using the effect of a dimension-6 coefficient on associated ZH production. We then validate it for the known case of CP-violation in weak-boson-fusion Higgs production, including detector effects.
+    image: back_to_formula.png
+    date: 2021-09-21
+  - title: Disentangling a deep learned volume formula
+    authors:
+      - Jessica Craven (1)
+      - Vishnu Jejjala (1)
+      - Arjun Kar (2)
+    affiliations:
+      1: University of the Witwatersrand
+      2: University of British Columbia
+    link: https://link.springer.com/article/10.1007/JHEP06(2021)040
+    abstract: We present a simple phenomenological formula which approximates the hyperbolic volume of a knot using only a single evaluation of its Jones polynomial at a root of unity. The average error is just 2.86% on the first 1.7 million knots, which represents a large improvement over previous formulas of this kind. To find the approximation formula, we use layer-wise relevance propagation to reverse engineer a black box neural network which achieves a similar average error for the same approximation task when trained on 10% of the total dataset. The particular roots of unity which appear in our analysis cannot be written as e2πi/(k+2) with integer k; therefore, the relevant Jones polynomial evaluations are not given by unknot-normalized expectation values of Wilson loop operators in conventional SU(2) Chern-Simons theory with level k. Instead, they correspond to an analytic continuation of such expectation values to fractional level. We briefly review the continuation procedure and comment on the presence of certain Lefschetz thimbles, to which our approximation formula is sensitive, in the analytically continued Chern-Simons integration cycle.
+    image: hyperbolic_volume.png
+    date: 2021-06-07
+  - title: Modeling the galaxy-halo connection with machine learning
+    authors:
+      - Ana Maria Delgado (1)
+      - Digvijay Wadekar (2,3)
+      - Boryana Hadzhiyska (1)
+      - Sownak Bose (1,7)
+      - Lars Hernquist (1)
+      - Shirley Ho (2,4,5,6)
+    affiliations:
+      1: "Center for Astrophysics | Harvard & Smithsonian"
+      2: New York University
+      3: Institute for Advanced Study
+      4: Flatiron Institute
+      5: Princeton University
+      6: Carnegie Mellon University
+      7: Durham University
+    link: https://arxiv.org/abs/2111.02422v1
+    abstract: To extract information from the clustering of galaxies on non-linear scales, we need to model the connection between galaxies and halos accurately and in a flexible manner. Standard halo occupation distribution (HOD) models make the assumption that the galaxy occupation in a halo is a function of only its mass, however, in reality, the occupation can depend on various other parameters including halo concentration, assembly history, environment, spin, etc. Using the IllustrisTNG hydrodynamic simulation as our target, we show that machine learning tools can be used to capture this high-dimensional dependence and provide more accurate galaxy occupation models. Specifically, we use a random forest regressor to identify which secondary halo parameters best model the galaxy-halo connection and symbolic regression to augment the standard HOD model with simple equations capturing the dependence on those parameters, namely the local environmental overdensity and shear, at the location of a halo. This not only provides insights into the galaxy-formation relationship but, more importantly, improves the clustering statistics of the modeled galaxies significantly. Our approach demonstrates that machine learning tools can help us better understand and model the galaxy-halo connection, and are therefore useful for galaxy formation and cosmology studies from upcoming galaxy surveys.
+    image: hod_importances.png
+    date: 2021-11-03
+  - title: Finding universal relations in subhalo properties with artificial intelligence
+    authors:
+      - Helen Shao (1)
+      - Francisco Villaescusa-Navarro (1,2)
+      - Shy Genel (2,3)
+      - David N. Spergel (2,1)
+      - Daniel Angles-Alcazar (4,2)
+      - Lars Hernquist (5)
+      - Romeel Dave (6,7,8)
+      - Desika Narayanan (9,10)
+      - Gabriella Contardo (2)
+      - Mark Vogelsberger (11)
+    affiliations:
+      1: Princeton University
+      2: Flatiron Institute
+      3: Columbia University
+      4: University of Connecticut
+      5: "Center for Astrophysics | Harvard & Smithsonian"
+      6: University of Edinburgh
+      7: University of the Western Cape
+      8: South African Astronomical Observatories
+      9: University of Florida
+      10: University of Florida Informatics Institute
+      11: MIT
+    link: https://arxiv.org/abs/2109.04484v1
+    abstract: "We use a generic formalism designed to search for relations in high-dimensional spaces to determine if the total mass of a subhalo can be predicted from other internal properties such as velocity dispersion, radius, or star-formation rate. We train neural networks using data from the Cosmology and Astrophysics with MachinE Learning Simulations (CAMELS) project and show that the model can predict the total mass of a subhalo with high accuracy: more than 99% of the subhalos have a predicted mass within 0.2 dex of their true value. The networks exhibit surprising extrapolation properties, being able to accurately predict the total mass of any type of subhalo containing any kind of galaxy at any redshift from simulations with different cosmologies, astrophysics models, subgrid physics, volumes, and resolutions, indicating that the network may have found a universal relation. We then use different methods to find equations that approximate the relation found by the networks and derive new analytic expressions that predict the total mass of a subhalo from its radius, velocity dispersion, and maximum circular velocity. We show that in some regimes, the analytic expressions are more accurate than the neural networks. We interpret the relation found by the neural network and approximated by the analytic equation as being connected to the virial theorem."
+    date: 2021-09-09
+    image: illustris_example.png
+  - title: Rediscovering orbital mechanics with machine learning
+    authors:
+      - Pablo Lemos (1,2)
+      - Niall Jeffrey (3,2)
+      - Miles Cranmer (4)
+      - Shirley Ho (4,5,6,7)
+      - Peter Battaglia (8)
+    affiliations:
+      1: University of Sussex
+      2: University College London
+      3: ENS
+      4: Princeton University
+      5: Flatiron Institute
+      6: Carnegie Mellon University
+      7: New York University
+      8: DeepMind
+    link: https://arxiv.org/abs/2202.02306
+    abstract: "We present an approach for using machine learning to automatically discover the governing equations and hidden properties of real physical systems from observations. We train a \"graph neural network\" to simulate the dynamics of our solar system's Sun, planets, and large moons from 30 years of trajectory data. We then use symbolic regression to discover an analytical expression for the force law implicitly learned by the neural network, which our results showed is equivalent to Newton's law of gravitation. The key assumptions that were required were translational and rotational equivariance, and Newton's second and third laws of motion. Our approach correctly discovered the form of the symbolic force law. Furthermore, our approach did not require any assumptions about the masses of planets and moons or physical constants. They, too, were accurately inferred through our methods. Though, of course, the classical law of gravitation has been known since Isaac Newton, our result serves as a validation that our method can discover unknown laws and hidden properties from observed data. More broadly this work represents a key step toward realizing the potential of machine learning for accelerating scientific discovery."
+    image: rediscovering_gravity.png
+    date: 2022-02-04
+  - title: (Thesis) On Neural Differential Equations - Section 6.1
+    authors:
+      - Patrick Kidger (1)
+    affiliations:
+      1: University of Oxford
+    abstract: "The conjoining of dynamical systems and deep learning has become a topic of great interest. In particular, neural differential equations (NDEs) demonstrate that neural networks and differential equation are two sides of the same coin. Traditional parameterised differential equations are a special case. Many popular neural network architectures, such as residual networks and recurrent networks, are discretisations. NDEs are suitable for tackling generative problems, dynamical systems, and time series (particularly in physics, finance, ...) and are thus of interest to both modern machine learning and traditional mathematical modelling. NDEs offer high-capacity function approximation, strong priors on model space, the ability to handle irregular data, memory efficiency, and a wealth of available theory on both sides. This doctoral thesis provides an in-depth survey of the field. Topics include: neural ordinary differential equations (e.g. for hybrid neural/mechanistic modelling of physical systems); neural controlled differential equations (e.g. for learning functions of irregular time series); and neural stochastic differential equations (e.g. to produce generative models capable of representing complex stochastic dynamics, or sampling from complex high-dimensional distributions). Further topics include: numerical methods for NDEs (e.g. reversible differential equations solvers, backpropagation through differential equations, Brownian reconstruction); symbolic regression for dynamical systems (e.g. via regularised evolution); and deep implicit models (e.g. deep equilibrium models, differentiable optimisation). We anticipate this thesis will be of interest to anyone interested in the marriage of deep learning with dynamical systems, and hope it will provide a useful reference for the current state of the art."
+    link: https://arxiv.org/abs/2202.02435
+    date: 2022-02-04
+    image: kidger_thesis.png
+  - title: "Augmenting astrophysical scaling relations with machine learning: application to reducing the SZ flux-mass scatter"
+    authors:
+      - Digvijay Wadekar (1)
+      - Leander Thiele (2)
+      - Francisco Villaescusa-Navarro (3)
+      - J. Colin Hill (4)
+      - Miles Cranmer (2)
+      - David N. Spergel (3)
+      - Nicholas Battaglia (5)
+      - Daniel Anglés-Alcázar (6)
+      - Lars Hernquist (7)
+      - Shirley Ho (3)
+    affiliations:
+      1: Institute for Advanced Study
+      2: Princeton University
+      3: Flatiron Institute
+      4: Columbia University
+      5: Cornell University
+      6: University of Connecticut
+      7: Harvard University
+    link: https://arxiv.org/abs/2201.01305
+    abstract: "Complex systems (stars, supernovae, galaxies, and clusters) often exhibit low scatter relations between observable properties (e.g., luminosity, velocity dispersion, oscillation period, temperature). These scaling relations can illuminate the underlying physics and can provide observational tools for estimating masses and distances. Machine learning can provide a fast and systematic way to search for new scaling relations (or for simple extensions to existing relations) in abstract high-dimensional parameter spaces. We use a machine learning tool called symbolic regression (SR), which models the patterns in a given dataset in the form of analytic equations. We focus on the Sunyaev-Zeldovich flux-cluster mass relation (Y-M), the scatter in which affects inference of cosmological parameters from cluster abundance data. Using SR on the data from the IllustrisTNG hydrodynamical simulation, we find a new proxy for cluster mass which combines $Y_{SZ}$ and concentration of ionized gas (cgas): $M \\propto Y_{\\text{conc}}^{3/5} \\equiv Y_{SZ}^{3/5} (1 - A c_\\text{gas})$. Yconc reduces the scatter in the predicted M by ~ 20 - 30% for large clusters ($M > 10^{14} M_{\\odot}/h$) at both high and low redshifts, as compared to using just $Y_{SZ}$. We show that the dependence on cgas is linked to cores of clusters exhibiting larger scatter than their outskirts. Finally, we test Yconc on clusters from simulations of the CAMELS project and show that Yconc is robust against variations in cosmology, astrophysics, subgrid physics, and cosmic variance. Our results and methodology can be useful for accurate multiwavelength cluster mass estimation from current and upcoming CMB and X-ray surveys like ACT, SO, SPT, eROSITA and CMB-S4."
+    image: SyReg_GasConc.png
+    date: 2022-01-05
+  - title: "The SZ flux-mass (Y-M) relation at low halo masses: improvements with symbolic regression and strong constraints on baryonic feedback"
+    authors:
+      - Digvijay Wadekar (1)
+      - Leander Thiele (2)
+      - J. Colin Hill (3)
+      - Shivam Pandey (4)
+      - Francisco Villaescusa-Navarro (5)
+      - David N. Spergel (5)
+      - Miles Cranmer (2)
+      - Daisuke Nagai (6)
+      - Daniel Anglés-Alcázar (7)
+      - Shirley Ho (5)
+      - Lars Hernquist (8)
+    affiliations:
+      1: Institute for Advanced Study
+      2: Princeton University
+      3: Columbia University
+      4: University of Pennsylvania
+      5: Flatiron Institute
+      6: Yale University
+      7: University of Connecticut
+      8: Harvard University
+    link: https://arxiv.org/abs/2209.02075
+    abstract: "Ionized gas in the halo circumgalactic medium leaves an imprint on the cosmic microwave background via the thermal Sunyaev-Zeldovich (tSZ) effect. Feedback from active galactic nuclei (AGN) and supernovae can affect the measurements of the integrated tSZ flux of halos ($Y_{SZ}$) and cause its relation with the halo mass ($Y_{SZ}-M$) to deviate from the self-similar power-law prediction of the virial theorem. We perform a comprehensive study of such deviations using CAMELS, a suite of hydrodynamic simulations with extensive variations in feedback prescriptions. We use a combination of two machine learning tools (random forest and symbolic regression) to search for analogues of the $Y-M$ relation which are more robust to feedback processes for low masses ($M \\leq 10^{14} M_{\\odot}/h$); we find that simply replacing $Y \\rightarrow Y(1+M_\\ast/M_{\\text{gas}})$ in the relation makes it remarkably self-similar. This could serve as a robust multiwavelength mass proxy for low-mass clusters and galaxy groups. Our methodology can also be generally useful to improve the domain of validity of other astrophysical scaling relations. We also forecast that measurements of the Y-M relation could provide percent-level constraints on certain combinations of feedback parameters and/or rule out a major part of the parameter space of supernova and AGN feedback models used in current state-of-the-art hydrodynamic simulations. Our results can be useful for using upcoming SZ surveys (e.g. SO, CMB-S4) and galaxy surveys (e.g. DESI and Rubin) to constrain the nature of baryonic feedback. Finally, we find that the an alternative relation, $Y-M_{\\ast}$, provides complementary information on feedback than $Y-M$."
+    image: Y_Mgal_Simba.png
+    date: 2022-09-05
+  - title: Electron Transfer Rules of Minerals under Pressure informed by Machine Learning
+    authors:
+      - Yanzhang Li (1)
+      - Hongyu Wang (2)
+      - Yan Li (1)
+      - Xiangzhi Bai (2)
+      - Anhuai Lu (1)
+    affiliations:
+      1: Peking University
+      2: Beihang University
+    link: https://doi.org/10.1038/s41467-023-37384-1
+    abstract: "Electron transfer is the most elementary process in nature, but the existing electron transfer rules are seldom applied to high-pressure situations, such as in the deep Earth. Here we show a deep learning model to obtain the electronegativity of 96 elements under arbitrary pressure, and a regressed unified formula to quantify its relationship with pressure and electronic configuration. The relative work function of minerals is further predicted by electronegativity, presenting a decreasing trend with pressure because of pressure-induced electron delocalization. Using the work function as the case study of electronegativity, it reveals that the driving force behind directional electron transfer results from the enlarged work function difference between compounds with pressure. This well explains the deep high-conductivity anomalies, and helps discover the redox reactivity between widespread Fe(II)-bearing minerals and water during ongoing subduction. Our results give an insight into the fundamental physicochemical properties of elements and their compounds under pressure"
+    image: electronnegativity_introduction.jpg
+    date: 2023-03-31
+  - title: Discovering interpretable models of scientific image data with deep learning
+    authors:
+      - Christopher J. Soelistyo (1)
+      - Alan R. Lowe (1, 2)
+    affiliations:
+      1: The Alan Turing Institute
+      2: University College London
+    link: https://arxiv.org/abs/2402.03115
+    abstract: "How can we find interpretable, domain-appropriate models of natural phenomena given some complex, raw data such as images? Can we use such models to derive scientific insight from the data? In this paper, we propose some methods for achieving this. In particular, we implement disentangled representation learning, sparse deep neural network training and symbolic regression, and assess their usefulness in forming interpretable models of complex image data. We demonstrate their relevance to the field of bioimaging using a well-studied test problem of classifying cell states in microscopy data. We find that such methods can produce highly parsimonious models that achieve ~98% of the accuracy of black-box benchmark models, with a tiny fraction of the complexity. We explore the utility of such interpretable models in producing scientific explanations of the underlying biological phenomenon."
+    image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/master/images/cell_state_classification.jpg
+    date: 2024-02-05
