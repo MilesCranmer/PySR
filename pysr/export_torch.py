@@ -82,7 +82,7 @@ def _initialize_torch():
         }
 
         class _Node(torch.nn.Module):
-            """SympyTorch code from https://github.com/patrick-kidger/sympytorch"""
+            """Forked from https://github.com/patrick-kidger/sympytorch"""
 
             def __init__(self, *, expr, _memodict, _func_lookup, **kwargs):
                 super().__init__(**kwargs)
@@ -154,7 +154,7 @@ def _initialize_torch():
                 return self._torch_func(*args)
 
         class _SingleSymPyModule(torch.nn.Module):
-            """SympyTorch code from https://github.com/patrick-kidger/sympytorch"""
+            """Forked from https://github.com/patrick-kidger/sympytorch"""
 
             def __init__(
                 self, expression, symbols_in, selection=None, extra_funcs=None, **kwargs
