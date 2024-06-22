@@ -1,3 +1,4 @@
+import numpy as np  # noqa: F401
 import sympy
 
 # Special since need to reduce arguments.
