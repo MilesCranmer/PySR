@@ -87,7 +87,12 @@ def pysr2sympy(
         **sympy_mappings,
     }
 
-    return sympify(equation, locals=local_sympy_mappings, evaluate=False)
+    try:
+        return sympify(equation, locals=local_sympy_mappings, evaluate=False)
+    except TypeError as e:
+        if "got an unexpected keyword argument 'evaluate'" in str(e):
+            return sympify(equation, locals=local_sympy_mappings)
+        raise TypeError(f"Error processing equation '{equation}'") from e
 
 
 def assert_valid_sympy_symbol(var_name: str) -> None:
