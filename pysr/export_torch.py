@@ -1,11 +1,9 @@
-#####
-# From https://github.com/patrick-kidger/sympytorch
-# Copied here to allow PySR-specific tweaks
-#####
+# Fork of https://github.com/patrick-kidger/sympytorch
 
 import collections as co
 import functools as ft
 
+import numpy as np  # noqa: F401
 import sympy
 
 
