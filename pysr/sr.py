@@ -2060,13 +2060,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 "Note: you are running with 10 features or more. "
                 "Genetic algorithms like used in PySR scale poorly with large numbers of features. "
                 "You should run PySR for more `niterations` to ensure it can find "
-                "the correct variables, "
-                "or, alternatively, do a dimensionality reduction beforehand. "
-                "For example, `X = PCA(n_components=6).fit_transform(X)`, "
-                "using scikit-learn's `PCA` class, "
-                "will reduce the number of features to 6 in an interpretable way, "
-                "as each resultant feature "
-                "will be a linear combination of the original features. "
+                "the correct variables, and consider using a larger `maxsize`."
             )
 
         # Assertion checks

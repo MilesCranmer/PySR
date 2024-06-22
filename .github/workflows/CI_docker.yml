@@ -3,22 +3,16 @@ name: Docker
 on:
   push:
     branches:
-      - '**'
+      - 'master'
     paths:
-      - 'test/**'
-      - 'pysr/**'
-      - '.github/workflows/CI_docker.yml'
-      - 'setup.py'
-      - 'Dockerfile'
+      - '**'
+    tags:
+      - 'v*.*.*'
   pull_request:
     branches:
-      - '*'
+      - 'master'
     paths:
-      - 'test/**'
-      - 'pysr/**'
-      - '.github/workflows/CI_docker.yml'
-      - 'setup.py'
-      - 'Dockerfile'
+      - '**'
 
 jobs:
   test:
