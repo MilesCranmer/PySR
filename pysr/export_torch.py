@@ -116,6 +116,11 @@ def _initialize_torch():
                     self._value = int(expr)
                     self._torch_func = lambda: self._value
                     self._args = ()
+                elif issubclass(expr.func, sympy.NumberSymbol):
+                    # Can get here from exp(1) or exact pi
+                    self._value = float(expr)
+                    self._torch_func = lambda: self._value
+                    self._args = ()
                 elif issubclass(expr.func, sympy.Symbol):
                     self._name = expr.name
                     self._torch_func = lambda value: value

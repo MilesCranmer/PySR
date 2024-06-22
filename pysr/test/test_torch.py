@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import sympy
 
+import pysr
 from pysr import PySRRegressor, sympy2torch
 
 
@@ -153,10 +154,43 @@ class TestTorch(unittest.TestCase):
             decimal=3,
         )
 
+    def test_avoid_simplification(self):
+        # SymPy should not simplify without permission
+        torch = self.torch
+        ex = pysr.export_sympy.pysr2sympy(
+            "square(exp(sign(0.44796443))) + 1.5 * x1",
+            # ^ Normally this would become exp1 and require
+            #   its own mapping
+            feature_names_in=["x1"],
+            extra_sympy_mappings={"square": lambda x: x**2},
+        )
+        m = pysr.export_torch.sympy2torch(ex, ["x1"])
+        rng = np.random.RandomState(0)
+        X = rng.randn(10, 1)
+        np.testing.assert_almost_equal(
+            m(torch.tensor(X)).detach().numpy(),
+            np.square(np.exp(np.sign(0.44796443))) + 1.5 * X[:, 0],
+            decimal=3,
+        )
+
+    def test_issue_656(self):
+        # Should correctly map numeric symbols to floats
+        E_plus_x1 = sympy.exp(1) + sympy.symbols("x1")
+        m = pysr.export_torch.sympy2torch(E_plus_x1, ["x1"])
+        X = np.random.randn(10, 1)
+        np.testing.assert_almost_equal(
+            m(self.torch.tensor(X)).detach().numpy(),
+            np.exp(1) + X[:, 0],
+            decimal=3,
+        )
+
     def test_feature_selection_custom_operators(self):
         rstate = np.random.RandomState(0)
         X = pd.DataFrame({f"k{i}": rstate.randn(2000) for i in range(10, 21)})
-        cos_approx = lambda x: 1 - (x**2) / 2 + (x**4) / 24 + (x**6) / 720
+
+        def cos_approx(x):
+            return 1 - (x**2) / 2 + (x**4) / 24 + (x**6) / 720
+
         y = X["k15"] ** 2 + 2 * cos_approx(X["k20"])
 
         model = PySRRegressor(
