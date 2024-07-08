@@ -10,13 +10,15 @@ import pandas as pd
 from data import generate_data, read_csv
 from plots import plot_predictions
 
-EMPTY_DF = lambda: pd.DataFrame(
-    {
-        "Equation": [],
-        "Loss": [],
-        "Complexity": [],
-    }
-)
+
+def empty_df():
+    return pd.DataFrame(
+        {
+            "Equation": [],
+            "Loss": [],
+            "Complexity": [],
+        }
+    )
 
 
 def pysr_fit(queue: mp.Queue, out_queue: mp.Queue):
@@ -138,7 +140,7 @@ def processing(
         try:
             X, y = read_csv(file_input, force_run)
         except ValueError as e:
-            return (EMPTY_DF(), plot_predictions([], []), str(e))
+            return (empty_df(), plot_predictions([], []), str(e))
     else:
         X, y = generate_data(test_equation, num_points, noise_level, data_seed)
 
