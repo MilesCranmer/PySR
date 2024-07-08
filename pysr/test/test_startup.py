@@ -9,8 +9,9 @@ from pathlib import Path
 
 import numpy as np
 
-from .. import PySRRegressor
-from ..julia_import import jl_version
+from pysr import PySRRegressor
+from pysr.julia_import import jl_version
+
 from .params import DEFAULT_NITERATIONS, DEFAULT_POPULATIONS
 
 
@@ -117,10 +118,6 @@ class TestStartup(unittest.TestCase):
             dict(
                 code="import juliacall; import pysr",
                 msg="juliacall module already imported.",
-            ),
-            dict(
-                code='import os; os.environ["PYSR_AUTOLOAD_EXTENSIONS"] = "foo"; import pysr',
-                msg="PYSR_AUTOLOAD_EXTENSIONS environment variable is set",
             ),
         ]
         for warning_test in warning_tests:

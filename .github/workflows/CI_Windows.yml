@@ -3,22 +3,16 @@ name: Windows
 on:
   push:
     branches:
-      - '**'
+      - 'master'
     paths:
-      - 'test/**'
-      - 'pysr/**'
-      - '.github/workflows/CI_Windows.yml'
-      - 'setup.py'
+      - '**'
     tags:
       - 'v*.*.*'
   pull_request:
     branches:
-      - '*'
+      - 'master'
     paths:
-      - 'test/**'
-      - 'pysr/**'
-      - '.github/workflows/CI_Windows.yml'
-      - 'setup.py'
+      - '**'
 
 jobs:
   test:
@@ -30,17 +24,17 @@ jobs:
     strategy:
       matrix:
         julia-version: ['1']
-        python-version: ['3.11']
+        python-version: ['3.12']
         os: [windows-latest]
 
     steps:
       - uses: actions/checkout@v4
       - name: "Set up Julia"
-        uses: julia-actions/setup-julia@v1
+        uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.julia-version }}
       - name: "Cache Julia"
-        uses: julia-actions/cache@v1
+        uses: julia-actions/cache@v2
         with:
           cache-name: ${{ matrix.os }}-test-${{ matrix.julia-version }}-${{ matrix.python-version }}
           cache-packages: false
@@ -52,7 +46,7 @@ jobs:
       - name: "Install PySR"
         run: |
             python -m pip install --upgrade pip
-            pip install pytest nbval
+            pip install pytest nbval "numpy<2.0.0"
             pip install .
             python -c 'import pysr'
       - name: "Run tests"

@@ -8,27 +8,31 @@ import shutil
 import sys
 import tempfile
 import warnings
+from dataclasses import dataclass, fields
 from datetime import datetime
 from io import StringIO
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple, Union
-
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union, cast
 
 import numpy as np
 import pandas as pd
+from numpy import ndarray
+from numpy.typing import NDArray
 from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
 from sklearn.utils import check_array, check_consistent_length, check_random_state
-from sklearn.utils.validation import _check_feature_names_in, check_is_fitted
+from sklearn.utils.validation import _check_feature_names_in  # type: ignore
+from sklearn.utils.validation import check_is_fitted
 
 from .denoising import denoise, multi_denoise
 from .deprecated import DEPRECATED_KWARGS
 from .export_jax import sympy2jax
-from .export_latex import sympy2latex, sympy2latextable, sympy2multilatextable
+from .export_latex import (
+    sympy2latex,
+    sympy2latextable,
+    sympy2multilatextable,
+    with_preamble,
+)
 from .export_numpy import sympy2numpy
 from .export_sympy import assert_valid_sympy_symbol, create_sympy_symbols, pysr2sympy
 from .export_torch import sympy2torch
@@ -40,17 +44,21 @@ from .julia_helpers import (
     _load_cluster_manager,
     jl_array,
     jl_deserialize,
+    jl_is_function,
     jl_serialize,
 )
 from .julia_import import SymbolicRegression, jl
 from .utils import (
+    ArrayLike,
+    PathLike,
     _csv_filename_to_pkl_filename,
     _preprocess_julia_floats,
     _safe_check_feature_names_in,
     _subscriptify,
+    _suggest_keywords,
 )
 
-already_ran = False
+ALREADY_RAN = False
 
 
 def _process_constraints(binary_operators, unary_operators, constraints):
@@ -113,7 +121,7 @@ def _maybe_create_inline_operators(
                         "and underscores are allowed."
                     )
                 if (extra_sympy_mappings is None) or (
-                    not function_name in extra_sympy_mappings
+                    function_name not in extra_sympy_mappings
                 ):
                     raise ValueError(
                         f"Custom function {function_name} is not defined in `extra_sympy_mappings`. "
@@ -130,6 +138,7 @@ def _check_assertions(
     X,
     use_custom_variable_names,
     variable_names,
+    complexity_of_variables,
     weights,
     y,
     X_units,
@@ -154,6 +163,13 @@ def _check_assertions(
                     "and underscores are allowed."
                 )
             assert_valid_sympy_symbol(var_name)
+    if (
+        isinstance(complexity_of_variables, list)
+        and len(complexity_of_variables) != X.shape[1]
+    ):
+        raise ValueError(
+            "The number of elements in `complexity_of_variables` must equal the number of features in `X`."
+        )
     if X_units is not None and len(X_units) != X.shape[1]:
         raise ValueError(
             "The number of units in `X_units` must equal the number of features in `X`."
@@ -176,6 +192,21 @@ def _check_assertions(
 
 # Class validation constants
 VALID_OPTIMIZER_ALGORITHMS = ["BFGS", "NelderMead"]
+
+
+@dataclass
+class _DynamicallySetParams:
+    """Defines some parameters that are set at runtime."""
+
+    binary_operators: List[str]
+    unary_operators: List[str]
+    maxdepth: int
+    constraints: Dict[str, str]
+    multithreading: bool
+    batch_size: int
+    update_verbosity: int
+    progress: bool
+    warmup_maxsize_by: float
 
 
 class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
@@ -309,7 +340,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         `idx` argument to the function, which is `nothing`
         for non-batched, and a 1D array of indices for batched.
         Default is `None`.
-    complexity_of_operators : dict[str, float]
+    complexity_of_operators : dict[str, Union[int, float]]
         If you would like to use a complexity other than 1 for an
         operator, specify the complexity here. For example,
         `{"sin": 2, "+": 1}` would give a complexity of 2 for each use
@@ -318,16 +349,22 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         numbers for a complexity, and the total complexity of a tree
         will be rounded to the nearest integer after computing.
         Default is `None`.
-    complexity_of_constants : float
+    complexity_of_constants : int | float
         Complexity of constants. Default is `1`.
-    complexity_of_variables : float
-        Complexity of variables. Default is `1`.
+    complexity_of_variables : int | float
+        Global complexity of variables. To set different complexities for
+        different variables, pass a list of complexities to the `fit` method
+        with keyword `complexity_of_variables`. You cannot use both.
+        Default is `1`.
     parsimony : float
         Multiplicative factor for how much to punish complexity.
         Default is `0.0032`.
     dimensional_constraint_penalty : float
         Additive penalty for if dimensional analysis of an expression fails.
         By default, this is `1000.0`.
+    dimensionless_constants_only : bool
+        Whether to only search for dimensionless constants, if using units.
+        Default is `False`.
     use_frequency : bool
         Whether to measure the frequency of complexities, and use that
         instead of parsimony to explore equation space. Will naturally
@@ -603,22 +640,17 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Units of each variable in the training dataset, `y`.
     nout_ : int
         Number of output dimensions.
-    selection_mask_ : list[int] of length `select_k_features`
-        List of indices for input features that are selected when
-        `select_k_features` is set.
+    selection_mask_ : ndarray of shape (`n_features_in_`,)
+        Mask of which features of `X` to use when `select_k_features` is set.
     tempdir_ : Path
         Path to the temporary equations directory.
-    equation_file_ : str
+    equation_file_ : Union[str, Path]
         Output equation file name produced by the julia backend.
     julia_state_stream_ : ndarray
         The serialized state for the julia SymbolicRegression.jl backend (after fitting),
         stored as an array of uint8, produced by Julia's Serialization.serialize function.
-    julia_state_
-        The deserialized state.
     julia_options_stream_ : ndarray
         The serialized julia options, stored as an array of uint8,
-    julia_options_
-        The deserialized julia options.
     equation_file_contents_ : list[pandas.DataFrame]
         Contents of the equation file output by the Julia backend.
     show_pickle_warnings_ : bool
@@ -665,6 +697,22 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     ```
     """
 
+    equations_: Union[pd.DataFrame, List[pd.DataFrame], None]
+    n_features_in_: int
+    feature_names_in_: ArrayLike[str]
+    display_feature_names_in_: ArrayLike[str]
+    complexity_of_variables_: Union[int, float, List[Union[int, float]], None]
+    X_units_: Union[ArrayLike[str], None]
+    y_units_: Union[str, ArrayLike[str], None]
+    nout_: int
+    selection_mask_: Union[NDArray[np.bool_], None]
+    tempdir_: Path
+    equation_file_: PathLike
+    julia_state_stream_: Union[NDArray[np.uint8], None]
+    julia_options_stream_: Union[NDArray[np.uint8], None]
+    equation_file_contents_: Union[List[pd.DataFrame], None]
+    show_pickle_warnings_: bool
+
     def __init__(
         self,
         model_selection: Literal["best", "accuracy", "score"] = "best",
@@ -685,9 +733,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         loss_function: Optional[str] = None,
         complexity_of_operators: Optional[Dict[str, Union[int, float]]] = None,
         complexity_of_constants: Union[int, float] = 1,
-        complexity_of_variables: Union[int, float] = 1,
+        complexity_of_variables: Optional[Union[int, float]] = None,
         parsimony: float = 0.0032,
         dimensional_constraint_penalty: Optional[float] = None,
+        dimensionless_constants_only: bool = False,
         use_frequency: bool = True,
         use_frequency_in_tournament: bool = True,
         adaptive_parsimony_scaling: float = 20.0,
@@ -783,6 +832,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.complexity_of_variables = complexity_of_variables
         self.parsimony = parsimony
         self.dimensional_constraint_penalty = dimensional_constraint_penalty
+        self.dimensionless_constants_only = dimensionless_constants_only
         self.use_frequency = use_frequency
         self.use_frequency_in_tournament = use_frequency_in_tournament
         self.adaptive_parsimony_scaling = adaptive_parsimony_scaling
@@ -863,15 +913,15 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     updated_kwarg_name = DEPRECATED_KWARGS[k]
                     setattr(self, updated_kwarg_name, v)
                     warnings.warn(
-                        f"{k} has been renamed to {updated_kwarg_name} in PySRRegressor. "
+                        f"`{k}` has been renamed to `{updated_kwarg_name}` in PySRRegressor. "
                         "Please use that instead.",
                         FutureWarning,
                     )
                 # Handle kwargs that have been moved to the fit method
                 elif k in ["weights", "variable_names", "Xresampled"]:
                     warnings.warn(
-                        f"{k} is a data dependant parameter so should be passed when fit is called. "
-                        f"Ignoring parameter; please pass {k} during the call to fit instead.",
+                        f"`{k}` is a data-dependent parameter and should be passed when fit is called. "
+                        f"Ignoring parameter; please pass `{k}` during the call to fit instead.",
                         FutureWarning,
                     )
                 elif k == "julia_project":
@@ -888,21 +938,25 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                         FutureWarning,
                     )
                 else:
-                    raise TypeError(
-                        f"{k} is not a valid keyword argument for PySRRegressor."
+                    suggested_keywords = _suggest_keywords(PySRRegressor, k)
+                    err_msg = (
+                        f"`{k}` is not a valid keyword argument for PySRRegressor."
                     )
+                    if len(suggested_keywords) > 0:
+                        err_msg += f" Did you mean {', '.join(map(lambda s: f'`{s}`', suggested_keywords))}?"
+                    raise TypeError(err_msg)
 
     @classmethod
     def from_file(
         cls,
-        equation_file,
+        equation_file: PathLike,
         *,
-        binary_operators=None,
-        unary_operators=None,
-        n_features_in=None,
-        feature_names_in=None,
-        selection_mask=None,
-        nout=1,
+        binary_operators: Optional[List[str]] = None,
+        unary_operators: Optional[List[str]] = None,
+        n_features_in: Optional[int] = None,
+        feature_names_in: Optional[ArrayLike[str]] = None,
+        selection_mask: Optional[NDArray[np.bool_]] = None,
+        nout: int = 1,
         verbosity=1,
         **pysr_kwargs,
     ):
@@ -911,7 +965,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        equation_file : str
+        equation_file : str or Path
             Path to a pickle file containing a saved model, or a csv file
             containing equations.
         binary_operators : list[str]
@@ -926,8 +980,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         feature_names_in : list[str]
             Names of the features passed to the model.
             Not needed if loading from a pickle file.
-        selection_mask : list[bool]
-            If using select_k_features, you must pass `model.selection_mask_` here.
+        selection_mask : NDArray[np.bool_]
+            If using `select_k_features`, you must pass `model.selection_mask_` here.
             Not needed if loading from a pickle file.
         nout : int
             Number of outputs of the model.
@@ -983,7 +1037,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # TODO: copy .bkup file if exists.
         model = cls(
-            equation_file=equation_file,
+            equation_file=str(equation_file),
             binary_operators=binary_operators,
             unary_operators=unary_operators,
             **pysr_kwargs,
@@ -1003,7 +1057,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             model.display_feature_names_in_ = feature_names_in
 
         if selection_mask is None:
-            model.selection_mask_ = np.ones(n_features_in, dtype=bool)
+            model.selection_mask_ = np.ones(n_features_in, dtype=np.bool_)
         else:
             model.selection_mask_ = selection_mask
 
@@ -1030,7 +1084,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             all_equations = equations
 
         for i, equations in enumerate(all_equations):
-            selected = ["" for _ in range(len(equations))]
+            selected = pd.Series([""] * len(equations), index=equations.index)
             chosen_row = idx_model_selection(equations, self.model_selection)
             selected[chosen_row] = ">>>>"
             repr_equations = pd.DataFrame(
@@ -1063,15 +1117,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Handle pickle serialization for PySRRegressor.
 
         The Scikit-learn standard requires estimators to be serializable via
-        `pickle.dumps()`. However, `PyCall.jlwrap` does not support pickle
-        serialization.
-
-        Thus, for `PySRRegressor` to support pickle serialization, the
-        `julia_state_stream_` attribute must be hidden from pickle. This will
-        prevent the `warm_start` of any model that is loaded via `pickle.loads()`,
-        but does allow all other attributes of a fitted `PySRRegressor` estimator
-        to be serialized. Note: Jax and Torch format equations are also removed
-        from the pickled instance.
+        `pickle.dumps()`. However, some attributes do not support pickling
+        and need to be hidden, such as the JAX and Torch representations.
         """
         state = self.__dict__
         show_pickle_warning = not (
@@ -1137,10 +1184,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
     @property
     def julia_options_(self):
+        """The deserialized julia options."""
         return jl_deserialize(self.julia_options_stream_)
 
     @property
     def julia_state_(self):
+        """The deserialized state."""
         return jl_deserialize(self.julia_state_stream_)
 
     @property
@@ -1153,7 +1202,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         )
         return self.julia_state_
 
-    def get_best(self, index=None):
+    def get_best(self, index=None) -> Union[pd.Series, List[pd.Series]]:
         """
         Get best equation using `model_selection`.
 
@@ -1176,8 +1225,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Raised when an invalid model selection strategy is provided.
         """
         check_is_fitted(self, attributes=["equations_"])
-        if self.equations_ is None:
-            raise ValueError("No equations have been generated yet.")
 
         if index is not None:
             if isinstance(self.equations_, list):
@@ -1185,16 +1232,21 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     index, list
                 ), "With multiple output features, index must be a list."
                 return [eq.iloc[i] for eq, i in zip(self.equations_, index)]
-            return self.equations_.iloc[index]
+            else:
+                equations_ = cast(pd.DataFrame, self.equations_)
+                return cast(pd.Series, equations_.iloc[index])
 
         if isinstance(self.equations_, list):
             return [
-                eq.iloc[idx_model_selection(eq, self.model_selection)]
+                cast(pd.Series, eq.loc[idx_model_selection(eq, self.model_selection)])
                 for eq in self.equations_
             ]
-        return self.equations_.iloc[
-            idx_model_selection(self.equations_, self.model_selection)
-        ]
+        else:
+            equations_ = cast(pd.DataFrame, self.equations_)
+            return cast(
+                pd.Series,
+                equations_.loc[idx_model_selection(equations_, self.model_selection)],
+            )
 
     def _setup_equation_file(self):
         """
@@ -1219,7 +1271,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self.equation_file_ = self.equation_file
         self.equation_file_contents_ = None
 
-    def _validate_and_set_init_params(self):
+    def _validate_and_modify_params(self) -> _DynamicallySetParams:
         """
         Ensure parameters passed at initialization are valid.
 
@@ -1277,59 +1329,57 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 f"PySR currently only supports the following optimizer algorithms: {VALID_OPTIMIZER_ALGORITHMS}"
             )
 
-        progress = self.progress
-        # 'Mutable' parameter validation
-        #  (Params and their default values, if None is given:)
-        default_param_mapping = {
-            "binary_operators": "+ * - /".split(" "),
-            "unary_operators": [],
-            "maxdepth": self.maxsize,
-            "constraints": {},
-            "multithreading": self.procs != 0 and self.cluster_manager is None,
-            "batch_size": 1,
-            "update_verbosity": int(self.verbosity),
-            "progress": progress,
-        }
-        packed_modified_params = {}
-        for parameter, default_value in default_param_mapping.items():
-            parameter_value = getattr(self, parameter)
-            if parameter_value is None:
-                parameter_value = default_value
-            else:
-                # Special cases such as when binary_operators is a string
-                if parameter in ["binary_operators", "unary_operators"] and isinstance(
-                    parameter_value, str
-                ):
-                    parameter_value = [parameter_value]
-                elif parameter == "batch_size" and parameter_value < 1:
-                    warnings.warn(
-                        "Given `batch_size` must be greater than or equal to one. "
-                        "`batch_size` has been increased to equal one."
-                    )
-                    parameter_value = 1
-                elif (
-                    parameter == "progress"
-                    and parameter_value
-                    and "buffer" not in sys.stdout.__dir__()
-                ):
-                    warnings.warn(
-                        "Note: it looks like you are running in Jupyter. "
-                        "The progress bar will be turned off."
-                    )
-                    parameter_value = False
-            packed_modified_params[parameter] = parameter_value
-
-        assert (
-            len(packed_modified_params["binary_operators"])
-            + len(packed_modified_params["unary_operators"])
-            > 0
+        param_container = _DynamicallySetParams(
+            binary_operators=["+", "*", "-", "/"],
+            unary_operators=[],
+            maxdepth=self.maxsize,
+            constraints={},
+            multithreading=self.procs != 0 and self.cluster_manager is None,
+            batch_size=1,
+            update_verbosity=int(self.verbosity),
+            progress=self.progress,
+            warmup_maxsize_by=0.0,
         )
 
-        return packed_modified_params
+        for param_name in map(lambda x: x.name, fields(_DynamicallySetParams)):
+            user_param_value = getattr(self, param_name)
+            if user_param_value is None:
+                # Leave as the default in DynamicallySetParams
+                ...
+            else:
+                # If user has specified it, we will override the default.
+                # However, there are some special cases to mutate it:
+                new_param_value = _mutate_parameter(param_name, user_param_value)
+                setattr(param_container, param_name, new_param_value)
+        # TODO: This should just be part of the __init__ of _DynamicallySetParams
+
+        assert (
+            len(param_container.binary_operators) > 0
+            or len(param_container.unary_operators) > 0
+        ), "At least one operator must be provided."
+
+        return param_container
 
     def _validate_and_set_fit_params(
-        self, X, y, Xresampled, weights, variable_names, X_units, y_units
-    ):
+        self,
+        X,
+        y,
+        Xresampled,
+        weights,
+        variable_names,
+        complexity_of_variables,
+        X_units,
+        y_units,
+    ) -> Tuple[
+        ndarray,
+        ndarray,
+        Optional[ndarray],
+        Optional[ndarray],
+        ArrayLike[str],
+        Union[int, float, List[Union[int, float]]],
+        Optional[ArrayLike[str]],
+        Optional[Union[str, ArrayLike[str]]],
+    ]:
         """
         Validate the parameters passed to the :term`fit` method.
 
@@ -1349,12 +1399,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Weight array of the same shape as `y`.
             Each element is how to weight the mean-square-error loss
             for that particular element of y.
-        variable_names : list[str] of length n_features
-            Names of each variable in the training dataset, `X`.
+        variable_names : ndarray of length n_features
+            Names of each feature in the training dataset, `X`.
+        complexity_of_variables : int | float | list[int | float]
+            Complexity of each feature in the training dataset, `X`.
         X_units : list[str] of length n_features
-            Units of each variable in the training dataset, `X`.
+            Units of each feature in the training dataset, `X`.
         y_units : str | list[str] of length n_out
-            Units of each variable in the training dataset, `y`.
+            Units of each feature in the training dataset, `y`.
 
         Returns
         -------
@@ -1398,6 +1450,22 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 "Please use valid names instead."
             )
 
+        if (
+            complexity_of_variables is not None
+            and self.complexity_of_variables is not None
+        ):
+            raise ValueError(
+                "You cannot set `complexity_of_variables` at both `fit` and `__init__`. "
+                "Pass it at `__init__` to set it to global default, OR use `fit` to set it for "
+                "each variable individually."
+            )
+        elif complexity_of_variables is not None:
+            complexity_of_variables = complexity_of_variables
+        elif self.complexity_of_variables is not None:
+            complexity_of_variables = self.complexity_of_variables
+        else:
+            complexity_of_variables = 1
+
         # Data validation and feature name fetching via sklearn
         # This method sets the n_features_in_ attribute
         if Xresampled is not None:
@@ -1405,7 +1473,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if weights is not None:
             weights = check_array(weights, ensure_2d=False)
             check_consistent_length(weights, y)
-        X, y = self._validate_data(X=X, y=y, reset=True, multi_output=True)
+        X, y = self._validate_data_X_y(X, y)
         self.feature_names_in_ = _safe_check_feature_names_in(
             self, variable_names, generate_names=False
         )
@@ -1415,10 +1483,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self.display_feature_names_in_ = np.array(
                 [f"x{_subscriptify(i)}" for i in range(X.shape[1])]
             )
+            variable_names = self.feature_names_in_
         else:
             self.display_feature_names_in_ = self.feature_names_in_
-
-        variable_names = self.feature_names_in_
+            variable_names = self.feature_names_in_
 
         # Handle multioutput data
         if len(y.shape) == 1 or (len(y.shape) == 2 and y.shape[1] == 1):
@@ -1428,13 +1496,39 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         else:
             raise NotImplementedError("y shape not supported!")
 
+        self.complexity_of_variables_ = copy.deepcopy(complexity_of_variables)
         self.X_units_ = copy.deepcopy(X_units)
         self.y_units_ = copy.deepcopy(y_units)
 
-        return X, y, Xresampled, weights, variable_names, X_units, y_units
+        return (
+            X,
+            y,
+            Xresampled,
+            weights,
+            variable_names,
+            complexity_of_variables,
+            X_units,
+            y_units,
+        )
+
+    def _validate_data_X_y(self, X, y) -> Tuple[ndarray, ndarray]:
+        raw_out = self._validate_data(X=X, y=y, reset=True, multi_output=True)  # type: ignore
+        return cast(Tuple[ndarray, ndarray], raw_out)
+
+    def _validate_data_X(self, X) -> Tuple[ndarray]:
+        raw_out = self._validate_data(X=X, reset=False)  # type: ignore
+        return cast(Tuple[ndarray], raw_out)
 
     def _pre_transform_training_data(
-        self, X, y, Xresampled, variable_names, X_units, y_units, random_state
+        self,
+        X: ndarray,
+        y: ndarray,
+        Xresampled: Union[ndarray, None],
+        variable_names: ArrayLike[str],
+        complexity_of_variables: Union[int, float, List[Union[int, float]]],
+        X_units: Union[ArrayLike[str], None],
+        y_units: Union[ArrayLike[str], str, None],
+        random_state: np.random.RandomState,
     ):
         """
         Transform the training data before fitting the symbolic regressor.
@@ -1443,17 +1537,19 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        X : ndarray | pandas.DataFrame
+        X : ndarray
             Training data of shape (n_samples, n_features).
-        y : ndarray | pandas.DataFrame
+        y : ndarray
             Target values of shape (n_samples,) or (n_samples, n_targets).
             Will be cast to X's dtype if necessary.
-        Xresampled : ndarray | pandas.DataFrame
+        Xresampled : ndarray | None
             Resampled training data, of shape `(n_resampled, n_features)`,
             used for denoising.
         variable_names : list[str]
             Names of each variable in the training dataset, `X`.
             Of length `n_features`.
+        complexity_of_variables : int | float | list[int | float]
+            Complexity of each variable in the training dataset, `X`.
         X_units : list[str]
             Units of each variable in the training dataset, `X`.
         y_units : str | list[str]
@@ -1486,24 +1582,43 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         """
         # Feature selection transformation
         if self.select_k_features:
-            self.selection_mask_ = run_feature_selection(
+            selection_mask = run_feature_selection(
                 X, y, self.select_k_features, random_state=random_state
             )
-            X = X[:, self.selection_mask_]
+            X = X[:, selection_mask]
 
             if Xresampled is not None:
-                Xresampled = Xresampled[:, self.selection_mask_]
+                Xresampled = Xresampled[:, selection_mask]
 
             # Reduce variable_names to selection
-            variable_names = [variable_names[i] for i in self.selection_mask_]
+            variable_names = cast(
+                ArrayLike[str],
+                [
+                    variable_names[i]
+                    for i in range(len(variable_names))
+                    if selection_mask[i]
+                ],
+            )
+
+            if isinstance(complexity_of_variables, list):
+                complexity_of_variables = [
+                    complexity_of_variables[i]
+                    for i in range(len(complexity_of_variables))
+                    if selection_mask[i]
+                ]
+                self.complexity_of_variables_ = copy.deepcopy(complexity_of_variables)
 
             if X_units is not None:
-                X_units = [X_units[i] for i in self.selection_mask_]
+                X_units = cast(
+                    ArrayLike[str],
+                    [X_units[i] for i in range(len(X_units)) if selection_mask[i]],
+                )
                 self.X_units_ = copy.deepcopy(X_units)
 
             # Re-perform data validation and feature name updating
-            X, y = self._validate_data(X=X, y=y, reset=True, multi_output=True)
+            X, y = self._validate_data_X_y(X, y)
             # Update feature names with selected variable names
+            self.selection_mask_ = selection_mask
             self.feature_names_in_ = _check_feature_names_in(self, variable_names)
             self.display_feature_names_in_ = self.feature_names_in_
             print(f"Using features {self.feature_names_in_}")
@@ -1517,22 +1632,29 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             else:
                 X, y = denoise(X, y, Xresampled=Xresampled, random_state=random_state)
 
-        return X, y, variable_names, X_units, y_units
+        return X, y, variable_names, complexity_of_variables, X_units, y_units
 
-    def _run(self, X, y, mutated_params, weights, seed):
+    def _run(
+        self,
+        X: ndarray,
+        y: ndarray,
+        runtime_params: _DynamicallySetParams,
+        weights: Optional[ndarray],
+        seed: int,
+    ):
         """
         Run the symbolic regression fitting process on the julia backend.
 
         Parameters
         ----------
-        X : ndarray | pandas.DataFrame
+        X : ndarray
             Training data of shape `(n_samples, n_features)`.
-        y : ndarray | pandas.DataFrame
+        y : ndarray
             Target values of shape `(n_samples,)` or `(n_samples, n_targets)`.
             Will be cast to `X`'s dtype if necessary.
-        mutated_params : dict[str, Any]
-            Dictionary of mutated versions of some parameters passed in __init__.
-        weights : ndarray | pandas.DataFrame
+        runtime_params : DynamicallySetParams
+            Dynamically set versions of some parameters passed in __init__.
+        weights : ndarray | None
             Weight array of the same shape as `y`.
             Each element is how to weight the mean-square-error loss
             for that particular element of y.
@@ -1551,24 +1673,27 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         """
         # Need to be global as we don't want to recreate/reinstate julia for
         # every new instance of PySRRegressor
-        global already_ran
+        global ALREADY_RAN
 
         # These are the parameters which may be modified from the ones
         # specified in init, so we define them here locally:
-        binary_operators = mutated_params["binary_operators"]
-        unary_operators = mutated_params["unary_operators"]
-        maxdepth = mutated_params["maxdepth"]
-        constraints = mutated_params["constraints"]
+        binary_operators = runtime_params.binary_operators
+        unary_operators = runtime_params.unary_operators
+        maxdepth = runtime_params.maxdepth
+        constraints = runtime_params.constraints
+        multithreading = runtime_params.multithreading
+        batch_size = runtime_params.batch_size
+        update_verbosity = runtime_params.update_verbosity
+        progress = runtime_params.progress
+        warmup_maxsize_by = runtime_params.warmup_maxsize_by
+
         nested_constraints = self.nested_constraints
         complexity_of_operators = self.complexity_of_operators
-        multithreading = mutated_params["multithreading"]
+        complexity_of_variables = self.complexity_of_variables_
         cluster_manager = self.cluster_manager
-        batch_size = mutated_params["batch_size"]
-        update_verbosity = mutated_params["update_verbosity"]
-        progress = mutated_params["progress"]
 
         # Start julia backend processes
-        if not already_ran and update_verbosity != 0:
+        if not ALREADY_RAN and update_verbosity != 0:
             print("Compiling Julia backend...")
 
         if cluster_manager is not None:
@@ -1607,6 +1732,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 complexity_of_operators_str += f"({k}) => {v}, "
             complexity_of_operators_str += ")"
             complexity_of_operators = jl.seval(complexity_of_operators_str)
+        # TODO: Refactor this into helper function
+
+        if isinstance(complexity_of_variables, list):
+            complexity_of_variables = jl_array(complexity_of_variables)
 
         custom_loss = jl.seval(
             str(self.elementwise_loss)
@@ -1643,16 +1772,30 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             optimize=self.weight_optimize,
         )
 
+        jl_binary_operators: List[Any] = []
+        jl_unary_operators: List[Any] = []
+        for input_list, output_list, name in [
+            (binary_operators, jl_binary_operators, "binary"),
+            (unary_operators, jl_unary_operators, "unary"),
+        ]:
+            for op in input_list:
+                jl_op = jl.seval(op)
+                if not jl_is_function(jl_op):
+                    raise ValueError(
+                        f"When building `{name}_operators`, `'{op}'` did not return a Julia function"
+                    )
+                output_list.append(jl_op)
+
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/OptionsStruct.jl
         options = SymbolicRegression.Options(
-            binary_operators=jl.seval(str(binary_operators).replace("'", "")),
-            unary_operators=jl.seval(str(unary_operators).replace("'", "")),
+            binary_operators=jl_array(jl_binary_operators, dtype=jl.Function),
+            unary_operators=jl_array(jl_unary_operators, dtype=jl.Function),
             bin_constraints=jl_array(bin_constraints),
             una_constraints=jl_array(una_constraints),
             complexity_of_operators=complexity_of_operators,
             complexity_of_constants=self.complexity_of_constants,
-            complexity_of_variables=self.complexity_of_variables,
+            complexity_of_variables=complexity_of_variables,
             nested_constraints=nested_constraints,
             elementwise_loss=custom_loss,
             loss_function=custom_full_objective,
@@ -1667,6 +1810,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             # These have the same name:
             parsimony=self.parsimony,
             dimensional_constraint_penalty=self.dimensional_constraint_penalty,
+            dimensionless_constants_only=self.dimensionless_constants_only,
             alpha=self.alpha,
             maxdepth=maxdepth,
             fast_cycle=self.fast_cycle,
@@ -1678,9 +1822,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             fraction_replaced_hof=self.fraction_replaced_hof,
             should_simplify=self.should_simplify,
             should_optimize_constants=self.should_optimize_constants,
-            warmup_maxsize_by=(
-                0.0 if self.warmup_maxsize_by is None else self.warmup_maxsize_by
-            ),
+            warmup_maxsize_by=warmup_maxsize_by,
             use_frequency=self.use_frequency,
             use_frequency_in_tournament=self.use_frequency_in_tournament,
             adaptive_parsimony_scaling=self.adaptive_parsimony_scaling,
@@ -1787,7 +1929,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if self.delete_tempfiles:
             shutil.rmtree(self.tempdir_)
 
-        already_ran = True
+        ALREADY_RAN = True
 
         return self
 
@@ -1797,9 +1939,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         y,
         Xresampled=None,
         weights=None,
-        variable_names: Optional[List[str]] = None,
-        X_units: Optional[List[str]] = None,
-        y_units: Optional[List[str]] = None,
+        variable_names: Optional[ArrayLike[str]] = None,
+        complexity_of_variables: Optional[
+            Union[int, float, List[Union[int, float]]]
+        ] = None,
+        X_units: Optional[ArrayLike[str]] = None,
+        y_units: Optional[Union[str, ArrayLike[str]]] = None,
     ) -> "PySRRegressor":
         """
         Search for equations to fit the dataset and store them in `self.equations_`.
@@ -1858,15 +2003,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self.selection_mask_ = None
             self.julia_state_stream_ = None
             self.julia_options_stream_ = None
+            self.complexity_of_variables_ = None
             self.X_units_ = None
             self.y_units_ = None
 
-        random_state = check_random_state(self.random_state)  # For np random
-        seed = random_state.get_state()[1][0]  # For julia random
-
         self._setup_equation_file()
 
-        mutated_params = self._validate_and_set_init_params()
+        runtime_params = self._validate_and_modify_params()
 
         (
             X,
@@ -1874,10 +2017,18 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Xresampled,
             weights,
             variable_names,
+            complexity_of_variables,
             X_units,
             y_units,
         ) = self._validate_and_set_fit_params(
-            X, y, Xresampled, weights, variable_names, X_units, y_units
+            X,
+            y,
+            Xresampled,
+            weights,
+            variable_names,
+            complexity_of_variables,
+            X_units,
+            y_units,
         )
 
         if X.shape[0] > 10000 and not self.batching:
@@ -1891,9 +2042,21 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 "More datapoints will lower the search speed."
             )
 
+        random_state = check_random_state(self.random_state)  # For np random
+        seed = cast(int, random_state.randint(0, 2**31 - 1))  # For julia random
+
         # Pre transformations (feature selection and denoising)
-        X, y, variable_names, X_units, y_units = self._pre_transform_training_data(
-            X, y, Xresampled, variable_names, X_units, y_units, random_state
+        X, y, variable_names, complexity_of_variables, X_units, y_units = (
+            self._pre_transform_training_data(
+                X,
+                y,
+                Xresampled,
+                variable_names,
+                complexity_of_variables,
+                X_units,
+                y_units,
+                random_state,
+            )
         )
 
         # Warn about large feature counts (still warn if feature count is large
@@ -1903,13 +2066,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 "Note: you are running with 10 features or more. "
                 "Genetic algorithms like used in PySR scale poorly with large numbers of features. "
                 "You should run PySR for more `niterations` to ensure it can find "
-                "the correct variables, "
-                "or, alternatively, do a dimensionality reduction beforehand. "
-                "For example, `X = PCA(n_components=6).fit_transform(X)`, "
-                "using scikit-learn's `PCA` class, "
-                "will reduce the number of features to 6 in an interpretable way, "
-                "as each resultant feature "
-                "will be a linear combination of the original features. "
+                "the correct variables, and consider using a larger `maxsize`."
             )
 
         # Assertion checks
@@ -1920,6 +2077,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             X,
             use_custom_variable_names,
             variable_names,
+            complexity_of_variables,
             weights,
             y,
             X_units,
@@ -1932,7 +2090,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self._checkpoint()
 
         # Perform the search:
-        self._run(X, y, mutated_params, weights=weights, seed=seed)
+        self._run(X, y, runtime_params, weights=weights, seed=seed)
 
         # Then, after fit, we save again, so the pickle file contains
         # the equations:
@@ -1941,7 +2099,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         return self
 
-    def refresh(self, checkpoint_file=None):
+    def refresh(self, checkpoint_file: Optional[PathLike] = None) -> None:
         """
         Update self.equations_ with any new options passed.
 
@@ -1950,11 +2108,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        checkpoint_file : str
+        checkpoint_file : str or Path
             Path to checkpoint hall of fame file to be loaded.
             The default will use the set `equation_file_`.
         """
-        if checkpoint_file:
+        if checkpoint_file is not None:
             self.equation_file_ = checkpoint_file
             self.equation_file_contents_ = None
         check_is_fitted(self, attributes=["equation_file_"])
@@ -2006,7 +2164,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             if self.selection_mask_ is not None:
                 # RangeIndex enforces column order allowing columns to
                 # be correctly filtered with self.selection_mask_
-                X = X.iloc[:, self.selection_mask_]
+                X = X[X.columns[self.selection_mask_]]
             X.columns = self.feature_names_in_
         # Without feature information, CallableEquation/lambda_format equations
         # require that the column order of X matches that of the X used during
@@ -2016,14 +2174,16 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # reordered/reindexed to match those of the transformed (denoised and
         # feature selected) X in fit.
         X = X.reindex(columns=self.feature_names_in_)
-        X = self._validate_data(X, reset=False)
+        X = self._validate_data_X(X)
 
         try:
-            if self.nout_ > 1:
+            if isinstance(best_equation, list):
+                assert self.nout_ > 1
                 return np.stack(
                     [eq["lambda_format"](X) for eq in best_equation], axis=1
                 )
-            return best_equation["lambda_format"](X)
+            else:
+                return best_equation["lambda_format"](X)
         except Exception as error:
             raise ValueError(
                 "Failed to evaluate the expression. "
@@ -2053,9 +2213,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         """
         self.refresh()
         best_equation = self.get_best(index=index)
-        if self.nout_ > 1:
+        if isinstance(best_equation, list):
+            assert self.nout_ > 1
             return [eq["sympy_format"] for eq in best_equation]
-        return best_equation["sympy_format"]
+        else:
+            return best_equation["sympy_format"]
 
     def latex(self, index=None, precision=3):
         """
@@ -2115,9 +2277,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.set_params(output_jax_format=True)
         self.refresh()
         best_equation = self.get_best(index=index)
-        if self.nout_ > 1:
+        if isinstance(best_equation, list):
+            assert self.nout_ > 1
             return [eq["jax_format"] for eq in best_equation]
-        return best_equation["jax_format"]
+        else:
+            return best_equation["jax_format"]
 
     def pytorch(self, index=None):
         """
@@ -2145,9 +2309,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.set_params(output_torch_format=True)
         self.refresh()
         best_equation = self.get_best(index=index)
-        if self.nout_ > 1:
+        if isinstance(best_equation, list):
             return [eq["torch_format"] for eq in best_equation]
-        return best_equation["torch_format"]
+        else:
+            return best_equation["torch_format"]
 
     def _read_equation_file(self):
         """Read the hall of fame file created by `SymbolicRegression.jl`."""
@@ -2246,10 +2411,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             lastComplexity = 0
             sympy_format = []
             lambda_format = []
-            if self.output_jax_format:
-                jax_format = []
-            if self.output_torch_format:
-                torch_format = []
+            jax_format = []
+            torch_format = []
 
             for _, eqn_row in output.iterrows():
                 eqn = pysr2sympy(
@@ -2361,7 +2524,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         """
         self.refresh()
 
-        if self.nout_ > 1:
+        if isinstance(self.equations_, list):
             if indices is not None:
                 assert isinstance(indices, list)
                 assert isinstance(indices[0], list)
@@ -2370,7 +2533,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             table_string = sympy2multilatextable(
                 self.equations_, indices=indices, precision=precision, columns=columns
             )
-        else:
+        elif isinstance(self.equations_, pd.DataFrame):
             if indices is not None:
                 assert isinstance(indices, list)
                 assert isinstance(indices[0], int)
@@ -2378,15 +2541,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             table_string = sympy2latextable(
                 self.equations_, indices=indices, precision=precision, columns=columns
             )
+        else:
+            raise ValueError(
+                "Invalid type for equations_ to pass to `latex_table`. "
+                "Expected a DataFrame or a list of DataFrames."
+            )
 
-        preamble_string = [
-            r"\usepackage{breqn}",
-            r"\usepackage{booktabs}",
-            "",
-            "...",
-            "",
-        ]
-        return "\n".join(preamble_string + [table_string])
+        return with_preamble(table_string)
 
 
 def idx_model_selection(equations: pd.DataFrame, model_selection: str):
@@ -2404,3 +2565,30 @@ def idx_model_selection(equations: pd.DataFrame, model_selection: str):
             f"{model_selection} is not a valid model selection strategy."
         )
     return chosen_idx
+
+
+def _mutate_parameter(param_name: str, param_value):
+    if param_name in ["binary_operators", "unary_operators"] and isinstance(
+        param_value, str
+    ):
+        return [param_value]
+
+    if param_name == "batch_size" and param_value < 1:
+        warnings.warn(
+            "Given `batch_size` must be greater than or equal to one. "
+            "`batch_size` has been increased to equal one."
+        )
+        return 1
+
+    if (
+        param_name == "progress"
+        and param_value == True
+        and "buffer" not in sys.stdout.__dir__()
+    ):
+        warnings.warn(
+            "Note: it looks like you are running in Jupyter. "
+            "The progress bar will be turned off."
+        )
+        return False
+
+    return param_value

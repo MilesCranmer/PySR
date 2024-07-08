@@ -1,6 +1,8 @@
 import os
 import sys
 import warnings
+from types import ModuleType
+from typing import cast
 
 # Check if JuliaCall is already loaded, and if so, warn the user
 # about the relevant environment variables. If not loaded,
@@ -35,31 +37,17 @@ else:
         os.environ[k] = os.environ.get(k, default)
 
 
+autoload_extensions = os.environ.get("PYSR_AUTOLOAD_EXTENSIONS")
+if autoload_extensions is not None:
+    # Deprecated; so just pass to juliacall
+    os.environ["PYTHON_JULIACALL_AUTOLOAD_IPYTHON_EXTENSION"] = autoload_extensions
+
 from juliacall import Main as jl  # type: ignore
 
+jl = cast(ModuleType, jl)
+
+
 jl_version = (jl.VERSION.major, jl.VERSION.minor, jl.VERSION.patch)
-
-# Next, automatically load the juliacall extension if we're in a Jupyter notebook
-autoload_extensions = os.environ.get("PYSR_AUTOLOAD_EXTENSIONS", "yes")
-if autoload_extensions in {"yes", ""} and jl_version >= (1, 9, 0):
-    try:
-        get_ipython = sys.modules["IPython"].get_ipython
-
-        if "IPKernelApp" not in get_ipython().config:
-            raise ImportError("console")
-
-        print(
-            "Detected Jupyter notebook. Loading juliacall extension. Set `PYSR_AUTOLOAD_EXTENSIONS=no` to disable."
-        )
-
-        # TODO: Turn this off if juliacall does this automatically
-        get_ipython().run_line_magic("load_ext", "juliacall")
-    except Exception:
-        pass
-elif autoload_extensions not in {"no", "yes", ""}:
-    warnings.warn(
-        "PYSR_AUTOLOAD_EXTENSIONS environment variable is set to something other than 'yes' or 'no' or ''."
-    )
 
 jl.seval("using SymbolicRegression")
 SymbolicRegression = jl.SymbolicRegression

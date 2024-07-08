@@ -428,7 +428,7 @@ the evaluation, as we simply evaluated each argument and divided the result) int
 `((2.3554819 + -0.3554746) - (x1 * (x0 * x0)))` and
 `(-1.0000019 - (x2 * x2))`, meaning that our discovered equation is
 equal to:
-$\frac{x_0^2 x_1 - 2.0000073}{x_2^2 - 1.0000019}$, which
+$\frac{x_0^2 x_1 - 2.0000073}{x_2^2 + 1.0000019}$, which
 is nearly the same as the true equation!
 
 ## 10. Dimensional constraints
@@ -520,6 +520,8 @@ a constant `"2.6353e-22[m s⁻²]"`.
 
 Note that this expression has a large dynamic range so may be difficult to find. Consider searching with a larger `niterations` if needed.
 
+Note that you can also search for exclusively dimensionless constants by settings
+`dimensionless_constants_only` to `true`.
 
 ## 11. Additional features
 

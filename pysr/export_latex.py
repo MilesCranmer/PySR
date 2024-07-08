@@ -1,4 +1,5 @@
 """Functions to help export PySR equations to LaTeX."""
+
 from typing import List, Optional, Tuple
 
 import pandas as pd
@@ -152,3 +153,15 @@ def sympy2multilatextable(
     ]
 
     return "\n\n".join(latex_tables)
+
+
+def with_preamble(table_string: str) -> str:
+    preamble_string = [
+        r"\usepackage{breqn}",
+        r"\usepackage{booktabs}",
+        "",
+        "...",
+        "",
+        table_string,
+    ]
+    return "\n".join(preamble_string)

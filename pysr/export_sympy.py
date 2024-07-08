@@ -1,8 +1,11 @@
 """Define utilities to export to sympy"""
+
 from typing import Callable, Dict, List, Optional
 
 import sympy
 from sympy import sympify
+
+from .utils import ArrayLike
 
 sympy_mappings = {
     "div": lambda x, y: x / y,
@@ -29,8 +32,8 @@ sympy_mappings = {
     "acosh": lambda x: sympy.acosh(x),
     "acosh_abs": lambda x: sympy.acosh(abs(x) + 1),
     "asinh": sympy.asinh,
-    "atanh": lambda x: sympy.atanh(sympy.Mod(x + 1, 2) - 1),
-    "atanh_clip": lambda x: sympy.atanh(sympy.Mod(x + 1, 2) - 1),
+    "atanh": lambda x: sympy.atanh(sympy.Mod(x + 1, 2) - sympy.S(1)),
+    "atanh_clip": lambda x: sympy.atanh(sympy.Mod(x + 1, 2) - sympy.S(1)),
     "abs": abs,
     "mod": sympy.Mod,
     "erf": sympy.erf,
@@ -50,6 +53,7 @@ sympy_mappings = {
     "round": lambda x: sympy.ceiling(x - 0.5),
     "max": lambda x, y: sympy.Piecewise((y, x < y), (x, True)),
     "min": lambda x, y: sympy.Piecewise((x, x < y), (y, True)),
+    "greater": lambda x, y: sympy.Piecewise((1.0, x > y), (0.0, True)),
     "cond": lambda x, y: sympy.Piecewise((y, x > 0), (0.0, True)),
     "logical_or": lambda x, y: sympy.Piecewise((1.0, (x > 0) | (y > 0)), (0.0, True)),
     "logical_and": lambda x, y: sympy.Piecewise((1.0, (x > 0) & (y > 0)), (0.0, True)),
@@ -58,13 +62,13 @@ sympy_mappings = {
 
 
 def create_sympy_symbols_map(
-    feature_names_in: List[str],
+    feature_names_in: ArrayLike[str],
 ) -> Dict[str, sympy.Symbol]:
     return {variable: sympy.Symbol(variable) for variable in feature_names_in}
 
 
 def create_sympy_symbols(
-    feature_names_in: List[str],
+    feature_names_in: ArrayLike[str],
 ) -> List[sympy.Symbol]:
     return [sympy.Symbol(variable) for variable in feature_names_in]
 
@@ -72,7 +76,7 @@ def create_sympy_symbols(
 def pysr2sympy(
     equation: str,
     *,
-    feature_names_in: Optional[List[str]] = None,
+    feature_names_in: Optional[ArrayLike[str]] = None,
     extra_sympy_mappings: Optional[Dict[str, Callable]] = None,
 ):
     if feature_names_in is None:
@@ -83,7 +87,12 @@ def pysr2sympy(
         **sympy_mappings,
     }
 
-    return sympify(equation, locals=local_sympy_mappings)
+    try:
+        return sympify(equation, locals=local_sympy_mappings, evaluate=False)
+    except TypeError as e:
+        if "got an unexpected keyword argument 'evaluate'" in str(e):
+            return sympify(equation, locals=local_sympy_mappings)
+        raise TypeError(f"Error processing equation '{equation}'") from e
 
 
 def assert_valid_sympy_symbol(var_name: str) -> None:

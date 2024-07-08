@@ -1,10 +1,20 @@
+import difflib
+import inspect
 import os
 import re
+from pathlib import Path
+from typing import Any, List, TypeVar, Union
 
-from sklearn.utils.validation import _check_feature_names_in
+from numpy import ndarray
+from sklearn.utils.validation import _check_feature_names_in  # type: ignore
+
+T = TypeVar("T", bound=Any)
+
+ArrayLike = Union[ndarray, List[T]]
+PathLike = Union[str, Path]
 
 
-def _csv_filename_to_pkl_filename(csv_filename: str) -> str:
+def _csv_filename_to_pkl_filename(csv_filename: PathLike) -> PathLike:
     if os.path.splitext(csv_filename)[1] == ".pkl":
         return csv_filename
 
@@ -53,3 +63,13 @@ def _subscriptify(i: int) -> str:
     For example, 123 -> "₁₂₃".
     """
     return "".join([chr(0x2080 + int(c)) for c in str(i)])
+
+
+def _suggest_keywords(cls, k: str) -> List[str]:
+    valid_keywords = [
+        param
+        for param in inspect.signature(cls.__init__).parameters
+        if param not in ["self", "kwargs"]
+    ]
+    suggestions = difflib.get_close_matches(k, valid_keywords, n=3)
+    return suggestions

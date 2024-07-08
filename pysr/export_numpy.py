@@ -1,9 +1,12 @@
 """Code for exporting discovered expressions to numpy"""
+
 import warnings
+from typing import List, Union
 
 import numpy as np
 import pandas as pd
-from sympy import lambdify
+from numpy.typing import NDArray
+from sympy import Expr, Symbol, lambdify
 
 
 def sympy2numpy(eqn, sympy_symbols, *, selection=None):
@@ -12,6 +15,10 @@ def sympy2numpy(eqn, sympy_symbols, *, selection=None):
 
 class CallableEquation:
     """Simple wrapper for numpy lambda functions built with sympy"""
+
+    _sympy: Expr
+    _sympy_symbols: List[Symbol]
+    _selection: Union[NDArray[np.bool_], None]
 
     def __init__(self, eqn, sympy_symbols, selection=None):
         self._sympy = eqn
@@ -28,8 +35,9 @@ class CallableEquation:
             return self._lambda(
                 **{k: X[k].values for k in map(str, self._sympy_symbols)}
             ) * np.ones(expected_shape)
+
         if self._selection is not None:
-            if X.shape[1] != len(self._selection):
+            if X.shape[1] != self._selection.sum():
                 warnings.warn(
                     "`X` should be of shape (n_samples, len(self._selection)). "
                     "Automatically filtering `X` to selection. "
@@ -37,6 +45,7 @@ class CallableEquation:
                     "this may lead to incorrect predictions and other errors."
                 )
                 X = X[:, self._selection]
+
         return self._lambda(*X.T) * np.ones(expected_shape)
 
     @property

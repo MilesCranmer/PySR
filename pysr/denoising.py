@@ -1,8 +1,17 @@
 """Functions for denoising data during preprocessing."""
+
+from typing import Optional, Tuple, cast
+
 import numpy as np
+from numpy import ndarray
 
 
-def denoise(X, y, Xresampled=None, random_state=None):
+def denoise(
+    X: ndarray,
+    y: ndarray,
+    Xresampled: Optional[ndarray] = None,
+    random_state: Optional[np.random.RandomState] = None,
+) -> Tuple[ndarray, ndarray]:
     """Denoise the dataset using a Gaussian process."""
     from sklearn.gaussian_process import GaussianProcessRegressor
     from sklearn.gaussian_process.kernels import RBF, ConstantKernel, WhiteKernel
@@ -14,12 +23,17 @@ def denoise(X, y, Xresampled=None, random_state=None):
     gpr.fit(X, y)
 
     if Xresampled is not None:
-        return Xresampled, gpr.predict(Xresampled)
+        return Xresampled, cast(ndarray, gpr.predict(Xresampled))
 
-    return X, gpr.predict(X)
+    return X, cast(ndarray, gpr.predict(X))
 
 
-def multi_denoise(X, y, Xresampled=None, random_state=None):
+def multi_denoise(
+    X: ndarray,
+    y: ndarray,
+    Xresampled: Optional[ndarray] = None,
+    random_state: Optional[np.random.RandomState] = None,
+):
     """Perform `denoise` along each column of `y` independently."""
     y = np.stack(
         [

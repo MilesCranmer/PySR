@@ -11,17 +11,28 @@ import pandas as pd
 import sympy
 from sklearn.utils.estimator_checks import check_estimator
 
-from .. import PySRRegressor, install, jl
-from ..export_latex import sympy2latex
-from ..feature_selection import _handle_feature_selection, run_feature_selection
-from ..julia_helpers import init_julia
-from ..sr import _check_assertions, _process_constraints, idx_model_selection
-from ..utils import _csv_filename_to_pkl_filename
+from pysr import PySRRegressor, install, jl
+from pysr.export_latex import sympy2latex
+from pysr.feature_selection import _handle_feature_selection, run_feature_selection
+from pysr.julia_helpers import init_julia
+from pysr.sr import (
+    _check_assertions,
+    _process_constraints,
+    _suggest_keywords,
+    idx_model_selection,
+)
+from pysr.utils import _csv_filename_to_pkl_filename
+
 from .params import (
     DEFAULT_NCYCLES,
     DEFAULT_NITERATIONS,
     DEFAULT_PARAMS,
     DEFAULT_POPULATIONS,
+)
+
+# Disables local saving:
+os.environ["SYMBOLIC_REGRESSION_IS_TESTING"] = os.environ.get(
+    "SYMBOLIC_REGRESSION_IS_TESTING", "true"
 )
 
 
@@ -171,6 +182,63 @@ class TestPipeline(unittest.TestCase):
         self.assertLessEqual(mse1, 1e-4)
         self.assertLessEqual(mse2, 1e-4)
 
+    def test_custom_variable_complexity(self):
+        for outer in (True, False):
+            for case in (1, 2):
+                y = self.X[:, [0, 1]]
+                if case == 1:
+                    kwargs = dict(complexity_of_variables=[2, 3])
+                elif case == 2:
+                    kwargs = dict(complexity_of_variables=2)
+
+                if outer:
+                    outer_kwargs = kwargs
+                    inner_kwargs = dict()
+                else:
+                    outer_kwargs = dict()
+                    inner_kwargs = kwargs
+
+                model = PySRRegressor(
+                    binary_operators=["+"],
+                    verbosity=0,
+                    **self.default_test_kwargs,
+                    early_stop_condition=(
+                        f"stop_if_{case}(l, c) = l < 1e-8 && c <= {3 if case == 1 else 2}"
+                    ),
+                    **outer_kwargs,
+                )
+                model.fit(self.X[:, [0, 1]], y, **inner_kwargs)
+                self.assertLessEqual(model.get_best()[0]["loss"], 1e-8)
+                self.assertLessEqual(model.get_best()[1]["loss"], 1e-8)
+
+                self.assertEqual(model.get_best()[0]["complexity"], 2)
+                self.assertEqual(
+                    model.get_best()[1]["complexity"], 3 if case == 1 else 2
+                )
+
+    def test_error_message_custom_variable_complexity(self):
+        X = np.ones((10, 2))
+        y = np.ones((10,))
+        model = PySRRegressor()
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, y, complexity_of_variables=[1, 2, 3])
+
+        self.assertIn(
+            "number of elements in `complexity_of_variables`", str(cm.exception)
+        )
+
+    def test_error_message_both_variable_complexity(self):
+        X = np.ones((10, 2))
+        y = np.ones((10,))
+        model = PySRRegressor(complexity_of_variables=[1, 2])
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, y, complexity_of_variables=[1, 2, 3])
+
+        self.assertIn(
+            "You cannot set `complexity_of_variables` at both `fit` and `__init__`.",
+            str(cm.exception),
+        )
+
     def test_multioutput_weighted_with_callable_temp_equation(self):
         X = self.X.copy()
         y = X[:, [0, 1]] ** 2
@@ -308,7 +376,10 @@ class TestPipeline(unittest.TestCase):
                 "unused_feature": self.rstate.randn(500),
             }
         )
-        true_fn = lambda x: np.array(x["T"] + x["x"] ** 2 + 1.323837)
+
+        def true_fn(x):
+            return np.array(x["T"] + x["x"] ** 2 + 1.323837)
+
         y = true_fn(X)
         noise = self.rstate.randn(500) * 0.01
         y = y + noise
@@ -367,13 +438,12 @@ class TestPipeline(unittest.TestCase):
 
     def test_load_model(self):
         """See if we can load a ran model from the equation file."""
-        csv_file_data = """
-        Complexity,Loss,Equation
+        csv_file_data = """Complexity,Loss,Equation
         1,0.19951081,"1.9762075"
         3,0.12717344,"(f0 + 1.4724599)"
         4,0.104823045,"pow_abs(2.2683423, cos(f3))\""""
         # Strip the indents:
-        csv_file_data = "\n".join([l.strip() for l in csv_file_data.split("\n")])
+        csv_file_data = "\n".join([line.strip() for line in csv_file_data.split("\n")])
 
         for from_backup in [False, True]:
             rand_dir = Path(tempfile.mkdtemp())
@@ -425,11 +495,21 @@ class TestPipeline(unittest.TestCase):
             if os.path.exists(file_to_delete):
                 os.remove(file_to_delete)
 
-        pickle_file = rand_dir / "equations.pkl"
+        # pickle_file = rand_dir / "equations.pkl"
         model3 = PySRRegressor.from_file(
             model.equation_file_, extra_sympy_mappings={"sq": lambda x: x**2}
         )
         np.testing.assert_allclose(model.predict(self.X), model3.predict(self.X))
+
+    def test_jl_function_error(self):
+        # TODO: Move this to better class
+        with self.assertRaises(ValueError) as cm:
+            PySRRegressor(unary_operators=["1"]).fit([[1]], [1])
+
+        self.assertIn(
+            "When building `unary_operators`, `'1'` did not return a Julia function",
+            str(cm.exception),
+        )
 
 
 def manually_create_model(equations, feature_names=None):
@@ -526,7 +606,7 @@ class TestFeatureSelection(unittest.TestCase):
         X = self.rstate.randn(20000, 5)
         y = X[:, 2] ** 2 + X[:, 3] ** 2
         selected = run_feature_selection(X, y, select_k_features=2)
-        self.assertEqual(sorted(selected), [2, 3])
+        np.testing.assert_array_equal(selected, [False, False, True, True, False])
 
     def test_feature_selection_handler(self):
         X = self.rstate.randn(20000, 5)
@@ -538,8 +618,8 @@ class TestFeatureSelection(unittest.TestCase):
             variable_names=var_names,
             y=y,
         )
-        self.assertTrue((2 in selection) and (3 in selection))
-        selected_var_names = [var_names[i] for i in selection]
+        np.testing.assert_array_equal(selection, [False, False, True, True, False])
+        selected_var_names = [var_names[i] for i in range(5) if selection[i]]
         self.assertEqual(set(selected_var_names), set("x2 x3".split(" ")))
         np.testing.assert_array_equal(
             np.sort(selected_X, axis=1), np.sort(X[:, [2, 3]], axis=1)
@@ -562,6 +642,105 @@ class TestMiscellaneous(unittest.TestCase):
         # Next, test inputting the strings.
         test_pkl_file = _csv_filename_to_pkl_filename(str(equation_file))
         self.assertEqual(test_pkl_file, str(expected_pkl_file))
+
+    def test_pickle_with_temp_equation_file(self):
+        """If we have a temporary equation file, unpickle the estimator."""
+        model = PySRRegressor(
+            populations=int(1 + DEFAULT_POPULATIONS / 5),
+            temp_equation_file=True,
+            procs=0,
+            multithreading=False,
+        )
+        nout = 3
+        X = np.random.randn(100, 2)
+        y = np.random.randn(100, nout)
+        model.fit(X, y)
+        contents = model.equation_file_contents_.copy()
+
+        y_predictions = model.predict(X)
+
+        equation_file_base = model.equation_file_
+        for i in range(1, nout + 1):
+            assert not os.path.exists(str(equation_file_base) + f".out{i}.bkup")
+
+        with tempfile.NamedTemporaryFile() as pickle_file:
+            pkl.dump(model, pickle_file)
+            pickle_file.seek(0)
+            model2 = pkl.load(pickle_file)
+
+        contents2 = model2.equation_file_contents_
+        cols_to_check = ["equation", "loss", "complexity"]
+        for frame1, frame2 in zip(contents, contents2):
+            pd.testing.assert_frame_equal(frame1[cols_to_check], frame2[cols_to_check])
+
+        y_predictions2 = model2.predict(X)
+        np.testing.assert_array_almost_equal(y_predictions, y_predictions2)
+
+    def test_scikit_learn_compatibility(self):
+        """Test PySRRegressor compatibility with scikit-learn."""
+        model = PySRRegressor(
+            niterations=int(1 + DEFAULT_NITERATIONS / 10),
+            populations=int(1 + DEFAULT_POPULATIONS / 3),
+            ncycles_per_iteration=int(2 + DEFAULT_NCYCLES / 10),
+            verbosity=0,
+            progress=False,
+            random_state=0,
+            deterministic=True,  # Deterministic as tests require this.
+            procs=0,
+            multithreading=False,
+            warm_start=False,
+            temp_equation_file=True,
+        )  # Return early.
+
+        check_generator = check_estimator(model, generate_only=True)
+        exception_messages = []
+        for _, check in check_generator:
+            if check.func.__name__ == "check_complex_data":
+                # We can use complex data, so avoid this check.
+                continue
+            try:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    check(model)
+                print("Passed", check.func.__name__)
+            except Exception:
+                error_message = str(traceback.format_exc())
+                exception_messages.append(
+                    f"{check.func.__name__}:\n" + error_message + "\n"
+                )
+                print("Failed", check.func.__name__, "with:")
+                # Add a leading tab to error message, which
+                # might be multi-line:
+                print("\n".join([(" " * 4) + row for row in error_message.split("\n")]))
+        # If any checks failed don't let the test pass.
+        self.assertEqual(len(exception_messages), 0)
+
+    def test_param_groupings(self):
+        """Test that param_groupings are complete"""
+        param_groupings_file = Path(__file__).parent.parent / "param_groupings.yml"
+        if not param_groupings_file.exists():
+            return
+
+        # Read the file, discarding lines ending in ":",
+        # and removing leading "\s*-\s*":
+        params = []
+        with open(param_groupings_file, "r") as f:
+            for line in f.readlines():
+                if line.strip().endswith(":"):
+                    continue
+                if line.strip().startswith("-"):
+                    params.append(line.strip()[1:].strip())
+
+        regressor_params = [
+            p for p in DEFAULT_PARAMS.keys() if p not in ["self", "kwargs"]
+        ]
+
+        # Check the sets are equal:
+        self.assertSetEqual(set(params), set(regressor_params))
+
+
+class TestHelpMessages(unittest.TestCase):
+    """Test user help messages."""
 
     def test_deprecation(self):
         """Ensure that deprecation works as expected.
@@ -705,100 +884,28 @@ class TestMiscellaneous(unittest.TestCase):
                 model.get_best()
                 print("Failed", opt["kwargs"])
 
-    def test_pickle_with_temp_equation_file(self):
-        """If we have a temporary equation file, unpickle the estimator."""
-        model = PySRRegressor(
-            populations=int(1 + DEFAULT_POPULATIONS / 5),
-            temp_equation_file=True,
-            procs=0,
-            multithreading=False,
+    def test_suggest_keywords(self):
+        # Easy
+        self.assertEqual(
+            _suggest_keywords(PySRRegressor, "loss_function"), ["loss_function"]
         )
-        nout = 3
-        X = np.random.randn(100, 2)
-        y = np.random.randn(100, nout)
-        model.fit(X, y)
-        contents = model.equation_file_contents_.copy()
 
-        y_predictions = model.predict(X)
+        # More complex, and with error
+        with self.assertRaises(TypeError) as cm:
+            model = PySRRegressor(ncyclesperiterationn=5)
 
-        equation_file_base = model.equation_file_
-        for i in range(1, nout + 1):
-            assert not os.path.exists(str(equation_file_base) + f".out{i}.bkup")
+        self.assertIn(
+            "`ncyclesperiterationn` is not a valid keyword", str(cm.exception)
+        )
+        self.assertIn("Did you mean", str(cm.exception))
+        self.assertIn("`ncycles_per_iteration`, ", str(cm.exception))
+        self.assertIn("`niterations`", str(cm.exception))
 
-        with tempfile.NamedTemporaryFile() as pickle_file:
-            pkl.dump(model, pickle_file)
-            pickle_file.seek(0)
-            model2 = pkl.load(pickle_file)
+        # Farther matches (this might need to be changed)
+        with self.assertRaises(TypeError) as cm:
+            model = PySRRegressor(operators=["+", "-"])
 
-        contents2 = model2.equation_file_contents_
-        cols_to_check = ["equation", "loss", "complexity"]
-        for frame1, frame2 in zip(contents, contents2):
-            pd.testing.assert_frame_equal(frame1[cols_to_check], frame2[cols_to_check])
-
-        y_predictions2 = model2.predict(X)
-        np.testing.assert_array_equal(y_predictions, y_predictions2)
-
-    def test_scikit_learn_compatibility(self):
-        """Test PySRRegressor compatibility with scikit-learn."""
-        model = PySRRegressor(
-            niterations=int(1 + DEFAULT_NITERATIONS / 10),
-            populations=int(1 + DEFAULT_POPULATIONS / 3),
-            ncycles_per_iteration=int(2 + DEFAULT_NCYCLES / 10),
-            verbosity=0,
-            progress=False,
-            random_state=0,
-            deterministic=True,  # Deterministic as tests require this.
-            procs=0,
-            multithreading=False,
-            warm_start=False,
-            temp_equation_file=True,
-        )  # Return early.
-
-        check_generator = check_estimator(model, generate_only=True)
-        exception_messages = []
-        for _, check in check_generator:
-            if check.func.__name__ == "check_complex_data":
-                # We can use complex data, so avoid this check.
-                continue
-            try:
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore")
-                    check(model)
-                print("Passed", check.func.__name__)
-            except Exception:
-                error_message = str(traceback.format_exc())
-                exception_messages.append(
-                    f"{check.func.__name__}:\n" + error_message + "\n"
-                )
-                print("Failed", check.func.__name__, "with:")
-                # Add a leading tab to error message, which
-                # might be multi-line:
-                print("\n".join([(" " * 4) + row for row in error_message.split("\n")]))
-        # If any checks failed don't let the test pass.
-        self.assertEqual(len(exception_messages), 0)
-
-    def test_param_groupings(self):
-        """Test that param_groupings are complete"""
-        param_groupings_file = Path(__file__).parent.parent / "param_groupings.yml"
-        if not param_groupings_file.exists():
-            return
-
-        # Read the file, discarding lines ending in ":",
-        # and removing leading "\s*-\s*":
-        params = []
-        with open(param_groupings_file, "r") as f:
-            for line in f.readlines():
-                if line.strip().endswith(":"):
-                    continue
-                if line.strip().startswith("-"):
-                    params.append(line.strip()[1:].strip())
-
-        regressor_params = [
-            p for p in DEFAULT_PARAMS.keys() if p not in ["self", "kwargs"]
-        ]
-
-        # Check the sets are equal:
-        self.assertSetEqual(set(params), set(regressor_params))
+        self.assertIn("`unary_operators`, `binary_operators`", str(cm.exception))
 
 
 TRUE_PREAMBLE = "\n".join(
@@ -932,7 +1039,7 @@ class TestLaTeXTable(unittest.TestCase):
         middle_part_2 = r"""
             $y_{1} = x_{1}$ & $1$ & $1.32$ & $0.0$ \\
             $y_{1} = \cos{\left(x_{1} \right)}$ & $2$ & $0.0520$ & $3.23$ \\
-            $y_{1} = x_{0}^{2} x_{1}$ & $5$ & $2.00 \cdot 10^{-15}$ & $10.3$ \\
+            $y_{1} = x_{0} x_{0} x_{1}$ & $5$ & $2.00 \cdot 10^{-15}$ & $10.3$ \\
         """
         true_latex_table_str = "\n\n".join(
             self.create_true_latex(part, include_score=True)
@@ -985,7 +1092,7 @@ class TestLaTeXTable(unittest.TestCase):
         middle_part = r"""
         $y = x_{0}$ & $1$ & $1.05$ & $0.0$ \\
         $y = \cos{\left(x_{0} \right)}$ & $2$ & $0.0232$ & $3.82$ \\
-        \begin{minipage}{0.8\linewidth} \vspace{-1em} \begin{dmath*} y = x_{0}^{5} + x_{0}^{3} + 3.20 x_{0} + x_{1}^{3} - 1.20 x_{1} - 5.20 \sin{\left(2.60 x_{0} - 0.326 \sin{\left(x_{2} \right)} \right)} - \cos{\left(x_{0} x_{1} \right)} + \cos{\left(x_{0}^{3} + 3.20 x_{0} + x_{1}^{3} - 1.20 x_{1} + \cos{\left(x_{0} x_{1} \right)} \right)} \end{dmath*} \end{minipage} & $30$ & $1.12 \cdot 10^{-15}$ & $1.09$ \\
+        \begin{minipage}{0.8\linewidth} \vspace{-1em} \begin{dmath*} y = x_{0} x_{0} x_{0} + x_{0} x_{0} x_{0} x_{0} x_{0} + 3.20 x_{0} - 1.20 x_{1} + x_{1} x_{1} x_{1} + 5.20 \sin{\left(- 2.60 x_{0} + 0.326 \sin{\left(x_{2} \right)} \right)} - \cos{\left(x_{0} x_{1} \right)} + \cos{\left(x_{0} x_{0} x_{0} + 3.20 x_{0} - 1.20 x_{1} + x_{1} x_{1} x_{1} + \cos{\left(x_{0} x_{1} \right)} \right)} \end{dmath*} \end{minipage} & $30$ & $1.12 \cdot 10^{-15}$ & $1.09$ \\
         """
         true_latex_table_str = (
             TRUE_PREAMBLE
@@ -1039,8 +1146,14 @@ class TestDimensionalConstraints(unittest.TestCase):
         """This just checks the number of units passed"""
         use_custom_variable_names = False
         variable_names = None
+        complexity_of_variables = 1
         weights = None
-        args = (use_custom_variable_names, variable_names, weights)
+        args = (
+            use_custom_variable_names,
+            variable_names,
+            complexity_of_variables,
+            weights,
+        )
         valid_units = [
             (np.ones((10, 2)), np.ones(10), ["m/s", "s"], "m"),
             (np.ones((10, 1)), np.ones(10), ["m/s"], None),
@@ -1148,6 +1261,7 @@ def runtests(just_tests=False):
         TestBest,
         TestFeatureSelection,
         TestMiscellaneous,
+        TestHelpMessages,
         TestLaTeXTable,
         TestDimensionalConstraints,
     ]

@@ -297,7 +297,7 @@ model = PySRRegressor(
     # ^ Higher precision calculations.
     warm_start=True,
     # ^ Start from where left off.
-    bumper=True,
+    turbo=True,
     # ^ Faster evaluation (experimental)
     extra_sympy_mappings={"cos2": lambda x: sympy.cos(x)**2},
     # extra_torch_mappings={sympy.cos: torch.cos},

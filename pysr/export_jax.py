@@ -1,3 +1,4 @@
+import numpy as np  # noqa: F401
 import sympy
 
 # Special since need to reduce arguments.
@@ -55,7 +56,9 @@ def sympy2jaxtext(expr, parameters, symbols_in, extra_jax_mappings=None):
     if issubclass(expr.func, sympy.Float):
         parameters.append(float(expr))
         return f"parameters[{len(parameters) - 1}]"
-    elif issubclass(expr.func, sympy.Rational):
+    elif issubclass(expr.func, sympy.Rational) or issubclass(
+        expr.func, sympy.NumberSymbol
+    ):
         return f"{float(expr)}"
     elif issubclass(expr.func, sympy.Integer):
         return f"{int(expr)}"
