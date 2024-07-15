@@ -18,7 +18,6 @@ __all__ = [
     "sklearn_monkeypatch",
     "sympy2jax",
     "sympy2torch",
-    "Problem",
     "install",
     "PySRRegressor",
     "best",

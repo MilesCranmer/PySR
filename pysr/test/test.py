@@ -1,3 +1,4 @@
+import importlib
 import os
 import pickle as pkl
 import tempfile
@@ -906,6 +907,14 @@ class TestHelpMessages(unittest.TestCase):
             model = PySRRegressor(operators=["+", "-"])
 
         self.assertIn("`unary_operators`, `binary_operators`", str(cm.exception))
+
+    def test_issue_666(self):
+        # Try the equivalent of `from pysr import *`
+        pysr_module = importlib.import_module("pysr")
+        names_to_import = pysr_module.__all__
+
+        for name in names_to_import:
+            getattr(pysr_module, name)
 
 
 TRUE_PREAMBLE = "\n".join(
