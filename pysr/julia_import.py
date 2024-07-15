@@ -4,6 +4,8 @@ import warnings
 from types import ModuleType
 from typing import cast
 
+import juliapkg
+
 # Check if JuliaCall is already loaded, and if so, warn the user
 # about the relevant environment variables. If not loaded,
 # set up sensible defaults.
@@ -35,6 +37,14 @@ else:
         ("PYTHON_JULIACALL_OPTLEVEL", "3"),
     ):
         os.environ[k] = os.environ.get(k, default)
+
+juliapkg.require_julia("~1.6.7, ~1.7, ~1.8, ~1.9, =1.10.0, ^1.10.3")
+juliapkg.add(
+    "SymbolicRegression",
+    "8254be44-1295-4e6a-a16d-46603ac705cb",
+    version="=0.24.5",
+)
+juliapkg.add("Serialization", "9e88b42a-f829-5b0c-bbe9-9e923198166b", version="1")
 
 
 autoload_extensions = os.environ.get("PYSR_AUTOLOAD_EXTENSIONS")

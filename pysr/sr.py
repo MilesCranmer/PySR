@@ -957,6 +957,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         feature_names_in: Optional[ArrayLike[str]] = None,
         selection_mask: Optional[NDArray[np.bool_]] = None,
         nout: int = 1,
+        verbosity=1,
         **pysr_kwargs,
     ):
         """
@@ -986,6 +987,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Number of outputs of the model.
             Not needed if loading from a pickle file.
             Default is `1`.
+        verbosity : int
+            What verbosity level to use. 0 means minimal print statements.
         **pysr_kwargs : dict
             Any other keyword arguments to initialize the PySRRegressor object.
             These will overwrite those stored in the pickle file.
@@ -1000,9 +1003,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         pkl_filename = _csv_filename_to_pkl_filename(equation_file)
 
         # Try to load model from <equation_file>.pkl
-        print(f"Checking if {pkl_filename} exists...")
+        if verbosity > 0:
+            print(f"Checking if {pkl_filename} exists...")
         if os.path.exists(pkl_filename):
-            print(f"Loading model from {pkl_filename}")
+            if verbosity > 0:
+                print(f"Loading model from {pkl_filename}")
             assert binary_operators is None
             assert unary_operators is None
             assert n_features_in is None
@@ -1022,10 +1027,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             return model
 
         # Else, we re-create it.
-        print(
-            f"{pkl_filename} does not exist, "
-            "so we must create the model from scratch."
-        )
+        if verbosity > 0:
+            print(
+                f"{pkl_filename} does not exist, "
+                "so we must create the model from scratch."
+            )
         assert binary_operators is not None or unary_operators is not None
         assert n_features_in is not None
 

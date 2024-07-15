@@ -19,6 +19,12 @@ classifiers = [
 ]
 dynamic = ["dependencies"]
 
+[project.optional-dependencies]
+gui = [
+    "gradio>=4.0.0,<5.0.0",
+    "matplotlib>=3.0.0,<4.0.0",
+]
+
 [tool.setuptools]
 packages = ["pysr", "pysr._cli", "pysr.test"]
 include-package-data = false
@@ -32,14 +38,14 @@ profile = "black"
 
 [tool.rye]
 dev-dependencies = [
-    "pre-commit>=3.7.0",
-    "ipython>=8.23.0",
-    "ipykernel>=6.29.4",
-    "mypy>=1.10.0",
-    "jax[cpu]>=0.4.26",
-    "torch>=2.3.0",
-    "pandas-stubs>=2.2.1.240316",
-    "types-pytz>=2024.1.0.20240417",
-    "types-openpyxl>=3.1.0.20240428",
     "coverage>=7.5.3",
+    "ipykernel>=6.29.4",
+    "ipython>=8.23.0",
+    "jax[cpu]>=0.4.26",
+    "mypy>=1.10.0",
+    "pandas-stubs>=2.2.1.240316",
+    "pre-commit>=3.7.0",
+    "torch>=2.3.0",
+    "types-openpyxl>=3.1.0.20240428",
+    "types-pytz>=2024.1.0.20240417",
 ]
