@@ -3,7 +3,7 @@ from functools import partial
 
 import numpy as np
 import pandas as pd
-import sympy
+import sympy  # type: ignore
 
 import pysr
 from pysr import PySRRegressor, sympy2jax
@@ -102,7 +102,7 @@ class TestJAX(unittest.TestCase):
         )
 
     def test_issue_656(self):
-        import sympy
+        import sympy  # type: ignore
 
         E_plus_x1 = sympy.exp(1) + sympy.symbols("x1")
         f, params = pysr.export_jax.sympy2jax(E_plus_x1, [sympy.symbols("x1")])

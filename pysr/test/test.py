@@ -9,7 +9,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import sympy
+import sympy  # type: ignore
 from sklearn.utils.estimator_checks import check_estimator
 
 from pysr import PySRRegressor, install, jl

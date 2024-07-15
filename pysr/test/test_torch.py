@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 import pandas as pd
-import sympy
+import sympy  # type: ignore
 
 import pysr
 from pysr import PySRRegressor, sympy2torch
