@@ -3,8 +3,8 @@
 from typing import List, Optional, Tuple
 
 import pandas as pd
-import sympy
-from sympy.printing.latex import LatexPrinter
+import sympy  # type: ignore
+from sympy.printing.latex import LatexPrinter  # type: ignore
 
 
 class PreciseLatexPrinter(LatexPrinter):

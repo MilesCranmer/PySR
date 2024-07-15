@@ -1,5 +1,5 @@
 import numpy as np  # noqa: F401
-import sympy
+import sympy  # type: ignore
 
 # Special since need to reduce arguments.
 MUL = 0

@@ -6,7 +6,7 @@ from typing import List, Union
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
-from sympy import Expr, Symbol, lambdify
+from sympy import Expr, Symbol, lambdify  # type: ignore
 
 
 def sympy2numpy(eqn, sympy_symbols, *, selection=None):
