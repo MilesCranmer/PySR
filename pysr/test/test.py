@@ -893,7 +893,7 @@ class TestHelpMessages(unittest.TestCase):
 
         # More complex, and with error
         with self.assertRaises(TypeError) as cm:
-            model = PySRRegressor(ncyclesperiterationn=5)
+            PySRRegressor(ncyclesperiterationn=5)
 
         self.assertIn(
             "`ncyclesperiterationn` is not a valid keyword", str(cm.exception)
@@ -904,7 +904,7 @@ class TestHelpMessages(unittest.TestCase):
 
         # Farther matches (this might need to be changed)
         with self.assertRaises(TypeError) as cm:
-            model = PySRRegressor(operators=["+", "-"])
+            PySRRegressor(operators=["+", "-"])
 
         self.assertIn("`unary_operators`, `binary_operators`", str(cm.exception))
 
