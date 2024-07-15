@@ -38,13 +38,10 @@ WORKDIR $HOME/pysr
 COPY --chown=user ./requirements.txt $HOME/pysr/requirements.txt
 RUN $PIP install --no-cache-dir -r $HOME/pysr/requirements.txt
 
-COPY --chown=user ./gui/requirements.txt $HOME/pysr/gui/requirements.txt
-RUN $PIP install --no-cache-dir -r $HOME/pysr/gui/requirements.txt
-
 COPY --chown=user ./pyproject.toml $HOME/pysr/pyproject.toml
 COPY --chown=user ./setup.py $HOME/pysr/setup.py
 COPY --chown=user ./pysr $HOME/pysr/pysr
-RUN $PIP install --no-cache-dir .
+RUN $PIP install --no-cache-dir ".[gui]"
 
 # Install Julia pre-requisites:
 RUN $PYTHON -c 'import pysr'
