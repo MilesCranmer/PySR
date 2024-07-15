@@ -1,3 +1,4 @@
+import importlib
 import os
 import pickle as pkl
 import tempfile
@@ -8,7 +9,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import sympy
+import sympy  # type: ignore
 from sklearn.utils.estimator_checks import check_estimator
 
 from pysr import PySRRegressor, install, jl
@@ -892,7 +893,7 @@ class TestHelpMessages(unittest.TestCase):
 
         # More complex, and with error
         with self.assertRaises(TypeError) as cm:
-            model = PySRRegressor(ncyclesperiterationn=5)
+            PySRRegressor(ncyclesperiterationn=5)
 
         self.assertIn(
             "`ncyclesperiterationn` is not a valid keyword", str(cm.exception)
@@ -903,9 +904,17 @@ class TestHelpMessages(unittest.TestCase):
 
         # Farther matches (this might need to be changed)
         with self.assertRaises(TypeError) as cm:
-            model = PySRRegressor(operators=["+", "-"])
+            PySRRegressor(operators=["+", "-"])
 
         self.assertIn("`unary_operators`, `binary_operators`", str(cm.exception))
+
+    def test_issue_666(self):
+        # Try the equivalent of `from pysr import *`
+        pysr_module = importlib.import_module("pysr")
+        names_to_import = pysr_module.__all__
+
+        for name in names_to_import:
+            getattr(pysr_module, name)
 
 
 TRUE_PREAMBLE = "\n".join(

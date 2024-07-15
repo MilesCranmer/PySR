@@ -2,7 +2,7 @@
 
 from typing import Callable, Dict, List, Optional
 
-import sympy
+import sympy  # type: ignore
 from sympy import sympify
 
 from .utils import ArrayLike

@@ -4,7 +4,7 @@ import collections as co
 import functools as ft
 
 import numpy as np  # noqa: F401
-import sympy
+import sympy  # type: ignore
 
 
 def _reduce(fn):
