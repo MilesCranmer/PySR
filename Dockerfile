@@ -12,12 +12,12 @@ FROM python:${PYVERSION}-${BASE_IMAGE}
 COPY --from=jl /usr/local/julia /usr/local/julia
 ENV PATH="/usr/local/julia/bin:${PATH}"
 
-# Install font used for GUI
-RUN mkdir -p /usr/local/share/fonts/IBM_Plex_Mono && \
-    curl -L https://github.com/IBM/plex/releases/download/v6.4.0/IBM-Plex-Mono.zip -o /tmp/IBM_Plex_Mono.zip && \
-    unzip /tmp/IBM_Plex_Mono.zip -d /usr/local/share/fonts/IBM_Plex_Mono && \
-    rm /tmp/IBM_Plex_Mono.zip
-RUN fc-cache -f -v
+# # Install font used for GUI
+# RUN mkdir -p /usr/local/share/fonts/IBM_Plex_Mono && \
+#     curl -L https://github.com/IBM/plex/releases/download/v6.4.0/IBM-Plex-Mono.zip -o /tmp/IBM_Plex_Mono.zip && \
+#     unzip /tmp/IBM_Plex_Mono.zip -d /usr/local/share/fonts/IBM_Plex_Mono && \
+#     rm /tmp/IBM_Plex_Mono.zip
+# RUN fc-cache -f -v
 
 # Set up a new user named "user" with user ID 1000
 RUN useradd -m -u 1000 user

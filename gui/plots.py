@@ -1,18 +1,16 @@
-import logging
-
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
 plt.ioff()
-plt.rcParams["font.family"] = [
-    "IBM Plex Mono",
-    # Fallback fonts:
-    "DejaVu Sans Mono",
-    "Courier New",
-    "monospace",
-]
-logging.getLogger("matplotlib.font_manager").disabled = True
+plt.rcParams["font.family"] = "monospace"
+# plt.rcParams["font.family"] = [
+#     "IBM Plex Mono",
+#     # Fallback fonts:
+#     "DejaVu Sans Mono",
+#     "Courier New",
+#     "monospace",
+# ]
 
 from data import generate_data
 
