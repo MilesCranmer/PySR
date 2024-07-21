@@ -2028,9 +2028,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         )
 
         if self.recursive_history_length is not None:
-            if self.recursive_history_length <= 1:
+            if self.recursive_history_length <= 0:
                 raise ValueError(
-                    "The `recursive_history_length` must be greater than 1 (otherwise it's not recursion)."
+                    "The `recursive_history_length` must be greater than 0 (otherwise it's not recursion)."
                 )
             if y != None:
                 raise ValueError(
