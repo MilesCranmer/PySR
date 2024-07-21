@@ -2032,20 +2032,25 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 raise ValueError(
                     "The `recursive_history_length` must be greater than 0 (otherwise it's not recursion)."
                 )
-            if y != None:
-                raise ValueError(
+            if y.any():
+                warnings.warn(
                     "Recursive symbolic regression does not require an output array; set this parameter to None."
                 )
-            if X.shape[0] != 1:
+            if X.shape[1] != 1:
                 raise ValueError(
                     "Recursive symbolic regression requires a single input variable; reshape the array with array.reshape(-1, 1)"
                 )
+            if len(X) <= self.recursive_history_length + 1:
+                raise ValueError(
+                    f"Recursive symbolic regression with a history length of {self.recursive_history_length} requires at least {self.recursive_history_length + 2} datapoints."
+                )
             y = X.copy()
             X = []
-            for i in range(self.recursive_history_length, len(y)):
-                X.append(y[i-self.recursive_history_length:i])
+            for i in range(self.recursive_history_length + 1, len(y)):
+                X.append(y[i-self.recursive_history_length:i].flatten())
             X = np.array(X)
-            y = y[self.recursive_history_length:len(y)]
+            y = y[self.recursive_history_length + 1:]
+            print(X, len(X), y, len(y))
 
         if X.shape[0] > 10000 and not self.batching:
             warnings.warn(
@@ -2084,10 +2089,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 "You should run PySR for more `niterations` to ensure it can find "
                 "the correct variables, and consider using a larger `maxsize`."
             )
-
-        # Assertion checks
-        use_custom_variable_names = variable_names is not None
-        # TODO: this is always true.
+        try:
+            # Assertion checks
+            use_custom_variable_names = variable_names.any()
+            # TODO: this is always true.
+        except:
+            use_custom_variable_names = False
 
         _check_assertions(
             X,
