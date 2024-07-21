@@ -802,6 +802,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         extra_jax_mappings: Optional[Dict[Callable, str]] = None,
         denoise: bool = False,
         select_k_features: Optional[int] = None,
+        recursive_history_length = Optional[int] = None,
         **kwargs,
     ):
         # Hyperparameters
@@ -813,6 +814,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.populations = populations
         self.population_size = population_size
         self.ncycles_per_iteration = ncycles_per_iteration
+        self.recursive_history_length = recursive_history_length
         # - Equation Constraints
         self.maxsize = maxsize
         self.maxdepth = maxdepth
@@ -2024,6 +2026,26 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             X_units,
             y_units,
         )
+
+        if self.recursive_history_length is not None:
+            if self.recursive_history_length <= 1:
+                raise ValueError(
+                    "The `recursive_history_length` must be greater than 1 (otherwise it's not recursion)."
+                )
+            if y != None:
+                raise ValueError(
+                    "Recursive symbolic regression does not require an output array; set this parameter to None."
+                )
+            if X.shape[0] != 1:
+                raise ValueError(
+                    "Recursive symbolic regression requires a single input variable; reshape the array with array.reshape(-1, 1)"
+                )
+            y = X.copy()
+            X = []
+            for i in range(self.recursive_history_length, len(y)):
+                X.append(y[i-self.recursive_history_length:i])
+            X = np.array(X)
+            y = y[self.recursive_history_length:len(y)]
 
         if X.shape[0] > 10000 and not self.batching:
             warnings.warn(
