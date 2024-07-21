@@ -2034,7 +2034,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 )
             if y.any():
                 warnings.warn(
-                    "Recursive symbolic regression does not require an output array; set this parameter to None."
+                    "Recursive symbolic regression does not require an output array; this parameter is ignored."
                 )
             if X.shape[1] != 1:
                 raise ValueError(
@@ -2047,10 +2047,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             y = X.copy()
             X = []
             for i in range(self.recursive_history_length + 1, len(y)):
-                X.append(y[i-self.recursive_history_length:i].flatten())
+                X.append(y[i - self.recursive_history_length : i].flatten())
             X = np.array(X)
-            y = y[self.recursive_history_length + 1:]
-            print(X, len(X), y, len(y))
+            y = y[self.recursive_history_length + 1 :]
 
         if X.shape[0] > 10000 and not self.batching:
             warnings.warn(
