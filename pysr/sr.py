@@ -802,7 +802,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         extra_jax_mappings: Optional[Dict[Callable, str]] = None,
         denoise: bool = False,
         select_k_features: Optional[int] = None,
-        recursive_history_length = Optional[int] = None,
+        recursive_history_length: Optional[int] = None,
         **kwargs,
     ):
         # Hyperparameters
