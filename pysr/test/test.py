@@ -523,14 +523,14 @@ class TestSequencePipeline(unittest.TestCase):
             niterations=DEFAULT_NITERATIONS * 2,
             populations=DEFAULT_POPULATIONS * 2,
             temp_equation_file=True,
-            recursive_history_length=3
+            recursive_history_length=3,
         )
 
     def test_sequence(self):
         # simple tribbonaci sequence
         X = [1, 1, 1]
         for i in range(3, 30):
-            X.append(X[i-1] + X[i-2] + X[i-3])
+            X.append(X[i - 1] + X[i - 2] + X[i - 3])
         X = np.asarray(X)
         model = PySRSequenceRegressor(
             **self.default_test_kwargs,
@@ -544,21 +544,21 @@ class TestSequencePipeline(unittest.TestCase):
     def test_sequence_named(self):
         X = [1, 1, 1]
         for i in range(3, 30):
-            X.append(X[i-1] + X[i-2] + X[i-3])
+            X.append(X[i - 1] + X[i - 2] + X[i - 3])
         X = np.asarray(X)
         model = PySRSequenceRegressor(
             **self.default_test_kwargs,
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
         )
-        model.fit(X, variable_names=["c1", "c2", "c3"]) # recursive history length is 3
+        model.fit(X, variable_names=["c1", "c2", "c3"])  # recursive history length is 3
         self.assertIn("c1", model.equations_.iloc[-1]["equation"])
 
     def test_sequence_weighted_bumper(self):
         X = [1, 1, 1]
         for i in range(3, 30):
-            X.append(X[i-1] + X[i-2] + X[i-3])
+            X.append(X[i - 1] + X[i - 2] + X[i - 3])
         X = np.asarray(X)
-        weights = np.ones_like(X)[3:] # 3 is recursive history length
+        weights = np.ones_like(X)[3:]  # 3 is recursive history length
         model = PySRSequenceRegressor(
             **self.default_test_kwargs,
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
@@ -574,7 +574,7 @@ class TestSequencePipeline(unittest.TestCase):
     def test_sequence_multiprocessing_turbo_custom_objective(self):
         X = [1]
         for i in range(1, 20):
-            X.append(np.sqrt(X[i-1]) + 1)
+            X.append(np.sqrt(X[i - 1]) + 1)
         X = np.asarray(X)
         model = PySRSequenceRegressor(
             **self.default_test_kwargs,
@@ -603,6 +603,7 @@ class TestSequencePipeline(unittest.TestCase):
         self.assertEqual(
             jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.turbo), True
         )
+
     def test_multiline_seval(self):
         # The user should be able to run multiple things in a single seval call:
         num = jl.seval(
@@ -614,11 +615,11 @@ class TestSequencePipeline(unittest.TestCase):
         """
         )
         self.assertEqual(num, 1.5)
-    
+
     def test_high_precision_search_custom_loss(self):
         X = [1, 1, 1]
         for i in range(3, 30):
-            X.append(X[i-1] + X[i-2] + X[i-3])
+            X.append(X[i - 1] + X[i - 2] + X[i - 3])
         X = np.asarray(X)
         model = PySRSequenceRegressor(
             **self.default_test_kwargs,
@@ -644,7 +645,7 @@ class TestSequencePipeline(unittest.TestCase):
             for case in (1, 2):
                 X = [1, 1]
                 for i in range(2, 30):
-                    X.append(X[i-1] + X[i-2])
+                    X.append(X[i - 1] + X[i - 2])
                 X = np.asarray(X)
                 if case == 1:
                     kwargs = dict(complexity_of_variables=[2, 3, 2])
@@ -674,7 +675,7 @@ class TestSequencePipeline(unittest.TestCase):
     def test_error_message_custom_variable_complexity(self):
         X = [1, 1]
         for i in range(2, 100):
-            X.append(X[i-1] + X[i-2])
+            X.append(X[i - 1] + X[i - 2])
         X = np.asarray(X)
         model = PySRSequenceRegressor(recursive_history_length=3)
         with self.assertRaises(ValueError) as cm:
@@ -687,9 +688,11 @@ class TestSequencePipeline(unittest.TestCase):
     def test_error_message_both_variable_complexity(self):
         X = [1, 1]
         for i in range(2, 100):
-            X.append(X[i-1] + X[i-2])
+            X.append(X[i - 1] + X[i - 2])
         X = np.asarray(X)
-        model = PySRSequenceRegressor(recursive_history_length=3, complexity_of_variables=[1, 2])
+        model = PySRSequenceRegressor(
+            recursive_history_length=3, complexity_of_variables=[1, 2]
+        )
         with self.assertRaises(ValueError) as cm:
             model.fit(X, complexity_of_variables=[1, 2, 3])
 
@@ -702,15 +705,17 @@ class TestSequencePipeline(unittest.TestCase):
         # Smoke test for bug where warm_start=True is set at init
         X = [1, 1, 1]
         for i in range(3, 30):
-            X.append(X[i-1] + X[i-2] + X[i-3])
+            X.append(X[i - 1] + X[i - 2] + X[i - 3])
         X = np.asarray(X)
-        regressor = PySRSequenceRegressor(recursive_history_length=3, warm_start=True, max_evals=10)
+        regressor = PySRSequenceRegressor(
+            recursive_history_length=3, warm_start=True, max_evals=10
+        )
         regressor.fit(X)
 
     def test_noisy_builtin_variable_names(self):
         X = [1, 1]
         for i in range(2, 30):
-            X.append(X[i-1] + X[i-2])
+            X.append(X[i - 1] + X[i - 2])
         X = np.asarray(X)
         model = PySRSequenceRegressor(
             binary_operators=["+"],

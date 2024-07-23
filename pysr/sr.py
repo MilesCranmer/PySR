@@ -2584,6 +2584,7 @@ def _mutate_parameter(param_name: str, param_value):
 
     return param_value
 
+
 class PySRSequenceRegressor(PySRRegressor):
     def __init__(
         self,
@@ -2819,6 +2820,7 @@ class PySRSequenceRegressor(PySRRegressor):
                     if len(suggested_keywords) > 0:
                         err_msg += f" Did you mean {', '.join(map(lambda s: f'`{s}`', suggested_keywords))}?"
                     raise TypeError(err_msg)
+
     def fit(
         self,
         X,
