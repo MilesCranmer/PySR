@@ -603,8 +603,7 @@ class TestSequencePipeline(unittest.TestCase):
         self.assertEqual(
             jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.turbo), True
         )
-
-    def test_multiline_seval(self):
+    def test_sequence_multiline_seval(self):
         # The user should be able to run multiple things in a single seval call:
         num = jl.seval(
             """
@@ -615,8 +614,8 @@ class TestSequencePipeline(unittest.TestCase):
         """
         )
         self.assertEqual(num, 1.5)
-
-    def test_high_precision_search_custom_loss(self):
+   
+    def test_sequence_high_precision_search_custom_loss(self):
         X = [1, 1, 1]
         for i in range(3, 30):
             X.append(X[i - 1] + X[i - 2] + X[i - 3])
@@ -640,7 +639,7 @@ class TestSequencePipeline(unittest.TestCase):
             jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.turbo), False
         )
 
-    def test_custom_variable_complexity(self):
+    def test_sequence_custom_variable_complexity(self):
         for outer in (True, False):
             for case in (1, 2):
                 X = [1, 1]
@@ -672,7 +671,7 @@ class TestSequencePipeline(unittest.TestCase):
                 self.assertLessEqual(model.get_best()["loss"], 1e-8)
                 self.assertLessEqual(model.get_best()["loss"], 1e-8)
 
-    def test_error_message_custom_variable_complexity(self):
+    def test_sequence_error_message_custom_variable_complexity(self):
         X = [1, 1]
         for i in range(2, 100):
             X.append(X[i - 1] + X[i - 2])
@@ -685,7 +684,7 @@ class TestSequencePipeline(unittest.TestCase):
             "number of elements in `complexity_of_variables`", str(cm.exception)
         )
 
-    def test_error_message_both_variable_complexity(self):
+    def test_sequence_error_message_both_variable_complexity(self):
         X = [1, 1]
         for i in range(2, 100):
             X.append(X[i - 1] + X[i - 2])
@@ -701,7 +700,7 @@ class TestSequencePipeline(unittest.TestCase):
             str(cm.exception),
         )
 
-    def test_warm_start_set_at_init(self):
+    def test_sequence_warm_start_set_at_init(self):
         # Smoke test for bug where warm_start=True is set at init
         X = [1, 1, 1]
         for i in range(3, 30):
@@ -712,7 +711,7 @@ class TestSequencePipeline(unittest.TestCase):
         )
         regressor.fit(X)
 
-    def test_noisy_builtin_variable_names(self):
+    def test_sequence_noisy_builtin_variable_names(self):
         X = [1, 1]
         for i in range(2, 30):
             X.append(X[i - 1] + X[i - 2])
