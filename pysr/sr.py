@@ -802,7 +802,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         extra_jax_mappings: Optional[Dict[Callable, str]] = None,
         denoise: bool = False,
         select_k_features: Optional[int] = None,
-        recursive_history_length: Optional[int] = None,
         **kwargs,
     ):
         # Hyperparameters
@@ -814,7 +813,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.populations = populations
         self.population_size = population_size
         self.ncycles_per_iteration = ncycles_per_iteration
-        self.recursive_history_length = recursive_history_length
         # - Equation Constraints
         self.maxsize = maxsize
         self.maxdepth = maxdepth
@@ -2027,30 +2025,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             y_units,
         )
 
-        if self.recursive_history_length is not None:
-            if self.recursive_history_length <= 0:
-                raise ValueError(
-                    "The `recursive_history_length` must be greater than 0 (otherwise it's not recursion)."
-                )
-            if y.any():
-                warnings.warn(
-                    "Recursive symbolic regression does not require an output array; this parameter is ignored."
-                )
-            if X.shape[1] != 1:
-                raise ValueError(
-                    "Recursive symbolic regression requires a single input variable; reshape the array with array.reshape(-1, 1)"
-                )
-            if len(X) <= self.recursive_history_length + 1:
-                raise ValueError(
-                    f"Recursive symbolic regression with a history length of {self.recursive_history_length} requires at least {self.recursive_history_length + 2} datapoints."
-                )
-            y = X.copy()
-            X = []
-            for i in range(self.recursive_history_length + 1, len(y)):
-                X.append(y[i - self.recursive_history_length : i].flatten())
-            X = np.array(X)
-            y = y[self.recursive_history_length + 1 :]
-
         if X.shape[0] > 10000 and not self.batching:
             warnings.warn(
                 "Note: you are running with more than 10,000 datapoints. "
@@ -2088,12 +2062,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 "You should run PySR for more `niterations` to ensure it can find "
                 "the correct variables, and consider using a larger `maxsize`."
             )
-        try:
-            # Assertion checks
-            use_custom_variable_names = variable_names.any()
-            # TODO: this is always true.
-        except:
-            use_custom_variable_names = False
+        use_custom_variable_names = variable_names is not None
 
         _check_assertions(
             X,
@@ -2614,3 +2583,419 @@ def _mutate_parameter(param_name: str, param_value):
         return False
 
     return param_value
+
+class PySRSequenceRegressor(PySRRegressor):
+    def __init__(
+        self,
+        model_selection: Literal["best", "accuracy", "score"] = "best",
+        *,
+        binary_operators: Optional[List[str]] = None,
+        unary_operators: Optional[List[str]] = None,
+        niterations: int = 40,
+        populations: int = 15,
+        population_size: int = 33,
+        max_evals: Optional[int] = None,
+        maxsize: int = 20,
+        maxdepth: Optional[int] = None,
+        warmup_maxsize_by: Optional[float] = None,
+        timeout_in_seconds: Optional[float] = None,
+        constraints: Optional[Dict[str, Union[int, Tuple[int, int]]]] = None,
+        nested_constraints: Optional[Dict[str, Dict[str, int]]] = None,
+        elementwise_loss: Optional[str] = None,
+        loss_function: Optional[str] = None,
+        complexity_of_operators: Optional[Dict[str, Union[int, float]]] = None,
+        complexity_of_constants: Union[int, float] = 1,
+        complexity_of_variables: Optional[Union[int, float]] = None,
+        parsimony: float = 0.0032,
+        dimensional_constraint_penalty: Optional[float] = None,
+        dimensionless_constants_only: bool = False,
+        use_frequency: bool = True,
+        use_frequency_in_tournament: bool = True,
+        adaptive_parsimony_scaling: float = 20.0,
+        alpha: float = 0.1,
+        annealing: bool = False,
+        early_stop_condition: Optional[Union[float, str]] = None,
+        ncycles_per_iteration: int = 550,
+        fraction_replaced: float = 0.000364,
+        fraction_replaced_hof: float = 0.035,
+        weight_add_node: float = 0.79,
+        weight_insert_node: float = 5.1,
+        weight_delete_node: float = 1.7,
+        weight_do_nothing: float = 0.21,
+        weight_mutate_constant: float = 0.048,
+        weight_mutate_operator: float = 0.47,
+        weight_swap_operands: float = 0.1,
+        weight_randomize: float = 0.00023,
+        weight_simplify: float = 0.0020,
+        weight_optimize: float = 0.0,
+        crossover_probability: float = 0.066,
+        skip_mutation_failures: bool = True,
+        migration: bool = True,
+        hof_migration: bool = True,
+        topn: int = 12,
+        should_simplify: Optional[bool] = None,
+        should_optimize_constants: bool = True,
+        optimizer_algorithm: Literal["BFGS", "NelderMead"] = "BFGS",
+        optimizer_nrestarts: int = 2,
+        optimize_probability: float = 0.14,
+        optimizer_iterations: int = 8,
+        perturbation_factor: float = 0.076,
+        tournament_selection_n: int = 10,
+        tournament_selection_p: float = 0.86,
+        procs: int = cpu_count(),
+        multithreading: Optional[bool] = None,
+        cluster_manager: Optional[
+            Literal["slurm", "pbs", "lsf", "sge", "qrsh", "scyld", "htc"]
+        ] = None,
+        heap_size_hint_in_bytes: Optional[int] = None,
+        batching: bool = False,
+        batch_size: int = 50,
+        fast_cycle: bool = False,
+        turbo: bool = False,
+        bumper: bool = False,
+        precision: int = 32,
+        enable_autodiff: bool = False,
+        random_state=None,
+        deterministic: bool = False,
+        warm_start: bool = False,
+        verbosity: int = 1,
+        update_verbosity: Optional[int] = None,
+        print_precision: int = 5,
+        progress: bool = True,
+        equation_file: Optional[str] = None,
+        temp_equation_file: bool = False,
+        tempdir: Optional[str] = None,
+        delete_tempfiles: bool = True,
+        update: bool = False,
+        output_jax_format: bool = False,
+        output_torch_format: bool = False,
+        extra_sympy_mappings: Optional[Dict[str, Callable]] = None,
+        extra_torch_mappings: Optional[Dict[Callable, Callable]] = None,
+        extra_jax_mappings: Optional[Dict[Callable, str]] = None,
+        denoise: bool = False,
+        select_k_features: Optional[int] = None,
+        recursive_history_length: Optional[int] = None,
+        **kwargs,
+    ):
+        # Hyperparameters
+        # - Model search parameters
+        self.model_selection = model_selection
+        self.binary_operators = binary_operators
+        self.unary_operators = unary_operators
+        self.niterations = niterations
+        self.populations = populations
+        self.population_size = population_size
+        self.ncycles_per_iteration = ncycles_per_iteration
+        self.recursive_history_length = recursive_history_length
+        # - Equation Constraints
+        self.maxsize = maxsize
+        self.maxdepth = maxdepth
+        self.constraints = constraints
+        self.nested_constraints = nested_constraints
+        self.warmup_maxsize_by = warmup_maxsize_by
+        self.should_simplify = should_simplify
+        # - Early exit conditions:
+        self.max_evals = max_evals
+        self.timeout_in_seconds = timeout_in_seconds
+        self.early_stop_condition = early_stop_condition
+        # - Loss parameters
+        self.elementwise_loss = elementwise_loss
+        self.loss_function = loss_function
+        self.complexity_of_operators = complexity_of_operators
+        self.complexity_of_constants = complexity_of_constants
+        self.complexity_of_variables = complexity_of_variables
+        self.parsimony = parsimony
+        self.dimensional_constraint_penalty = dimensional_constraint_penalty
+        self.dimensionless_constants_only = dimensionless_constants_only
+        self.use_frequency = use_frequency
+        self.use_frequency_in_tournament = use_frequency_in_tournament
+        self.adaptive_parsimony_scaling = adaptive_parsimony_scaling
+        self.alpha = alpha
+        self.annealing = annealing
+        # - Evolutionary search parameters
+        # -- Mutation parameters
+        self.weight_add_node = weight_add_node
+        self.weight_insert_node = weight_insert_node
+        self.weight_delete_node = weight_delete_node
+        self.weight_do_nothing = weight_do_nothing
+        self.weight_mutate_constant = weight_mutate_constant
+        self.weight_mutate_operator = weight_mutate_operator
+        self.weight_swap_operands = weight_swap_operands
+        self.weight_randomize = weight_randomize
+        self.weight_simplify = weight_simplify
+        self.weight_optimize = weight_optimize
+        self.crossover_probability = crossover_probability
+        self.skip_mutation_failures = skip_mutation_failures
+        # -- Migration parameters
+        self.migration = migration
+        self.hof_migration = hof_migration
+        self.fraction_replaced = fraction_replaced
+        self.fraction_replaced_hof = fraction_replaced_hof
+        self.topn = topn
+        # -- Constants parameters
+        self.should_optimize_constants = should_optimize_constants
+        self.optimizer_algorithm = optimizer_algorithm
+        self.optimizer_nrestarts = optimizer_nrestarts
+        self.optimize_probability = optimize_probability
+        self.optimizer_iterations = optimizer_iterations
+        self.perturbation_factor = perturbation_factor
+        # -- Selection parameters
+        self.tournament_selection_n = tournament_selection_n
+        self.tournament_selection_p = tournament_selection_p
+        # -- Performance parameters
+        self.procs = procs
+        self.multithreading = multithreading
+        self.cluster_manager = cluster_manager
+        self.heap_size_hint_in_bytes = heap_size_hint_in_bytes
+        self.batching = batching
+        self.batch_size = batch_size
+        self.fast_cycle = fast_cycle
+        self.turbo = turbo
+        self.bumper = bumper
+        self.precision = precision
+        self.enable_autodiff = enable_autodiff
+        self.random_state = random_state
+        self.deterministic = deterministic
+        self.warm_start = warm_start
+        # Additional runtime parameters
+        # - Runtime user interface
+        self.verbosity = verbosity
+        self.update_verbosity = update_verbosity
+        self.print_precision = print_precision
+        self.progress = progress
+        # - Project management
+        self.equation_file = equation_file
+        self.temp_equation_file = temp_equation_file
+        self.tempdir = tempdir
+        self.delete_tempfiles = delete_tempfiles
+        self.update = update
+        self.output_jax_format = output_jax_format
+        self.output_torch_format = output_torch_format
+        self.extra_sympy_mappings = extra_sympy_mappings
+        self.extra_jax_mappings = extra_jax_mappings
+        self.extra_torch_mappings = extra_torch_mappings
+        # Pre-modelling transformation
+        self.denoise = denoise
+        self.select_k_features = select_k_features
+
+        # Once all valid parameters have been assigned handle the
+        # deprecated kwargs
+        if len(kwargs) > 0:  # pragma: no cover
+            for k, v in kwargs.items():
+                # Handle renamed kwargs
+                if k in DEPRECATED_KWARGS:
+                    updated_kwarg_name = DEPRECATED_KWARGS[k]
+                    setattr(self, updated_kwarg_name, v)
+                    warnings.warn(
+                        f"`{k}` has been renamed to `{updated_kwarg_name}` in PySRRegressor. "
+                        "Please use that instead.",
+                        FutureWarning,
+                    )
+                # Handle kwargs that have been moved to the fit method
+                elif k in ["weights", "variable_names", "Xresampled"]:
+                    warnings.warn(
+                        f"`{k}` is a data-dependent parameter and should be passed when fit is called. "
+                        f"Ignoring parameter; please pass `{k}` during the call to fit instead.",
+                        FutureWarning,
+                    )
+                elif k == "julia_project":
+                    warnings.warn(
+                        "The `julia_project` parameter has been deprecated. To use a custom "
+                        "julia project, please see `https://astroautomata.com/PySR/backend`.",
+                        FutureWarning,
+                    )
+                elif k == "julia_kwargs":
+                    warnings.warn(
+                        "The `julia_kwargs` parameter has been deprecated. To pass custom "
+                        "keyword arguments to the julia backend, you should use environment variables. "
+                        "See the Julia documentation for more information.",
+                        FutureWarning,
+                    )
+                else:
+                    suggested_keywords = _suggest_keywords(PySRRegressor, k)
+                    err_msg = (
+                        f"`{k}` is not a valid keyword argument for PySRRegressor."
+                    )
+                    if len(suggested_keywords) > 0:
+                        err_msg += f" Did you mean {', '.join(map(lambda s: f'`{s}`', suggested_keywords))}?"
+                    raise TypeError(err_msg)
+    def fit(
+        self,
+        X,
+        Xresampled=None,
+        weights=None,
+        variable_names: Optional[ArrayLike[str]] = None,
+        complexity_of_variables: Optional[
+            Union[int, float, List[Union[int, float]]]
+        ] = None,
+        X_units: Optional[ArrayLike[str]] = None,
+    ) -> "PySRRegressor":
+        """
+        Search for equations to fit the dataset and store them in `self.equations_`.
+
+        Parameters
+        ----------
+        X : ndarray | pandas.DataFrame
+            Training data of shape (n_samples, n_features).
+        y : ndarray | pandas.DataFrame
+            Target values of shape (n_samples,) or (n_samples, n_targets).
+            Will be cast to X's dtype if necessary.
+        Xresampled : ndarray | pandas.DataFrame
+            Resampled training data, of shape (n_resampled, n_features),
+            to generate a denoised data on. This
+            will be used as the training data, rather than `X`.
+        weights : ndarray | pandas.DataFrame
+            Weight array of the same shape as `y`.
+            Each element is how to weight the mean-square-error loss
+            for that particular element of `y`. Alternatively,
+            if a custom `loss` was set, it will can be used
+            in arbitrary ways.
+        variable_names : list[str]
+            A list of names for the variables, rather than "x0", "x1", etc.
+            If `X` is a pandas dataframe, the column names will be used
+            instead of `variable_names`. Cannot contain spaces or special
+            characters. Avoid variable names which are also
+            function names in `sympy`, such as "N".
+        X_units : list[str]
+            A list of units for each variable in `X`. Each unit should be
+            a string representing a Julia expression. See DynamicQuantities.jl
+            https://symbolicml.org/DynamicQuantities.jl/dev/units/ for more
+            information.
+        y_units : str | list[str]
+            Similar to `X_units`, but as a unit for the target variable, `y`.
+            If `y` is a matrix, a list of units should be passed. If `X_units`
+            is given but `y_units` is not, then `y_units` will be arbitrary.
+
+        Returns
+        -------
+        self : object
+            Fitted estimator.
+        """
+        # Init attributes that are not specified in BaseEstimator
+        if self.warm_start and hasattr(self, "julia_state_stream_"):
+            pass
+        else:
+            if hasattr(self, "julia_state_stream_"):
+                warnings.warn(
+                    "The discovered expressions are being reset. "
+                    "Please set `warm_start=True` if you wish to continue "
+                    "to start a search where you left off.",
+                )
+
+            self.equations_ = None
+            self.nout_ = 1
+            self.selection_mask_ = None
+            self.julia_state_stream_ = None
+            self.julia_options_stream_ = None
+            self.complexity_of_variables_ = None
+            self.X_units_ = None
+            self.y_units_ = None
+
+        self._setup_equation_file()
+
+        runtime_params = self._validate_and_modify_params()
+        if self.recursive_history_length <= 0:
+            raise ValueError(
+                "The `recursive_history_length` must be greater than 0 (otherwise it's not recursion)."
+            )
+        if 1 not in X.shape and len(X.shape) > 1:
+            raise ValueError(
+                "Recursive symbolic regression requires a single input variable; reshape the array with array.reshape(-1, 1) or array.reshape(1, -1)"
+            )
+        if len(X) <= self.recursive_history_length + 1:
+            raise ValueError(
+                f"Recursive symbolic regression with a history length of {self.recursive_history_length} requires at least {self.recursive_history_length + 2} datapoints."
+            )
+        y = X.copy()
+        X = []
+        for i in range(self.recursive_history_length + 1, len(y)):
+            X.append(y[i - self.recursive_history_length : i].flatten())
+        X = np.array(X)
+        y = y[self.recursive_history_length + 1 :]
+
+        y_units = X_units
+
+        (
+            X,
+            y,
+            Xresampled,
+            weights,
+            variable_names,
+            complexity_of_variables,
+            X_units,
+            y_units,
+        ) = self._validate_and_set_fit_params(
+            X,
+            y,
+            Xresampled,
+            weights,
+            variable_names,
+            complexity_of_variables,
+            X_units,
+            y_units,
+        )
+
+        if X.shape[0] > 10000 and not self.batching:
+            warnings.warn(
+                "Note: you are running with more than 10,000 datapoints. "
+                "You should consider turning on batching (https://astroautomata.com/PySR/options/#batching). "
+                "You should also reconsider if you need that many datapoints. "
+                "Unless you have a large amount of noise (in which case you "
+                "should smooth your dataset first), generally < 10,000 datapoints "
+                "is enough to find a functional form with symbolic regression. "
+                "More datapoints will lower the search speed."
+            )
+
+        random_state = check_random_state(self.random_state)  # For np random
+        seed = cast(int, random_state.randint(0, 2**31 - 1))  # For julia random
+
+        # Pre transformations (feature selection and denoising)
+        X, y, variable_names, complexity_of_variables, X_units, y_units = (
+            self._pre_transform_training_data(
+                X,
+                y,
+                Xresampled,
+                variable_names,
+                complexity_of_variables,
+                X_units,
+                y_units,
+                random_state,
+            )
+        )
+
+        # Warn about large feature counts (still warn if feature count is large
+        # after running feature selection)
+        if self.n_features_in_ >= 10:
+            warnings.warn(
+                "Note: you are running with 10 features or more. "
+                "Genetic algorithms like used in PySR scale poorly with large numbers of features. "
+                "You should run PySR for more `niterations` to ensure it can find "
+                "the correct variables, and consider using a larger `maxsize`."
+            )
+        use_custom_variable_names = variable_names is not None
+
+        _check_assertions(
+            X,
+            use_custom_variable_names,
+            variable_names,
+            complexity_of_variables,
+            weights,
+            y,
+            X_units,
+            y_units,
+        )
+
+        # Initially, just save model parameters, so that
+        # it can be loaded from an early exit:
+        if not self.temp_equation_file:
+            self._checkpoint()
+
+        # Perform the search:
+        self._run(X, y, runtime_params, weights=weights, seed=seed)
+
+        # Then, after fit, we save again, so the pickle file contains
+        # the equations:
+        if not self.temp_equation_file:
+            self._checkpoint()
+
+        return self
