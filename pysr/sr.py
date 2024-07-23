@@ -2609,12 +2609,9 @@ class PySRSequenceRegressor(PySRRegressor):
         Parameters
         ----------
         X : ndarray | pandas.DataFrame
-            Training data of shape (n_samples, n_features).
-        y : ndarray | pandas.DataFrame
-            Target values of shape (n_samples,) or (n_samples, n_targets).
-            Will be cast to X's dtype if necessary.
+            Training data of shape (n_samples, 1) or (1, n_samples).
         Xresampled : ndarray | pandas.DataFrame
-            Resampled training data, of shape (n_resampled, n_features),
+            Resampled training data, of shape (n_resampled, 1) or (1, n_resampled),
             to generate a denoised data on. This
             will be used as the training data, rather than `X`.
         weights : ndarray | pandas.DataFrame
@@ -2629,15 +2626,12 @@ class PySRSequenceRegressor(PySRRegressor):
             instead of `variable_names`. Cannot contain spaces or special
             characters. Avoid variable names which are also
             function names in `sympy`, such as "N".
+            The number of variable names must be equal to recurrence_history_length.
         X_units : list[str]
             A list of units for each variable in `X`. Each unit should be
             a string representing a Julia expression. See DynamicQuantities.jl
             https://symbolicml.org/DynamicQuantities.jl/dev/units/ for more
             information.
-        y_units : str | list[str]
-            Similar to `X_units`, but as a unit for the target variable, `y`.
-            If `y` is a matrix, a list of units should be passed. If `X_units`
-            is given but `y_units` is not, then `y_units` will be arbitrary.
 
         Returns
         -------
@@ -2667,6 +2661,7 @@ class PySRSequenceRegressor(PySRRegressor):
         self._setup_equation_file()
 
         runtime_params = self._validate_and_modify_params()
+
         if self.recursive_history_length <= 0:
             raise ValueError(
                 "The `recursive_history_length` must be greater than 0 (otherwise it's not recursion)."
@@ -2681,11 +2676,10 @@ class PySRSequenceRegressor(PySRRegressor):
             )
         y = X.copy()
         X = []
-        for i in range(self.recursive_history_length + 1, len(y)):
+        for i in range(self.recursive_history_length, len(y)):
             X.append(y[i - self.recursive_history_length : i].flatten())
         X = np.array(X)
-        y = y[self.recursive_history_length + 1 :]
-
+        y = y[self.recursive_history_length:]
         y_units = X_units
 
         (
