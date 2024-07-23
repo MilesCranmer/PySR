@@ -2593,7 +2593,7 @@ class PySRSequenceRegressor(PySRRegressor):
     ):
         self.recursive_history_length = recursive_history_length
         super().__init__(**kwargs)
-    
+
     def fit(
         self,
         X,
@@ -2681,7 +2681,7 @@ class PySRSequenceRegressor(PySRRegressor):
         for i in range(self.recursive_history_length, len(y)):
             X.append(y[i - self.recursive_history_length : i].flatten())
         X = np.array(X)
-        y = y[self.recursive_history_length:]
+        y = y[self.recursive_history_length :]
         y_units = X_units
 
         (
