@@ -12,7 +12,7 @@ import pandas as pd
 import sympy  # type: ignore
 from sklearn.utils.estimator_checks import check_estimator
 
-from pysr import PySRRegressor, install, jl
+from pysr import PySRRegressor, PySRSequenceRegressor, install, jl
 from pysr.export_latex import sympy2latex
 from pysr.feature_selection import _handle_feature_selection, run_feature_selection
 from pysr.julia_helpers import init_julia
@@ -511,6 +511,223 @@ class TestPipeline(unittest.TestCase):
             "When building `unary_operators`, `'1'` did not return a Julia function",
             str(cm.exception),
         )
+
+
+class TestSequencePipeline(unittest.TestCase):
+    def setUp(self):
+        # Using inspect,
+        # get default niterations from PySRRegressor, and double them:
+        self.default_test_kwargs = dict(
+            progress=False,
+            model_selection="accuracy",
+            niterations=DEFAULT_NITERATIONS * 2,
+            populations=DEFAULT_POPULATIONS * 2,
+            temp_equation_file=True,
+            recursive_history_length=3
+        )
+
+    def test_sequence(self):
+        # simple tribbonaci sequence
+        X = [1, 1, 1]
+        for i in range(3, 30):
+            X.append(X[i-1] + X[i-2] + X[i-3])
+        X = np.asarray(X)
+        model = PySRSequenceRegressor(
+            **self.default_test_kwargs,
+            binary_operators=["+"],
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
+        )
+        model.fit(X)
+        print(model.equations_)
+        self.assertLessEqual(model.get_best()["loss"], 1e-4)
+
+    def test_sequence_named(self):
+        X = [1, 1, 1]
+        for i in range(3, 30):
+            X.append(X[i-1] + X[i-2] + X[i-3])
+        X = np.asarray(X)
+        model = PySRSequenceRegressor(
+            **self.default_test_kwargs,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
+        )
+        model.fit(X, variable_names=["c1", "c2", "c3"]) # recursive history length is 3
+        self.assertIn("c1", model.equations_.iloc[-1]["equation"])
+
+    def test_sequence_weighted_bumper(self):
+        X = [1, 1, 1]
+        for i in range(3, 30):
+            X.append(X[i-1] + X[i-2] + X[i-3])
+        X = np.asarray(X)
+        weights = np.ones_like(X)[3:] # 3 is recursive history length
+        model = PySRSequenceRegressor(
+            **self.default_test_kwargs,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
+            bumper=True,
+        )
+        model.fit(X, weights=weights)
+        print(model.equations_)
+        self.assertLessEqual(model.get_best()["loss"], 1e-4)
+        self.assertEqual(
+            jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.bumper), True
+        )
+
+    def test_sequence_multiprocessing_turbo_custom_objective(self):
+        X = [1]
+        for i in range(1, 20):
+            X.append(np.sqrt(X[i-1]) + 1)
+        X = np.asarray(X)
+        model = PySRSequenceRegressor(
+            **self.default_test_kwargs,
+            # Turbo needs to work with unsafe operators:
+            unary_operators=["sqrt"],
+            procs=2,
+            multithreading=False,
+            turbo=True,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-10 && complexity == 1",
+            loss_function="""
+            function my_objective(tree::Node{T}, dataset::Dataset{T}, options::Options) where T
+                prediction, flag = eval_tree_array(tree, dataset.X, options)
+                !flag && return T(Inf)
+                abs3(x) = abs(x) ^ 3
+                return sum(abs3, prediction .- dataset.y) / length(prediction)
+            end
+            """,
+        )
+        model.fit(X)
+        print(model.equations_)
+        best_loss = model.equations_.iloc[-1]["loss"]
+        self.assertLessEqual(best_loss, 1e-10)
+        self.assertGreaterEqual(best_loss, 0.0)
+
+        # Test options stored:
+        self.assertEqual(
+            jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.turbo), True
+        )
+    def test_multiline_seval(self):
+        # The user should be able to run multiple things in a single seval call:
+        num = jl.seval(
+            """
+            function my_new_objective(x)
+                x^2
+            end
+            1.5
+        """
+        )
+        self.assertEqual(num, 1.5)
+    
+    def test_high_precision_search_custom_loss(self):
+        X = [1, 1, 1]
+        for i in range(3, 30):
+            X.append(X[i-1] + X[i-2] + X[i-3])
+        X = np.asarray(X)
+        model = PySRSequenceRegressor(
+            **self.default_test_kwargs,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 3",
+            elementwise_loss="my_loss(prediction, target) = (prediction - target)^2",
+            precision=64,
+            parsimony=0.01,
+            warm_start=True,
+        )
+        model.fit(X)
+
+        # We should have that the model state is now a Float64 hof:
+        test_state = model.raw_julia_state_
+        self.assertTrue(jl.typeof(test_state[1]).parameters[1] == jl.Float64)
+
+        # Test options stored:
+        self.assertEqual(
+            jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.turbo), False
+        )
+
+    def test_custom_variable_complexity(self):
+        for outer in (True, False):
+            for case in (1, 2):
+                X = [1, 1]
+                for i in range(2, 30):
+                    X.append(X[i-1] + X[i-2])
+                X = np.asarray(X)
+                if case == 1:
+                    kwargs = dict(complexity_of_variables=[2, 3, 2])
+                elif case == 2:
+                    kwargs = dict(complexity_of_variables=2)
+
+                if outer:
+                    outer_kwargs = kwargs
+                    inner_kwargs = dict()
+                else:
+                    outer_kwargs = dict()
+                    inner_kwargs = kwargs
+
+                model = PySRSequenceRegressor(
+                    binary_operators=["+"],
+                    verbosity=0,
+                    **self.default_test_kwargs,
+                    early_stop_condition=(
+                        f"stop_if_{case}(l, c) = l < 1e-8 && c <= {3 if case == 1 else 2}"
+                    ),
+                    **outer_kwargs,
+                )
+                model.fit(X, **inner_kwargs)
+                self.assertLessEqual(model.get_best()["loss"], 1e-8)
+                self.assertLessEqual(model.get_best()["loss"], 1e-8)
+
+    def test_error_message_custom_variable_complexity(self):
+        X = [1, 1]
+        for i in range(2, 100):
+            X.append(X[i-1] + X[i-2])
+        X = np.asarray(X)
+        model = PySRSequenceRegressor(recursive_history_length=3)
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, complexity_of_variables=[1])
+
+        self.assertIn(
+            "number of elements in `complexity_of_variables`", str(cm.exception)
+        )
+
+    def test_error_message_both_variable_complexity(self):
+        X = [1, 1]
+        for i in range(2, 100):
+            X.append(X[i-1] + X[i-2])
+        X = np.asarray(X)
+        model = PySRSequenceRegressor(recursive_history_length=3, complexity_of_variables=[1, 2])
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, complexity_of_variables=[1, 2, 3])
+
+        self.assertIn(
+            "You cannot set `complexity_of_variables` at both `fit` and `__init__`.",
+            str(cm.exception),
+        )
+
+    def test_warm_start_set_at_init(self):
+        # Smoke test for bug where warm_start=True is set at init
+        X = [1, 1, 1]
+        for i in range(3, 30):
+            X.append(X[i-1] + X[i-2] + X[i-3])
+        X = np.asarray(X)
+        regressor = PySRSequenceRegressor(recursive_history_length=3, warm_start=True, max_evals=10)
+        regressor.fit(X)
+
+    def test_noisy_builtin_variable_names(self):
+        X = [1, 1]
+        for i in range(2, 30):
+            X.append(X[i-1] + X[i-2])
+        X = np.asarray(X)
+        model = PySRSequenceRegressor(
+            binary_operators=["+"],
+            **self.default_test_kwargs,
+            early_stop_condition="stop_if(loss, complexity) = loss < 0.05 && complexity == 2",
+        )
+        # We expect in this case that the "best"
+        # equation should be the right one:
+        model.set_params(model_selection="best")
+        # Also try without a temp equation file:
+        model.set_params(temp_equation_file=False)
+        # We also test builtin variable names
+        model.fit(X, variable_names=["exec", "hash", "bruh"])
+        self.assertLessEqual(model.get_best()["loss"], 1e-2)
+        self.assertLessEqual(model.get_best()["loss"], 1e-2)
+        self.assertIn("exec", model.latex()[0])
+        self.assertIn("hash", model.latex()[1])
 
 
 def manually_create_model(equations, feature_names=None):
@@ -1267,6 +1484,7 @@ def runtests(just_tests=False):
     """Run all tests in test.py."""
     test_cases = [
         TestPipeline,
+        TestSequencePipeline,
         TestBest,
         TestFeatureSelection,
         TestMiscellaneous,
