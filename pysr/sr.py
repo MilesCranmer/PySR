@@ -2584,6 +2584,7 @@ def _mutate_parameter(param_name: str, param_value):
 
     return param_value
 
+
 class PySRSequenceRegressor(PySRRegressor):
     def __init__(
         self,
@@ -2592,6 +2593,7 @@ class PySRSequenceRegressor(PySRRegressor):
     ):
         self.recursive_history_length = recursive_history_length
         super().__init__(**kwargs)
+    
     def fit(
         self,
         X,
