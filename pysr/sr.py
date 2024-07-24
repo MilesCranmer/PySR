@@ -2597,7 +2597,6 @@ class PySRSequenceRegressor(PySRRegressor):
     def fit(
         self,
         X,
-        Xresampled=None,
         weights=None,
         variable_names: Optional[ArrayLike[str]] = None,
         complexity_of_variables: Optional[
@@ -2611,11 +2610,7 @@ class PySRSequenceRegressor(PySRRegressor):
         Parameters
         ----------
         X : ndarray | pandas.DataFrame
-            Training time series data of shape (n_samples, 1) or (1, n_samples).
-        Xresampled : ndarray | pandas.DataFrame
-            Resampled training data, of shape (n_resampled, 1) or (1, n_resampled),
-            to generate a denoised data on. This
-            will be used as the training data, rather than `X`.
+            Training time series data of shape (n_times, 1).
         weights : ndarray | pandas.DataFrame
             Weight array of the same shape as `X`, but not for the
             first recurrence_history_length terms. Therefore, the shape is
@@ -2626,7 +2621,7 @@ class PySRSequenceRegressor(PySRRegressor):
             in arbitrary ways.
         variable_names : list[str]
             A list of names for the variables, rather than "x0", "x1", etc.
-            If `X` is a pandas dataframe, the column names will be used
+            If `X` is a pandas dataframe, the column name will be used
             instead of `variable_names`. Cannot contain spaces or special
             characters. Avoid variable names which are also
             function names in `sympy`, such as "N".
@@ -2636,39 +2631,16 @@ class PySRSequenceRegressor(PySRRegressor):
             a string representing a Julia expression. See DynamicQuantities.jl
             https://symbolicml.org/DynamicQuantities.jl/dev/units/ for more
             information.
+            Length should be equal to recurrence_history_length.
 
         Returns
         -------
         self : object
             Fitted estimator.
         """
-        # Init attributes that are not specified in BaseEstimator
-        if self.warm_start and hasattr(self, "julia_state_stream_"):
-            pass
-        else:
-            if hasattr(self, "julia_state_stream_"):
-                warnings.warn(
-                    "The discovered expressions are being reset. "
-                    "Please set `warm_start=True` if you wish to continue "
-                    "to start a search where you left off.",
-                )
-
-            self.equations_ = None
-            self.nout_ = 1
-            self.selection_mask_ = None
-            self.julia_state_stream_ = None
-            self.julia_options_stream_ = None
-            self.complexity_of_variables_ = None
-            self.X_units_ = None
-            self.y_units_ = None
-
-        self._setup_equation_file()
-
-        runtime_params = self._validate_and_modify_params()
-
         if self.recursive_history_length <= 0:
             raise ValueError(
-                "The `recursive_history_length` must be greater than 0 (otherwise it's not recursion)."
+                "The `recursive_history_length` parameter must be greater than 0 (otherwise it's not recursion)."
             )
         if 1 not in X.shape and len(X.shape) > 1:
             raise ValueError(
@@ -2686,87 +2658,14 @@ class PySRSequenceRegressor(PySRRegressor):
         y = y[self.recursive_history_length :]
         y_units = X_units
 
-        (
+        super().fit(
             X,
             y,
-            Xresampled,
-            weights,
-            variable_names,
-            complexity_of_variables,
-            X_units,
-            y_units,
-        ) = self._validate_and_set_fit_params(
-            X,
-            y,
-            Xresampled,
-            weights,
-            variable_names,
-            complexity_of_variables,
-            X_units,
-            y_units,
+            weights=weights,
+            variable_names=variable_names,
+            X_units=X_units,
+            y_units=y_units,
+            complexity_of_variables=complexity_of_variables,
         )
-
-        if X.shape[0] > 10000 and not self.batching:
-            warnings.warn(
-                "Note: you are running with more than 10,000 datapoints. "
-                "You should consider turning on batching (https://astroautomata.com/PySR/options/#batching). "
-                "You should also reconsider if you need that many datapoints. "
-                "Unless you have a large amount of noise (in which case you "
-                "should smooth your dataset first), generally < 10,000 datapoints "
-                "is enough to find a functional form with symbolic regression. "
-                "More datapoints will lower the search speed."
-            )
-
-        random_state = check_random_state(self.random_state)  # For np random
-        seed = cast(int, random_state.randint(0, 2**31 - 1))  # For julia random
-
-        # Pre transformations (feature selection and denoising)
-        X, y, variable_names, complexity_of_variables, X_units, y_units = (
-            self._pre_transform_training_data(
-                X,
-                y,
-                Xresampled,
-                variable_names,
-                complexity_of_variables,
-                X_units,
-                y_units,
-                random_state,
-            )
-        )
-
-        # Warn about large feature counts (still warn if feature count is large
-        # after running feature selection)
-        if self.n_features_in_ >= 10:
-            warnings.warn(
-                "Note: you are running with 10 features or more. "
-                "Genetic algorithms like used in PySR scale poorly with large numbers of features. "
-                "You should run PySR for more `niterations` to ensure it can find "
-                "the correct variables, and consider using a larger `maxsize`."
-            )
-        use_custom_variable_names = variable_names is not None
-
-        _check_assertions(
-            X,
-            use_custom_variable_names,
-            variable_names,
-            complexity_of_variables,
-            weights,
-            y,
-            X_units,
-            y_units,
-        )
-
-        # Initially, just save model parameters, so that
-        # it can be loaded from an early exit:
-        if not self.temp_equation_file:
-            self._checkpoint()
-
-        # Perform the search:
-        self._run(X, y, runtime_params, weights=weights, seed=seed)
-
-        # Then, after fit, we save again, so the pickle file contains
-        # the equations:
-        if not self.temp_equation_file:
-            self._checkpoint()
 
         return self
