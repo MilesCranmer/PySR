@@ -2671,7 +2671,7 @@ class PySRSequenceRegressor(PySRRegressor):
             )
         y = X.copy()
         temp = X.copy()[0]
-        X = np.lib.stride_tricks.sliding_window_view(y[:-1].flatten(), self.recursive_history_length * np.prod(y.shape[1:]))
+        X = np.lib.stride_tricks.sliding_window_view(y[:-1].flatten(), self.recursive_history_length * np.prod(temp.shape))
         y = np.array([i.flatten() for i in y[self.recursive_history_length :]])
         y_units = X_units
 
@@ -2725,8 +2725,5 @@ class PySRSequenceRegressor(PySRRegressor):
                 f"Recursive symbolic regression with a history length of {self.recursive_history_length} requires at least {self.recursive_history_length} datapoints."
             )
         temp = X.copy()
-        X = []
-        for i in range(self.recursive_history_length, len(temp) + 1):
-            X.append(temp[i - self.recursive_history_length : i].flatten())
-        X = np.array(X)
+        X = np.lib.stride_tricks.sliding_window_view(X.flatten(), self.recursive_history_length * np.prod(temp.shape))
         return super().predict(X, index=index)
