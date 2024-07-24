@@ -2606,20 +2606,22 @@ class PySRSequenceRegressor(PySRRegressor):
         X_units: Optional[ArrayLike[str]] = None,
     ) -> "PySRRegressor":
         """
-        Search for equations to fit the dataset and store them in `self.equations_`.
+        Search for equations to fit the time series dataset and store them in `self.equations_`.
 
         Parameters
         ----------
         X : ndarray | pandas.DataFrame
-            Training data of shape (n_samples, 1) or (1, n_samples).
+            Training time series data of shape (n_samples, 1) or (1, n_samples).
         Xresampled : ndarray | pandas.DataFrame
             Resampled training data, of shape (n_resampled, 1) or (1, n_resampled),
             to generate a denoised data on. This
             will be used as the training data, rather than `X`.
         weights : ndarray | pandas.DataFrame
-            Weight array of the same shape as `y`.
+            Weight array of the same shape as `X`, but not for the 
+            first recurrence_history_length terms. Therefore, the shape is 
+            (n_samples-recurrence_history_length, 1) or (1, n_samples-recurrence_history_length)
             Each element is how to weight the mean-square-error loss
-            for that particular element of `y`. Alternatively,
+            for that particular element of `X`. Alternatively,
             if a custom `loss` was set, it will can be used
             in arbitrary ways.
         variable_names : list[str]
