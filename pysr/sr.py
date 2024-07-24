@@ -2610,7 +2610,9 @@ class PySRSequenceRegressor(PySRRegressor):
         Parameters
         ----------
         X : ndarray | pandas.DataFrame
-            Training time series data of shape (n_times, 1).
+            Training time series data of shape (n_times, ...).
+            Multidimensional time series data is supported, but the more dimensions
+            provided, the worse the regressor will perform.
         weights : ndarray | pandas.DataFrame
             Weight array of the same shape as `X`, but not for the
             first recurrence_history_length terms. Therefore, the shape is
@@ -2620,14 +2622,12 @@ class PySRSequenceRegressor(PySRRegressor):
             if a custom `loss` was set, it will can be used
             in arbitrary ways.
         variable_names : list[str]
-            A list of names for the variables, rather than "x0", "x1", etc.
+            A list of names for the variables, rather than "xt_1", "xt_2", etc.
             If `X` is a pandas dataframe, the column name will be used
             instead of `variable_names`. Cannot contain spaces or special
             characters. Avoid variable names which are also
             function names in `sympy`, such as "N".
-            The number of variable names must be equal to recurrence_history_length.
-            If this parameter is not set, the variable names will be automatically set to 
-            "x_t_1", "x_t_2", etc.
+            The number of variable names must be equal to recurrence_history_length * X.shape[1:].
         X_units : list[str]
             A list of units for each variable in `X`. Each unit should be
             a string representing a Julia expression. See DynamicQuantities.jl
@@ -2640,6 +2640,25 @@ class PySRSequenceRegressor(PySRRegressor):
         self : object
             Fitted estimator.
         """
+        def _create_index_combinations(dimensions: ArrayLike[int]):
+            if not dimensions:
+                return []
+
+            # Create the ranges for each dimension
+            ranges = [range(dim) for dim in dimensions]
+
+            # Create the combinations using nested loops
+            result = []
+
+            def _generate_combinations(current, depth):
+                if depth == len(ranges):
+                    result.append('x' + '_'.join(map(str, current[1:])) + 't_' + str(current[0]))
+                    return
+                for i in ranges[depth]:
+                    _generate_combinations(current + [i], depth + 1)
+
+            _generate_combinations([], 0)
+            return result
         if self.recursive_history_length <= 0:
             raise ValueError(
                 "The `recursive_history_length` parameter must be greater than 0 (otherwise it's not recursion)."
@@ -2653,6 +2672,7 @@ class PySRSequenceRegressor(PySRRegressor):
                 f"Recursive symbolic regression with a history length of {self.recursive_history_length} requires at least {self.recursive_history_length + 2} datapoints."
             )
         y = X.copy()
+        temp = X.copy()[0]
         X = []
         for i in range(self.recursive_history_length, len(y)):
             X.append(y[i - self.recursive_history_length : i].flatten())
@@ -2663,11 +2683,15 @@ class PySRSequenceRegressor(PySRRegressor):
         print(X[:5], y[:5])
 
         if not variable_names:
-            if y.shape[1] == 1:
+            if len(temp.shape) == 1:
                 variable_names = [f"xt_{i}" for i in range(self.recursive_history_length, 0, -1)]
             else:
-                variable_names = [f"xt_{j}_{i}" for i in range(y.shape[1]) for j in range(self.recursive_history_length, 0, -1)]
-
+                dimensions = [self.recursive_history_length]
+                print(dimensions)
+                dimensions.extend(temp.shape)
+                print(temp, dimensions, type(dimensions))
+                variable_names = _create_index_combinations(dimensions=dimensions)
+        print(variable_names)
         super().fit(
             X,
             y,
