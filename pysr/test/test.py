@@ -733,7 +733,7 @@ class TestSequencePipeline(unittest.TestCase):
         self.assertLessEqual(model.get_best()["loss"], 1e-2)
         self.assertIn("exec", model.latex()[0])
         self.assertIn("hash", model.latex()[1])
-    
+
     def test_sequence_multidimensional_data(self):
         X = [
             [
@@ -750,14 +750,16 @@ class TestSequencePipeline(unittest.TestCase):
                 [13, 14],
                 [15, 16],
                 [17, 18],
-            ]
+            ],
         ]
         for i in range(3, 10):
-            X.append([
-                [X[i - 1][0][0] + X[i - 2][0][1], X[i - 1][0][1] + X[i - 2][1][0]],
-                [X[i - 1][1][0] + X[i - 3][1][1], X[i - 1][1][1] + X[i - 3][1][0]],
-                [X[i - 2][2][0] + X[i - 3][2][1], X[i - 2][2][1] + X[i - 3][2][0]],
-            ])
+            X.append(
+                [
+                    [X[i - 1][0][0] + X[i - 2][0][1], X[i - 1][0][1] + X[i - 2][1][0]],
+                    [X[i - 1][1][0] + X[i - 3][1][1], X[i - 1][1][1] + X[i - 3][1][0]],
+                    [X[i - 2][2][0] + X[i - 3][2][1], X[i - 2][2][1] + X[i - 3][2][0]],
+                ]
+            )
         X = np.asarray(X)
         model = PySRSequenceRegressor(
             **self.default_test_kwargs,
@@ -766,8 +768,7 @@ class TestSequencePipeline(unittest.TestCase):
         model.fit(X)
         self.assertLessEqual(model.get_best()[0]["loss"], 1e-2)
         self.assertAlmostEqual(
-            model.predict(np.asarray(X[:3])),
-            [[21, 23, 19, 19, 17, 17]]
+            model.predict(np.asarray(X[:3])), [[21, 23, 19, 19, 17, 17]]
         )
 
 

@@ -2584,6 +2584,7 @@ def _mutate_parameter(param_name: str, param_value):
 
     return param_value
 
+
 class PySRSequenceRegressor(PySRRegressor):
     def __init__(
         self,
@@ -2639,23 +2640,29 @@ class PySRSequenceRegressor(PySRRegressor):
         self : object
             Fitted estimator.
         """
+
         def _create_index_combinations(dimensions: ArrayLike[int]):
             if not dimensions:
                 return []
 
-            ranges = [range(1, self.recursive_history_length + 1)] + [range(dim) for dim in dimensions]
+            ranges = [range(1, self.recursive_history_length + 1)] + [
+                range(dim) for dim in dimensions
+            ]
 
             result = []
 
             def _generate_combinations(current, depth):
                 if depth == len(ranges):
-                    result.append('x' + '_'.join(map(str, current[1:])) + 't_' + str(current[0]))
+                    result.append(
+                        "x" + "_".join(map(str, current[1:])) + "t_" + str(current[0])
+                    )
                     return
                 for i in ranges[depth]:
                     _generate_combinations(current + [i], depth + 1)
 
             _generate_combinations([], 0)
             return result
+
         if self.recursive_history_length <= 0:
             raise ValueError(
                 "The `recursive_history_length` parameter must be greater than 0 (otherwise it's not recursion)."
@@ -2670,13 +2677,17 @@ class PySRSequenceRegressor(PySRRegressor):
             )
         y = X.copy()
         temp = X.copy()[0]
-        X = np.lib.stride_tricks.sliding_window_view(y[:-1].flatten(), self.recursive_history_length * np.prod(temp.shape))
+        X = np.lib.stride_tricks.sliding_window_view(
+            y[:-1].flatten(), self.recursive_history_length * np.prod(temp.shape)
+        )
         y = np.array([i.flatten() for i in y[self.recursive_history_length :]])
         y_units = X_units
 
         if not variable_names:
             if len(temp.shape) == 0:
-                variable_names = [f"xt_{i}" for i in range(self.recursive_history_length, 0, -1)]
+                variable_names = [
+                    f"xt_{i}" for i in range(self.recursive_history_length, 0, -1)
+                ]
             else:
                 variable_names = _create_index_combinations(dimensions=temp.shape)
         super().fit(
@@ -2724,5 +2735,7 @@ class PySRSequenceRegressor(PySRRegressor):
                 f"Recursive symbolic regression with a history length of {self.recursive_history_length} requires at least {self.recursive_history_length} datapoints."
             )
         temp = X.copy()
-        X = np.lib.stride_tricks.sliding_window_view(X.flatten(), self.recursive_history_length * np.prod(temp.shape))
+        X = np.lib.stride_tricks.sliding_window_view(
+            X.flatten(), self.recursive_history_length * np.prod(temp.shape)
+        )
         return super().predict(X, index=index)
