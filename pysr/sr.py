@@ -2626,6 +2626,8 @@ class PySRSequenceRegressor(PySRRegressor):
             characters. Avoid variable names which are also
             function names in `sympy`, such as "N".
             The number of variable names must be equal to recurrence_history_length.
+            If this parameter is not set, the variable names will be automatically set to 
+            "x_t_1", "x_t_2", etc.
         X_units : list[str]
             A list of units for each variable in `X`. Each unit should be
             a string representing a Julia expression. See DynamicQuantities.jl
@@ -2642,9 +2644,9 @@ class PySRSequenceRegressor(PySRRegressor):
             raise ValueError(
                 "The `recursive_history_length` parameter must be greater than 0 (otherwise it's not recursion)."
             )
-        if 1 not in X.shape and len(X.shape) > 1:
+        if not len(X.shape) > 1:
             raise ValueError(
-                "Recursive symbolic regression requires a single input variable; reshape the array with array.reshape(-1, 1) or array.reshape(1, -1)"
+                "Recursive symbolic regression requires a single input variable; reshape the array with array.reshape(-1, 1)"
             )
         if len(X) <= self.recursive_history_length + 1:
             raise ValueError(
@@ -2655,8 +2657,16 @@ class PySRSequenceRegressor(PySRRegressor):
         for i in range(self.recursive_history_length, len(y)):
             X.append(y[i - self.recursive_history_length : i].flatten())
         X = np.array(X)
-        y = y[self.recursive_history_length :]
+        #y = y[self.recursive_history_length :]
+        y = np.array([i.flatten() for i in y[self.recursive_history_length :]])
         y_units = X_units
+        print(X[:5], y[:5])
+
+        if not variable_names:
+            if y.shape[1] == 1:
+                variable_names = [f"xt_{i}" for i in range(self.recursive_history_length, 0, -1)]
+            else:
+                variable_names = [f"xt_{j}_{i}" for i in range(y.shape[1]) for j in range(self.recursive_history_length, 0, -1)]
 
         super().fit(
             X,
