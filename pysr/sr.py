@@ -2584,7 +2584,6 @@ def _mutate_parameter(param_name: str, param_value):
 
     return param_value
 
-
 class PySRSequenceRegressor(PySRRegressor):
     def __init__(
         self,
