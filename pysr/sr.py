@@ -2644,10 +2644,8 @@ class PySRSequenceRegressor(PySRRegressor):
             if not dimensions:
                 return []
 
-            # Create the ranges for each dimension
-            ranges = [range(dim) for dim in dimensions]
+            ranges = [range(1, self.recursive_history_length + 1)] + [range(dim) for dim in dimensions]
 
-            # Create the combinations using nested loops
             result = []
 
             def _generate_combinations(current, depth):
@@ -2677,21 +2675,14 @@ class PySRSequenceRegressor(PySRRegressor):
         for i in range(self.recursive_history_length, len(y)):
             X.append(y[i - self.recursive_history_length : i].flatten())
         X = np.array(X)
-        #y = y[self.recursive_history_length :]
         y = np.array([i.flatten() for i in y[self.recursive_history_length :]])
         y_units = X_units
-        print(X[:5], y[:5])
 
         if not variable_names:
-            if len(temp.shape) == 1:
+            if len(temp.shape) == 0:
                 variable_names = [f"xt_{i}" for i in range(self.recursive_history_length, 0, -1)]
             else:
-                dimensions = [self.recursive_history_length]
-                print(dimensions)
-                dimensions.extend(temp.shape)
-                print(temp, dimensions, type(dimensions))
-                variable_names = _create_index_combinations(dimensions=dimensions)
-        print(variable_names)
+                variable_names = _create_index_combinations(dimensions=temp.shape)
         super().fit(
             X,
             y,
