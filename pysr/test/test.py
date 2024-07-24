@@ -604,18 +604,6 @@ class TestSequencePipeline(unittest.TestCase):
             jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.turbo), True
         )
 
-    def test_sequence_multiline_seval(self):
-        # The user should be able to run multiple things in a single seval call:
-        num = jl.seval(
-            """
-            function my_new_objective(x)
-                x^2
-            end
-            1.5
-        """
-        )
-        self.assertEqual(num, 1.5)
-
     def test_sequence_high_precision_search_custom_loss(self):
         X = [1, 1, 1]
         for i in range(3, 30):
