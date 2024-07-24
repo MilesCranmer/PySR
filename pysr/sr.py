@@ -2617,8 +2617,8 @@ class PySRSequenceRegressor(PySRRegressor):
             to generate a denoised data on. This
             will be used as the training data, rather than `X`.
         weights : ndarray | pandas.DataFrame
-            Weight array of the same shape as `X`, but not for the 
-            first recurrence_history_length terms. Therefore, the shape is 
+            Weight array of the same shape as `X`, but not for the
+            first recurrence_history_length terms. Therefore, the shape is
             (n_samples-recurrence_history_length, 1) or (1, n_samples-recurrence_history_length)
             Each element is how to weight the mean-square-error loss
             for that particular element of `X`. Alternatively,
