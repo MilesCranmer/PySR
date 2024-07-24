@@ -2640,23 +2640,29 @@ class PySRSequenceRegressor(PySRRegressor):
         self : object
             Fitted estimator.
         """
+
         def _create_index_combinations(dimensions: ArrayLike[int]):
             if not dimensions:
                 return []
 
-            ranges = [range(1, self.recursive_history_length + 1)] + [range(dim) for dim in dimensions]
+            ranges = [range(1, self.recursive_history_length + 1)] + [
+                range(dim) for dim in dimensions
+            ]
 
             result = []
 
             def _generate_combinations(current, depth):
                 if depth == len(ranges):
-                    result.append('x' + '_'.join(map(str, current[1:])) + 't_' + str(current[0]))
+                    result.append(
+                        "x" + "_".join(map(str, current[1:])) + "t_" + str(current[0])
+                    )
                     return
                 for i in ranges[depth]:
                     _generate_combinations(current + [i], depth + 1)
 
             _generate_combinations([], 0)
             return result
+
         if self.recursive_history_length <= 0:
             raise ValueError(
                 "The `recursive_history_length` parameter must be greater than 0 (otherwise it's not recursion)."
@@ -2680,7 +2686,9 @@ class PySRSequenceRegressor(PySRRegressor):
 
         if not variable_names:
             if len(temp.shape) == 0:
-                variable_names = [f"xt_{i}" for i in range(self.recursive_history_length, 0, -1)]
+                variable_names = [
+                    f"xt_{i}" for i in range(self.recursive_history_length, 0, -1)
+                ]
             else:
                 variable_names = _create_index_combinations(dimensions=temp.shape)
         super().fit(
