@@ -2611,8 +2611,6 @@ class PySRSequenceRegressor(PySRRegressor):
         ----------
         X : ndarray | pandas.DataFrame
             Training time series data of shape (n_times, n_features).
-            Multidimensional time series data is supported, but the more dimensions
-            provided, the worse the regressor will perform.
         weights : ndarray | pandas.DataFrame
             Weight array of the same shape as `X`.
             Each element is how to weight the mean-square-error loss
@@ -2655,6 +2653,10 @@ class PySRSequenceRegressor(PySRRegressor):
             raise ValueError(
                 f"Recursive symbolic regression with a history length of {self.recursive_history_length} requires at least {self.recursive_history_length + 2} datapoints."
             )
+        if isinstance(weights, np.ndarray) and len(weights) != len(X):
+            raise ValueError(
+                "The length of `weights` must have shape (n_times,)."
+            )
         y = X.copy()
         temp = X.copy()[0]
         X = np.lib.stride_tricks.sliding_window_view(
@@ -2662,8 +2664,8 @@ class PySRSequenceRegressor(PySRRegressor):
         )[:: temp.shape[0], :]
         y = np.array([i.flatten() for i in y[self.recursive_history_length :]])
         y_units = X_units
-        if weights:
-            weights = weights[self.recursive_history_length :]
+        if isinstance(weights, np.ndarray):
+            weights = weights[self.recursive_history_length:]
 
         if not variable_names:
             if len(temp.shape) == 0:

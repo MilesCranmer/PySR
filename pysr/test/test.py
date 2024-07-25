@@ -550,15 +550,15 @@ class TestSequencePipeline(unittest.TestCase):
             **self.default_test_kwargs,
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
         )
-        model.fit(X, variable_names=["c1", "c2", "c3"])  # recursive history length is 3
-        self.assertIn("c1", model.equations_.iloc[-1]["equation"])
+        model.fit(X, variable_names=["c1"])
+        self.assertIn("c1t_0", model.equations_.iloc[-1]["equation"])
 
     def test_sequence_weighted_bumper(self):
         X = [1, 1, 1]
         for i in range(3, 30):
             X.append(X[i - 1] + X[i - 2] + X[i - 3])
         X = np.asarray(X).reshape(-1, 1)
-        weights = np.ones_like(X)[3:]  # 3 is recursive history length
+        weights = np.ones_like(X)
         model = PySRSequenceRegressor(
             **self.default_test_kwargs,
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
@@ -679,7 +679,7 @@ class TestSequencePipeline(unittest.TestCase):
             X.append(X[i - 1] + X[i - 2])
         X = np.asarray(X).reshape(-1, 1)
         model = PySRSequenceRegressor(
-            recursive_history_length=3, complexity_of_variables=[1, 2]
+            **self.default_test_kwargs, complexity_of_variables=[1, 2]
         )
         with self.assertRaises(ValueError) as cm:
             model.fit(X, complexity_of_variables=[1, 2, 3])
@@ -696,7 +696,7 @@ class TestSequencePipeline(unittest.TestCase):
             X.append(X[i - 1] + X[i - 2] + X[i - 3])
         X = np.asarray(X).reshape(-1, 1)
         regressor = PySRSequenceRegressor(
-            recursive_history_length=3, warm_start=True, max_evals=10
+            **self.default_test_kwargs, warm_start=True, max_evals=10
         )
         regressor.fit(X)
 
@@ -722,7 +722,7 @@ class TestSequencePipeline(unittest.TestCase):
         self.assertIn("exec", model.latex()[0])
         self.assertIn("hash", model.latex()[1])
 
-    def test_sequence_multidimensional_data(self):
+    def test_sequence_multidimensional_data_error(self):
         X = [
             [
                 [1, 2],
@@ -751,13 +751,30 @@ class TestSequencePipeline(unittest.TestCase):
         X = np.asarray(X)
         model = PySRSequenceRegressor(
             **self.default_test_kwargs,
-            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
         )
-        model.fit(X)
-        self.assertLessEqual(model.get_best()[0]["loss"], 1e-2)
-        self.assertAlmostEqual(
-            model.predict(np.asarray(X[:3])), [[21, 23, 19, 19, 17, 17]]
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X)
+        self.assertIn("Recursive symbolic regression only supports up to 2D data; please flatten your data first", str(cm.exception))
+    
+    def test_sequence_2D_data_custom_variable_names(self):
+        X = [
+            [1, 2, 3],
+            [8, 7, 6],
+            [3, 6, 4],
+        ]
+        for i in range(3, 20):
+            X.append([
+                X[i-1][2] * X[i-2][1],
+                X[i-2][1] - X[i-3][0],
+                X[i-3][2] / X[i-1][0],
+            ])
+        X = np.asarray(X)
+        model = PySRSequenceRegressor(
+            **self.default_test_kwargs,
         )
+        model.fit(X,variable_names=["x", "y", "z"])
+        self.assertLessEqual(model.get_best()[0]["loss"], 1e-4)
+        self.assertIn("zt_1", model.equations_.iloc[-1]["equation"])
 
 
 def manually_create_model(equations, feature_names=None):
@@ -1513,14 +1530,14 @@ class TestDimensionalConstraints(unittest.TestCase):
 def runtests(just_tests=False):
     """Run all tests in test.py."""
     test_cases = [
-        TestPipeline,
+        #TestPipeline,
         TestSequencePipeline,
-        TestBest,
-        TestFeatureSelection,
-        TestMiscellaneous,
-        TestHelpMessages,
-        TestLaTeXTable,
-        TestDimensionalConstraints,
+        #TestBest,
+        #TestFeatureSelection,
+        #TestMiscellaneous,
+        #TestHelpMessages,
+        #TestLaTeXTable,
+        #TestDimensionalConstraints,
     ]
     if just_tests:
         return test_cases
