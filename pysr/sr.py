@@ -2677,7 +2677,7 @@ class PySRSequenceRegressor(PySRRegressor):
                     for i in range(self.recursive_history_length, 0, -1)
                 ]
         else:
-            variable_names = [i + str(j) for i in variable_names for j in self.recursive_history_length]
+            variable_names = [i + 't_' + str(j) for i in variable_names for j in range(self.recursive_history_length, 0, -1)]
         super().fit(
             X,
             y,
