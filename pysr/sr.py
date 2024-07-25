@@ -2610,7 +2610,7 @@ class PySRSequenceRegressor(PySRRegressor):
         Parameters
         ----------
         X : ndarray | pandas.DataFrame
-            Training time series data of shape (n_times, ...).
+            Training time series data of shape (n_times, n_features).
             Multidimensional time series data is supported, but the more dimensions
             provided, the worse the regressor will perform.
         weights : ndarray | pandas.DataFrame
@@ -2625,7 +2625,7 @@ class PySRSequenceRegressor(PySRRegressor):
             instead of `variable_names`. Cannot contain spaces or special
             characters. Avoid variable names which are also
             function names in `sympy`, such as "N".
-            The number of variable names must be equal to recurrence_history_length.
+            The number of variable names must be equal to (n_features,).
         X_units : list[str]
             A list of units for each variable in `X`. Each unit should be
             a string representing a Julia expression. See DynamicQuantities.jl
