@@ -708,7 +708,7 @@ class TestSequencePipeline(unittest.TestCase):
         model = PySRSequenceRegressor(
             binary_operators=["+"],
             **self.default_test_kwargs,
-            early_stop_condition="stop_if(loss, complexity) = loss < 0.05 && complexity == 2"
+            early_stop_condition="stop_if(loss, complexity) = loss < 0.05 && complexity == 2",
         )
         # We test builtin variable names
         model.fit(X, variable_names=["exec"])
@@ -773,7 +773,7 @@ class TestSequencePipeline(unittest.TestCase):
         )
         model.fit(X, variable_names=["x", "y", "z"])
         self.assertLessEqual(model.get_best()[0]["loss"], 1e-4)
-        self.assertIn("zt_{1}", ''.join(model.latex()))
+        self.assertIn("zt_{1}", "".join(model.latex()))
 
 
 def manually_create_model(equations, feature_names=None):

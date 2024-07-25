@@ -2063,7 +2063,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 "the correct variables, and consider using a larger `maxsize`."
             )
         use_custom_variable_names = variable_names is not None
-        
+
         _check_assertions(
             X,
             use_custom_variable_names,
