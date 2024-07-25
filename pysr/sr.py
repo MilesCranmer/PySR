@@ -2654,9 +2654,7 @@ class PySRSequenceRegressor(PySRRegressor):
                 f"Recursive symbolic regression with a history length of {self.recursive_history_length} requires at least {self.recursive_history_length + 2} datapoints."
             )
         if isinstance(weights, np.ndarray) and len(weights) != len(X):
-            raise ValueError(
-                "The length of `weights` must have shape (n_times,)."
-            )
+            raise ValueError("The length of `weights` must have shape (n_times,).")
         y = X.copy()
         temp = X.copy()[0]
         X = np.lib.stride_tricks.sliding_window_view(
@@ -2665,7 +2663,7 @@ class PySRSequenceRegressor(PySRRegressor):
         y = np.array([i.flatten() for i in y[self.recursive_history_length :]])
         y_units = X_units
         if isinstance(weights, np.ndarray):
-            weights = weights[self.recursive_history_length:]
+            weights = weights[self.recursive_history_length :]
 
         if not variable_names:
             if len(temp.shape) == 0:

@@ -754,8 +754,11 @@ class TestSequencePipeline(unittest.TestCase):
         )
         with self.assertRaises(ValueError) as cm:
             model.fit(X)
-        self.assertIn("Recursive symbolic regression only supports up to 2D data; please flatten your data first", str(cm.exception))
-    
+        self.assertIn(
+            "Recursive symbolic regression only supports up to 2D data; please flatten your data first",
+            str(cm.exception),
+        )
+
     def test_sequence_2D_data_custom_variable_names(self):
         X = [
             [1, 2, 3],
@@ -763,16 +766,18 @@ class TestSequencePipeline(unittest.TestCase):
             [3, 6, 4],
         ]
         for i in range(3, 20):
-            X.append([
-                X[i-1][2] * X[i-2][1],
-                X[i-2][1] - X[i-3][0],
-                X[i-3][2] / X[i-1][0],
-            ])
+            X.append(
+                [
+                    X[i - 1][2] * X[i - 2][1],
+                    X[i - 2][1] - X[i - 3][0],
+                    X[i - 3][2] / X[i - 1][0],
+                ]
+            )
         X = np.asarray(X)
         model = PySRSequenceRegressor(
             **self.default_test_kwargs,
         )
-        model.fit(X,variable_names=["x", "y", "z"])
+        model.fit(X, variable_names=["x", "y", "z"])
         self.assertLessEqual(model.get_best()[0]["loss"], 1e-4)
         self.assertIn("zt_1", model.equations_.iloc[-1]["equation"])
 
@@ -1530,14 +1535,14 @@ class TestDimensionalConstraints(unittest.TestCase):
 def runtests(just_tests=False):
     """Run all tests in test.py."""
     test_cases = [
-        #TestPipeline,
+        # TestPipeline,
         TestSequencePipeline,
-        #TestBest,
-        #TestFeatureSelection,
-        #TestMiscellaneous,
-        #TestHelpMessages,
-        #TestLaTeXTable,
-        #TestDimensionalConstraints,
+        # TestBest,
+        # TestFeatureSelection,
+        # TestMiscellaneous,
+        # TestHelpMessages,
+        # TestLaTeXTable,
+        # TestDimensionalConstraints,
     ]
     if just_tests:
         return test_cases
