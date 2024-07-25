@@ -1,7 +1,10 @@
-from .sr import PySRRegressor
-import numpy as np
 from typing import List, Optional, Union
+
+import numpy as np
+
+from .sr import PySRRegressor
 from .utils import ArrayLike
+
 
 class PySRSequenceRegressor(PySRRegressor):
     def __init__(
