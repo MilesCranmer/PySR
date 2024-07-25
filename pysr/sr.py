@@ -2631,7 +2631,7 @@ class PySRSequenceRegressor(PySRRegressor):
             a string representing a Julia expression. See DynamicQuantities.jl
             https://symbolicml.org/DynamicQuantities.jl/dev/units/ for more
             information.
-            Length should be equal to recurrence_history_length.
+            Length should be equal to n_features.
 
         Returns
         -------
