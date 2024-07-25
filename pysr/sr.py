@@ -2063,7 +2063,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 "the correct variables, and consider using a larger `maxsize`."
             )
         use_custom_variable_names = variable_names is not None
-
+        
         _check_assertions(
             X,
             use_custom_variable_names,
@@ -2645,7 +2645,7 @@ class PySRSequenceRegressor(PySRRegressor):
             raise ValueError(
                 "Recursive symbolic regression only supports up to 2D data; please flatten your data first"
             )
-        if len(X) < 2:
+        elif len(X) < 2:
             raise ValueError(
                 "Recursive symbolic regression requires at least 2 datapoints; if you tried to pass a 1D array, use array.reshape(-1, 1)"
             )
@@ -2660,7 +2660,7 @@ class PySRSequenceRegressor(PySRRegressor):
         X = np.lib.stride_tricks.sliding_window_view(
             y[:-1].flatten(), self.recursive_history_length * temp.shape[0]
         )[:: temp.shape[0], :]
-        y = np.array([i.flatten() for i in y[self.recursive_history_length :]])
+        y = np.array([i for i in y[self.recursive_history_length :]])
         y_units = X_units
         if isinstance(weights, np.ndarray):
             weights = weights[self.recursive_history_length :]

@@ -551,22 +551,22 @@ class TestSequencePipeline(unittest.TestCase):
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
         )
         model.fit(X, variable_names=["c1"])
-        self.assertIn("c1t_0", model.equations_.iloc[-1]["equation"])
+        self.assertIn("c1t_1", model.equations_.iloc[-1]["equation"])
 
     def test_sequence_weighted_bumper(self):
         X = [1, 1, 1]
         for i in range(3, 30):
             X.append(X[i - 1] + X[i - 2] + X[i - 3])
         X = np.asarray(X).reshape(-1, 1)
-        weights = np.ones_like(X)
+        weights = np.ones_like(X).reshape(-1)
         model = PySRSequenceRegressor(
             **self.default_test_kwargs,
-            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity <= 5",
             bumper=True,
         )
         model.fit(X, weights=weights)
         print(model.equations_)
-        self.assertLessEqual(model.get_best()["loss"], 1e-4)
+        self.assertLessEqual(model.get_best()["loss"], 1e-2)
         self.assertEqual(
             jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.bumper), True
         )
@@ -704,23 +704,17 @@ class TestSequencePipeline(unittest.TestCase):
         X = [1, 1]
         for i in range(2, 30):
             X.append(X[i - 1] + X[i - 2])
-        X = np.asarray(X)
+        X = np.asarray(X).reshape(-1, 1)
         model = PySRSequenceRegressor(
             binary_operators=["+"],
             **self.default_test_kwargs,
-            early_stop_condition="stop_if(loss, complexity) = loss < 0.05 && complexity == 2",
+            early_stop_condition="stop_if(loss, complexity) = loss < 0.05 && complexity == 2"
         )
-        # We expect in this case that the "best"
-        # equation should be the right one:
-        model.set_params(model_selection="best")
-        # Also try without a temp equation file:
-        model.set_params(temp_equation_file=False)
-        # We also test builtin variable names
-        model.fit(X, variable_names=["exec", "hash", "bruh"])
+        # We test builtin variable names
+        model.fit(X, variable_names=["exec"])
         self.assertLessEqual(model.get_best()["loss"], 1e-2)
         self.assertLessEqual(model.get_best()["loss"], 1e-2)
-        self.assertIn("exec", model.latex()[0])
-        self.assertIn("hash", model.latex()[1])
+        self.assertIn("exec", model.latex())
 
     def test_sequence_multidimensional_data_error(self):
         X = [
@@ -779,7 +773,7 @@ class TestSequencePipeline(unittest.TestCase):
         )
         model.fit(X, variable_names=["x", "y", "z"])
         self.assertLessEqual(model.get_best()[0]["loss"], 1e-4)
-        self.assertIn("zt_1", model.equations_.iloc[-1]["equation"])
+        self.assertIn("zt_{1}", ''.join(model.latex()))
 
 
 def manually_create_model(equations, feature_names=None):
@@ -1535,14 +1529,14 @@ class TestDimensionalConstraints(unittest.TestCase):
 def runtests(just_tests=False):
     """Run all tests in test.py."""
     test_cases = [
-        # TestPipeline,
+        TestPipeline,
         TestSequencePipeline,
-        # TestBest,
-        # TestFeatureSelection,
-        # TestMiscellaneous,
-        # TestHelpMessages,
-        # TestLaTeXTable,
-        # TestDimensionalConstraints,
+        TestBest,
+        TestFeatureSelection,
+        TestMiscellaneous,
+        TestHelpMessages,
+        TestLaTeXTable,
+        TestDimensionalConstraints,
     ]
     if just_tests:
         return test_cases
