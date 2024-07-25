@@ -2659,11 +2659,11 @@ class PySRSequenceRegressor(PySRRegressor):
         temp = X.copy()[0]
         X = np.lib.stride_tricks.sliding_window_view(
             y[:-1].flatten(), self.recursive_history_length * temp.shape[0]
-        )[::temp.shape[0], :]
+        )[:: temp.shape[0], :]
         y = np.array([i.flatten() for i in y[self.recursive_history_length :]])
         y_units = X_units
         if weights:
-            weights = weights[self.recursive_history_length:]
+            weights = weights[self.recursive_history_length :]
 
         if not variable_names:
             if len(temp.shape) == 0:
@@ -2677,7 +2677,11 @@ class PySRSequenceRegressor(PySRRegressor):
                     for i in range(self.recursive_history_length, 0, -1)
                 ]
         else:
-            variable_names = [i + 't_' + str(j) for i in variable_names for j in range(self.recursive_history_length, 0, -1)]
+            variable_names = [
+                i + "t_" + str(j)
+                for i in variable_names
+                for j in range(self.recursive_history_length, 0, -1)
+            ]
         super().fit(
             X,
             y,
@@ -2725,5 +2729,5 @@ class PySRSequenceRegressor(PySRRegressor):
         temp = X.copy()
         X = np.lib.stride_tricks.sliding_window_view(
             X.flatten(), self.recursive_history_length * np.prod(temp.shape)
-        )[::temp.shape[0], :]
+        )[:: temp.shape[0], :]
         return super().predict(X, index=index)
