@@ -2614,20 +2614,18 @@ class PySRSequenceRegressor(PySRRegressor):
             Multidimensional time series data is supported, but the more dimensions
             provided, the worse the regressor will perform.
         weights : ndarray | pandas.DataFrame
-            Weight array of the same shape as `X`, but not for the
-            first recurrence_history_length terms. Therefore, the shape is
-            (n_samples-recurrence_history_length, 1) or (1, n_samples-recurrence_history_length)
+            Weight array of the same shape as `X`.
             Each element is how to weight the mean-square-error loss
             for that particular element of `X`. Alternatively,
             if a custom `loss` was set, it will can be used
             in arbitrary ways.
         variable_names : list[str]
-            A list of names for the variables, rather than "xt_1", "xt_2", etc.
+            A list of names for the variables, rather than "x0t_1", "x1t_2", etc.
             If `X` is a pandas dataframe, the column name will be used
             instead of `variable_names`. Cannot contain spaces or special
             characters. Avoid variable names which are also
             function names in `sympy`, such as "N".
-            The number of variable names must be equal to recurrence_history_length * X.shape[1:].
+            The number of variable names must be equal to recurrence_history_length.
         X_units : list[str]
             A list of units for each variable in `X`. Each unit should be
             a string representing a Julia expression. See DynamicQuantities.jl
