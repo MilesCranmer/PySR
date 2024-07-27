@@ -12,9 +12,8 @@ from dataclasses import dataclass, fields
 from datetime import datetime
 from io import StringIO
 from multiprocessing import cpu_count
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union, cast
-from pathlib import Path, PureWindowsPath, PurePosixPath
 
 import numpy as np
 import pandas as pd
@@ -1000,10 +999,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         class CustomUnpickler(pkl.Unpickler):
             def find_class(self, module, name):
-                if module == 'pathlib':
-                    if name == 'PosixPath':
+                if module == "pathlib":
+                    if name == "PosixPath":
                         return PurePosixPath
-                    elif name == 'WindowsPath':
+                    elif name == "WindowsPath":
                         return PureWindowsPath
                 return super().find_class(module, name)
 
