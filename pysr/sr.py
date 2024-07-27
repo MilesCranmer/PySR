@@ -14,11 +14,12 @@ from io import StringIO
 from multiprocessing import cpu_count
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union, cast
+from pathlib import Path, PureWindowsPath, PurePosixPath
 
 import numpy as np
 import pandas as pd
 from numpy import ndarray
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
 from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
 from sklearn.utils import check_array, check_consistent_length, check_random_state
 from sklearn.utils.validation import _check_feature_names_in  # type: ignore
@@ -949,7 +950,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     @classmethod
     def from_file(
         cls,
-        equation_file: PathLike,
+        equation_file: Union[str, Path],
         *,
         binary_operators: Optional[List[str]] = None,
         unary_operators: Optional[List[str]] = None,
@@ -997,6 +998,20 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             The model with fitted equations.
         """
 
+        class CustomUnpickler(pkl.Unpickler):
+            def find_class(self, module, name):
+                if module == 'pathlib':
+                    if name == 'PosixPath':
+                        return PurePosixPath
+                    elif name == 'WindowsPath':
+                        return PureWindowsPath
+                return super().find_class(module, name)
+
+        def path_to_str(path):
+            if isinstance(path, (PurePosixPath, PureWindowsPath)):
+                return str(path)
+            return path
+
         pkl_filename = _csv_filename_to_pkl_filename(equation_file)
 
         # Try to load model from <equation_file>.pkl
@@ -1007,11 +1022,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             assert unary_operators is None
             assert n_features_in is None
             with open(pkl_filename, "rb") as f:
-                model = pkl.load(f)
-            # Change equation_file_ to be in the same dir as the pickle file
-            base_dir = os.path.dirname(pkl_filename)
-            base_equation_file = os.path.basename(model.equation_file_)
-            model.equation_file_ = os.path.join(base_dir, base_equation_file)
+                unpickler = CustomUnpickler(f)
+                model = unpickler.load()
+            # Convert equation_file_ to string to ensure cross-platform compatibility
+            model.equation_file_ = path_to_str(model.equation_file_)
 
             # Update any parameters if necessary, such as
             # extra_sympy_mappings:
