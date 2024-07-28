@@ -142,7 +142,7 @@ class PySRSequenceRegressor(PySRRegressor):
         Parameters
         ----------
         X : ndarray | pandas.DataFrame
-            Training data of shape `(n_times, 1)`.
+            Data of shape `(n_times, n_features)`.
         index : int | list[int]
             If you want to compute the output of an expression using a
             particular row of `self.equations_`, you may specify the index here.
@@ -151,7 +151,7 @@ class PySRSequenceRegressor(PySRRegressor):
 
         Returns
         -------
-        x_predicted : ndarray of shape (n_samples, nout_)
+        x_predicted : ndarray of shape (n_samples, n_features)
             Values predicted by substituting `X` into the fitted sequence symbolic
             regression model.
 
