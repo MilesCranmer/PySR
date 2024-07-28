@@ -717,32 +717,7 @@ class TestSequenceRegressor(unittest.TestCase):
         self.assertIn("exec", model.latex())
 
     def test_sequence_multidimensional_data_error(self):
-        X = [
-            [
-                [1, 2],
-                [3, 4],
-                [5, 6],
-            ],
-            [
-                [7, 8],
-                [9, 10],
-                [11, 12],
-            ],
-            [
-                [13, 14],
-                [15, 16],
-                [17, 18],
-            ],
-        ]
-        for i in range(3, 5):
-            X.append(
-                [
-                    [X[i - 1][0][0] + X[i - 2][0][1], X[i - 1][0][1] + X[i - 2][1][0]],
-                    [X[i - 1][1][0] + X[i - 3][1][1], X[i - 1][1][1] + X[i - 3][1][0]],
-                    [X[i - 2][2][0] + X[i - 3][2][1], X[i - 2][2][1] + X[i - 3][2][0]],
-                ]
-            )
-        X = np.asarray(X)
+        X = np.zeros((10, 1, 1))
         model = PySRSequenceRegressor(
             **self.default_test_kwargs,
         )
