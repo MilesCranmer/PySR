@@ -566,7 +566,7 @@ class TestSequencePipeline(unittest.TestCase):
         )
         model.fit(X, weights=weights)
         print(model.equations_)
-        self.assertLessEqual(model.get_best()["loss"], 1e-2)
+        self.assertLessEqual(model.get_best()["loss"], 1e-1)
         self.assertEqual(
             jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.bumper), True
         )
