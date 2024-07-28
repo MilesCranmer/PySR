@@ -13,8 +13,8 @@ class PySRSequenceRegressor(PySRRegressor):
         recursive_history_length: int = 0,
         **kwargs,
     ):
-        self.recursive_history_length = recursive_history_length
         super().__init__(**kwargs)
+        self.recursive_history_length = recursive_history_length
 
     def fit(
         self,
