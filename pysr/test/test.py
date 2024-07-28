@@ -513,7 +513,7 @@ class TestPipeline(unittest.TestCase):
         )
 
 
-class TestSequencePipeline(unittest.TestCase):
+class TestSequenceRegressor(unittest.TestCase):
     def setUp(self):
         # Using inspect,
         # get default niterations from PySRRegressor, and double them:
@@ -1543,7 +1543,7 @@ def runtests(just_tests=False):
     """Run all tests in test.py."""
     test_cases = [
         TestPipeline,
-        TestSequencePipeline,
+        TestSequenceRegressor,
         TestBest,
         TestFeatureSelection,
         TestMiscellaneous,
