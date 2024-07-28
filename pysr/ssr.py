@@ -1,5 +1,5 @@
+from typing import List, Optional, Union
 import warnings
-from typing import List, Optional, Union, override
 
 import numpy as np
 
@@ -16,7 +16,6 @@ class PySRSequenceRegressor(PySRRegressor):
         self.recursive_history_length = recursive_history_length
         super().__init__(**kwargs)
 
-    @override
     def fit(
         self,
         X,
