@@ -1,5 +1,5 @@
-from typing import List, Optional, Union, override
 import warnings
+from typing import List, Optional, Union, override
 
 import numpy as np
 
@@ -20,15 +20,15 @@ class PySRSequenceRegressor(PySRRegressor):
     def fit(
         self,
         X,
-        y = None,
+        y=None,
         Xresampled=None,
-        weights = None,
+        weights=None,
         variable_names: Optional[ArrayLike[str]] = None,
         complexity_of_variables: Optional[
             Union[int, float, List[Union[int, float]]]
         ] = None,
         X_units: Optional[ArrayLike[str]] = None,
-        y_units = None,
+        y_units=None,
     ) -> "PySRSequenceRegressor":
         """
         Search for equations to fit the time series dataset and store them in `self.equations_`.
@@ -64,11 +64,17 @@ class PySRSequenceRegressor(PySRRegressor):
         """
 
         if y is not None:
-            warnings.warn("Recursive symbolic regression does not use `y` - this parameter is being ignored")
+            warnings.warn(
+                "Recursive symbolic regression does not use `y` - this parameter is being ignored"
+            )
         if y_units is not None:
-            warnings.warn("Recursive symbolic regression does not use `y_units` - this parameter is being ignored")
+            warnings.warn(
+                "Recursive symbolic regression does not use `y_units` - this parameter is being ignored"
+            )
         if Xresampled is not None:
-            warnings.warn("Recursive symbolic regression does not use `Xresampled` - this parameter is being ignored")
+            warnings.warn(
+                "Recursive symbolic regression does not use `Xresampled` - this parameter is being ignored"
+            )
 
         if self.recursive_history_length <= 0:
             raise ValueError(
