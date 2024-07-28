@@ -775,6 +775,19 @@ class TestSequencePipeline(unittest.TestCase):
         self.assertLessEqual(model.get_best()[0]["loss"], 1e-4)
         self.assertIn("zt_{1}", "".join(model.latex()))
 
+    def test_unused_variables(self):
+        X = [1, 1]
+        for i in range(2, 30):
+            X.append(X[i - 1] + X[i - 2])
+        X = np.asarray(X).reshape(-1, 1)
+        y = np.asarray([1] * len(X))
+        model = PySRSequenceRegressor(
+            **self.default_test_kwargs,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
+        )
+        with self.assertWarns(UserWarning):
+            model.fit(X, y, Xresampled=X, y_units=["doesn't matter"])
+
 
 def manually_create_model(equations, feature_names=None):
     if feature_names is None:
