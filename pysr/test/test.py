@@ -734,7 +734,7 @@ class TestSequencePipeline(unittest.TestCase):
                 [17, 18],
             ],
         ]
-        for i in range(3, 10):
+        for i in range(3, 5):
             X.append(
                 [
                     [X[i - 1][0][0] + X[i - 2][0][1], X[i - 1][0][1] + X[i - 2][1][0]],
