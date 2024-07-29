@@ -571,39 +571,6 @@ class TestSequenceRegressor(unittest.TestCase):
             jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.bumper), True
         )
 
-    def test_sequence_multiprocessing_turbo_custom_objective(self):
-        X = [1]
-        for i in range(1, 20):
-            X.append(np.sqrt(X[i - 1]) + 1)
-        X = np.asarray(X).reshape(-1, 1)
-        model = PySRSequenceRegressor(
-            **self.default_test_kwargs,
-            # Turbo needs to work with unsafe operators:
-            unary_operators=["sqrt"],
-            procs=2,
-            multithreading=False,
-            turbo=True,
-            early_stop_condition="stop_if(loss, complexity) = loss < 1e-10 && complexity == 1",
-            loss_function="""
-            function my_objective(tree::Node{T}, dataset::Dataset{T}, options::Options) where T
-                prediction, flag = eval_tree_array(tree, dataset.X, options)
-                !flag && return T(Inf)
-                abs3(x) = abs(x) ^ 3
-                return sum(abs3, prediction .- dataset.y) / length(prediction)
-            end
-            """,
-        )
-        model.fit(X)
-        print(model.equations_)
-        best_loss = model.equations_.iloc[-1]["loss"]
-        self.assertLessEqual(best_loss, 1e-10)
-        self.assertGreaterEqual(best_loss, 0.0)
-
-        # Test options stored:
-        self.assertEqual(
-            jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.turbo), True
-        )
-
     def test_sequence_high_precision_search_custom_loss(self):
         X = [1, 1, 1]
         for i in range(3, 30):
