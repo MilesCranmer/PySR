@@ -8,7 +8,7 @@ from .deprecated import best, best_callable, best_row, best_tex, install, pysr
 from .export_jax import sympy2jax
 from .export_torch import sympy2torch
 from .sr import PySRRegressor
-from .ssr import PySRSequenceRegressor
+from .regressor_sequence import PySRSequenceRegressor
 
 # This file is created by setuptools_scm during the build process:
 from .version import __version__
