@@ -7,8 +7,8 @@ from .sr import PySRRegressor
 from .utils import ArrayLike
 
 
-def _check_assertions(X, recursive_history_length, weights, variable_names, X_units):
-    if recursive_history_length <= 0:
+def _check_assertions(X, recursive_history_length=None, weights=None, variable_names=None, X_units=None):
+    if recursive_history_length is not None and recursive_history_length <= 0:
         raise ValueError(
             "The `recursive_history_length` parameter must be greater than 0 (otherwise it's not recursion)."
         )
@@ -177,12 +177,8 @@ class PySRSequenceRegressor(PySRRegressor):
         ValueError
             Raises if the `best_equation` cannot be evaluated.
         """
-        if len(X) < self.recursive_history_length:
-            raise ValueError(
-                f"Recursive symbolic regression with a history length of {self.recursive_history_length} requires at least {self.recursive_history_length} datapoints."
-            )
-        temp = X.copy()
+        X = _check_assertions(X, self.recursive_history_length)[0]
         X = np.lib.stride_tricks.sliding_window_view(
-            X.flatten(), self.recursive_history_length * np.prod(temp.shape)
-        )[:: temp.shape[0], :]
+            X.flatten(), self.recursive_history_length * np.prod(X.shape[1])
+        )[:: X.shape[1], :]
         return super().predict(X, index=index)
