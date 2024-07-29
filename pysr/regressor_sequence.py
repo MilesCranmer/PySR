@@ -133,18 +133,18 @@ class PySRSequenceRegressor(PySRRegressor):
             y_units,
         )
 
-        historical_X = X[self.recursive_history_length :]
-        current_X = np.lib.stride_tricks.sliding_window_view(
+        current_X = X[self.recursive_history_length :]
+        historical_X = np.lib.stride_tricks.sliding_window_view(
             X[:-1].flatten(), self.recursive_history_length * X.shape[1]
-        )[:: historical_X.shape[1], :]
+        )[:: current_X.shape[1], :]
         y_units = X_units
         if isinstance(weights, np.ndarray):
             weights = weights[self.recursive_history_length :]
-        variable_names = self._variable_names(historical_X, variable_names)
+        variable_names = self._variable_names(current_X, variable_names)
 
         super().fit(
-            X=current_X,
-            y=historical_X,
+            X=historical_X,
+            y=current_X,
             weights=weights,
             variable_names=variable_names,
             X_units=X_units,
@@ -183,7 +183,10 @@ class PySRSequenceRegressor(PySRRegressor):
             Raises if the `best_equation` cannot be evaluated.
         """
         _check_assertions(X, recursive_history_length=self.recursive_history_length)
-        current_X = np.lib.stride_tricks.sliding_window_view(
+        historical_X = np.lib.stride_tricks.sliding_window_view(
             X.flatten(), self.recursive_history_length * np.prod(X.shape[1])
         )[:: X.shape[1], :]
-        return super().predict(X=current_X, index=index)
+        padding = np.empty((self.recursive_history_length - 1, historical_X.shape[1]))
+        padding[:] = np.nan
+        padded_X = np.concatenate(padding, X)
+        return super().predict(X=padded_X, index=index)
