@@ -3,7 +3,9 @@ import inspect
 import os
 import re
 from pathlib import Path
+import pickle as pkl
 from typing import Any, List, TypeVar, Union
+from pathlib import PurePosixPath, PureWindowsPath
 
 from numpy import ndarray
 from sklearn.utils.validation import _check_feature_names_in  # type: ignore
@@ -73,3 +75,19 @@ def _suggest_keywords(cls, k: str) -> List[str]:
     ]
     suggestions = difflib.get_close_matches(k, valid_keywords, n=3)
     return suggestions
+
+
+class _CrossPlatformPathUnpickler(pkl.Unpickler):
+    def find_class(self, module, name):
+        if module == "pathlib":
+            if name == "PosixPath":
+                return PurePosixPath
+            elif name == "WindowsPath":
+                return PureWindowsPath
+        return super().find_class(module, name)
+
+
+def _path_to_str(path):
+    if isinstance(path, (PurePosixPath, PureWindowsPath)):
+        return str(path)
+    return path

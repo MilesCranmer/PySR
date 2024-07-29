@@ -12,13 +12,13 @@ from dataclasses import dataclass, fields
 from datetime import datetime
 from io import StringIO
 from multiprocessing import cpu_count
-from pathlib import Path, PurePosixPath, PureWindowsPath
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union, cast
 
 import numpy as np
 import pandas as pd
 from numpy import ndarray
-from numpy.typing import ArrayLike, NDArray
+from numpy.typing import NDArray
 from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
 from sklearn.utils import check_array, check_consistent_length, check_random_state
 from sklearn.utils.validation import _check_feature_names_in  # type: ignore
@@ -51,11 +51,13 @@ from .julia_import import SymbolicRegression, jl
 from .utils import (
     ArrayLike,
     PathLike,
+    _CrossPlatformPathUnpickler,
     _csv_filename_to_pkl_filename,
     _preprocess_julia_floats,
     _safe_check_feature_names_in,
     _subscriptify,
     _suggest_keywords,
+    _path_to_str,
 )
 
 ALREADY_RAN = False
@@ -949,7 +951,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     @classmethod
     def from_file(
         cls,
-        equation_file: Union[str, Path],
+        equation_file: PathLike,
         *,
         binary_operators: Optional[List[str]] = None,
         unary_operators: Optional[List[str]] = None,
@@ -997,20 +999,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             The model with fitted equations.
         """
 
-        class CustomUnpickler(pkl.Unpickler):
-            def find_class(self, module, name):
-                if module == "pathlib":
-                    if name == "PosixPath":
-                        return PurePosixPath
-                    elif name == "WindowsPath":
-                        return PureWindowsPath
-                return super().find_class(module, name)
-
-        def path_to_str(path):
-            if isinstance(path, (PurePosixPath, PureWindowsPath)):
-                return str(path)
-            return path
-
         pkl_filename = _csv_filename_to_pkl_filename(equation_file)
 
         # Try to load model from <equation_file>.pkl
@@ -1021,10 +1009,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             assert unary_operators is None
             assert n_features_in is None
             with open(pkl_filename, "rb") as f:
-                unpickler = CustomUnpickler(f)
+                unpickler = _CrossPlatformPathUnpickler(f)
                 model = unpickler.load()
             # Convert equation_file_ to string to ensure cross-platform compatibility
-            model.equation_file_ = path_to_str(model.equation_file_)
+            model.equation_file_ = _path_to_str(model.equation_file_)
 
             # Update any parameters if necessary, such as
             # extra_sympy_mappings:
