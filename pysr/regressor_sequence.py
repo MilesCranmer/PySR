@@ -133,18 +133,18 @@ class PySRSequenceRegressor(PySRRegressor):
             y_units,
         )
 
-        y = X[self.recursive_history_length :]
-        newX = np.lib.stride_tricks.sliding_window_view(
+        historical_X = X[self.recursive_history_length :]
+        current_X = np.lib.stride_tricks.sliding_window_view(
             X[:-1].flatten(), self.recursive_history_length * X.shape[1]
-        )[:: y.shape[1], :]
+        )[:: historical_X.shape[1], :]
         y_units = X_units
         if isinstance(weights, np.ndarray):
             weights = weights[self.recursive_history_length :]
         variable_names = self._variable_names(y, variable_names)
 
         super().fit(
-            newX,
-            y,
+            X=current_X,
+            y=historical_X,
             weights=weights,
             variable_names=variable_names,
             X_units=X_units,
