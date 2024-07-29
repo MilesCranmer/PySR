@@ -7,7 +7,9 @@ from .sr import PySRRegressor
 from .utils import ArrayLike
 
 
-def _check_assertions(X, recursive_history_length=None, weights=None, variable_names=None, X_units=None):
+def _check_assertions(
+    X, recursive_history_length=None, weights=None, variable_names=None, X_units=None
+):
     if recursive_history_length is not None and recursive_history_length <= 0:
         raise ValueError(
             "The `recursive_history_length` parameter must be greater than 0 (otherwise it's not recursion)."
