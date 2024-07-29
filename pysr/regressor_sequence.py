@@ -7,6 +7,36 @@ from .sr import PySRRegressor
 from .utils import ArrayLike
 
 
+def _check_assertions(X, recursive_history_length, weights, variable_names, X_units):
+    if recursive_history_length <= 0:
+        raise ValueError(
+            "The `recursive_history_length` parameter must be greater than 0 (otherwise it's not recursion)."
+        )
+    if len(X.shape) > 2:
+        raise ValueError(
+            "Recursive symbolic regression only supports up to 2D data; please flatten your data first"
+        )
+    elif len(X) < 2:
+        raise ValueError(
+            "Recursive symbolic regression requires at least 2 datapoints; if you tried to pass a 1D array, use array.reshape(-1, 1)"
+        )
+    if len(X) <= recursive_history_length + 1:
+        raise ValueError(
+            f"Recursive symbolic regression with a history length of {recursive_history_length} requires at least {recursive_history_length + 2} datapoints."
+        )
+    if isinstance(weights, np.ndarray) and len(weights) != len(X):
+        raise ValueError("The length of `weights` must have shape (n_times,).")
+    if isinstance(variable_names, list) and len(variable_names) != X.shape[1]:
+        raise ValueError(
+            "The length of `variable_names` must be equal to the number of features in `X`."
+        )
+    if isinstance(X_units, list) and len(X_units) != X.shape[1]:
+        raise ValueError(
+            "The length of `X_units` must be equal to the number of features in `X`."
+        )
+    return (X, recursive_history_length, weights, variable_names, X_units)
+
+
 class PySRSequenceRegressor(PySRRegressor):
     def __init__(
         self,
@@ -75,24 +105,12 @@ class PySRSequenceRegressor(PySRRegressor):
                 "Recursive symbolic regression does not use `Xresampled` - this parameter is being ignored"
             )
 
-        if self.recursive_history_length <= 0:
-            raise ValueError(
-                "The `recursive_history_length` parameter must be greater than 0 (otherwise it's not recursion)."
+        (X, self.recursive_history_length, weights, variable_names, X_units) = (
+            _check_assertions(
+                X, self.recursive_history_length, weights, variable_names, X_units
             )
-        if len(X.shape) > 2:
-            raise ValueError(
-                "Recursive symbolic regression only supports up to 2D data; please flatten your data first"
-            )
-        elif len(X) < 2:
-            raise ValueError(
-                "Recursive symbolic regression requires at least 2 datapoints; if you tried to pass a 1D array, use array.reshape(-1, 1)"
-            )
-        if len(X) <= self.recursive_history_length + 1:
-            raise ValueError(
-                f"Recursive symbolic regression with a history length of {self.recursive_history_length} requires at least {self.recursive_history_length + 2} datapoints."
-            )
-        if isinstance(weights, np.ndarray) and len(weights) != len(X):
-            raise ValueError("The length of `weights` must have shape (n_times,).")
+        )
+
         y = X.copy()
         temp = X.copy()[0]
         X = np.lib.stride_tricks.sliding_window_view(
@@ -104,15 +122,15 @@ class PySRSequenceRegressor(PySRRegressor):
             weights = weights[self.recursive_history_length :]
 
         if not variable_names:
-            if len(temp.shape) == 0:
+            if X.shape[1] == 1:
                 variable_names = [
                     f"xt_{i}" for i in range(self.recursive_history_length, 0, -1)
                 ]
-            elif len(temp.shape) == 1:
+            else:
                 variable_names = [
                     f"x{i}t_{j}"
-                    for j in range(temp.shape[0])
-                    for i in range(self.recursive_history_length, 0, -1)
+                    for i in range(temp.shape[0])
+                    for j in range(self.recursive_history_length, 0, -1)
                 ]
         else:
             variable_names = [
