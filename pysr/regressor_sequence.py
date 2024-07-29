@@ -8,7 +8,7 @@ from .utils import ArrayLike
 
 
 def _check_assertions(
-    X, recursive_history_length=None, weights=None, variable_names=None, X_units=None
+    X, y=None, Xresampled=None, recursive_history_length=None, weights=None, variable_names=None, X_units=None, y_units=None
 ):
     if recursive_history_length is not None and recursive_history_length <= 0:
         raise ValueError(
@@ -35,6 +35,18 @@ def _check_assertions(
     if isinstance(X_units, list) and len(X_units) != X.shape[1]:
         raise ValueError(
             "The length of `X_units` must be equal to the number of features in `X`."
+        )
+    if y is not None:
+        raise ValueError(
+            "Recursive symbolic regression does not use `y`"
+        )
+    if y_units is not None:
+        raise ValueError(
+            "Recursive symbolic regression does not use `y_units`"
+        )
+    if Xresampled is not None:
+        raise ValueError(
+            "Recursive symbolic regression does not use `Xresampled`"
         )
     return (X, recursive_history_length, weights, variable_names, X_units)
 
@@ -111,22 +123,9 @@ class PySRSequenceRegressor(PySRRegressor):
             Fitted estimator.
         """
 
-        if y is not None:
-            warnings.warn(
-                "Recursive symbolic regression does not use `y` - this parameter is being ignored"
-            )
-        if y_units is not None:
-            warnings.warn(
-                "Recursive symbolic regression does not use `y_units` - this parameter is being ignored"
-            )
-        if Xresampled is not None:
-            warnings.warn(
-                "Recursive symbolic regression does not use `Xresampled` - this parameter is being ignored"
-            )
-
         (X, self.recursive_history_length, weights, variable_names, X_units) = (
             _check_assertions(
-                X, self.recursive_history_length, weights, variable_names, X_units
+                X, y, Xresampled, self.recursive_history_length, weights, variable_names, X_units, y_units
             )
         )
 

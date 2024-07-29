@@ -760,7 +760,7 @@ class TestSequenceRegressor(unittest.TestCase):
             **self.default_test_kwargs,
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
         )
-        with self.assertWarns(UserWarning):
+        with self.assertRaises(ValueError):
             model.fit(X, y, Xresampled=X, y_units=["doesn't matter"])
 
 
