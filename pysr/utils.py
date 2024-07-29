@@ -1,11 +1,10 @@
 import difflib
 import inspect
 import os
-import re
-from pathlib import Path
 import pickle as pkl
+import re
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, List, TypeVar, Union
-from pathlib import PurePosixPath, PureWindowsPath
 
 from numpy import ndarray
 from sklearn.utils.validation import _check_feature_names_in  # type: ignore

@@ -53,11 +53,11 @@ from .utils import (
     PathLike,
     _CrossPlatformPathUnpickler,
     _csv_filename_to_pkl_filename,
+    _path_to_str,
     _preprocess_julia_floats,
     _safe_check_feature_names_in,
     _subscriptify,
     _suggest_keywords,
-    _path_to_str,
 )
 
 ALREADY_RAN = False
