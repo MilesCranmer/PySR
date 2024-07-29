@@ -140,7 +140,7 @@ class PySRSequenceRegressor(PySRRegressor):
         y_units = X_units
         if isinstance(weights, np.ndarray):
             weights = weights[self.recursive_history_length :]
-        variable_names = self._variable_names(y, variable_names)
+        variable_names = self._variable_names(historical_X, variable_names)
 
         super().fit(
             X=current_X,
