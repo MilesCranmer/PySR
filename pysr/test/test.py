@@ -715,7 +715,7 @@ class TestSequenceRegressor(unittest.TestCase):
         )
         model.fit(X)
         self.assertLessEqual(model.get_best()[0]["loss"], 1e-4)
-    
+
     def test_sequence_variable_names(self):
         model = PySRSequenceRegressor(
             **self.default_test_kwargs,
@@ -723,16 +723,32 @@ class TestSequenceRegressor(unittest.TestCase):
         y = np.ones((5, 3))
         sequence_variable_names = model._variable_names(y)
         print(sequence_variable_names)
-        self.assertListEqual(sequence_variable_names, ["x0t_3", "x1t_3", "x2t_3", "x0t_2", "x1t_2", "x2t_2", "x0t_1", "x1t_1", "x2t_1"])
-    
+        self.assertListEqual(
+            sequence_variable_names,
+            [
+                "x0t_3",
+                "x1t_3",
+                "x2t_3",
+                "x0t_2",
+                "x1t_2",
+                "x2t_2",
+                "x0t_1",
+                "x1t_1",
+                "x2t_1",
+            ],
+        )
+
     def test_sequence_custom_variable_names(self):
         model = PySRSequenceRegressor(
             **self.default_test_kwargs,
         )
         variable_names = ["a", "b", "c"]
-        y = np.array([[1] * 5]*3)
+        y = np.array([[1] * 5] * 3)
         sequence_variable_names = model._variable_names(y, variable_names)
-        self.assertListEqual(sequence_variable_names, ["at_3", "bt_3", "ct_3", "at_2", "bt_2", "ct_2", "at_1", "bt_1", "ct_1"])
+        self.assertListEqual(
+            sequence_variable_names,
+            ["at_3", "bt_3", "ct_3", "at_2", "bt_2", "ct_2", "at_1", "bt_1", "ct_1"],
+        )
 
     def test_unused_variables(self):
         X = [1, 1]

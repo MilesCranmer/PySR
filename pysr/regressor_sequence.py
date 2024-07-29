@@ -47,13 +47,11 @@ class PySRSequenceRegressor(PySRRegressor):
     ):
         super().__init__(**kwargs)
         self.recursive_history_length = recursive_history_length
-    
+
     def _variable_names(self, y, variable_names=None):
         if not variable_names:
             if y.shape[1] == 1:
-                return [
-                    f"xt_{i}" for i in range(self.recursive_history_length, 0, -1)
-                ]
+                return [f"xt_{i}" for i in range(self.recursive_history_length, 0, -1)]
             else:
                 return [
                     f"x{i}t_{j}"
