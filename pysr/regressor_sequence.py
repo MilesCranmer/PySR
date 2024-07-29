@@ -47,9 +47,7 @@ def _check_assertions(
     if y_units is not None:
         raise ValueError("Recursive symbolic regression does not use `y_units`")
     if Xresampled is not None:
-        raise ValueError(
-            "Recursive symbolic regression does not use `Xresampled`"
-        )
+        raise ValueError("Recursive symbolic regression does not use `Xresampled`")
 
 
 class PySRSequenceRegressor(PySRRegressor):
@@ -125,7 +123,14 @@ class PySRSequenceRegressor(PySRRegressor):
         """
 
         _check_assertions(
-            X, y, Xresampled, self.recursive_history_length, weights, variable_names, X_units, y_units
+            X,
+            y,
+            Xresampled,
+            self.recursive_history_length,
+            weights,
+            variable_names,
+            X_units,
+            y_units,
         )
 
         y = X[self.recursive_history_length :]
