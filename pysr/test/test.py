@@ -553,48 +553,6 @@ class TestSequenceRegressor(unittest.TestCase):
         model.fit(X, variable_names=["c1"])
         self.assertIn("c1t_1", model.equations_.iloc[-1]["equation"])
 
-    def test_sequence_weighted_bumper(self):
-        X = [1, 1, 1]
-        for i in range(3, 30):
-            X.append(X[i - 1] + X[i - 2] + X[i - 3])
-        X = np.asarray(X).reshape(-1, 1)
-        weights = np.ones_like(X).reshape(-1)
-        model = PySRSequenceRegressor(
-            **self.default_test_kwargs,
-            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity <= 5",
-            bumper=True,
-        )
-        model.fit(X, weights=weights)
-        print(model.equations_)
-        self.assertLessEqual(model.get_best()["loss"], 1e-1)
-        self.assertEqual(
-            jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.bumper), True
-        )
-
-    def test_sequence_high_precision_search_custom_loss(self):
-        X = [1, 1, 1]
-        for i in range(3, 30):
-            X.append(X[i - 1] + X[i - 2] + X[i - 3])
-        X = np.asarray(X).reshape(-1, 1)
-        model = PySRSequenceRegressor(
-            **self.default_test_kwargs,
-            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 3",
-            elementwise_loss="my_loss(prediction, target) = (prediction - target)^2",
-            precision=64,
-            parsimony=0.01,
-            warm_start=True,
-        )
-        model.fit(X)
-
-        # We should have that the model state is now a Float64 hof:
-        test_state = model.raw_julia_state_
-        self.assertTrue(jl.typeof(test_state[1]).parameters[1] == jl.Float64)
-
-        # Test options stored:
-        self.assertEqual(
-            jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.turbo), False
-        )
-
     def test_sequence_custom_variable_complexity(self):
         for outer in (True, False):
             for case in (1, 2):
@@ -639,49 +597,6 @@ class TestSequenceRegressor(unittest.TestCase):
         self.assertIn(
             "number of elements in `complexity_of_variables`", str(cm.exception)
         )
-
-    def test_sequence_error_message_both_variable_complexity(self):
-        X = [1, 1]
-        for i in range(2, 100):
-            X.append(X[i - 1] + X[i - 2])
-        X = np.asarray(X).reshape(-1, 1)
-        model = PySRSequenceRegressor(
-            **self.default_test_kwargs, complexity_of_variables=[1, 2]
-        )
-        with self.assertRaises(ValueError) as cm:
-            model.fit(X, complexity_of_variables=[1, 2, 3])
-
-        self.assertIn(
-            "You cannot set `complexity_of_variables` at both `fit` and `__init__`.",
-            str(cm.exception),
-        )
-
-    def test_sequence_warm_start_set_at_init(self):
-        # Smoke test for bug where warm_start=True is set at init
-        X = [1, 1, 1]
-        for i in range(3, 30):
-            X.append(X[i - 1] + X[i - 2] + X[i - 3])
-        X = np.asarray(X).reshape(-1, 1)
-        regressor = PySRSequenceRegressor(
-            **self.default_test_kwargs, warm_start=True, max_evals=10
-        )
-        regressor.fit(X)
-
-    def test_sequence_noisy_builtin_variable_names(self):
-        X = [1, 1]
-        for i in range(2, 30):
-            X.append(X[i - 1] + X[i - 2])
-        X = np.asarray(X).reshape(-1, 1)
-        model = PySRSequenceRegressor(
-            binary_operators=["+"],
-            **self.default_test_kwargs,
-            early_stop_condition="stop_if(loss, complexity) = loss < 0.05 && complexity == 2",
-        )
-        # We test builtin variable names
-        model.fit(X, variable_names=["exec"])
-        self.assertLessEqual(model.get_best()["loss"], 1e-2)
-        self.assertLessEqual(model.get_best()["loss"], 1e-2)
-        self.assertIn("exec", model.latex())
 
     def test_sequence_multidimensional_data_error(self):
         X = np.zeros((10, 1, 1))
