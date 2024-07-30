@@ -59,15 +59,15 @@ class PySRSequenceRegressor(PySRRegressor):
         super().__init__(**kwargs)
         self.recursive_history_length = recursive_history_length
 
-    def _construct_variable_names(self, y, variable_names=None):
+    def _construct_variable_names(self, n_features: int, variable_names=None):
         if not variable_names:
-            if y.shape[1] == 1:
+            if n_features == 1:
                 return [f"xt_{i}" for i in range(self.recursive_history_length, 0, -1)]
             else:
                 return [
                     f"x{i}t_{j}"
                     for j in range(self.recursive_history_length, 0, -1)
-                    for i in range(y.shape[1])
+                    for i in range(n_features)
                 ]
         else:
             return [
@@ -140,7 +140,7 @@ class PySRSequenceRegressor(PySRRegressor):
         y_units = X_units
         if isinstance(weights, np.ndarray):
             weights = weights[self.recursive_history_length :]
-        variable_names = self._construct_variable_names(current_X, variable_names)
+        variable_names = self._construct_variable_names(current_X.shape[1], variable_names)
 
         super().fit(
             X=historical_X,
