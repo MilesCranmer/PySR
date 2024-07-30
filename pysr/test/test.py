@@ -636,7 +636,7 @@ class TestSequenceRegressor(unittest.TestCase):
             **self.default_test_kwargs,
         )
         y = np.ones((5, 3))
-        sequence_variable_names = model._variable_names(y)
+        sequence_variable_names = model._construct_variable_names(y)
         print(sequence_variable_names)
         self.assertListEqual(
             sequence_variable_names,
@@ -659,7 +659,7 @@ class TestSequenceRegressor(unittest.TestCase):
         )
         variable_names = ["a", "b", "c"]
         y = np.array([[1] * 5] * 3)
-        sequence_variable_names = model._variable_names(y, variable_names)
+        sequence_variable_names = model._construct_variable_names(y, variable_names)
         self.assertListEqual(
             sequence_variable_names,
             ["at_3", "bt_3", "ct_3", "at_2", "bt_2", "ct_2", "at_1", "bt_1", "ct_1"],
