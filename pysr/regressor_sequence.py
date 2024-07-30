@@ -188,6 +188,11 @@ class PySRSequenceRegressor(BaseEstimator):
             particular row of `self.equations_`, you may specify the index here.
             For multiple output equations, you must pass a list of indices
             in the same order.
+        extra_predictions : int
+            If you want to predict more than one step into the future, specify
+            how many extra predictions you want. For example, if `extra_predictions=2`,
+            the model will predict the next two time points after the last time point
+            in `X`.
 
         Returns
         -------
