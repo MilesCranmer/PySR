@@ -206,5 +206,6 @@ class PySRSequenceRegressor(PySRRegressor):
         )[:: X.shape[1], :]
         padding = np.empty((self.recursive_history_length - 1, historical_X.shape[1]))
         padding[:] = np.nan
-        padded_X = np.concatenate(padding, X)
+        print(padding, historical_X)
+        padded_X = np.concatenate((padding, historical_X))
         return super().predict(X=padded_X, index=index)
