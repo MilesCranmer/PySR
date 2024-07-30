@@ -95,7 +95,7 @@ class PySRSequenceRegressor(PySRRegressor):
         Parameters
         ----------
         X : ndarray | pandas.DataFrame
-            Training time series data of shape (n_times, n_features).
+            Time series training data of shape (n_times, n_features).
         weights : ndarray | pandas.DataFrame
             Weight array of the same shape as `X`.
             Each element is how to weight the mean-square-error loss
