@@ -51,6 +51,20 @@ def _check_assertions(
 
 
 class PySRSequenceRegressor(PySRRegressor):
+    """
+    High performance symbolic regression for time series data.
+    Based off of the `PySRRegressor` class, but with a preprocessing step for recurrence relations.
+
+    Parameters
+    ----------
+    recursive_history_length : int
+        The number of previous time points to use as input features.
+        For example, if `recursive_history_length=2`, then the input features
+        will be `[X[0], X[1]]` and the output will be `X[2]`.
+        This continues on for all X: [X[n-1], X[n-2]] to predict X[n].
+        Must be greater than 0.
+    Other parameters and attributes are inherited from `PySRRegressor`.
+    """
     def __init__(
         self,
         recursive_history_length: int = 0,
