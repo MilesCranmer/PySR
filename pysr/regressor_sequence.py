@@ -211,12 +211,12 @@ class PySRSequenceRegressor(BaseEstimator):
             previous_points = historical_X[-1]
             # Without this, the model will re-predict the last data point
             pred_once = self._regressor.predict(X=[previous_points], index=index)
-            previous_points = previous_points[X.shape[1]:]
+            previous_points = previous_points[X.shape[1] :]
             previous_points = np.append(previous_points, pred_once)
             previous_points = previous_points.flatten()
             for _ in range(extra_predictions):
                 pred_once = self._regressor.predict(X=[previous_points], index=index)
-                previous_points = previous_points[X.shape[1]:]
+                previous_points = previous_points[X.shape[1] :]
                 previous_points = np.append(previous_points, pred_once)
                 previous_points = previous_points.flatten()
                 output = np.append(output, pred_once)
