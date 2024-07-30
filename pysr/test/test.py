@@ -605,10 +605,10 @@ class TestSequenceRegressor(unittest.TestCase):
         )
         with self.assertRaises(ValueError) as cm:
             model.fit(X)
-        self.assertIn(
-            "Recursive symbolic regression only supports up to 2D data; please flatten your data first",
-            str(cm.exception),
-        )
+            self.assertIn(
+                "Recursive symbolic regression only supports up to 2D data; please flatten your data first",
+                str(cm.exception),
+            )
 
     def test_sequence_2D_data(self):
         X = [

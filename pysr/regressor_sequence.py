@@ -75,7 +75,7 @@ class PySRSequenceRegressor(PySRRegressor):
         self.recursive_history_length = recursive_history_length
 
     def _construct_variable_names(self, n_features: int, variable_names=None):
-        if not variable_names:
+        if not isinstance(variable_names, list):
             if n_features == 1:
                 return [f"xt_{i}" for i in range(self.recursive_history_length, 0, -1)]
             else:
@@ -171,7 +171,7 @@ class PySRSequenceRegressor(PySRRegressor):
 
         return self
 
-    def predict(self, X, index=None):
+    def predict(self, X, index=None, extra_predictions=0):
         """
         Predict y from input X using the equation chosen by `model_selection`.
 
