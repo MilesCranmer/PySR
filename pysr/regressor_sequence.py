@@ -205,8 +205,4 @@ class PySRSequenceRegressor(BaseEstimator):
         historical_X = np.lib.stride_tricks.sliding_window_view(
             X.flatten(), self.recursive_history_length * np.prod(X.shape[1])
         )[:: X.shape[1], :]
-        padding = np.empty((self.recursive_history_length - 1, historical_X.shape[1]))
-        padding[:] = np.nan
-        print(padding, historical_X)
-        padded_X = np.concatenate((padding, historical_X))
-        return self._regressor.predict(X=padded_X, index=index)
+        return self._regressor.predict(X=historical_X, index=index)
