@@ -65,6 +65,7 @@ class PySRSequenceRegressor(PySRRegressor):
         Must be greater than 0.
     Other parameters and attributes are inherited from `PySRRegressor`.
     """
+
     def __init__(
         self,
         recursive_history_length: int = 0,
