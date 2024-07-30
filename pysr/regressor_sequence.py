@@ -182,6 +182,7 @@ class PySRSequenceRegressor(PySRRegressor):
         ValueError
             Raises if the `best_equation` cannot be evaluated.
         """
+        X = self._validate_data(X)
         _check_assertions(X, recursive_history_length=self.recursive_history_length)
         historical_X = np.lib.stride_tricks.sliding_window_view(
             X.flatten(), self.recursive_history_length * np.prod(X.shape[1])
