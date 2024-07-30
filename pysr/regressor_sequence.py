@@ -2,6 +2,8 @@ from typing import List, Optional, Union
 
 import numpy as np
 
+from sklearn.base import BaseEstimator
+
 from .sr import PySRRegressor
 from .utils import ArrayLike
 
@@ -50,7 +52,7 @@ def _check_assertions(
         raise ValueError("Recursive symbolic regression does not use `Xresampled`")
 
 
-class PySRSequenceRegressor(PySRRegressor):
+class PySRSequenceRegressor(BaseEstimator):
     """
     High performance symbolic regression for time series data.
     Based off of the `PySRRegressor` class, but with a preprocessing step for recurrence relations.
@@ -71,7 +73,7 @@ class PySRSequenceRegressor(PySRRegressor):
         recursive_history_length: int = 0,
         **kwargs,
     ):
-        super().__init__(**kwargs)
+        self._regressor = PySRRegressor(**kwargs)
         self.recursive_history_length = recursive_history_length
 
     def _construct_variable_names(self, n_features: int, variable_names=None):
@@ -159,7 +161,7 @@ class PySRSequenceRegressor(PySRRegressor):
             current_X.shape[1], variable_names
         )
 
-        super().fit(
+        self._regressor.fit(
             X=historical_X,
             y=current_X,
             weights=weights,
@@ -208,4 +210,4 @@ class PySRSequenceRegressor(PySRRegressor):
         padding[:] = np.nan
         print(padding, historical_X)
         padded_X = np.concatenate((padding, historical_X))
-        return super().predict(X=padded_X, index=index)
+        return self._regressor.predict(X=padded_X, index=index)
