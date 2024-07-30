@@ -121,7 +121,7 @@ class PySRSequenceRegressor(PySRRegressor):
         self : object
             Fitted estimator.
         """
-
+        X = self._validate_data(X)
         _check_assertions(
             X,
             y,
