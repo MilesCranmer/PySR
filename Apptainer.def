@@ -1,4 +1,6 @@
-# Build an Apptainer SIF file containing a working copy of PySR and its prereqs
+# This builds a dockerfile containing a working copy of PySR
+# with all pre-requisites installed.
+
 Bootstrap: docker
 From: rockylinux/rockylinux:{{ ROCKY_VERSION }}
 
@@ -9,17 +11,22 @@ From: rockylinux/rockylinux:{{ ROCKY_VERSION }}
 	PYTHON_VERSION=3.12
 	ROCKY_VERSION=8
 
+%files
+	./requirements.txt /opt/pysr/requirements.txt
+	./pyproject.toml /opt/pysr/pyproject.toml
+	./setup.py /opt/pysr/setup.py
+	./pysr /opt/pysr/pysr
+
 %environment
 	# Where to find Julia and its libraries
 	export LD_LIBRARY_PATH="/opt/julia/lib:/opt/julia/lib/julia:$LD_LIBRARY_PATH"
 	export PATH="/opt/julia/bin:$PATH"
 	# Use the container Julia binary, put the Project TOML file in the users home directory
 	export PYTHON_JULIAPKG_EXE=/opt/julia/bin/julia
-	export PYTHON_JULIAPKG_PROJECT="$HOME"
+	export PYTHON_JULIAPKG_PROJECT="$HOME/.pysr"
 
 %post
-	dnf install -y epel-release
-	dnf install -y conda wget
+	dnf install -y wget python{{ PYTHON_VERSION }} python{{ PYTHON_VERSION }}-pip
 
 	cd /opt
 
@@ -33,18 +40,19 @@ From: rockylinux/rockylinux:{{ ROCKY_VERSION }}
 	rm ${JULIA}-linux-x86_64.tar.gz
 	mv ${JULIA} julia
 
-	# Create a conda pysr environment in /opt/conda/pysr
-	. /etc/profile.d/conda.sh
-	conda create -y -p /opt/conda/pysr python={{ PYTHON_VERSION }}
-	conda activate /opt/conda/pysr
-	conda install -y -c conda-forge ipython pysr={{ PYSR_VERSION }}
-	conda deactivate
+	PATH="/opt/julia/bin:${PATH}"
 
-	# Activate the /opt/conda/pysr environment at runtime
-	echo ". /etc/profile.d/conda.sh" >> $APPTAINER_ENVIRONMENT
-	echo "conda activate /opt/conda/pysr" >> $APPTAINER_ENVIRONMENT
+	cd /opt/pysr
+
+	# Install IPython and other useful libraries:
+	pip3 install --no-cache-dir ipython matplotlib
+
+	pip3 install --no-cache-dir -r /opt/pysr/requirements.txt
+
+	# Install PySR:
+	pip3 install --no-cache-dir .
 
 %runscript
-	# Start ipython when the container is executed
-	cd /opt/conda/pysr
+	[ ! -d $HOME/.pysr ] && mkdir $HOME/.pysr
+	cd /opt/pysr
 	ipython
