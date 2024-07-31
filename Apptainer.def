@@ -1,0 +1,36 @@
+Bootstrap: docker
+From: rockylinux/rockylinux:8
+
+%post
+	dnf install -y epel-release
+	dnf install -y conda wget
+
+	cd /opt
+
+	wget https://julialang-s3.julialang.org/bin/linux/x64/1.10/julia-1.10.4-linux-x86_64.tar.gz
+	tar zxf julia-1.10.4-linux-x86_64.tar.gz
+	rm julia-1.10.4-linux-x86_64.tar.gz
+	mv julia-1.10.4 julia
+
+	cd
+
+	. /etc/profile.d/conda.sh
+	conda create -y -n pysr python=3.12
+	conda activate pysr
+	conda install -y -c conda-forge ipython pysr=0.19.3
+	conda env export > /usr/local/share/environment.yaml
+	conda deactivate
+
+	echo ". /etc/profile.d/conda.sh" >> $APPTAINER_ENVIRONMENT
+	echo "conda activate /opt/conda/envs/pysr" >> $APPTAINER_ENVIRONMENT
+
+	conda env create -f /usr/local/share/environment.yaml -p /opt/conda/envs/pysr
+	conda clean --all
+
+%runscript
+	export LD_LIBRARY_PATH="/opt/julia/lib:/opt/julia/lib/julia:$LD_LIBRARY_PATH"
+	export PATH="/opt/julia/bin:$PATH"
+	export PYTHON_JULIAPKG_EXE=/opt/julia/bin/julia
+	export PYTHON_JULIAPKG_PROJECT="$HOME"
+	cd /opt/conda/envs/pysr
+	ipython
