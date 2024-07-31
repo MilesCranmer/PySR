@@ -1,5 +1,21 @@
+# Build an Apptainer SIF file containing a working copy of PySR and its prereqs
 Bootstrap: docker
-From: rockylinux/rockylinux:8
+From: rockylinux/rockylinux:{{ ROCKY_VERSION }}
+
+%arguments
+	JULIA_RELEASE=1.10
+	JULIA_RELEASE_VERSION=4
+	PYSR_VERSION=0.19.3
+	PYTHON_VERSION=3.12
+	ROCKY_VERSION=8
+
+%environment
+	# Where to find Julia and its libraries
+	export LD_LIBRARY_PATH="/opt/julia/lib:/opt/julia/lib/julia:$LD_LIBRARY_PATH"
+	export PATH="/opt/julia/bin:$PATH"
+	# Use the container Julia binary, put the Project TOML file in the users home directory
+	export PYTHON_JULIAPKG_EXE=/opt/julia/bin/julia
+	export PYTHON_JULIAPKG_PROJECT="$HOME"
 
 %post
 	dnf install -y epel-release
@@ -7,30 +23,28 @@ From: rockylinux/rockylinux:8
 
 	cd /opt
 
-	wget https://julialang-s3.julialang.org/bin/linux/x64/1.10/julia-1.10.4-linux-x86_64.tar.gz
-	tar zxf julia-1.10.4-linux-x86_64.tar.gz
-	rm julia-1.10.4-linux-x86_64.tar.gz
-	mv julia-1.10.4 julia
+	# Download the version of Julia specified by the JULIA_RELEASE and JULIA_RELEASE_VERSION arguments
+	JULIA=julia-{{ JULIA_RELEASE }}.{{ JULIA_RELEASE_VERSION }}
 
-	cd
+	wget https://julialang-s3.julialang.org/bin/linux/x64/{{ JULIA_RELEASE }}/${JULIA}-linux-x86_64.tar.gz
 
+	# Install it in /opt/julia
+	tar zxf ${JULIA}-linux-x86_64.tar.gz
+	rm ${JULIA}-linux-x86_64.tar.gz
+	mv ${JULIA} julia
+
+	# Create a conda pysr environment in /opt/conda/pysr
 	. /etc/profile.d/conda.sh
-	conda create -y -n pysr python=3.12
-	conda activate pysr
-	conda install -y -c conda-forge ipython pysr=0.19.3
-	conda env export > /usr/local/share/environment.yaml
+	conda create -y -p /opt/conda/pysr python={{ PYTHON_VERSION }}
+	conda activate /opt/conda/pysr
+	conda install -y -c conda-forge ipython pysr={{ PYSR_VERSION }}
 	conda deactivate
 
+	# Activate the /opt/conda/pysr environment at runtime
 	echo ". /etc/profile.d/conda.sh" >> $APPTAINER_ENVIRONMENT
-	echo "conda activate /opt/conda/envs/pysr" >> $APPTAINER_ENVIRONMENT
-
-	conda env create -f /usr/local/share/environment.yaml -p /opt/conda/envs/pysr
-	conda clean --all
+	echo "conda activate /opt/conda/pysr" >> $APPTAINER_ENVIRONMENT
 
 %runscript
-	export LD_LIBRARY_PATH="/opt/julia/lib:/opt/julia/lib/julia:$LD_LIBRARY_PATH"
-	export PATH="/opt/julia/bin:$PATH"
-	export PYTHON_JULIAPKG_EXE=/opt/julia/bin/julia
-	export PYTHON_JULIAPKG_PROJECT="$HOME"
-	cd /opt/conda/envs/pysr
+	# Start ipython when the container is executed
+	cd /opt/conda/pysr
 	ipython
