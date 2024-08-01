@@ -45,7 +45,7 @@ Stage: runtime
 	pip3 install --no-cache-dir .
 
 	export PYTHON_JULIAPKG_PROJECT="$HOME/.pysr"
-	python3 -c 'import pysr'
+	python3 -c 'import pysr; pysr.load_all_packages()'
 
 %runscript
 	# Start ipython when the container is executed
