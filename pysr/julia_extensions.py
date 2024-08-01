@@ -22,6 +22,17 @@ def load_required_packages(
         load_package("ClusterManagers", "34f1f09b-3a8b-5176-ab39-66d58a4d544e")
 
 
+def load_all_packages():
+    """Install and load all Julia extensions available to PySR."""
+    load_required_packages(
+        turbo=True, bumper=True, enable_autodiff=True, cluster_manager="slurm"
+    )
+
+
+# TODO: Refactor this file so we can install all packages at once using `juliapkg`,
+#       ideally parameterizable via the regular Python extras API
+
+
 def isinstalled(uuid_s: str):
     return jl.haskey(Pkg.dependencies(), jl.Base.UUID(uuid_s))
 
