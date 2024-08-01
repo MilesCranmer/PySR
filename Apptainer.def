@@ -35,7 +35,7 @@ Stage: runtime
 %post
 	export PATH="/usr/local/julia/bin:$PATH"
 	cd /pysr
-	
+
 	# Install IPython and other useful libraries:
 	pip3 install --no-cache-dir ipython matplotlib
 
