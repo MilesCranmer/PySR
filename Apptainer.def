@@ -1,58 +1,54 @@
-# This builds a dockerfile containing a working copy of PySR
-# with all pre-requisites installed.
-
+# Build an Apptainer SIF file containing a working copy of PySR and its prereqs
 Bootstrap: docker
-From: rockylinux/rockylinux:{{ ROCKY_VERSION }}
+From: julia:{{ JULIA_VERSION }}-{{ JULIA_BASE_IMAGE }}
+Stage: jl
 
 %arguments
-	JULIA_RELEASE=1.10
-	JULIA_RELEASE_VERSION=4
-	PYSR_VERSION=0.19.3
-	PYTHON_VERSION=3.12
-	ROCKY_VERSION=8
+	JULIA_VERSION=1.10.4
+	JULIA_BASE_IMAGE=bullseye
 
-%files
-	./requirements.txt /opt/pysr/requirements.txt
-	./pyproject.toml /opt/pysr/pyproject.toml
-	./setup.py /opt/pysr/setup.py
-	./pysr /opt/pysr/pysr
+Bootstrap: docker
+From: python:{{ PYTHON_VERSION }}-{{ BASE_IMAGE }}
+Stage: runtime
+
+%arguments
+	PYTHON_VERSION=3.12
+	BASE_IMAGE=bullseye
 
 %environment
 	# Where to find Julia and its libraries
-	export LD_LIBRARY_PATH="/opt/julia/lib:/opt/julia/lib/julia:$LD_LIBRARY_PATH"
-	export PATH="/opt/julia/bin:$PATH"
+	export LD_LIBRARY_PATH="/usr/local/julia/lib:/usr/local/julia/lib/julia:$LD_LIBRARY_PATH"
+	export PATH="/usr/local/julia/bin:$PATH"
 	# Use the container Julia binary, put the Project TOML file in the users home directory
-	export PYTHON_JULIAPKG_EXE=/opt/julia/bin/julia
+	export PYTHON_JULIAPKG_EXE=/usr/local/julia/bin/julia
 	export PYTHON_JULIAPKG_PROJECT="$HOME/.pysr"
 
+%files from jl
+	/usr/local/julia /usr/local/julia
+
+%files
+	./requirements.txt /pysr/requirements.txt
+	./pyproject.toml /pysr/pyproject.toml
+	./setup.py /pysr/setup.py
+	./pysr /pysr/pysr
+
 %post
-	dnf install -y wget python{{ PYTHON_VERSION }} python{{ PYTHON_VERSION }}-pip
-
-	cd /opt
-
-	# Download the version of Julia specified by the JULIA_RELEASE and JULIA_RELEASE_VERSION arguments
-	JULIA=julia-{{ JULIA_RELEASE }}.{{ JULIA_RELEASE_VERSION }}
-
-	wget https://julialang-s3.julialang.org/bin/linux/x64/{{ JULIA_RELEASE }}/${JULIA}-linux-x86_64.tar.gz
-
-	# Install it in /opt/julia
-	tar zxf ${JULIA}-linux-x86_64.tar.gz
-	rm ${JULIA}-linux-x86_64.tar.gz
-	mv ${JULIA} julia
-
-	PATH="/opt/julia/bin:${PATH}"
-
-	cd /opt/pysr
-
+	export PATH="/usr/local/julia/bin:$PATH"
+	cd /pysr
+	
 	# Install IPython and other useful libraries:
 	pip3 install --no-cache-dir ipython matplotlib
 
-	pip3 install --no-cache-dir -r /opt/pysr/requirements.txt
+	pip3 install --no-cache-dir -r ./requirements.txt
 
 	# Install PySR:
 	pip3 install --no-cache-dir .
 
+	export PYTHON_JULIAPKG_PROJECT="$HOME/.pysr"
+	python3 -c 'import pysr'
+
 %runscript
+	# Start ipython when the container is executed
 	[ ! -d $HOME/.pysr ] && mkdir $HOME/.pysr
-	cd /opt/pysr
+	cd /pysr
 	ipython
