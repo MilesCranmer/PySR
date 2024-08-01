@@ -12,7 +12,7 @@ import pandas as pd
 import sympy  # type: ignore
 from sklearn.utils.estimator_checks import check_estimator
 
-from pysr import PySRRegressor, install, jl
+from pysr import PySRRegressor, install, jl, load_all_packages
 from pysr.export_latex import sympy2latex
 from pysr.feature_selection import _handle_feature_selection, run_feature_selection
 from pysr.julia_helpers import init_julia
@@ -738,6 +738,11 @@ class TestMiscellaneous(unittest.TestCase):
 
         # Check the sets are equal:
         self.assertSetEqual(set(params), set(regressor_params))
+
+    def test_load_all_packages(self):
+        """Test we can load all packages at once."""
+        load_all_packages()
+        self.assertTrue(jl.seval("ClusterManagers isa Module"))
 
 
 class TestHelpMessages(unittest.TestCase):
