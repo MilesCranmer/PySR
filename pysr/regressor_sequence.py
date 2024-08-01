@@ -73,6 +73,7 @@ class PySRSequenceRegressor(BaseEstimator):
         **kwargs,
     ):
         self._regressor = PySRRegressor(**kwargs)
+        #object.__setattr__(self, "_regressor", PySRRegressor(**kwargs))
         self.recursive_history_length = recursive_history_length
 
     def _construct_variable_names(self, n_features: int, variable_names=None):
@@ -169,7 +170,10 @@ class PySRSequenceRegressor(BaseEstimator):
             y_units=y_units,
             complexity_of_variables=complexity_of_variables,
         )
-
+        self._regressor.__dict__["__sklearn_is_fitted__"] = True
+        self._regressor.__dict__["selection_mask_"] = self._regressor.selection_mask_
+        self._regressor.__dict__["feature_names_in_"] = self._regressor.feature_names_in_
+        self._regressor.__dict__["nout_"] = self._regressor.nout_
         return self
 
     def predict(self, X, index=None, extra_predictions=0):
@@ -227,3 +231,23 @@ class PySRSequenceRegressor(BaseEstimator):
                 output = np.append(output, pred_once)
             return output.reshape(-1, X.shape[1])
         return pred
+
+    def __getattr__(self, name):
+        #return self._regressor.__getattr__(name)
+        try:
+            return getattr(self._regressor, name)
+        except AttributeError:
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+
+    def __delattr__(self, name):
+        if name == "_regressor":
+            print("no delete regressor")
+        else:
+            delattr(self._regressor, name)
+    
+    def __setattr__(self, name, value) -> None:
+        if name == "_regressor":
+            object.__setattr__(self, name, value)
+        else:
+            setattr(self._regressor, name, value)
+            print(self._regressor.__dict__[name])
