@@ -1,10 +1,30 @@
-from typing import List, Optional, Union
+import copy
+import os
+import pickle as pkl
+import re
+import shutil
+import sys
+import tempfile
+import warnings
+
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union, cast
 
 import numpy as np
+from numpy import ndarray
+from numpy.typing import NDArray
 from sklearn.base import BaseEstimator
+from pathlib import Path
 
 from .sr import PySRRegressor
-from .utils import ArrayLike
+from .utils import (
+    ArrayLike,
+    PathLike,
+    _csv_filename_to_pkl_filename,
+    _preprocess_julia_floats,
+    _safe_check_feature_names_in,
+    _subscriptify,
+    _suggest_keywords,
+)
 
 
 def _check_assertions(
@@ -73,7 +93,6 @@ class PySRSequenceRegressor(BaseEstimator):
         **kwargs,
     ):
         self._regressor = PySRRegressor(**kwargs)
-        # object.__setattr__(self, "_regressor", PySRRegressor(**kwargs))
         self.recursive_history_length = recursive_history_length
 
     def _construct_variable_names(self, n_features: int, variable_names=None):
@@ -234,24 +253,126 @@ class PySRSequenceRegressor(BaseEstimator):
             return output.reshape(-1, X.shape[1])
         return pred
 
-    def __getattr__(self, name):
-        # return self._regressor.__getattr__(name)
-        try:
-            return getattr(self._regressor, name)
-        except AttributeError:
-            raise AttributeError(
-                f"'{self.__class__.__name__}' object has no attribute '{name}'"
-            )
+    def from_file(
+        self,
+        cls,
+        equation_file: PathLike,
+        *pysr_args,
+        binary_operators: Optional[List[str]] = None,
+        unary_operators: Optional[List[str]] = None,
+        n_features_in: Optional[int] = None,
+        feature_names_in: Optional[ArrayLike[str]] = None,
+        selection_mask: Optional[NDArray[np.bool_]] = None,
+        nout: int = 1,
+        **pysr_kwargs
+    ):
+        return self._regressor.from_file(
+            cls,
+            equation_file,
+            *pysr_args,
+            binary_operators,
+            unary_operators,
+            n_features_in,
+            feature_names_in,
+            selection_mask,
+            nout,
+            **pysr_kwargs,
+        )
+    
+    def __repr__(self):
+        return self._regressor.__repr__()
 
-    def __delattr__(self, name):
-        if name == "_regressor":
-            print("no delete regressor")
-        else:
-            delattr(self._regressor, name)
+    def __getstate__(self):
+        return self._regressor.__getstate__()
+    
+    @property
+    def julia_options_(self):
+        return self._regressor.julia_options_
 
-    def __setattr__(self, name, value) -> None:
-        if name == "_regressor":
-            object.__setattr__(self, name, value)
-        else:
-            setattr(self._regressor, name, value)
-            print(self._regressor.__dict__[name])
+    @property
+    def julia_state_(self):
+        return self._regressor.julia_state_
+    
+    def get_best(self, index=None):
+        return self._regressor.get_best(index=index)
+    
+    def refresh(self, checkpoint_file: Optional[PathLike] = None) -> None:
+        return self._regressor.refresh(checkpoint_file=checkpoint_file)
+    
+    def sympy(self, index=None):
+        return self._regressor.sympy(index=index)
+    
+    def latex(self, index=None, precision=3):
+        return self._regressor.latex(index=index, precision=precision)
+    
+    def get_hof(self):
+        return self._regressor.get_hof()
+    
+    def latex_table(
+        self,
+        indices=None,
+        precision=3,
+        columns=["equation", "complexity", "loss", "score"],
+    ):
+        return self._regressor.latex_table(indices=indices, precision=precision, columns=columns)
+    
+    @property
+    def equations_(self):
+        return self._regressor.equations_
+
+    # this causes errors
+    """ @property
+    def n_features_in_(self):
+        return self._regressor.n_features_in_ """
+
+    @property
+    def feature_names_in_(self):
+        return self._regressor.feature_names_in_
+
+    @property
+    def display_feature_names_in_(self):
+        return self._regressor.display_feature_names_in_
+
+    @property
+    def complexity_of_variables_(self):
+        return self._regressor.complexity_of_variables_
+
+    @property
+    def X_units_(self):
+        return self._regressor.X_units_
+
+    @property
+    def y_units_(self):
+        return self._regressor.y_units_
+
+    @property
+    def nout_(self):
+        return self._regressor.nout_
+
+    @property
+    def selection_mask_(self):
+        return self._regressor.selection_mask_
+
+    @property
+    def tempdir_(self):
+        return self._regressor.tempdir_
+
+    @property
+    def equation_file_(self):
+        return self._regressor.equation_file_
+
+    @property
+    def julia_state_stream_(self):
+        return self._regressor.julia_state_stream_
+
+    @property
+    def julia_options_stream_(self):
+        return self._regressor.julia_options_stream_
+
+    @property
+    def equation_file_contents_(self):
+        return self._regressor.equation_file_contents_
+
+    @property
+    def show_pickle_warnings_(self):
+        return self._regressor.show_pickle_warnings_
