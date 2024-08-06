@@ -271,7 +271,54 @@ class PySRSequenceRegressor(BaseEstimator):
         return self._regressor.__repr__().replace("PySRRegressor", "PySRSequenceRegressor")
 
     def __getstate__(self):
-        return self._regressor.__getstate__()
+        """
+        Handle pickle serialization for PySRRegressor.
+
+        The Scikit-learn standard requires estimators to be serializable via
+        `pickle.dumps()`. However, some attributes do not support pickling
+        and need to be hidden, such as the JAX and Torch representations.
+        """
+        state = self._regressor.__dict__
+        show_pickle_warning = not (
+            "show_pickle_warnings_" in state and not state["show_pickle_warnings_"]
+        )
+        state_keys_containing_lambdas = ["extra_sympy_mappings", "extra_torch_mappings"]
+        for state_key in state_keys_containing_lambdas:
+            if state[state_key] is not None and show_pickle_warning:
+                warnings.warn(
+                    f"`{state_key}` cannot be pickled and will be removed from the "
+                    "serialized instance. When loading the model, please redefine "
+                    f"`{state_key}` at runtime."
+                )
+        state_keys_to_clear = state_keys_containing_lambdas
+        pickled_state = {
+            key: (None if key in state_keys_to_clear else value)
+            for key, value in state.items()
+        }
+        if ("equations_" in pickled_state) and (
+            pickled_state["equations_"] is not None
+        ):
+            pickled_state["output_torch_format"] = False
+            pickled_state["output_jax_format"] = False
+            if self._regressor.nout_ == 1:
+                pickled_columns = ~pickled_state["equations_"].columns.isin(
+                    ["jax_format", "torch_format"]
+                )
+                pickled_state["equations_"] = (
+                    pickled_state["equations_"].loc[:, pickled_columns].copy()
+                )
+            else:
+                pickled_columns = [
+                    ~dataframe.columns.isin(["jax_format", "torch_format"])
+                    for dataframe in pickled_state["equations_"]
+                ]
+                pickled_state["equations_"] = [
+                    dataframe.loc[:, signle_pickled_columns]
+                    for dataframe, signle_pickled_columns in zip(
+                        pickled_state["equations_"], pickled_columns
+                    )
+                ]
+        return pickled_state
     
     @property
     def julia_options_(self):
