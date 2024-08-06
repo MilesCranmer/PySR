@@ -84,6 +84,7 @@ class PySRSequenceRegressor(BaseEstimator):
         **kwargs,
     ):
         self._regressor = PySRRegressor(**kwargs)
+        super().__init__()
         self.recursive_history_length = recursive_history_length
 
     def _construct_variable_names(
