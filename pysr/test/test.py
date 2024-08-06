@@ -540,6 +540,7 @@ class TestSequenceRegressor(unittest.TestCase):
         model.fit(X)
         print(model.equations_)
         self.assertLessEqual(model.get_best()["loss"], 1e-4)
+        self.assertIn("xt_0", model.latex_table())
 
     def test_sequence_named(self):
         X = [1, 1, 1]
