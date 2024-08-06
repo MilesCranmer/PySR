@@ -272,7 +272,7 @@ class PySRSequenceRegressor(BaseEstimator):
 
     def __getstate__(self):
         """
-        Handle pickle serialization for PySRRegressor.
+        Handle pickle serialization for PySRSequenceRegressor.
 
         The Scikit-learn standard requires estimators to be serializable via
         `pickle.dumps()`. However, some attributes do not support pickling
