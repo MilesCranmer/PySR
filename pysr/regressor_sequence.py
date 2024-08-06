@@ -356,11 +356,6 @@ class PySRSequenceRegressor(BaseEstimator):
     def equations_(self):
         return self._regressor.equations_
 
-    # this causes errors
-    """ @property
-    def n_features_in_(self):
-        return self._regressor.n_features_in_ """
-
     @property
     def feature_names_in_(self):
         return self._regressor.feature_names_in_
