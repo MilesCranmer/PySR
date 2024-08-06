@@ -95,7 +95,10 @@ class PySRSequenceRegressor(BaseEstimator):
         self._regressor = PySRRegressor(**kwargs)
         self.recursive_history_length = recursive_history_length
 
-    def _construct_variable_names(self, n_features: int, variable_names=None):
+    def _construct_variable_names(
+        self, n_features: int,
+        variable_names: Optional[List[str]]
+    ):
         if not isinstance(variable_names, list):
             if n_features == 1:
                 return [f"xt_{i}" for i in range(self.recursive_history_length, 0, -1)]
