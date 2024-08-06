@@ -29,13 +29,10 @@ from .utils import (
 
 def _check_assertions(
     X,
-    y=None,
-    Xresampled=None,
     recursive_history_length=None,
     weights=None,
     variable_names=None,
     X_units=None,
-    y_units=None,
 ):
     if recursive_history_length is not None and recursive_history_length <= 0:
         raise ValueError(
@@ -63,12 +60,6 @@ def _check_assertions(
         raise ValueError(
             "The length of `X_units` must be equal to the number of features in `X`."
         )
-    if y is not None:
-        raise ValueError("Recursive symbolic regression does not use `y`")
-    if y_units is not None:
-        raise ValueError("Recursive symbolic regression does not use `y_units`")
-    if Xresampled is not None:
-        raise ValueError("Recursive symbolic regression does not use `Xresampled`")
 
 
 class PySRSequenceRegressor(BaseEstimator):
@@ -118,15 +109,12 @@ class PySRSequenceRegressor(BaseEstimator):
     def fit(
         self,
         X,
-        y=None,
-        Xresampled=None,
         weights=None,
         variable_names: Optional[ArrayLike[str]] = None,
         complexity_of_variables: Optional[
             Union[int, float, List[Union[int, float]]]
         ] = None,
         X_units: Optional[ArrayLike[str]] = None,
-        y_units=None,
     ) -> "PySRSequenceRegressor":
         """
         Search for equations to fit the time series dataset and store them in `self.equations_`.
@@ -134,7 +122,7 @@ class PySRSequenceRegressor(BaseEstimator):
         Parameters
         ----------
         X : ndarray | pandas.DataFrame
-            Time series training data of shape (n_times, n_features).
+            Sequence of shape (n_times, n_features).
         weights : ndarray | pandas.DataFrame
             Weight array of the same shape as `X`.
             Each element is how to weight the mean-square-error loss
@@ -163,13 +151,10 @@ class PySRSequenceRegressor(BaseEstimator):
         X = self._validate_data(X)
         _check_assertions(
             X,
-            y,
-            Xresampled,
             self.recursive_history_length,
             weights,
             variable_names,
             X_units,
-            y_units,
         )
 
         current_X = X[self.recursive_history_length :]
@@ -192,12 +177,12 @@ class PySRSequenceRegressor(BaseEstimator):
             y_units=y_units,
             complexity_of_variables=complexity_of_variables,
         )
-        self._regressor.__dict__["__sklearn_is_fitted__"] = True
+        """ self._regressor.__dict__["__sklearn_is_fitted__"] = True
         self._regressor.__dict__["selection_mask_"] = self._regressor.selection_mask_
         self._regressor.__dict__["feature_names_in_"] = (
             self._regressor.feature_names_in_
         )
-        self._regressor.__dict__["nout_"] = self._regressor.nout_
+        self._regressor.__dict__["nout_"] = self._regressor.nout_ """
         return self
 
     def predict(self, X, index=None, extra_predictions=0):
@@ -283,7 +268,7 @@ class PySRSequenceRegressor(BaseEstimator):
         )
     
     def __repr__(self):
-        return self._regressor.__repr__()
+        return self._regressor.__repr__().replace("PySRRegressor", "PySRSequenceRegressor")
 
     def __getstate__(self):
         return self._regressor.__getstate__()
@@ -343,9 +328,6 @@ class PySRSequenceRegressor(BaseEstimator):
     @property
     def X_units_(self):
         return self._regressor.X_units_
-
-    @property
-    def y_units_(self):
         return self._regressor.y_units_
 
     @property
