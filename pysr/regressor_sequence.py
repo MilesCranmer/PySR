@@ -64,7 +64,7 @@ def _check_assertions(
 
 class PySRSequenceRegressor(BaseEstimator):
     """
-    High performance symbolic regression for time series data.
+    High performance symbolic regression for recurrent sequences.
     Based off of the `PySRRegressor` class, but with a preprocessing step for recurrence relations.
 
     Parameters
