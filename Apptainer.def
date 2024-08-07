@@ -57,5 +57,4 @@ Stage: runtime
 %runscript
 	# Start ipython when the container is executed
 	[ ! -d $HOME/.pysr ] && mkdir $HOME/.pysr
-	cd /pysr
-	ipython
+	PYTHONPATH=/pysr ipython
