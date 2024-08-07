@@ -553,6 +553,7 @@ class TestSequenceRegressor(unittest.TestCase):
         )
         model.fit(X, variable_names=["c1"])
         self.assertIn("c1t_1", model.equations_.iloc[-1]["equation"])
+        self.assertIn("c1t_0", model.latex_table())
 
     def test_sequence_custom_variable_complexity(self):
         for outer in (True, False):
@@ -583,7 +584,6 @@ class TestSequenceRegressor(unittest.TestCase):
                     **outer_kwargs,
                 )
                 model.fit(X, **inner_kwargs)
-                self.assertLessEqual(model.get_best()["loss"], 1e-8)
                 self.assertLessEqual(model.get_best()["loss"], 1e-8)
 
     def test_sequence_error_message_custom_variable_complexity(self):
@@ -631,6 +631,31 @@ class TestSequenceRegressor(unittest.TestCase):
         )
         model.fit(X)
         self.assertLessEqual(model.get_best()[0]["loss"], 1e-4)
+        self.assertIn("x1t_0", model.latex_table())
+    
+    def test_sequence_named_2D_data(self):
+        X = [
+            [1, 2, 3],
+            [8, 7, 6],
+            [3, 6, 4],
+        ]
+        for i in range(3, 20):
+            X.append(
+                [
+                    X[i - 1][2] * X[i - 2][1],
+                    X[i - 2][1] - X[i - 3][0],
+                    X[i - 3][2] / X[i - 1][0],
+                ]
+            )
+        X = np.asarray(X)
+        model = PySRSequenceRegressor(
+            **self.default_test_kwargs,
+        )
+        model.fit(X, variable_names=["a", "b", "c"])
+        self.assertLessEqual(model.get_best()[0]["loss"], 1e-4)
+        self.assertIn("at_0", model.latex_table())
+        self.assertIn("bt_0", model.latex_table())
+        self.assertIn("ct_0", model.latex_table())
 
     def test_sequence_variable_names(self):
         model = PySRSequenceRegressor(

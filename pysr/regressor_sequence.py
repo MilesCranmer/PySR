@@ -165,6 +165,7 @@ class PySRSequenceRegressor(BaseEstimator):
             X_units,
         )
         self.variable_names = variable_names # for latex_table()
+        self.n_features = X.shape[1] # for latex_table()
 
         current_X = X[self.recursive_history_length :]
         historical_X = np.lib.stride_tricks.sliding_window_view(
@@ -387,17 +388,25 @@ class PySRSequenceRegressor(BaseEstimator):
                 assert isinstance(indices, list)
                 assert isinstance(indices[0], list)
                 assert len(indices) == self._regressor.nout_
-
+            variable_names = self.variable_names
+            if variable_names is not None:
+                variable_names = [variable_name + "t_0" for variable_name in variable_names]
+            else:
+                variable_names = [f"x{i}t_0" for i in range(self.n_features)]
             table_string = sympy2multilatextable(
-                self._regressor.equations_, indices=indices, precision=precision, columns=columns
+                self._regressor.equations_, indices=indices, precision=precision, columns=columns, output_variable_names=variable_names
             )
         elif isinstance(self.equations_, pd.DataFrame):
             if indices is not None:
                 assert isinstance(indices, list)
                 assert isinstance(indices[0], int)
-
+            if self.variable_names is not None:
+                assert len(self.variable_names) == 1
+                variable_name = self.variable_names[0] + "t_0"
+            else:
+                variable_name = "xt_0"
             table_string = sympy2latextable(
-                self._regressor.equations_, indices=indices, precision=precision, columns=columns, output_variable_name="xt_0"
+                self._regressor.equations_, indices=indices, precision=precision, columns=columns, output_variable_name=variable_name
             )
         else:
             raise ValueError(
