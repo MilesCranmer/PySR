@@ -2,6 +2,6 @@ sympy>=1.0.0,<2.0.0
 pandas>=0.21.0,<3.0.0
 numpy>=1.13.0,<3.0.0
 scikit_learn>=1.0.0,<2.0.0
-juliacall==0.9.21
+juliacall==0.9.22
 click>=7.0.0,<9.0.0
 setuptools>=50.0.0
