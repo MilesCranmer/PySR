@@ -1456,14 +1456,14 @@ class TestDimensionalConstraints(unittest.TestCase):
 def runtests(just_tests=False):
     """Run all tests in test.py."""
     test_cases = [
-        #TestPipeline,
+        TestPipeline,
         TestSequenceRegressor,
-        #TestBest,
-        #TestFeatureSelection,
-        #TestMiscellaneous,
-        #TestHelpMessages,
-        #TestLaTeXTable,
-        #TestDimensionalConstraints,
+        TestBest,
+        TestFeatureSelection,
+        TestMiscellaneous,
+        TestHelpMessages,
+        TestLaTeXTable,
+        TestDimensionalConstraints,
     ]
     if just_tests:
         return test_cases
