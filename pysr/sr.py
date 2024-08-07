@@ -2062,7 +2062,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 "You should run PySR for more `niterations` to ensure it can find "
                 "the correct variables, and consider using a larger `maxsize`."
             )
+
+        # Assertion checks
         use_custom_variable_names = variable_names is not None
+        # TODO: this is always true.
 
         _check_assertions(
             X,
