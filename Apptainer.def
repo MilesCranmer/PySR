@@ -50,7 +50,7 @@ Stage: runtime
 	mkdir /pysr/env
 
 	export JULIA_DEPOT_PATH="/pysr/depot:$JULIA_DEPOT_PATH"
-	export PYTHON_JULIAPKG_PROJECT="/pysr/depot"
+	export PYTHON_JULIAPKG_PROJECT="/pysr/env"
 
 	# Pull in all the Julia dependencies
 	python3 -c 'import pysr; pysr.load_all_packages()'
