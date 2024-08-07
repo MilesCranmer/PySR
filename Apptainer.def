@@ -47,6 +47,7 @@ Stage: runtime
 
 	# Put the Julia dependencies in /pysr/depo
 	mkdir /pysr/depot
+	mkdir /pysr/env
 
 	export JULIA_DEPOT_PATH="/pysr/depot:$JULIA_DEPOT_PATH"
 	export PYTHON_JULIAPKG_PROJECT="/pysr/depot"
