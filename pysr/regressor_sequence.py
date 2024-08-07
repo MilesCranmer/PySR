@@ -1,30 +1,17 @@
-import copy
-import os
 import pickle as pkl
-import re
-import shutil
-import sys
-import tempfile
 import warnings
 
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union, cast
 
 import numpy as np
-from numpy import ndarray
 from numpy.typing import NDArray
 from sklearn.base import BaseEstimator
-from pathlib import Path
 import pandas as pd
 
 from .sr import PySRRegressor
 from .utils import (
     ArrayLike,
     PathLike,
-    _csv_filename_to_pkl_filename,
-    _preprocess_julia_floats,
-    _safe_check_feature_names_in,
-    _subscriptify,
-    _suggest_keywords,
 )
 from .export_latex import (
     sympy2latex,
