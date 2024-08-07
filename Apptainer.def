@@ -19,7 +19,7 @@ Stage: runtime
 	# Use the container Julia binary
 	export PATH="/usr/local/julia/bin:$PATH"
 
-	# Create a stacked environment for additional Julia packages	
+	# Create a stacked environment for additional Julia packages
 	export JULIA_DEPOT_PATH="$HOME/.pysr:/pysr/depot:$JULIA_DEPOT_PATH"
 	export JULIA_LOAD_PATH="$HOME/.pysr:/pysr:$JULIA_LOAD_PATH"
 
