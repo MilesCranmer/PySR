@@ -147,7 +147,7 @@ class PySRSequenceRegressor(BaseEstimator):
         complexity_of_variables : int | float | list[int] | list[float]
             The complexity of each variable in `X`. If a single value is
             passed, it will be used for all variables. If a list is passed,
-            it must be the same length as recurrence_history_length.
+            its length must be the same as recurrence_history_length.
         X_units : list[str]
             A list of units for each variable in `X`. Each unit should be
             a string representing a Julia expression. See DynamicQuantities.jl
