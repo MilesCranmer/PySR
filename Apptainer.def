@@ -1,19 +1,11 @@
 # Build an Apptainer SIF file containing a working copy of PySR and its prereqs
 Bootstrap: docker
-From: julia:{{ JULIA_VERSION }}-{{ JULIA_BASE_IMAGE }}
+From: julia:1.10.4-bullseye
 Stage: jl
 
-%arguments
-	JULIA_VERSION=1.10.4
-	JULIA_BASE_IMAGE=bullseye
-
 Bootstrap: docker
-From: python:{{ PYTHON_VERSION }}-{{ BASE_IMAGE }}
+From: python:3.12-bullseye
 Stage: runtime
-
-%arguments
-	PYTHON_VERSION=3.12
-	BASE_IMAGE=bullseye
 
 %environment
 	# Use the container Julia binary
@@ -49,7 +41,7 @@ Stage: runtime
 	mkdir /pysr/depot
 	mkdir /pysr/env
 
-	export JULIA_DEPOT_PATH="/pysr/depot:$JULIA_DEPOT_PATH"
+	export JULIA_DEPOT_PATH="/pysr/depot"
 	export PYTHON_JULIAPKG_PROJECT="/pysr/env"
 
 	# Pull in all the Julia dependencies
