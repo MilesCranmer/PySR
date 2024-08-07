@@ -16,12 +16,12 @@ Stage: runtime
 	BASE_IMAGE=bullseye
 
 %environment
-	# Where to find Julia and its libraries
-	export LD_LIBRARY_PATH="/usr/local/julia/lib:/usr/local/julia/lib/julia:$LD_LIBRARY_PATH"
+	# Use the container Julia binary
 	export PATH="/usr/local/julia/bin:$PATH"
-	# Use the container Julia binary, put the Project TOML file in the users home directory
-	export PYTHON_JULIAPKG_EXE=/usr/local/julia/bin/julia
-	export PYTHON_JULIAPKG_PROJECT="$HOME/.pysr"
+
+	# Create a stacked environment for additional Julia packages	
+	export JULIA_DEPOT_PATH="$HOME/.pysr:/pysr/depot:$JULIA_DEPOT_PATH"
+	export JULIA_LOAD_PATH="$HOME/.pysr:/pysr:$JULIA_LOAD_PATH"
 
 %files from jl
 	/usr/local/julia /usr/local/julia
@@ -33,8 +33,9 @@ Stage: runtime
 	./pysr /pysr/pysr
 
 %post
-	export PATH="/usr/local/julia/bin:$PATH"
 	cd /pysr
+
+	export PATH="/usr/local/julia/bin:$PATH"
 
 	# Install IPython and other useful libraries:
 	pip3 install --no-cache-dir ipython matplotlib
@@ -44,7 +45,13 @@ Stage: runtime
 	# Install PySR:
 	pip3 install --no-cache-dir .
 
-	export PYTHON_JULIAPKG_PROJECT="$HOME/.pysr"
+	# Put the Julia dependencies in /pysr/depo
+	mkdir /pysr/depot
+
+	export JULIA_DEPOT_PATH="/pysr/depot:$JULIA_DEPOT_PATH"
+	export PYTHON_JULIAPKG_PROJECT="/pysr/depot"
+
+	# Pull in all the Julia dependencies
 	python3 -c 'import pysr; pysr.load_all_packages()'
 
 %runscript
