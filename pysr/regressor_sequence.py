@@ -454,7 +454,3 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     @property
     def equation_file_contents_(self):
         return self._regressor.equation_file_contents_
-
-    @property
-    def show_pickle_warnings_(self):
-        return self._regressor.show_pickle_warnings_
