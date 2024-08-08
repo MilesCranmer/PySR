@@ -134,6 +134,8 @@ class TestStartup(unittest.TestCase):
             self.skipTest("Julia version too old")
         if platform.system() == "Windows":
             self.skipTest("Notebook test incompatible with Windows")
+        if os.stat(Path(__file__).parent).st_mode & 0o200:
+            self.skipTest("Read-only file system")
 
         notebook_file = Path(__file__).parent / "test_nb.ipynb"
         sanitize_file = Path(__file__).parent / "nb_sanitize.cfg"
