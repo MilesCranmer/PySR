@@ -34,4 +34,4 @@ jobs:
       - name: Build apptainer
         run: apptainer build pysr.sif Apptainer.def
       - name: Test apptainer
-        run: apptainer exec ./pysr.sif /bin/bash -c 'pip install pytest nbval && PYTHONPATH=/pysr python3 -m pysr test main,cli,startup'
+        run: apptainer exec ./pysr.sif /bin/bash -c 'pip install pytest nbval && PYTHONPATH=/pysr:/pysr/pysr python3 -m pysr test main,cli,startup'
