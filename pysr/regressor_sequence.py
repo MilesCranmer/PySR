@@ -178,12 +178,6 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             y_units=y_units,
             complexity_of_variables=complexity_of_variables,
         )
-        """ self._regressor.__dict__["__sklearn_is_fitted__"] = True
-        self._regressor.__dict__["selection_mask_"] = self._regressor.selection_mask_
-        self._regressor.__dict__["feature_names_in_"] = (
-            self._regressor.feature_names_in_
-        )
-        self._regressor.__dict__["nout_"] = self._regressor.nout_ """
         return self
 
     def predict(self, X, index=None, extra_predictions=0):
