@@ -51,7 +51,9 @@ from .julia_import import SymbolicRegression, jl
 from .utils import (
     ArrayLike,
     PathLike,
+    _CrossPlatformPathUnpickler,
     _csv_filename_to_pkl_filename,
+    _path_to_str,
     _preprocess_julia_floats,
     _safe_check_feature_names_in,
     _subscriptify,
@@ -1007,11 +1009,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             assert unary_operators is None
             assert n_features_in is None
             with open(pkl_filename, "rb") as f:
-                model = pkl.load(f)
-            # Change equation_file_ to be in the same dir as the pickle file
-            base_dir = os.path.dirname(pkl_filename)
-            base_equation_file = os.path.basename(model.equation_file_)
-            model.equation_file_ = os.path.join(base_dir, base_equation_file)
+                unpickler = _CrossPlatformPathUnpickler(f)
+                model = unpickler.load()
+            # Convert equation_file_ to string to ensure cross-platform compatibility
+            model.equation_file_ = _path_to_str(model.equation_file_)
 
             # Update any parameters if necessary, such as
             # extra_sympy_mappings:
