@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union, c
 
 import numpy as np
 from numpy.typing import NDArray
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator, RegressorMixin, MultiOutputMixin
 import pandas as pd
 
 from .sr import PySRRegressor
@@ -56,7 +56,7 @@ def _check_assertions(
         )
 
 
-class PySRSequenceRegressor(BaseEstimator):
+class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     """
     High performance symbolic regression for recurrent sequences.
     Based off of the `PySRRegressor` class, but with a preprocessing step for recurrence relations.
