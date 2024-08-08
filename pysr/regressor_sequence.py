@@ -426,7 +426,6 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     @property
     def X_units_(self):
         return self._regressor.X_units_
-        return self._regressor.y_units_
 
     @property
     def nout_(self):
