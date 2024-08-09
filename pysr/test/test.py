@@ -661,6 +661,7 @@ class TestSequenceRegressor(unittest.TestCase):
         self.assertIn("at_0", model.latex_table())
         self.assertIn("bt_0", model.latex_table())
         self.assertIn("ct_0", model.latex_table())
+        self.assertIn("at_{1}", model.latex()[2])
 
     def test_sequence_variable_names(self):
         model = PySRSequenceRegressor(
@@ -719,6 +720,12 @@ class TestSequenceRegressor(unittest.TestCase):
         )
         with self.assertRaises(ValueError):
             model.fit(X)
+    
+    def test_sequence_repr(self):
+        model = PySRSequenceRegressor(
+            **self.default_test_kwargs,
+        )
+        self.assertIn("PySRSequenceRegressor", model.__repr__())
 
 
 def manually_create_model(equations, feature_names=None):
