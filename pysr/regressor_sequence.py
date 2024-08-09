@@ -108,7 +108,7 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         X_units: Optional[ArrayLike[str]] = None,
     ) -> "PySRSequenceRegressor":
         """
-        Search for equations to fit the time series dataset and store them in `self.equations_`.
+        Search for equations to fit the sequence and store them in `self.equations_`.
 
         Parameters
         ----------
