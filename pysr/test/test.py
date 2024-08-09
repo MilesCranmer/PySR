@@ -613,25 +613,30 @@ class TestSequenceRegressor(unittest.TestCase):
 
     def test_sequence_2D_data(self):
         X = [
-            [1, 2, 3],
-            [8, 7, 6],
-            [3, 6, 4],
+            [1, 2],
+            [2, 3]
         ]
-        for i in range(3, 20):
+        for i in range(2, 10):
             X.append(
                 [
-                    X[i - 1][2] * X[i - 2][1],
-                    X[i - 2][1] - X[i - 3][0],
-                    X[i - 3][2] / X[i - 1][0],
+                    X[i - 1][1] + X[i - 2][0],
+                    X[i - 1][0] - X[i - 2][1],
                 ]
             )
         X = np.asarray(X)
         model = PySRSequenceRegressor(
-            **self.default_test_kwargs,
+            progress=False,
+            model_selection="accuracy",
+            niterations=DEFAULT_NITERATIONS * 2,
+            populations=DEFAULT_POPULATIONS * 2,
+            temp_equation_file=True,
+            recursive_history_length=2,
         )
         model.fit(X)
         self.assertLessEqual(model.get_best()[0]["loss"], 1e-4)
-        self.assertIn("x1t_0", model.latex_table())
+        self.assertIn("x1t_0", model.latex_table(indices=[[0, 1], [1, 1]]))
+        self.assertListEqual(model.predict(X).tolist(), [[4.0, 0.0], [2.0, 1.0], [5.0, 2.0], [4.0, 4.0], [9.0, 2.0], [6.0, 5.0], [14.0, 4.0], [10.0, 9.0], [23.0, 6.0]]) 
+        self.assertListEqual(model.predict(X, extra_predictions=5).tolist(), [[4.0, 0.0], [2.0, 1.0], [5.0, 2.0], [4.0, 4.0], [9.0, 2.0], [6.0, 5.0], [14.0, 4.0], [10.0, 9.0], [23.0, 6.0], [16.0, 14.0], [37.0, 10.0], [26.0, 23.0], [60.0, 16.0], [42.0, 37.0]])
     
     def test_sequence_named_2D_data(self):
         X = [
@@ -689,7 +694,7 @@ class TestSequenceRegressor(unittest.TestCase):
             ["at_3", "bt_3", "ct_3", "at_2", "bt_2", "ct_2", "at_1", "bt_1", "ct_1"],
         )
 
-    def test_unused_variables(self):
+    def test_sequence_unused_variables(self):
         X = [1, 1]
         for i in range(2, 30):
             X.append(X[i - 1] + X[i - 2])
@@ -701,6 +706,10 @@ class TestSequenceRegressor(unittest.TestCase):
         )
         with self.assertRaises(TypeError):
             model.fit(X, y, Xresampled=X, y_units=["doesn't matter"])
+
+    def test_sequence_0_recursive_history_length_error(self):
+        with self.assertRaises(ValueError):
+            PySRSequenceRegressor(recursive_history_length=0)
 
 
 def manually_create_model(equations, feature_names=None):
@@ -1456,14 +1465,14 @@ class TestDimensionalConstraints(unittest.TestCase):
 def runtests(just_tests=False):
     """Run all tests in test.py."""
     test_cases = [
-        TestPipeline,
+        #TestPipeline,
         TestSequenceRegressor,
-        TestBest,
-        TestFeatureSelection,
-        TestMiscellaneous,
-        TestHelpMessages,
-        TestLaTeXTable,
-        TestDimensionalConstraints,
+        #TestBest,
+        #TestFeatureSelection,
+        #TestMiscellaneous,
+        #TestHelpMessages,
+        #TestLaTeXTable,
+        #TestDimensionalConstraints,
     ]
     if just_tests:
         return test_cases

@@ -36,10 +36,6 @@ def _check_assertions(
         raise ValueError(
             "Recursive symbolic regression only supports up to 2D data; please flatten your data first"
         )
-    elif len(X) < 2:
-        raise ValueError(
-            "Recursive symbolic regression requires at least 2 datapoints; if you tried to pass a 1D array, use array.reshape(-1, 1)"
-        )
     if len(X) <= recursive_history_length + 1:
         raise ValueError(
             f"Recursive symbolic regression with a history length of {recursive_history_length} requires at least {recursive_history_length + 2} datapoints."
