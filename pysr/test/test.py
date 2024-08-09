@@ -708,8 +708,17 @@ class TestSequenceRegressor(unittest.TestCase):
             model.fit(X, y, Xresampled=X, y_units=["doesn't matter"])
 
     def test_sequence_0_recursive_history_length_error(self):
+        model = PySRSequenceRegressor(recursive_history_length=0)
         with self.assertRaises(ValueError):
-            PySRSequenceRegressor(recursive_history_length=0)
+            model.fit([[1, 2, 3]])
+            
+    def test_sequence_short_data_error(self):
+        X = [1]
+        model = PySRSequenceRegressor(
+            **self.default_test_kwargs,
+        )
+        with self.assertRaises(ValueError):
+            model.fit(X)
 
 
 def manually_create_model(equations, feature_names=None):
