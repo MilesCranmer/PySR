@@ -1,3 +1,4 @@
+import os
 import pickle as pkl
 import warnings
 
@@ -12,6 +13,11 @@ from .sr import PySRRegressor
 from .utils import (
     ArrayLike,
     PathLike,
+    _csv_filename_to_pkl_filename,
+    _preprocess_julia_floats,
+    _safe_check_feature_names_in,
+    _subscriptify,
+    _suggest_keywords,
 )
 from .export_latex import (
     sympy2latex,
@@ -232,8 +238,8 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             return output.reshape(-1, X.shape[1])
         return pred
 
+    @classmethod
     def from_file(
-        self,
         cls,
         equation_file: PathLike,
         *pysr_args,
@@ -245,18 +251,105 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         nout: int = 1,
         **pysr_kwargs
     ):
-        return self._regressor.from_file(
-            cls,
-            equation_file,
-            *pysr_args,
-            binary_operators,
-            unary_operators,
-            n_features_in,
-            feature_names_in,
-            selection_mask,
-            nout,
+        """
+        Create a model from a saved model checkpoint or equation file.
+
+        Parameters
+        ----------
+        equation_file : str or Path
+            Path to a pickle file containing a saved model, or a csv file
+            containing equations.
+        binary_operators : list[str]
+            The same binary operators used when creating the model.
+            Not needed if loading from a pickle file.
+        unary_operators : list[str]
+            The same unary operators used when creating the model.
+            Not needed if loading from a pickle file.
+        n_features_in : int
+            Number of features passed to the model.
+            Not needed if loading from a pickle file.
+        feature_names_in : list[str]
+            Names of the features passed to the model.
+            Not needed if loading from a pickle file.
+        selection_mask : NDArray[np.bool_]
+            If using `select_k_features`, you must pass `model.selection_mask_` here.
+            Not needed if loading from a pickle file.
+        nout : int
+            Number of outputs of the model.
+            Not needed if loading from a pickle file.
+            Default is `1`.
+        **pysr_kwargs : dict
+            Any other keyword arguments to initialize the PySRRegressor object.
+            These will overwrite those stored in the pickle file.
+            Not needed if loading from a pickle file.
+
+        Returns
+        -------
+        model : PySRRegressor
+            The model with fitted equations.
+        """
+
+        pkl_filename = _csv_filename_to_pkl_filename(equation_file)
+
+        # Try to load model from <equation_file>.pkl
+        print(f"Checking if {pkl_filename} exists...")
+        if os.path.exists(pkl_filename):
+            print(f"Loading model from {pkl_filename}")
+            assert binary_operators is None
+            assert unary_operators is None
+            assert n_features_in is None
+            with open(pkl_filename, "rb") as f:
+                model = pkl.load(f)
+            # Change equation_file_ to be in the same dir as the pickle file
+            base_dir = os.path.dirname(pkl_filename)
+            base_equation_file = os.path.basename(model.equation_file_)
+            model.equation_file_ = os.path.join(base_dir, base_equation_file)
+
+            # Update any parameters if necessary, such as
+            # extra_sympy_mappings:
+            model.set_params(**pysr_kwargs)
+            if "equations_" not in model.__dict__ or model.equations_ is None:
+                model.refresh()
+
+            return model
+
+        # Else, we re-create it.
+        print(
+            f"{pkl_filename} does not exist, "
+            "so we must create the model from scratch."
+        )
+        assert binary_operators is not None or unary_operators is not None
+        assert n_features_in is not None
+
+        # TODO: copy .bkup file if exists.
+        model = cls(
+            equation_file=str(equation_file),
+            binary_operators=binary_operators,
+            unary_operators=unary_operators,
             **pysr_kwargs,
         )
+
+        model.nout_ = nout
+        model.n_features_in_ = n_features_in
+
+        if feature_names_in is None:
+            model.feature_names_in_ = np.array([f"x{i}" for i in range(n_features_in)])
+            model.display_feature_names_in_ = np.array(
+                [f"x{_subscriptify(i)}" for i in range(n_features_in)]
+            )
+        else:
+            assert len(feature_names_in) == n_features_in
+            model.feature_names_in_ = feature_names_in
+            model.display_feature_names_in_ = feature_names_in
+
+        if selection_mask is None:
+            model.selection_mask_ = np.ones(n_features_in, dtype=np.bool_)
+        else:
+            model.selection_mask_ = selection_mask
+
+        model.refresh(checkpoint_file=equation_file)
+
+        return model
     
     def __repr__(self):
         return self._regressor.__repr__().replace("PySRRegressor", "PySRSequenceRegressor")
