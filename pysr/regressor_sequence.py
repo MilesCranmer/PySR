@@ -104,7 +104,7 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self,
         X,
         weights=None,
-        variable_names: Optional[ArrayLike[str]] = None,
+        variable_names: Optional[List[str]] = None,
         complexity_of_variables: Optional[
             Union[int, float, List[Union[int, float]]]
         ] = None,
