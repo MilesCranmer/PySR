@@ -758,7 +758,6 @@ class TestSequenceRegressor(unittest.TestCase):
         self.assertIn("PySRSequenceRegressor", model.__repr__())
 
     def test_sequence_from_file(self):
-        print("filing")
         X = [1, 1]
         for i in range(2, 100):
             X.append(X[i - 1] + 3.3248 * X[i - 2])
