@@ -804,6 +804,16 @@ class TestSequenceRegressor(unittest.TestCase):
         )
         self.assertIn("xt_1", model3.get_best()["equation"])
 
+        model4 = PySRSequenceRegressor.from_file(
+            equation_file,
+            binary_operators=["+"],
+            n_features_in=2,
+            recursive_history_length=2,
+            feature_names_in=["xt_1", "xt_2"],
+            selection_mask=np.ones(2, dtype=np.bool_)
+        )
+        self.assertIn("xt_1", model4.get_best()["equation"])
+
 
 def manually_create_model(equations, feature_names=None):
     if feature_names is None:
