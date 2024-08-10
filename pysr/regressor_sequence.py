@@ -272,7 +272,7 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             if "equations_" not in model.__dict__ or model.equations_ is None:
                 model._regressor.refresh()
 
-            model.recursive_history_length = 2
+            model.recursive_history_length = 2 # DELETE THIS LATER
             return model
 
         # Else, we re-create it.
