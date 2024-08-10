@@ -774,13 +774,16 @@ class TestSequenceRegressor(unittest.TestCase):
 
         pkl_file = str(temp_dir / "equation_file.pkl")
         model.fit(X)
-        
+
         model2 = PySRSequenceRegressor.from_file(pkl_file)
         self.assertListEqual(model.predict(X).tolist(), model2.predict(X).tolist())
 
         os.remove(pkl_file)
         model3 = PySRSequenceRegressor.from_file(
-            equation_file, binary_operators=["+"], n_features_in=1, recursive_history_length=2
+            equation_file,
+            binary_operators=["+"],
+            n_features_in=1,
+            recursive_history_length=2,
         )
         self.assertListEqual(model.predict(X).tolist(), model3.predict(X).tolist())
 

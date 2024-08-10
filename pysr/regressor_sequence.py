@@ -296,7 +296,9 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         model._regressor.n_features_in_ = n_features_in
 
         if feature_names_in is None:
-            model._regressor.feature_names_in_ = np.array([f"x{i}" for i in range(n_features_in)])
+            model._regressor.feature_names_in_ = np.array(
+                [f"x{i}" for i in range(n_features_in)]
+            )
             model._regressor.display_feature_names_in_ = np.array(
                 [f"x{_subscriptify(i)}" for i in range(n_features_in)]
             )
