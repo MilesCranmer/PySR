@@ -750,7 +750,7 @@ class TestSequenceRegressor(unittest.TestCase):
         )
         with self.assertRaises(ValueError):
             model.fit(X)
-    
+
     def test_sequence_bad_weight_length_error(self):
         X = np.zeros((10, 1))
         model = PySRSequenceRegressor(
@@ -761,7 +761,7 @@ class TestSequenceRegressor(unittest.TestCase):
 
     def test_sequence_weights(self):
         X = np.ones((100, 1))
-        weights = np.ones((100, ))
+        weights = np.ones((100,))
         model = PySRSequenceRegressor(
             recursive_history_length=2,
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
@@ -810,7 +810,7 @@ class TestSequenceRegressor(unittest.TestCase):
             n_features_in=2,
             recursive_history_length=2,
             feature_names_in=["xt_1", "xt_2"],
-            selection_mask=np.ones(2, dtype=np.bool_)
+            selection_mask=np.ones(2, dtype=np.bool_),
         )
         self.assertIn("xt_1", model4.get_best()["equation"])
 
