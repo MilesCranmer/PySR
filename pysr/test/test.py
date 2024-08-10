@@ -758,9 +758,10 @@ class TestSequenceRegressor(unittest.TestCase):
         self.assertIn("PySRSequenceRegressor", model.__repr__())
 
     def test_sequence_from_file(self):
+        print("filing")
         X = [1, 1]
         for i in range(2, 100):
-            X.append(X[i - 1] + X[i - 2])
+            X.append(X[i - 1] + 3.3248 * X[i - 2])
         X = np.asarray(X).reshape(-1, 1)
 
         temp_dir = Path(tempfile.mkdtemp())
@@ -768,17 +769,18 @@ class TestSequenceRegressor(unittest.TestCase):
         model = PySRSequenceRegressor(
             recursive_history_length=2,
             equation_file=equation_file,
+            niterations=10,
         )
 
         pkl_file = str(temp_dir / "equation_file.pkl")
         model.fit(X)
-
-        model2 = PySRSequenceRegressor.from_file(equation_file=pkl_file)
+        
+        model2 = PySRSequenceRegressor.from_file(pkl_file)
         self.assertListEqual(model.predict(X).tolist(), model2.predict(X).tolist())
 
         os.remove(pkl_file)
         model3 = PySRSequenceRegressor.from_file(
-            equation_file=equation_file, binary_operators=["+"], n_features_in=2
+            equation_file, binary_operators=["+"], n_features_in=1, recursive_history_length=2
         )
         self.assertListEqual(model.predict(X).tolist(), model3.predict(X).tolist())
 

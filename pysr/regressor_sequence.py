@@ -240,6 +240,7 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         cls,
         equation_file: PathLike,
         *pysr_args,
+        recursive_history_length: Optional[int] = None,
         binary_operators: Optional[List[str]] = None,
         unary_operators: Optional[List[str]] = None,
         n_features_in: Optional[int] = None,
@@ -248,44 +249,6 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         nout: int = 1,
         **pysr_kwargs,
     ):
-        """
-        Create a model from a saved model checkpoint or equation file.
-
-        Parameters
-        ----------
-        equation_file : str or Path
-            Path to a pickle file containing a saved model, or a csv file
-            containing equations.
-        binary_operators : list[str]
-            The same binary operators used when creating the model.
-            Not needed if loading from a pickle file.
-        unary_operators : list[str]
-            The same unary operators used when creating the model.
-            Not needed if loading from a pickle file.
-        n_features_in : int
-            Number of features passed to the model.
-            Not needed if loading from a pickle file.
-        feature_names_in : list[str]
-            Names of the features passed to the model.
-            Not needed if loading from a pickle file.
-        selection_mask : NDArray[np.bool_]
-            If using `select_k_features`, you must pass `model.selection_mask_` here.
-            Not needed if loading from a pickle file.
-        nout : int
-            Number of outputs of the model.
-            Not needed if loading from a pickle file.
-            Default is `1`.
-        **pysr_kwargs : dict
-            Any other keyword arguments to initialize the PySRRegressor object.
-            These will overwrite those stored in the pickle file.
-            Not needed if loading from a pickle file.
-
-        Returns
-        -------
-        model : PySRRegressor
-            The model with fitted equations.
-        """
-
         pkl_filename = _csv_filename_to_pkl_filename(equation_file)
 
         # Try to load model from <equation_file>.pkl
@@ -295,19 +258,21 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             assert binary_operators is None
             assert unary_operators is None
             assert n_features_in is None
+            model = cls(*pysr_args, **pysr_kwargs)
             with open(pkl_filename, "rb") as f:
-                model = pkl.load(f)
+                model._regressor = pkl.load(f)
             # Change equation_file_ to be in the same dir as the pickle file
             base_dir = os.path.dirname(pkl_filename)
-            base_equation_file = os.path.basename(model.equation_file_)
-            model.equation_file_ = os.path.join(base_dir, base_equation_file)
+            base_equation_file = os.path.basename(model._regressor.equation_file_)
+            model._regressor.equation_file_ = os.path.join(base_dir, base_equation_file)
 
             # Update any parameters if necessary, such as
             # extra_sympy_mappings:
-            model.set_params(**pysr_kwargs)
+            model._regressor.set_params(**pysr_kwargs)
             if "equations_" not in model.__dict__ or model.equations_ is None:
-                model.refresh()
+                model._regressor.refresh()
 
+            model.recursive_history_length = 2
             return model
 
         # Else, we re-create it.
@@ -317,6 +282,7 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         )
         assert binary_operators is not None or unary_operators is not None
         assert n_features_in is not None
+        assert recursive_history_length is not None
 
         # TODO: copy .bkup file if exists.
         model = cls(
@@ -326,25 +292,26 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             **pysr_kwargs,
         )
 
-        model.nout_ = nout
-        model.n_features_in_ = n_features_in
+        model._regressor.nout_ = nout
+        model._regressor.n_features_in_ = n_features_in
 
         if feature_names_in is None:
-            model.feature_names_in_ = np.array([f"x{i}" for i in range(n_features_in)])
-            model.display_feature_names_in_ = np.array(
+            model._regressor.feature_names_in_ = np.array([f"x{i}" for i in range(n_features_in)])
+            model._regressor.display_feature_names_in_ = np.array(
                 [f"x{_subscriptify(i)}" for i in range(n_features_in)]
             )
         else:
             assert len(feature_names_in) == n_features_in
-            model.feature_names_in_ = feature_names_in
-            model.display_feature_names_in_ = feature_names_in
+            model._regressor.feature_names_in_ = feature_names_in
+            model._regressor.display_feature_names_in_ = feature_names_in
 
         if selection_mask is None:
-            model.selection_mask_ = np.ones(n_features_in, dtype=np.bool_)
+            model._regressor.selection_mask_ = np.ones(n_features_in, dtype=np.bool_)
         else:
-            model.selection_mask_ = selection_mask
+            model._regressor.selection_mask_ = selection_mask
 
-        model.refresh(checkpoint_file=equation_file)
+        model._regressor.refresh(checkpoint_file=equation_file)
+        model.recursive_history_length = recursive_history_length
 
         return model
 
