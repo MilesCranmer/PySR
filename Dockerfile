@@ -29,7 +29,7 @@ ADD ./pysr /pysr/pysr
 RUN pip3 install --no-cache-dir .
 
 # Install Julia pre-requisites:
-RUN python3 -c 'import pysr'
+RUN python3 -c 'import pysr; pysr.load_all_packages()'
 
 # metainformation
 LABEL org.opencontainers.image.authors = "Miles Cranmer"
