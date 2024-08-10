@@ -240,7 +240,7 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         cls,
         equation_file: PathLike,
         *pysr_args,
-        recursive_history_length: Optional[int] = None,
+        recursive_history_length: int,
         binary_operators: Optional[List[str]] = None,
         unary_operators: Optional[List[str]] = None,
         n_features_in: Optional[int] = None,
@@ -250,6 +250,8 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         **pysr_kwargs,
     ):
         pkl_filename = _csv_filename_to_pkl_filename(equation_file)
+
+        assert recursive_history_length is not None and recursive_history_length > 0
 
         # Try to load model from <equation_file>.pkl
         print(f"Checking if {pkl_filename} exists...")
@@ -272,7 +274,7 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             if "equations_" not in model.__dict__ or model.equations_ is None:
                 model._regressor.refresh()
 
-            model.recursive_history_length = 2  # DELETE THIS LATER
+            model.recursive_history_length = recursive_history_length
             return model
 
         # Else, we re-create it.
