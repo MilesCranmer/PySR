@@ -612,10 +612,7 @@ class TestSequenceRegressor(unittest.TestCase):
             )
 
     def test_sequence_2D_data(self):
-        X = [
-            [1, 2],
-            [2, 3]
-        ]
+        X = [[1, 2], [2, 3]]
         for i in range(2, 10):
             X.append(
                 [
@@ -635,9 +632,40 @@ class TestSequenceRegressor(unittest.TestCase):
         model.fit(X)
         self.assertLessEqual(model.get_best()[0]["loss"], 1e-4)
         self.assertIn("x1t_0", model.latex_table(indices=[[0, 1], [1, 1]]))
-        self.assertListEqual(model.predict(X).tolist(), [[4.0, 0.0], [2.0, 1.0], [5.0, 2.0], [4.0, 4.0], [9.0, 2.0], [6.0, 5.0], [14.0, 4.0], [10.0, 9.0], [23.0, 6.0]]) 
-        self.assertListEqual(model.predict(X, extra_predictions=5).tolist(), [[4.0, 0.0], [2.0, 1.0], [5.0, 2.0], [4.0, 4.0], [9.0, 2.0], [6.0, 5.0], [14.0, 4.0], [10.0, 9.0], [23.0, 6.0], [16.0, 14.0], [37.0, 10.0], [26.0, 23.0], [60.0, 16.0], [42.0, 37.0]])
-    
+        self.assertListEqual(
+            model.predict(X).tolist(),
+            [
+                [4.0, 0.0],
+                [2.0, 1.0],
+                [5.0, 2.0],
+                [4.0, 4.0],
+                [9.0, 2.0],
+                [6.0, 5.0],
+                [14.0, 4.0],
+                [10.0, 9.0],
+                [23.0, 6.0],
+            ],
+        )
+        self.assertListEqual(
+            model.predict(X, extra_predictions=5).tolist(),
+            [
+                [4.0, 0.0],
+                [2.0, 1.0],
+                [5.0, 2.0],
+                [4.0, 4.0],
+                [9.0, 2.0],
+                [6.0, 5.0],
+                [14.0, 4.0],
+                [10.0, 9.0],
+                [23.0, 6.0],
+                [16.0, 14.0],
+                [37.0, 10.0],
+                [26.0, 23.0],
+                [60.0, 16.0],
+                [42.0, 37.0],
+            ],
+        )
+
     def test_sequence_named_2D_data(self):
         X = [
             [1, 2, 3],
@@ -667,7 +695,9 @@ class TestSequenceRegressor(unittest.TestCase):
         model = PySRSequenceRegressor(
             **self.default_test_kwargs,
         )
-        sequence_variable_names = model._construct_variable_names(3, variable_names=None)
+        sequence_variable_names = model._construct_variable_names(
+            3, variable_names=None
+        )
         print(sequence_variable_names)
         self.assertListEqual(
             sequence_variable_names,
@@ -712,7 +742,7 @@ class TestSequenceRegressor(unittest.TestCase):
         model = PySRSequenceRegressor(recursive_history_length=0)
         with self.assertRaises(ValueError):
             model.fit([[1, 2, 3]])
-            
+
     def test_sequence_short_data_error(self):
         X = [1]
         model = PySRSequenceRegressor(
@@ -720,7 +750,7 @@ class TestSequenceRegressor(unittest.TestCase):
         )
         with self.assertRaises(ValueError):
             model.fit(X)
-    
+
     def test_sequence_repr(self):
         model = PySRSequenceRegressor(
             **self.default_test_kwargs,
@@ -742,7 +772,7 @@ class TestSequenceRegressor(unittest.TestCase):
 
         pkl_file = str(temp_dir / "equation_file.pkl")
         model.fit(X)
-        
+
         model2 = PySRSequenceRegressor.from_file(equation_file=pkl_file)
         self.assertListEqual(model.predict(X).tolist(), model2.predict(X).tolist())
 
@@ -1511,14 +1541,14 @@ class TestDimensionalConstraints(unittest.TestCase):
 def runtests(just_tests=False):
     """Run all tests in test.py."""
     test_cases = [
-        #TestPipeline,
+        # TestPipeline,
         TestSequenceRegressor,
-        #TestBest,
-        #TestFeatureSelection,
-        #TestMiscellaneous,
-        #TestHelpMessages,
-        #TestLaTeXTable,
-        #TestDimensionalConstraints,
+        # TestBest,
+        # TestFeatureSelection,
+        # TestMiscellaneous,
+        # TestHelpMessages,
+        # TestLaTeXTable,
+        # TestDimensionalConstraints,
     ]
     if just_tests:
         return test_cases

@@ -1,14 +1,18 @@
 import os
 import pickle as pkl
-import warnings
-
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union, cast
+from typing import List, Optional, Union
 
 import numpy as np
-from numpy.typing import NDArray
-from sklearn.base import BaseEstimator, RegressorMixin, MultiOutputMixin
 import pandas as pd
+from numpy.typing import NDArray
+from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
 
+from .export_latex import (
+    sympy2latex,
+    sympy2latextable,
+    sympy2multilatextable,
+    with_preamble,
+)
 from .sr import PySRRegressor
 from .utils import (
     ArrayLike,
@@ -18,12 +22,6 @@ from .utils import (
     _safe_check_feature_names_in,
     _subscriptify,
     _suggest_keywords,
-)
-from .export_latex import (
-    sympy2latex,
-    sympy2latextable,
-    sympy2multilatextable,
-    with_preamble,
 )
 
 
@@ -84,8 +82,7 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.recursive_history_length = recursive_history_length
 
     def _construct_variable_names(
-        self, n_features: int,
-        variable_names: Optional[List[str]]
+        self, n_features: int, variable_names: Optional[List[str]]
     ):
         if not isinstance(variable_names, list):
             if n_features == 1:
@@ -157,8 +154,8 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             variable_names,
             X_units,
         )
-        self.variable_names = variable_names # for latex_table()
-        self.n_features = X.shape[1] # for latex_table()
+        self.variable_names = variable_names  # for latex_table()
+        self.n_features = X.shape[1]  # for latex_table()
 
         current_X = X[self.recursive_history_length :]
         historical_X = np.lib.stride_tricks.sliding_window_view(
@@ -249,7 +246,7 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         feature_names_in: Optional[ArrayLike[str]] = None,
         selection_mask: Optional[NDArray[np.bool_]] = None,
         nout: int = 1,
-        **pysr_kwargs
+        **pysr_kwargs,
     ):
         """
         Create a model from a saved model checkpoint or equation file.
@@ -350,9 +347,11 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         model.refresh(checkpoint_file=equation_file)
 
         return model
-    
+
     def __repr__(self):
-        return self._regressor.__repr__().replace("PySRRegressor", "PySRSequenceRegressor")
+        return self._regressor.__repr__().replace(
+            "PySRRegressor", "PySRSequenceRegressor"
+        )
 
     @property
     def julia_options_(self):
@@ -361,22 +360,22 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     @property
     def julia_state_(self):
         return self._regressor.julia_state_
-    
+
     def get_best(self, index=None):
         return self._regressor.get_best(index=index)
-    
+
     def refresh(self, checkpoint_file: Optional[PathLike] = None) -> None:
         return self._regressor.refresh(checkpoint_file=checkpoint_file)
-    
+
     def sympy(self, index=None):
         return self._regressor.sympy(index=index)
-    
+
     def latex(self, index=None, precision=3):
         return self._regressor.latex(index=index, precision=precision)
-    
+
     def get_hof(self):
         return self._regressor.get_hof()
-    
+
     def latex_table(
         self,
         indices=None,
@@ -414,11 +413,17 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 assert len(indices) == self._regressor.nout_
             variable_names = self.variable_names
             if variable_names is not None:
-                variable_names = [variable_name + "t_0" for variable_name in variable_names]
+                variable_names = [
+                    variable_name + "t_0" for variable_name in variable_names
+                ]
             else:
                 variable_names = [f"x{i}t_0" for i in range(self.n_features)]
             table_string = sympy2multilatextable(
-                self._regressor.equations_, indices=indices, precision=precision, columns=columns, output_variable_names=variable_names
+                self._regressor.equations_,
+                indices=indices,
+                precision=precision,
+                columns=columns,
+                output_variable_names=variable_names,
             )
         elif isinstance(self.equations_, pd.DataFrame):
             if indices is not None:
@@ -430,7 +435,11 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             else:
                 variable_name = "xt_0"
             table_string = sympy2latextable(
-                self._regressor.equations_, indices=indices, precision=precision, columns=columns, output_variable_name=variable_name
+                self._regressor.equations_,
+                indices=indices,
+                precision=precision,
+                columns=columns,
+                output_variable_name=variable_name,
             )
         else:
             raise ValueError(
@@ -439,7 +448,7 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             )
 
         return with_preamble(table_string)
-    
+
     @property
     def equations_(self):
         return self._regressor.equations_
