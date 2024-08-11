@@ -35,7 +35,7 @@ jobs:
         run: apptainer build --notest pysr.sif Apptainer.def
       - name: Create test directory
         run: |
-          mkdir test.d && cp pysr.sid test.d
+          mkdir test.d && cp pysr.sif test.d
       - name: Test apptainer
         run: |
           cd test.d
