@@ -83,8 +83,12 @@ Similarly, with conda:
 conda install -c conda-forge pysr
 ```
 
+<details>
+<summary>
 
-### Dockerfile
+### Docker
+
+</summary>
 
 You can also use the `Dockerfile` to install PySR in a docker container
 
@@ -100,23 +104,31 @@ docker run -it --rm pysr ipython
 
 For more details, see the [docker section](#docker).
 
----
+</details>
 
-### Troubleshooting
+<details>
+<summary>
 
-One issue you might run into can result in a hard crash at import with
-a message like "`GLIBCXX_...` not found". This is due to another one of the Python dependencies
-loading an incorrect `libstdc++` library. To fix this, you should modify your
-`LD_LIBRARY_PATH` variable to reference the Julia libraries. For example, if the Julia
-version of `libstdc++.so` is located in `$HOME/.julia/juliaup/julia-1.10.0+0.x64.linux.gnu/lib/julia/`
-(which likely differs on your system!), you could add:
+### Apptainer
 
+</summary>
+
+If you are using PySR on a cluster where you do not have root access,
+you can use [Apptainer](https://apptainer.org/) to build a container
+instead of Docker. The `Apptainer.def` file is analogous to the `Dockerfile`,
+and can be built with:
+
+```bash
+apptainer build --notest pysr.sif Apptainer.def
 ```
-export LD_LIBRARY_PATH=$HOME/.julia/juliaup/julia-1.10.0+0.x64.linux.gnu/lib/julia/:$LD_LIBRARY_PATH
+
+and launched with
+
+```bash
+apptainer run pysr.sif
 ```
 
-to your `.bashrc` or `.zshrc` file.
-
+</details>
 
 ## Quickstart
 
