@@ -10,7 +10,7 @@ on:
       - 'v*.*.*'
   pull_request:
     branches:
-      - 'master'
+      - '*'
     paths:
       - '**'
 
