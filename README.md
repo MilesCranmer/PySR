@@ -74,7 +74,7 @@ pip install pysr
 ```
 
 Julia dependencies will be installed at first import.
-	
+
 ### Conda
 
 Similarly, with conda:
