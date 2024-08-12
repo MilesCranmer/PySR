@@ -32,10 +32,9 @@ jobs:
             apptainer-version: 1.3.0
       - name: Build apptainer
         run: apptainer build --notest pysr.sif Apptainer.def
-      - name: Create test directory
-        run: |
-          mkdir test.d && cp pysr.sif test.d
       - name: Test apptainer
         run: |
-          cd test.d
+          TMPDIR=$(mktemp -d)
+          cp pysr.sif $TMPDIR
+          cd $TMPDIR
           apptainer test ./pysr.sif
