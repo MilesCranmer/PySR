@@ -24,7 +24,6 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        arch: ['linux/amd64']
 
     steps:
       - uses: actions/checkout@v4
