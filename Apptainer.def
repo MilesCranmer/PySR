@@ -25,23 +25,22 @@ Stage: runtime
 	./pysr /pysr/pysr
 
 %post
-	cd /pysr
+	# Ensure we don't use the local pysr commands:
+	cd $(mktemp -d)
 
 	export PATH="/usr/local/julia/bin:$PATH"
 
 	# Install IPython and other useful libraries:
 	pip3 install --no-cache-dir ipython matplotlib pytest nbval
+	# Install PySR and requirements:
+	pip3 install --no-cache-dir /pysr
 
-	pip3 install --no-cache-dir -r ./requirements.txt
-
-	# Install PySR:
-	pip3 install --no-cache-dir .
-
-	# Put the Julia dependencies in /pysr/depo
+	# Put the Julia dependencies in /pysr/depot
 	mkdir /pysr/depot
-	mkdir /pysr/env
-
 	export JULIA_DEPOT_PATH="/pysr/depot"
+
+	# And set a specific environment for Julia dependencies
+	mkdir /pysr/env
 	export PYTHON_JULIAPKG_PROJECT="/pysr/env"
 
 	# Pull in all the Julia dependencies
