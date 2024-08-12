@@ -1,0 +1,55 @@
+# Build an Apptainer SIF file containing a working copy of PySR and its prereqs
+Bootstrap: docker
+From: julia:1.10.4-bullseye
+Stage: jl
+
+Bootstrap: docker
+From: python:3.12-bullseye
+Stage: runtime
+
+%environment
+	# Use the container Julia binary
+	export PATH="/usr/local/julia/bin:$PATH"
+
+	# Create a stacked environment for additional Julia packages
+	export JULIA_DEPOT_PATH="$HOME/.pysr:/pysr/depot:$JULIA_DEPOT_PATH"
+	export JULIA_LOAD_PATH="$HOME/.pysr:/pysr:$JULIA_LOAD_PATH"
+
+%files from jl
+	/usr/local/julia /usr/local/julia
+
+%files
+	./requirements.txt /pysr/requirements.txt
+	./pyproject.toml /pysr/pyproject.toml
+	./setup.py /pysr/setup.py
+	./pysr /pysr/pysr
+
+%post
+	# Ensure we don't use the local pysr commands:
+	cd $(mktemp -d)
+
+	export PATH="/usr/local/julia/bin:$PATH"
+
+	# Install IPython and other useful libraries:
+	pip3 install --no-cache-dir ipython matplotlib pytest nbval
+	# Install PySR and requirements:
+	pip3 install --no-cache-dir /pysr
+
+	# Put the Julia dependencies in /pysr/depot
+	mkdir /pysr/depot
+	export JULIA_DEPOT_PATH="/pysr/depot"
+
+	# And set a specific environment for Julia dependencies
+	mkdir /pysr/env
+	export PYTHON_JULIAPKG_PROJECT="/pysr/env"
+
+	# Pull in all the Julia dependencies
+	python3 -c 'import pysr; pysr.load_all_packages()'
+
+%test
+	python3 -m pysr test main,cli,startup
+
+%runscript
+	# Start ipython when the container is executed
+	[ ! -d $HOME/.pysr ] && mkdir $HOME/.pysr
+	PYTHONPATH=/pysr ipython
