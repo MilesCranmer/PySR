@@ -40,6 +40,7 @@ def isinstalled(uuid_s: str):
 def load_package(package_name: str, uuid_s: str) -> None:
     if not isinstalled(uuid_s):
         Pkg.add(name=package_name, uuid=uuid_s)
+        Pkg.resolve()
 
     # TODO: Protect against loading the same symbol from two packages,
     #       maybe with a @gensym here.
