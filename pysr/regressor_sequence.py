@@ -12,9 +12,7 @@ from .export_latex import (
     with_preamble,
 )
 from .sr import PySRRegressor
-from .utils import (
-    ArrayLike,
-)
+from .utils import ArrayLike
 
 
 def _check_assertions(
@@ -297,7 +295,9 @@ class PySRSequenceRegressor(BaseEstimator):
                 variable_names = "xt_0"
             else:
                 variable_names = [f"x{i}t_0" for i in range(self.n_features)]
-        return self._regressor.latex_table(**kwargs, output_variable_names=variable_names)
+        return self._regressor.latex_table(
+            **kwargs, output_variable_names=variable_names
+        )
 
     @property
     def equations_(self):

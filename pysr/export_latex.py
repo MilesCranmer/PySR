@@ -75,7 +75,7 @@ def sympy2latextable(
 
     if indices is None:
         indices = list(equations.index)
-    
+
     if output_variable_name == None:
         output_variable_name = "y"
 
