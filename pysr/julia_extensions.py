@@ -2,6 +2,7 @@
 
 from typing import Optional
 
+from .julia_helpers import jl_array
 from .julia_import import Pkg, jl
 
 UUIDs = {
@@ -36,8 +37,9 @@ def load_required_packages(
 def load_all_packages():
     """Install and load all Julia extensions available to PySR."""
     specs = [Pkg.PackageSpec(name=key, uuid=value) for key, value in UUIDs.items()]
-    Pkg.add(specs)
+    Pkg.add(jl_array(specs))
     Pkg.resolve()
+    jl.seval("import " + ", ".join(UUIDs.keys()))
 
 
 # TODO: Refactor this file so we can install all packages at once using `juliapkg`,
@@ -55,5 +57,5 @@ def load_package(package_name: str) -> None:
 
     # TODO: Protect against loading the same symbol from two packages,
     #       maybe with a @gensym here.
-    jl.seval(f"using {package_name}: {package_name}")
+    jl.seval(f"import {package_name}")
     return None
