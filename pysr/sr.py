@@ -495,8 +495,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Using procs=0 will turn off both. Default is `True`.
     cluster_manager : str
         For distributed computing, this sets the job queue system. Set
-        to one of "slurm", "pbs", "lsf", "sge", "qrsh", "scyld", or
-        "htc". If set to one of these, PySR will run in distributed
+        to one of "slurm", "pbs", "lsf", "sge", "qrsh", "scyld",
+        "htc", or "mpi". If set to one of these, PySR will run in distributed
         mode, and use `procs` to figure out how many processes to launch.
         Default is `None`.
     heap_size_hint_in_bytes : int
@@ -773,7 +773,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         procs: int = cpu_count(),
         multithreading: Optional[bool] = None,
         cluster_manager: Optional[
-            Literal["slurm", "pbs", "lsf", "sge", "qrsh", "scyld", "htc"]
+            Literal["slurm", "pbs", "lsf", "sge", "qrsh", "scyld", "htc", "mpi"]
         ] = None,
         heap_size_hint_in_bytes: Optional[int] = None,
         batching: bool = False,

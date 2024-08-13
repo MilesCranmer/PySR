@@ -49,7 +49,9 @@ def jl_array(x, dtype=None):
 
 
 def jl_is_function(f) -> bool:
-    return cast(bool, jl.seval("op -> op isa Function")(f))
+    # We name it so we only compile it once
+    is_function = jl.seval("__pysr_jl_is_function(op) = op isa Function")
+    return cast(bool, is_function(f))
 
 
 def jl_serialize(obj: Any) -> NDArray[np.uint8]:
