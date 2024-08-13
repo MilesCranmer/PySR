@@ -1,5 +1,3 @@
-import os
-import pickle as pkl
 from typing import List, Optional, Union
 
 import numpy as np
@@ -244,10 +242,7 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         assert recursive_history_length is not None and recursive_history_length > 0
 
         model = cls(recursive_history_length=recursive_history_length)
-        model._regressor = PySRRegressor.from_file(
-            *args,
-            **kwargs
-        )
+        model._regressor = PySRRegressor.from_file(*args, **kwargs)
         return model
 
     def __repr__(self):
