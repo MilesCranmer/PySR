@@ -256,17 +256,17 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             "PySRRegressor", "PySRSequenceRegressor"
         )
 
-    def get_best(self, index=None):
-        return self._regressor.get_best(index=index)
+    def get_best(self, **kwargs):
+        return self._regressor.get_best(**kwargs)
 
-    def refresh(self, checkpoint_file: Optional[PathLike] = None) -> None:
-        return self._regressor.refresh(checkpoint_file=checkpoint_file)
+    def refresh(self, **kwargs):
+        return self._regressor.refresh(**kwargs)
 
-    def sympy(self, index=None):
-        return self._regressor.sympy(index=index)
+    def sympy(self, **kwargs):
+        return self._regressor.sympy(**kwargs)
 
-    def latex(self, index=None, precision=3):
-        return self._regressor.latex(index=index, precision=precision)
+    def latex(self, **kwargs):
+        return self._regressor.latex(**kwargs)
 
     def get_hof(self):
         return self._regressor.get_hof()
