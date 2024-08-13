@@ -14,12 +14,6 @@ from .export_latex import (
 from .sr import PySRRegressor
 from .utils import (
     ArrayLike,
-    PathLike,
-    _csv_filename_to_pkl_filename,
-    _preprocess_julia_floats,
-    _safe_check_feature_names_in,
-    _subscriptify,
-    _suggest_keywords,
 )
 
 
@@ -247,7 +241,7 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
     def __repr__(self):
         return self._regressor.__repr__().replace(
-            "PySRRegressor", "PySRSequenceRegressor"
+            "PySRRegressor", "PySRSequenceRegressor", 1
         )
 
     def get_best(self, **kwargs):
