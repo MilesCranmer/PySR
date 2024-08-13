@@ -1,0 +1,40 @@
+name: Apptainer
+
+on:
+  push:
+    branches:
+      - 'master'
+    paths:
+      - '**'
+    tags:
+      - 'v*.*.*'
+  pull_request:
+    branches:
+      - 'master'
+    paths:
+      - '**'
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: eWaterCycle/setup-apptainer@v2
+        with:
+            apptainer-version: 1.3.0
+      - name: Build apptainer
+        run: apptainer build --notest pysr.sif Apptainer.def
+      - name: Test apptainer
+        run: |
+          TMPDIR=$(mktemp -d)
+          cp pysr.sif $TMPDIR
+          cd $TMPDIR
+          apptainer test ./pysr.sif
