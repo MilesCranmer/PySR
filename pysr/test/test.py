@@ -792,7 +792,7 @@ class TestSequenceRegressor(unittest.TestCase):
         pkl_file = str(temp_dir / "equation_file.pkl")
         model.fit(X)
 
-        model2 = PySRSequenceRegressor.from_file(pkl_file)
+        model2 = PySRSequenceRegressor.from_file(pkl_file, recursive_history_length=2)
         self.assertIn("xt_1", model2.get_best()["equation"])
 
         os.remove(pkl_file)
