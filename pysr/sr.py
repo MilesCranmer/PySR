@@ -1690,9 +1690,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if not ALREADY_RAN and update_verbosity != 0:
             print("Compiling Julia backend...")
 
-        if cluster_manager is not None:
-            cluster_manager = _load_cluster_manager(cluster_manager)
-
         # TODO(mcranmer): These functions should be part of this class.
         binary_operators, unary_operators = _maybe_create_inline_operators(
             binary_operators=binary_operators,
@@ -1752,6 +1749,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             enable_autodiff=self.enable_autodiff,
             cluster_manager=cluster_manager,
         )
+
+        if cluster_manager is not None:
+            cluster_manager = _load_cluster_manager(cluster_manager)
 
         mutation_weights = SymbolicRegression.MutationWeights(
             mutate_constant=self.weight_mutate_constant,
