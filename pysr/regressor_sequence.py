@@ -324,14 +324,6 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             "PySRRegressor", "PySRSequenceRegressor"
         )
 
-    @property
-    def julia_options_(self):
-        return self._regressor.julia_options_
-
-    @property
-    def julia_state_(self):
-        return self._regressor.julia_state_
-
     def get_best(self, index=None):
         return self._regressor.get_best(index=index)
 
