@@ -238,30 +238,16 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     @classmethod
     def from_file(
         cls,
-        equation_file: PathLike,
-        *pysr_args,
+        *args,
         recursive_history_length: int,
-        binary_operators: Optional[List[str]] = None,
-        unary_operators: Optional[List[str]] = None,
-        n_features_in: Optional[int] = None,
-        feature_names_in: Optional[ArrayLike[str]] = None,
-        selection_mask: Optional[NDArray[np.bool_]] = None,
-        nout: int = 1,
-        **pysr_kwargs,
+        **kwargs,
     ):
         assert recursive_history_length is not None and recursive_history_length > 0
 
         model = cls(recursive_history_length=recursive_history_length)
         model._regressor = PySRRegressor.from_file(
-            equation_file,
-            *pysr_args,
-            binary_operators=binary_operators,
-            unary_operators=unary_operators,
-            n_features_in=n_features_in,
-            feature_names_in=feature_names_in,
-            selection_mask=selection_mask,
-            nout=nout,
-            **pysr_kwargs,
+            *args,
+            **kwargs
         )
         return model
 
