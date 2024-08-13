@@ -263,7 +263,6 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             nout=nout,
             **pysr_kwargs,
         )
-        model.recursive_history_length = recursive_history_length
         return model
 
     def __repr__(self):
