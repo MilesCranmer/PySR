@@ -28,8 +28,15 @@ def _escape_filename(filename):
 
 
 def _load_cluster_manager(cluster_manager: str):
-    jl.seval(f"using ClusterManagers: addprocs_{cluster_manager}")
-    return jl.seval(f"addprocs_{cluster_manager}")
+    if cluster_manager == "mpi":
+        jl.seval("using MPIClusterManagers: MPIWorkerManager")
+        return jl.seval(
+            "__pysr_mpi_addprocs(np; exeflags=``, kws...) = "
+            + "addprocs(MPIWorkerManager(np); exeflags=`$exeflags --project=$(Base.active_project())`, kws...)"
+        )
+    else:
+        jl.seval(f"using ClusterManagers: addprocs_{cluster_manager}")
+        return jl.seval(f"addprocs_{cluster_manager}")
 
 
 def jl_array(x, dtype=None):
