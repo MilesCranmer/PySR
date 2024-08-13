@@ -95,6 +95,7 @@ class TestPipeline(unittest.TestCase):
             unary_operators=["sqrt"],
             procs=2,
             multithreading=False,
+            cluster_manager=cluster_manager,
             turbo=True,
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-10 && complexity == 1",
             loss_function="""
