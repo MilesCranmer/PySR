@@ -2493,6 +2493,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         indices=None,
         precision=3,
         columns=["equation", "complexity", "loss", "score"],
+        output_variable_names=None,
     ):
         """Create a LaTeX/booktabs table for all, or some, of the equations.
 
@@ -2525,7 +2526,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 assert len(indices) == self.nout_
 
             table_string = sympy2multilatextable(
-                self.equations_, indices=indices, precision=precision, columns=columns
+                self.equations_, indices=indices, precision=precision, columns=columns, output_variable_names=output_variable_names
             )
         elif isinstance(self.equations_, pd.DataFrame):
             if indices is not None:
@@ -2533,7 +2534,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 assert isinstance(indices[0], int)
 
             table_string = sympy2latextable(
-                self.equations_, indices=indices, precision=precision, columns=columns
+                self.equations_, indices=indices, precision=precision, columns=columns, output_variable_name=output_variable_names
             )
         else:
             raise ValueError(

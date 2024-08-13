@@ -261,9 +261,7 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
     def latex_table(
         self,
-        indices=None,
-        precision=3,
-        columns=["equation", "complexity", "loss", "score"],
+        **kwargs,
     ):
         """Create a LaTeX/booktabs table for all, or some, of the equations.
 
@@ -287,50 +285,19 @@ class PySRSequenceRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         latex_table_str : str
             A string that will render a table in LaTeX of the equations.
         """
-        self._regressor.refresh()
-
-        if isinstance(self._regressor.equations_, list):
-            if indices is not None:
-                assert isinstance(indices, list)
-                assert isinstance(indices[0], list)
-                assert len(indices) == self._regressor.nout_
-            variable_names = self.variable_names
-            if variable_names is not None:
+        if self.variable_names is not None:
+            if len(self.variable_names) == 1:
+                variable_names = self.variable_names[0] + "t_0"
+            else:
                 variable_names = [
-                    variable_name + "t_0" for variable_name in variable_names
+                    variable_name + "t_0" for variable_name in self.variable_names
                 ]
+        else:
+            if self.n_features == 1:
+                variable_names = "xt_0"
             else:
                 variable_names = [f"x{i}t_0" for i in range(self.n_features)]
-            table_string = sympy2multilatextable(
-                self._regressor.equations_,
-                indices=indices,
-                precision=precision,
-                columns=columns,
-                output_variable_names=variable_names,
-            )
-        elif isinstance(self.equations_, pd.DataFrame):
-            if indices is not None:
-                assert isinstance(indices, list)
-                assert isinstance(indices[0], int)
-            if self.variable_names is not None:
-                assert len(self.variable_names) == 1
-                variable_name = self.variable_names[0] + "t_0"
-            else:
-                variable_name = "xt_0"
-            table_string = sympy2latextable(
-                self._regressor.equations_,
-                indices=indices,
-                precision=precision,
-                columns=columns,
-                output_variable_name=variable_name,
-            )
-        else:
-            raise ValueError(
-                "Invalid type for equations_ to pass to `latex_table`. "
-                "Expected a DataFrame or a list of DataFrames."
-            )
-
-        return with_preamble(table_string)
+        return self._regressor.latex_table(**kwargs, output_variable_names=variable_names)
 
     @property
     def equations_(self):
