@@ -27,14 +27,22 @@ def _escape_filename(filename):
     return str_repr
 
 
-def _load_cluster_manager(cluster_manager: str):
+def _load_cluster_manager(cluster_manager: str, mpi_flags: str):
     if cluster_manager == "mpi":
         jl.seval("using Distributed: addprocs")
         jl.seval("using MPIClusterManagers: MPIWorkerManager")
 
         return jl.seval(
             "(np; exeflags=``, kws...) -> "
-            + "addprocs(MPIWorkerManager(np); exeflags=`$exeflags --project=$(Base.active_project())`, kws...)"
+            + "addprocs(MPIWorkerManager(np);"
+            + ",".join(
+                [
+                    "exeflags=`$exeflags --project=$(Base.active_project())`",
+                    f"mpiflags=`{mpi_flags}`",
+                    "kws...",
+                ]
+            )
+            + ")"
         )
     else:
         jl.seval(f"using ClusterManagers: addprocs_{cluster_manager}")
