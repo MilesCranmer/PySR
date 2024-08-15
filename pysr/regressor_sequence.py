@@ -2,6 +2,7 @@ from typing import List, Optional, Union
 
 import numpy as np
 from sklearn.base import BaseEstimator
+
 from .sr import PySRRegressor
 from .utils import ArrayLike
 
