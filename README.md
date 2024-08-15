@@ -130,6 +130,29 @@ apptainer run pysr.sif
 
 </details>
 
+<details>
+<summary>
+
+### Troubleshooting
+
+</summary>
+
+One issue you might run into can result in a hard crash at import with
+a message like "`GLIBCXX_...` not found". This is due to another one of the Python dependencies
+loading an incorrect `libstdc++` library. To fix this, you should modify your
+`LD_LIBRARY_PATH` variable to reference the Julia libraries. For example, if the Julia
+version of `libstdc++.so` is located in `$HOME/.julia/juliaup/julia-1.10.0+0.x64.linux.gnu/lib/julia/`
+(which likely differs on your system!), you could add:
+
+```
+export LD_LIBRARY_PATH=$HOME/.julia/juliaup/julia-1.10.0+0.x64.linux.gnu/lib/julia/:$LD_LIBRARY_PATH
+```
+
+to your `.bashrc` or `.zshrc` file.
+
+</details>
+
+
 ## Quickstart
 
 You might wish to try the interactive tutorial [here](https://colab.research.google.com/github/MilesCranmer/PySR/blob/master/examples/pysr_demo.ipynb), which uses the notebook in `examples/pysr_demo.ipynb`.
