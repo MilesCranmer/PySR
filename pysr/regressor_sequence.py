@@ -142,7 +142,7 @@ class PySRSequenceRegressor(BaseEstimator):
         self.n_features = X.shape[1]  # for latex_table()
 
         current_X = X[self.recursive_history_length :]
-        historical_X = self._sliding_window(X)[:-1: current_X.shape[1], :]
+        historical_X = self._sliding_window(X)[: -1 : current_X.shape[1], :]
         y_units = X_units
         if isinstance(weights, np.ndarray):
             weights = weights[self.recursive_history_length :]
