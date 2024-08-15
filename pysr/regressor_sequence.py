@@ -142,9 +142,7 @@ class PySRSequenceRegressor(BaseEstimator):
         self.n_features = X.shape[1]  # for latex_table()
 
         current_X = X[self.recursive_history_length :]
-        historical_X = np.lib.stride_tricks.sliding_window_view(
-            X[:-1].flatten(), self.recursive_history_length * X.shape[1]
-        )[:: current_X.shape[1], :]
+        historical_X = self._sliding_window(X)[:-1: current_X.shape[1], :]
         y_units = X_units
         if isinstance(weights, np.ndarray):
             weights = weights[self.recursive_history_length :]
@@ -198,9 +196,7 @@ class PySRSequenceRegressor(BaseEstimator):
         """
         X = self._validate_data(X)
         _check_assertions(X, recursive_history_length=self.recursive_history_length)
-        historical_X = np.lib.stride_tricks.sliding_window_view(
-            X.flatten(), self.recursive_history_length * np.prod(X.shape[1])
-        )[:: X.shape[1], :]
+        historical_X = self._sliding_window(X)[:: X.shape[1], :]
         pred = self._regressor.predict(X=historical_X, index=index)
         if extra_predictions > 0:
             output = pred
@@ -218,6 +214,11 @@ class PySRSequenceRegressor(BaseEstimator):
                 output = np.append(output, pred_once)
             return output.reshape(-1, X.shape[1])
         return pred
+
+    def _sliding_window(self, X):
+        return np.lib.stride_tricks.sliding_window_view(
+            X.flatten(), self.recursive_history_length * np.prod(X.shape[1])
+        )
 
     @classmethod
     def from_file(
