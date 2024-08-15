@@ -1,16 +1,7 @@
 from typing import List, Optional, Union
 
 import numpy as np
-import pandas as pd
-from numpy.typing import NDArray
-from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
-
-from .export_latex import (
-    sympy2latex,
-    sympy2latextable,
-    sympy2multilatextable,
-    with_preamble,
-)
+from sklearn.base import BaseEstimator
 from .sr import PySRRegressor
 from .utils import ArrayLike
 
