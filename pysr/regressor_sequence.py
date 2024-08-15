@@ -94,6 +94,7 @@ class PySRSequenceRegressor(BaseEstimator):
     def fit(
         self,
         X,
+        *,
         weights=None,
         variable_names: Optional[List[str]] = None,
         complexity_of_variables: Optional[
