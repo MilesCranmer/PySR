@@ -105,8 +105,8 @@ class PySRSequenceRegressor(BaseEstimator):
             Weight array of the same shape as `X`.
             Each element is how to weight the mean-square-error loss
             for that particular element of `X`. Alternatively,
-            if a custom `loss` was set, it will can be used
-            in arbitrary ways.
+            if a custom `loss` was set, it can be used
+            in custom ways.
         variable_names : list[str]
             A list of names for the variables, rather than "x0t_1", "x1t_2", etc.
             If `X` is a pandas dataframe, the column name will be used
