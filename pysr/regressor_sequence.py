@@ -64,6 +64,7 @@ class PySRSequenceRegressor(BaseEstimator):
 
     def __init__(
         self,
+        *,
         recursive_history_length: int = 0,
         **kwargs,
     ):
