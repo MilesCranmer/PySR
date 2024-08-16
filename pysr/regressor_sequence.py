@@ -216,25 +216,6 @@ class PySRSequenceRegressor(BaseEstimator):
                 )
             return pred
 
-        """ historical_X = self._sliding_window(X)[:: X.shape[1], :]
-        pred = self._regressor.predict(X=historical_X, index=index)
-        if extra_predictions > 0:
-            output = pred
-            previous_points = historical_X[-1]
-            # Without this, the model will re-predict the last data point
-            pred_once = self._regressor.predict(X=[previous_points], index=index)
-            previous_points = previous_points[X.shape[1] :]
-            previous_points = np.append(previous_points, pred_once)
-            previous_points = previous_points.flatten()
-            for _ in range(extra_predictions):
-                pred_once = self._regressor.predict(X=[previous_points], index=index)
-                previous_points = previous_points[X.shape[1] :]
-                previous_points = np.append(previous_points, pred_once)
-                previous_points = previous_points.flatten()
-                output = np.append(output, pred_once)
-            return output.reshape(-1, X.shape[1])
-        return pred """
-
     def _sliding_window(self, X):
         return np.lib.stride_tricks.sliding_window_view(
             X.flatten(), self.recursive_history_length * np.prod(X.shape[1])
