@@ -210,10 +210,8 @@ class PySRSequenceRegressor(BaseEstimator):
             extra_predictions = num_predictions - len(historical_X)
             pred = self._regressor.predict(X=historical_X, index=index)
             for _ in range(extra_predictions):
-                pred_data = pred[-self.recursive_history_length :]
-                pred = np.append(
-                    pred, self._regressor.predict(X=[pred_data], index=index)
-                )
+                pred_data = [pred[-self.recursive_history_length :].flatten()]
+                pred = np.concatenate([pred, self._regressor.predict(X=pred_data, index=index)], axis=0)
             return pred
 
         """ historical_X = self._sliding_window(X)[:: X.shape[1], :]
