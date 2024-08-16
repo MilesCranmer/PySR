@@ -1,5 +1,5 @@
 from typing import List, Optional, Union
-
+import warnings
 import numpy as np
 from sklearn.base import BaseEstimator
 
@@ -161,7 +161,7 @@ class PySRSequenceRegressor(BaseEstimator):
         )
         return self
 
-    def predict(self, X, index=None, extra_predictions=0):
+    def predict(self, X, index=None, num_predictions=1):
         """
         Predict y from input X using the equation chosen by `model_selection`.
 
@@ -197,6 +197,23 @@ class PySRSequenceRegressor(BaseEstimator):
         X = self._validate_data(X)
         _check_assertions(X, recursive_history_length=self.recursive_history_length)
         historical_X = self._sliding_window(X)[:: X.shape[1], :]
+        if num_predictions < 1:
+            raise ValueError("num_predictions must be greater than 0.")
+        if num_predictions < len(historical_X):
+            warnings.warn(
+                "The number of predictions is less than the number of historical data points. Some will be ignored."
+            )
+            historical_X = historical_X[:num_predictions]
+            return self._regressor.predict(X=historical_X, index=index)
+        else:
+            extra_predictions = num_predictions - len(historical_X)
+            pred = self._regressor.predict(X=historical_X, index=index)
+            for _ in range(extra_predictions):
+                pred_data = pred[-self.recursive_history_length :]
+                pred = np.append(pred, self._regressor.predict(X=[pred_data], index=index))
+            return pred
+
+        """ historical_X = self._sliding_window(X)[:: X.shape[1], :]
         pred = self._regressor.predict(X=historical_X, index=index)
         if extra_predictions > 0:
             output = pred
@@ -213,7 +230,7 @@ class PySRSequenceRegressor(BaseEstimator):
                 previous_points = previous_points.flatten()
                 output = np.append(output, pred_once)
             return output.reshape(-1, X.shape[1])
-        return pred
+        return pred """
 
     def _sliding_window(self, X):
         return np.lib.stride_tricks.sliding_window_view(
