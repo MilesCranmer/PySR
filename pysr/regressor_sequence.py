@@ -164,7 +164,7 @@ class PySRSequenceRegressor(BaseEstimator):
 
     def predict(self, X, index=None, num_predictions=1):
         """
-        Predict y from input X using the equation chosen by `model_selection`.
+        Predict future data from input X using the equation chosen by `model_selection`.
 
         You may see what equation is used by printing this object. X should
         have the same columns as the training data.
