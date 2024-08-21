@@ -1017,13 +1017,18 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             params = inspect.signature(model.__init__).parameters
 
             # Filter for missing parameters excluding kwargs
-            missing_params = {k: v for k, v in params.items() if
-                              k not in model.__dict__.keys() and v.name != "self" and v.kind != v.VAR_KEYWORD}
+            missing_params = {
+                k: v
+                for k, v in params.items()
+                if k not in model.__dict__.keys()
+                and v.name != "self"
+                and v.kind != v.VAR_KEYWORD
+            }
 
             # Assign missing attributes
             for k, v in missing_params.items():
                 setattr(model, k, v)
-            
+
             # Update any parameters if necessary, such as
             # extra_sympy_mappings:
             model.set_params(**pysr_kwargs)
