@@ -1025,6 +1025,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 and v.kind != v.VAR_KEYWORD
             }
 
+            if len(missing_params) > 0:
+                warnings.warn(
+                    "The following missing parameters will be assigned with default values:"
+                    f"{', '.join(missing_params.keys())}"
+                    "This may be due to the model being saved under an old package version."
+                )
+
             # Assign missing attributes
             for k, v in missing_params.items():
                 setattr(model, k, v)
