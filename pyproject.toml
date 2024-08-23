@@ -5,27 +5,25 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "pysr"
 version = "0.19.4"
-authors = [
-    {name = "Miles Cranmer", email = "miles.cranmer@gmail.com"},
-]
+authors = [{ name = "Miles Cranmer", email = "miles.cranmer@gmail.com" }]
 description = "Simple and efficient symbolic regression"
-readme = {file = "README.md", content-type = "text/markdown"}
-license = {file = "LICENSE"}
+readme = { file = "README.md", content-type = "text/markdown" }
+license = { file = "LICENSE" }
 requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
-    "License :: OSI Approved :: Apache Software License"
+    "License :: OSI Approved :: Apache Software License",
 ]
 dynamic = ["dependencies"]
 
 [tool.setuptools]
 packages = ["pysr", "pysr._cli", "pysr.test"]
 include-package-data = false
-package-data = {pysr = ["juliapkg.json"]}
+package-data = { pysr = ["juliapkg.json"] }
 
 [tool.setuptools.dynamic]
-dependencies = {file = "requirements.txt"}
+dependencies = { file = "requirements.txt" }
 
 [tool.isort]
 profile = "black"
@@ -38,6 +36,7 @@ dev-dependencies = [
     "mypy>=1.10.0",
     "jax[cpu]>=0.4.26",
     "torch>=2.3.0",
+    "paddlepaddle>=2.6.1",
     "pandas-stubs>=2.2.1.240316",
     "types-pytz>=2024.1.0.20240417",
     "types-openpyxl>=3.1.0.20240428",
