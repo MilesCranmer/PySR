@@ -81,6 +81,12 @@ jobs:
       - name: "Run Torch tests"
         run: coverage run --append -m pysr test torch
         if: ${{ matrix.test-id == 'main' }}
+      - name: "Install Paddle"
+        run: pip install paddle # (optional import)
+        if: ${{ matrix.test-id == 'main' }}
+      - name: "Run Paddle tests"
+        run: coverage run --append -m pysr test paddle
+        if: ${{ matrix.test-id == 'main' }}
       - name: "Coveralls"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -192,7 +198,7 @@ jobs:
             pip install .
             pip install mypy
       - name: "Install additional dependencies"
-        run: python -m pip install jax jaxlib torch
+        run: python -m pip install jax jaxlib torch paddlepaddle
         if: ${{ matrix.python-version != '3.8' }}
       - name: "Run mypy"
         run: python -m mypy --install-types --non-interactive pysr

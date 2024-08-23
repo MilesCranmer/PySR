@@ -60,3 +60,7 @@ jobs:
         run: pip install torch # (optional import)
       - name: "Run Torch tests"
         run: python -m pysr test torch
+      - name: "Install Paddle"
+        run: pip install paddlepaddle # (optional import)
+      - name: "Run Paddle tests"
+        run: PYTHON_JULIACALL_THREADS=1 python -m pysr test paddle
