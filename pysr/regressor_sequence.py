@@ -182,6 +182,7 @@ class PySRSequenceRegressor(BaseEstimator):
             How many predictions to make. If `num_predictions` is less than
             `(n_times - recursive_history_length + 1)`,
             some input data at the end will be ignored.
+            Default is `1`.
 
         Returns
         -------
