@@ -185,7 +185,7 @@ class PySRSequenceRegressor(BaseEstimator):
 
         Returns
         -------
-        x_predicted : ndarray of shape (n_samples, n_features)
+        x_predicted : ndarray of shape (num_predictions, n_features)
             Values predicted by substituting `X` into the fitted sequence symbolic
             regression model and rolling it out for `num_predictions` steps.
 
