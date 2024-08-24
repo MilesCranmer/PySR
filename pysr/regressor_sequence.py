@@ -178,7 +178,7 @@ class PySRSequenceRegressor(BaseEstimator):
             particular row of `self.equations_`, you may specify the index here.
             For multiple output equations, you must pass a list of indices
             in the same order.
-        num_predictions : int = 1
+        num_predictions : int
             How many predictions to make. If `num_predictions` is less than
             `(n_times - recursive_history_length + 1)`,
             some input data at the end will be ignored.
