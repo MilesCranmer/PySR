@@ -238,17 +238,17 @@ class PySRSequenceRegressor(BaseEstimator):
             "PySRRegressor", "PySRSequenceRegressor", 1
         )
 
-    def get_best(self, **kwargs):
-        return self._regressor.get_best(**kwargs)
+    def get_best(self, *args, **kwargs):
+        return self._regressor.get_best(*args, **kwargs)
 
-    def refresh(self, **kwargs):
-        return self._regressor.refresh(**kwargs)
+    def refresh(self, *args, **kwargs):
+        return self._regressor.refresh(*args, **kwargs)
 
-    def sympy(self, **kwargs):
-        return self._regressor.sympy(**kwargs)
+    def sympy(self, *args, **kwargs):
+        return self._regressor.sympy(*args, **kwargs)
 
-    def latex(self, **kwargs):
-        return self._regressor.latex(**kwargs)
+    def latex(self, *args, **kwargs):
+        return self._regressor.latex(*args, **kwargs)
 
     def get_hof(self):
         return self._regressor.get_hof()
