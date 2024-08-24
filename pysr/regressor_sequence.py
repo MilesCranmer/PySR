@@ -256,6 +256,7 @@ class PySRSequenceRegressor(BaseEstimator):
 
     def latex_table(
         self,
+        *args,
         **kwargs,
     ):
         """Create a LaTeX/booktabs table for all, or some, of the equations.
@@ -293,7 +294,7 @@ class PySRSequenceRegressor(BaseEstimator):
             else:
                 variable_names = [f"x{i}t_0" for i in range(self.n_features)]
         return self._regressor.latex_table(
-            **kwargs, output_variable_names=variable_names
+            *args, **kwargs, output_variable_names=variable_names
         )
 
     @property
