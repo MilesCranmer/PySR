@@ -540,7 +540,7 @@ class TestSequenceRegressor(unittest.TestCase):
         model.fit(X)
         print(model.equations_)
         self.assertLessEqual(model.get_best()["loss"], 1e-4)
-        self.assertIn("xt_0", model.latex_table())
+        self.assertIn("x_{t-0}", model.latex_table())
 
     def test_sequence_named(self):
         X = [1, 1, 1]
@@ -552,8 +552,8 @@ class TestSequenceRegressor(unittest.TestCase):
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
         )
         model.fit(X, variable_names=["c1"])
-        self.assertIn("c1t_1", model.equations_.iloc[-1]["equation"])
-        self.assertIn("c1t_0", model.latex_table())
+        self.assertIn("c1_t1", model.equations_.iloc[-1]["equation"])
+        self.assertIn("c1_{t-0}", model.latex_table())
 
     def test_sequence_custom_variable_complexity(self):
         for outer in (True, False):
@@ -631,7 +631,7 @@ class TestSequenceRegressor(unittest.TestCase):
         )
         model.fit(X)
         self.assertLessEqual(model.get_best()[0]["loss"], 1e-4)
-        self.assertIn("x1t_0", model.latex_table(indices=[[0, 1], [1, 1]]))
+        self.assertIn("x1_{t-0}", model.latex_table(indices=[[0, 1], [1, 1]]))
         with self.assertWarns(UserWarning):
             self.assertListEqual(model.predict(X).tolist(), [[4.0, 0.0]])
         self.assertListEqual(
@@ -688,10 +688,10 @@ class TestSequenceRegressor(unittest.TestCase):
         )
         model.fit(X, variable_names=["a", "b", "c"])
         self.assertLessEqual(model.get_best()[0]["loss"], 1e-4)
-        self.assertIn("at_0", model.latex_table())
-        self.assertIn("bt_0", model.latex_table())
-        self.assertIn("ct_0", model.latex_table())
-        self.assertIn("at_{1}", model.latex()[2])
+        self.assertIn("a_{t-0}", model.latex_table())
+        self.assertIn("b_{t-0}", model.latex_table())
+        self.assertIn("c_{t-0}", model.latex_table())
+        self.assertIn("a_{t1}", model.latex()[2])
 
     def test_sequence_variable_names(self):
         model = PySRSequenceRegressor(
@@ -704,15 +704,15 @@ class TestSequenceRegressor(unittest.TestCase):
         self.assertListEqual(
             sequence_variable_names,
             [
-                "x0t_3",
-                "x1t_3",
-                "x2t_3",
-                "x0t_2",
-                "x1t_2",
-                "x2t_2",
-                "x0t_1",
-                "x1t_1",
-                "x2t_1",
+                "x0_t3",
+                "x1_t3",
+                "x2_t3",
+                "x0_t2",
+                "x1_t2",
+                "x2_t2",
+                "x0_t1",
+                "x1_t1",
+                "x2_t1",
             ],
         )
 
@@ -724,7 +724,7 @@ class TestSequenceRegressor(unittest.TestCase):
         sequence_variable_names = model._construct_variable_names(3, variable_names)
         self.assertListEqual(
             sequence_variable_names,
-            ["at_3", "bt_3", "ct_3", "at_2", "bt_2", "ct_2", "at_1", "bt_1", "ct_1"],
+            ["a_t3", "b_t3", "c_t3", "a_t2", "b_t2", "c_t2", "a_t1", "b_t1", "c_t1"],
         )
 
     def test_sequence_unused_variables(self):
@@ -795,7 +795,7 @@ class TestSequenceRegressor(unittest.TestCase):
         model.fit(X)
 
         model2 = PySRSequenceRegressor.from_file(pkl_file, recursive_history_length=2)
-        self.assertIn("xt_1", model2.get_best()["equation"])
+        self.assertIn("x_t1", model2.get_best()["equation"])
 
         os.remove(pkl_file)
         model3 = PySRSequenceRegressor.from_file(
@@ -804,7 +804,7 @@ class TestSequenceRegressor(unittest.TestCase):
             n_features_in=2,
             recursive_history_length=2,
         )
-        self.assertIn("xt_1", model3.get_best()["equation"])
+        self.assertIn("x_t1", model3.get_best()["equation"])
 
         model4 = PySRSequenceRegressor.from_file(
             equation_file,
@@ -814,7 +814,7 @@ class TestSequenceRegressor(unittest.TestCase):
             feature_names_in=["xt_1", "xt_2"],
             selection_mask=np.ones(2, dtype=np.bool_),
         )
-        self.assertIn("xt_1", model4.get_best()["equation"])
+        self.assertIn("x_t1", model4.get_best()["equation"])
 
 
 def manually_create_model(equations, feature_names=None):

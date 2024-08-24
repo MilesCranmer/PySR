@@ -70,16 +70,16 @@ class PySRSequenceRegressor(BaseEstimator):
     ):
         if not isinstance(variable_names, list):
             if n_features == 1:
-                return [f"xt_{i}" for i in range(self.recursive_history_length, 0, -1)]
+                return [f"x_t{i}" for i in range(self.recursive_history_length, 0, -1)]
             else:
                 return [
-                    f"x{i}t_{j}"
+                    f"x{i}_t{j}"
                     for j in range(self.recursive_history_length, 0, -1)
                     for i in range(n_features)
                 ]
         else:
             return [
-                i + "t_" + str(j)
+                i + "_t" + str(j)
                 for j in range(self.recursive_history_length, 0, -1)
                 for i in variable_names
             ]
@@ -283,16 +283,16 @@ class PySRSequenceRegressor(BaseEstimator):
         """
         if self.variable_names is not None:
             if len(self.variable_names) == 1:
-                variable_names = self.variable_names[0] + "t_0"
+                variable_names = self.variable_names[0] + "_{t-0}"
             else:
                 variable_names = [
-                    variable_name + "t_0" for variable_name in self.variable_names
+                    variable_name + "_{t-0}" for variable_name in self.variable_names
                 ]
         else:
             if self.n_features == 1:
-                variable_names = "xt_0"
+                variable_names = "x_{t-0}"
             else:
-                variable_names = [f"x{i}t_0" for i in range(self.n_features)]
+                variable_names = [f"x{i}_{{t-0}}" for i in range(self.n_features)]
         return self._regressor.latex_table(
             *args, **kwargs, output_variable_names=variable_names
         )
