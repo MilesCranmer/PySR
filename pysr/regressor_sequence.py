@@ -131,7 +131,10 @@ class PySRSequenceRegressor(BaseEstimator):
         self : object
             Fitted estimator.
         """
-        X = self._validate_data(X)
+        X = self._validate_data(X, ensure_2d=False)
+        if X.ndim == 1:
+            X = X.reshape(-1, 1)
+        assert X.ndim == 2
         _check_assertions(
             X,
             self.recursive_history_length,
@@ -195,7 +198,10 @@ class PySRSequenceRegressor(BaseEstimator):
         ValueError
             Raises if the `best_equation` cannot be evaluated.
         """
-        X = self._validate_data(X)
+        X = self._validate_data(X, ensure_2d=False)
+        if X.ndim == 1:
+            X = X.reshape(-1, 1)
+        assert X.ndim == 2
         _check_assertions(X, recursive_history_length=self.recursive_history_length)
         historical_X = self._sliding_window(X)[:: X.shape[1], :]
         if num_predictions < 1:
