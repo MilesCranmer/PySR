@@ -101,7 +101,7 @@ class PySRSequenceRegressor(BaseEstimator):
         Parameters
         ----------
         X : ndarray | pandas.DataFrame
-            Sequence of shape (n_times, n_features).
+            Sequence of shape (n_times, n_features) or (n_times,)
         weights : ndarray | pandas.DataFrame
             Weight array of the same shape as `X`.
             Each element is how to weight the mean-square-error loss
