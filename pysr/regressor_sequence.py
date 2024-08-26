@@ -1,11 +1,11 @@
 import warnings
-from typing import List, Optional, Union
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 from sklearn.base import BaseEstimator
 
 from .sr import PySRRegressor
-from .utils import ArrayLike
+from .utils import ArrayLike, _subscriptify
 
 
 def _check_assertions(
@@ -67,22 +67,33 @@ class PySRSequenceRegressor(BaseEstimator):
 
     def _construct_variable_names(
         self, n_features: int, variable_names: Optional[List[str]]
-    ):
+    ) -> Tuple[List[str], List[str]]:
         if not isinstance(variable_names, list):
             if n_features == 1:
-                return [f"x_t{i}" for i in range(self.recursive_history_length, 0, -1)]
+                variable_names = ["x"]
+                display_variable_names = ["x"]
             else:
-                return [
-                    f"x{i}_t{j}"
-                    for j in range(self.recursive_history_length, 0, -1)
-                    for i in range(n_features)
+                variable_names = [f"x{i}" for i in range(n_features)]
+                display_variable_names = [
+                    f"x{_subscriptify(i)}" for i in range(n_features)
                 ]
         else:
-            return [
-                i + "_t" + str(j)
-                for j in range(self.recursive_history_length, 0, -1)
-                for i in variable_names
-            ]
+            display_variable_names = variable_names
+
+        # e.g., `x0_tm1`
+        variable_names_with_time = [
+            f"{var}_tm{j}"
+            for j in range(self.recursive_history_length, 0, -1)
+            for var in variable_names
+        ]
+        # e.g., `x₀[t-1]`
+        display_variable_names_with_time = [
+            f"{var}[t-{j}]"
+            for j in range(self.recursive_history_length, 0, -1)
+            for var in display_variable_names
+        ]
+
+        return variable_names_with_time, display_variable_names_with_time
 
     def fit(
         self,
@@ -150,7 +161,7 @@ class PySRSequenceRegressor(BaseEstimator):
         y_units = X_units
         if isinstance(weights, np.ndarray):
             weights = weights[self.recursive_history_length :]
-        variable_names = self._construct_variable_names(
+        variable_names, display_variable_names = self._construct_variable_names(
             current_X.shape[1], variable_names
         )
 
@@ -159,6 +170,7 @@ class PySRSequenceRegressor(BaseEstimator):
             y=current_X,
             weights=weights,
             variable_names=variable_names,
+            display_variable_names=display_variable_names,
             X_units=X_units,
             y_units=y_units,
             complexity_of_variables=complexity_of_variables,
