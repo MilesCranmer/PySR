@@ -39,6 +39,7 @@ class TestPaddle(unittest.TestCase):
             model_selection="accuracy",
             extra_sympy_mappings={},
             output_paddle_format=True,
+            multithreading=False,
         )
         model.fit(X, y)
 
@@ -72,6 +73,7 @@ class TestPaddle(unittest.TestCase):
             max_evals=10000,
             model_selection="accuracy",
             output_paddle_format=True,
+            multithreading=False,
         )
         model.fit(X, y)
 
@@ -130,6 +132,7 @@ class TestPaddle(unittest.TestCase):
             max_evals=10000,
             model_selection="accuracy",
             output_paddle_format=True,
+            multithreading=False,
         )
         model.fit(X, y)
 
