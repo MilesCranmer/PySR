@@ -70,6 +70,7 @@
   - multithreading
   - cluster_manager
   - heap_size_hint_in_bytes
+  - mpi_flags
   - batching
   - batch_size
   - precision
