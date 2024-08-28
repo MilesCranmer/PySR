@@ -1,21 +1,14 @@
 import numpy as np
 
-X = [
-    [1, 2],
-    [3, 4]
-]
+X = [[1, 2], [3, 4]]
 for i in range(100):
-    X.append([
-        X[-1][0] + X[-2][0],
-        X[-1][1] / X[-2][1]
-    ])
+    X.append([X[-1][0] + X[-2][0], X[-1][1] / X[-2][1]])
 X = np.array(X)
 
 from pysr import PySRSequenceRegressor
 
 model = PySRSequenceRegressor(
-    recursive_history_length=2, # How many previous values to use
-
+    recursive_history_length=2,  # How many previous values to use
     # All other parameters are the same as PySRRegressor
     model_selection="best",  # Result is mix of simplicity+accuracy
     niterations=40,
@@ -33,6 +26,6 @@ model = PySRSequenceRegressor(
     # ^ Custom loss function (julia syntax)
 )
 
-model.fit(X) # no y needed
+model.fit(X)  # no y needed
 
 print(model)
