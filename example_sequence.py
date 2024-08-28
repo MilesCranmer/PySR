@@ -29,3 +29,4 @@ model = PySRSequenceRegressor(
 model.fit(X)  # no y needed
 
 print(model)
+print(model.latex())
