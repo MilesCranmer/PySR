@@ -523,7 +523,56 @@ Note that this expression has a large dynamic range so may be difficult to find.
 Note that you can also search for exclusively dimensionless constants by settings
 `dimensionless_constants_only` to `true`.
 
-## 11. Additional features
+## 11. Sequences
+
+Note that most of the functionality
+of PySRSequenceRegressor is inherited
+from [PySRRegressor](options.md).
+
+### 1. Simple Search
+
+Here's a simple example where we
+find the expression `f(n) = f(n-1) + f(n-2)`.
+
+```python
+X = [1, 1]
+for i in range(20):
+    X.append(X[-1] + X[-2])
+X = np.array(X)
+model = PySRSequenceRegressor(
+    recursive_history_length=2,
+    binary_operators=["+", "-", "*", "/"]
+)
+model.fit(X)  # no y needed
+print(model)
+```
+
+### 2. Multidimensionality
+
+Here we find a 2D recurrence relation
+with two data points at a time:
+`f₀(n) = f₀(n-1) + f₁(n-2)`
+`f₁(n) = f₁(n-1) + f₀(n-2)`
+
+```python
+X = [[1, 2], [3, 4]]
+for i in range(100):
+    X.append([
+        X[-1][0] + X[-2][1],
+        X[-1][1] - X[-2][0]
+    ])
+X = np.array(X)
+
+model = PySRSequenceRegressor(
+    recursive_history_length=2,
+    binary_operators=["+", "*"],
+)
+
+model.fit(X)
+print(model)
+```
+
+## 12. Additional features
 
 For the many other features available in PySR, please
 read the [Options section](options.md).
