@@ -21,7 +21,7 @@ for i in range(20):
     X.append(X[-1] + X[-2])
 X = np.array(X)
 model = PySRSequenceRegressor(
-    recursive_history_length=2, 
+    recursive_history_length=2,
     binary_operators=["+", "-", "*", "/"]
 )
 model.fit(X)  # no y needed
@@ -37,7 +37,7 @@ with two data points at a time.
 X = [[1, 2], [3, 4]]
 for i in range(100):
     X.append([
-        X[-1][0] + X[-2][0], 
+        X[-1][0] + X[-2][0],
         X[-1][1] - X[-2][1]
     ])
 X = np.array(X)
