@@ -31,14 +31,16 @@ print(model)
 ## 2. Multidimensionality
 
 Here we find a 2D recurrence relation
-with two data points at a time.
+with two data points at a time:
+`f₀(n) = f₀(n-1) + f₁(n-2)`
+`f₁(n) = f₁(n-1) + f₀(n-2)`
 
 ```python
 X = [[1, 2], [3, 4]]
 for i in range(100):
     X.append([
-        X[-1][0] + X[-2][0],
-        X[-1][1] - X[-2][1]
+        X[-1][0] + X[-2][1],
+        X[-1][1] - X[-2][0]
     ])
 X = np.array(X)
 
