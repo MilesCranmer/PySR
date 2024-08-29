@@ -540,7 +540,7 @@ class TestSequenceRegressor(unittest.TestCase):
         model.fit(X)
         print(model.equations_)
         self.assertLessEqual(model.get_best()["loss"], 1e-4)
-        self.assertIn("x_{t-0}", model.latex_table())
+        self.assertIn("x_{tm}", model.latex_table())
 
     def test_sequence_named(self):
         X = [1, 1, 1]
@@ -552,7 +552,7 @@ class TestSequenceRegressor(unittest.TestCase):
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
         )
         model.fit(X, variable_names=["c1"])
-        self.assertIn("c1_t1", model.equations_.iloc[-1]["equation"])
+        self.assertIn("c1_tm1", model.equations_.iloc[-1]["equation"])
         self.assertIn("c1_{t-0}", model.latex_table())
 
     def test_sequence_custom_variable_complexity(self):
@@ -631,7 +631,7 @@ class TestSequenceRegressor(unittest.TestCase):
         )
         model.fit(X)
         self.assertLessEqual(model.get_best()[0]["loss"], 1e-4)
-        self.assertIn("x1_{t-0}", model.latex_table(indices=[[0, 1], [1, 1]]))
+        self.assertIn("x1_{tm}", model.latex_table(indices=[[0, 1], [1, 1]]))
         with self.assertWarns(UserWarning):
             self.assertListEqual(model.predict(X).tolist(), [[4.0, 0.0]])
         self.assertListEqual(
@@ -714,7 +714,7 @@ class TestSequenceRegressor(unittest.TestCase):
         sequence_variable_names = model._construct_variable_names(3, variable_names)
         self.assertListEqual(
             sequence_variable_names,
-            ["a_t3", "b_t3", "c_t3", "a_t2", "b_t2", "c_t2", "a_t1", "b_t1", "c_t1"],
+            ['a_tm3', 'b_tm3', 'c_tm3', 'a_tm2', 'b_tm2', 'c_tm2', 'a_tm1', 'b_tm1', 'c_tm1'],
         )
 
     def test_sequence_unused_variables(self):
@@ -785,7 +785,7 @@ class TestSequenceRegressor(unittest.TestCase):
         model.fit(X)
 
         model2 = PySRSequenceRegressor.from_file(pkl_file, recursive_history_length=2)
-        self.assertIn("x_t1", model2.get_best()["equation"])
+        self.assertIn("x_tm1", model2.get_best()["equation"])
 
         os.remove(pkl_file)
         model3 = PySRSequenceRegressor.from_file(
