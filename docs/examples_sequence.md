@@ -3,7 +3,7 @@
 ## Preamble
 ```python
 import numpy as np
-from pysr import *
+from pysr import PySRSequenceRegressor
 ```
 
 Note that most of the functionality
@@ -45,7 +45,6 @@ X = np.array(X)
 model = PySRSequenceRegressor(
     recursive_history_length=2,
     binary_operators=["+", "*"],
-    extra_sympy_mappings={"inv": lambda x: 1 / x},
 )
 
 model.fit(X)
