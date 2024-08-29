@@ -1499,11 +1499,13 @@ class TestDimensionalConstraints(unittest.TestCase):
         """This just checks the number of units passed"""
         use_custom_variable_names = False
         variable_names = None
+        display_variable_names = None
         complexity_of_variables = 1
         weights = None
         args = (
             use_custom_variable_names,
             variable_names,
+            display_variable_names,
             complexity_of_variables,
             weights,
         )
