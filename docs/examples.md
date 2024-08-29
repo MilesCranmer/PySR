@@ -535,10 +535,10 @@ Here's a simple example where we
 find the expression `f(n) = f(n-1) + f(n-2)`.
 
 ```python
-X = [1, 1]
+X = np.array([1, 1])
 for i in range(20):
-    X.append(X[-1] + X[-2])
-X = np.array(X)
+    X = np.append(X, X[-1] + X[-2])
+X.reshape(-1, 1)  # lots of samples with one data point, not the other way
 model = PySRSequenceRegressor(
     recursive_history_length=2,
     binary_operators=["+", "-", "*", "/"]
@@ -555,13 +555,12 @@ with two data points at a time:
 `f₁(n) = f₁(n-1) + f₀(n-2)`
 
 ```python
-X = [[1, 2], [3, 4]]
+X = np.array([[1, 2], [3, 4]])
 for i in range(100):
-    X.append([
+    X = np.append(X, [
         X[-1][0] + X[-2][1],
         X[-1][1] - X[-2][0]
     ])
-X = np.array(X)
 
 model = PySRSequenceRegressor(
     recursive_history_length=2,
