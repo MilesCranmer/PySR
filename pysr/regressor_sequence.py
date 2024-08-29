@@ -288,7 +288,7 @@ class PySRSequenceRegressor(BaseEstimator):
             if self.n_features == 1:
                 variable_names = "x_{tm}"
             else:
-                variable_names = [f"x{i}_{{tm}}" for i in range(self.n_features)]
+                variable_names = [f"x_{{{i} tm}}" for i in range(self.n_features)]
         return self._regressor.latex_table(
             *args, **kwargs, output_variable_names=variable_names
         )

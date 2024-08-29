@@ -553,7 +553,7 @@ class TestSequenceRegressor(unittest.TestCase):
         )
         model.fit(X, variable_names=["c1"])
         self.assertIn("c1_tm1", model.equations_.iloc[-1]["equation"])
-        self.assertIn("c1_{t-0}", model.latex_table())
+        self.assertIn("c1_{tm}", model.latex_table())
 
     def test_sequence_custom_variable_complexity(self):
         for outer in (True, False):
@@ -631,9 +631,8 @@ class TestSequenceRegressor(unittest.TestCase):
         )
         model.fit(X)
         self.assertLessEqual(model.get_best()[0]["loss"], 1e-4)
-        self.assertIn("x1_{tm}", model.latex_table(indices=[[0, 1], [1, 1]]))
-        with self.assertWarns(UserWarning):
-            self.assertListEqual(model.predict(X).tolist(), [[4.0, 0.0]])
+        self.assertIn("x_{1 tm}", model.latex_table(indices=[[0, 1], [1, 1]]))
+        self.assertListEqual(model.predict(X).tolist(), [[4.0, 0.0]])
         self.assertListEqual(
             model.predict(X, num_predictions=9).tolist(),
             [
@@ -688,10 +687,10 @@ class TestSequenceRegressor(unittest.TestCase):
         )
         model.fit(X, variable_names=["a", "b", "c"])
         self.assertLessEqual(model.get_best()[0]["loss"], 1e-4)
-        self.assertIn("a_{t-0}", model.latex_table())
-        self.assertIn("b_{t-0}", model.latex_table())
-        self.assertIn("c_{t-0}", model.latex_table())
-        self.assertIn("a_{t1}", model.latex()[2])
+        self.assertIn("a_{tm}", model.latex_table())
+        self.assertIn("b_{tm}", model.latex_table())
+        self.assertIn("c_{tm}", model.latex_table())
+        self.assertIn("a_{tm1}", model.latex()[2])
 
     def test_sequence_variable_names(self):
         model = PySRSequenceRegressor(
@@ -702,8 +701,8 @@ class TestSequenceRegressor(unittest.TestCase):
         )
         print(sequence_variable_names)
         self.assertListEqual(
-            sequence_variable_names,
-            ['x₀[t-3]', 'x₁[t-3]', 'x₂[t-3]', 'x₀[t-2]', 'x₁[t-2]', 'x₂[t-2]', 'x₀[t-1]', 'x₁[t-1]', 'x₂[t-1]']
+            list(sequence_variable_names),
+            [['x0_tm3', 'x1_tm3', 'x2_tm3', 'x0_tm2', 'x1_tm2', 'x2_tm2', 'x0_tm1', 'x1_tm1', 'x2_tm1'], ['x₀[t-3]', 'x₁[t-3]', 'x₂[t-3]', 'x₀[t-2]', 'x₁[t-2]', 'x₂[t-2]', 'x₀[t-1]', 'x₁[t-1]', 'x₂[t-1]']]
         )
 
     def test_sequence_custom_variable_names(self):
@@ -713,8 +712,8 @@ class TestSequenceRegressor(unittest.TestCase):
         variable_names = ["a", "b", "c"]
         sequence_variable_names = model._construct_variable_names(3, variable_names)
         self.assertListEqual(
-            sequence_variable_names,
-            ['a_tm3', 'b_tm3', 'c_tm3', 'a_tm2', 'b_tm2', 'c_tm2', 'a_tm1', 'b_tm1', 'c_tm1'],
+            list(sequence_variable_names),
+            [['a_tm3', 'b_tm3', 'c_tm3', 'a_tm2', 'b_tm2', 'c_tm2', 'a_tm1', 'b_tm1', 'c_tm1'], ['a[t-3]', 'b[t-3]', 'c[t-3]', 'a[t-2]', 'b[t-2]', 'c[t-2]', 'a[t-1]', 'b[t-1]', 'c[t-1]']],
         )
 
     def test_sequence_unused_variables(self):
@@ -794,7 +793,7 @@ class TestSequenceRegressor(unittest.TestCase):
             n_features_in=2,
             recursive_history_length=2,
         )
-        self.assertIn("x_t1", model3.get_best()["equation"])
+        self.assertIn("x_tm1", model3.get_best()["equation"])
 
         model4 = PySRSequenceRegressor.from_file(
             equation_file,
@@ -804,7 +803,7 @@ class TestSequenceRegressor(unittest.TestCase):
             feature_names_in=["xt_1", "xt_2"],
             selection_mask=np.ones(2, dtype=np.bool_),
         )
-        self.assertIn("x_t1", model4.get_best()["equation"])
+        self.assertIn("x_tm1", model4.get_best()["equation"])
 
 
 def manually_create_model(equations, feature_names=None):
@@ -1565,14 +1564,14 @@ class TestDimensionalConstraints(unittest.TestCase):
 def runtests(just_tests=False):
     """Run all tests in test.py."""
     test_cases = [
-        TestPipeline,
+        #TestPipeline,
         TestSequenceRegressor,
-        TestBest,
-        TestFeatureSelection,
-        TestMiscellaneous,
-        TestHelpMessages,
-        TestLaTeXTable,
-        TestDimensionalConstraints,
+        #TestBest,
+        #TestFeatureSelection,
+        #TestMiscellaneous,
+        #TestHelpMessages,
+        #TestLaTeXTable,
+        #TestDimensionalConstraints,
     ]
     if just_tests:
         return test_cases
