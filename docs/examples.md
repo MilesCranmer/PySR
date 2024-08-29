@@ -532,7 +532,7 @@ from [PySRRegressor](options.md).
 ### 1. Simple Search
 
 Here's a simple example where we
-find the expression `f(n) = f(n-1) + f(n-2)`.
+find the expression $f(n) = f(n-1) + f(n-2)$.
 
 ```python
 X = np.array([1, 1])
@@ -551,8 +551,8 @@ print(model)
 
 Here we find a 2D recurrence relation
 with two data points at a time:
-`f₀(n) = f₀(n-1) + f₁(n-2)`
-`f₁(n) = f₁(n-1) + f₀(n-2)`
+$f_0(n) = f_0(n-1) + f_1(n-2)$
+$f_1(n) = f_1(n-1) + f_0(n-2)$
 
 ```python
 X = np.array([[1, 2], [3, 4]])
