@@ -219,9 +219,6 @@ class PySRSequenceRegressor(BaseEstimator):
         if num_predictions < 1:
             raise ValueError("num_predictions must be greater than 0.")
         if num_predictions < len(historical_X):
-            warnings.warn(
-                "The number of predictions is less than the number of historical data points. Some will be ignored."
-            )
             historical_X = historical_X[:num_predictions]
             return self._regressor.predict(X=historical_X, index=index)
         else:
