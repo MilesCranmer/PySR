@@ -702,7 +702,30 @@ class TestSequenceRegressor(unittest.TestCase):
         print(sequence_variable_names)
         self.assertListEqual(
             list(sequence_variable_names),
-            [['x0_tm3', 'x1_tm3', 'x2_tm3', 'x0_tm2', 'x1_tm2', 'x2_tm2', 'x0_tm1', 'x1_tm1', 'x2_tm1'], ['x₀[t-3]', 'x₁[t-3]', 'x₂[t-3]', 'x₀[t-2]', 'x₁[t-2]', 'x₂[t-2]', 'x₀[t-1]', 'x₁[t-1]', 'x₂[t-1]']]
+            [
+                [
+                    "x0_tm3",
+                    "x1_tm3",
+                    "x2_tm3",
+                    "x0_tm2",
+                    "x1_tm2",
+                    "x2_tm2",
+                    "x0_tm1",
+                    "x1_tm1",
+                    "x2_tm1",
+                ],
+                [
+                    "x₀[t-3]",
+                    "x₁[t-3]",
+                    "x₂[t-3]",
+                    "x₀[t-2]",
+                    "x₁[t-2]",
+                    "x₂[t-2]",
+                    "x₀[t-1]",
+                    "x₁[t-1]",
+                    "x₂[t-1]",
+                ],
+            ],
         )
 
     def test_sequence_custom_variable_names(self):
@@ -713,7 +736,30 @@ class TestSequenceRegressor(unittest.TestCase):
         sequence_variable_names = model._construct_variable_names(3, variable_names)
         self.assertListEqual(
             list(sequence_variable_names),
-            [['a_tm3', 'b_tm3', 'c_tm3', 'a_tm2', 'b_tm2', 'c_tm2', 'a_tm1', 'b_tm1', 'c_tm1'], ['a[t-3]', 'b[t-3]', 'c[t-3]', 'a[t-2]', 'b[t-2]', 'c[t-2]', 'a[t-1]', 'b[t-1]', 'c[t-1]']],
+            [
+                [
+                    "a_tm3",
+                    "b_tm3",
+                    "c_tm3",
+                    "a_tm2",
+                    "b_tm2",
+                    "c_tm2",
+                    "a_tm1",
+                    "b_tm1",
+                    "c_tm1",
+                ],
+                [
+                    "a[t-3]",
+                    "b[t-3]",
+                    "c[t-3]",
+                    "a[t-2]",
+                    "b[t-2]",
+                    "c[t-2]",
+                    "a[t-1]",
+                    "b[t-1]",
+                    "c[t-1]",
+                ],
+            ],
         )
 
     def test_sequence_unused_variables(self):
