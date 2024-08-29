@@ -301,16 +301,16 @@ class PySRSequenceRegressor(BaseEstimator):
         """
         if self.variable_names is not None:
             if len(self.variable_names) == 1:
-                variable_names = self.variable_names[0] + "_{t-0}"
+                variable_names = self.variable_names[0] + "_t"
             else:
                 variable_names = [
-                    variable_name + "_{t-0}" for variable_name in self.variable_names
+                    variable_name + "_t" for variable_name in self.variable_names
                 ]
         else:
             if self.n_features == 1:
-                variable_names = "x_{t-0}"
+                variable_names = "x_t"
             else:
-                variable_names = [f"x{i}_{{t-0}}" for i in range(self.n_features)]
+                variable_names = [f"x{i}_t" for i in range(self.n_features)]
         return self._regressor.latex_table(
             *args, **kwargs, output_variable_names=variable_names
         )
