@@ -699,7 +699,6 @@ class TestSequenceRegressor(unittest.TestCase):
         sequence_variable_names = model._construct_variable_names(
             3, variable_names=None
         )
-        print(sequence_variable_names)
         self.assertListEqual(
             list(sequence_variable_names),
             [
