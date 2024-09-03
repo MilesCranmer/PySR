@@ -2104,7 +2104,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             y,
             Xresampled,
             variable_names,
-            display_variable_names,
+            cast(ArrayLike[str], display_variable_names),
             complexity_of_variables,
             X_units,
             y_units,
