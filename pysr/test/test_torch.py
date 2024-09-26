@@ -28,6 +28,16 @@ class TestTorch(unittest.TestCase):
             np.all(np.isclose(torch_module(X).detach().numpy(), true.detach().numpy()))
         )
 
+    def test_sympy2torch_number_symbol(self):
+        x, y, z = sympy.symbols("x y z")
+        expr = sin(sign(-0.041662704))
+        
+        X = self.torch.tensor(np.random.randn(1000, 3))
+        true = self.torch.sin(self.torch.tensor(-1))
+        torch_module = sympy2torch(expr, [x, y, z])
+        torch_out = torch_module(X)
+        self.assertTrue(np.isclose(torch_out.detach().numpy(), true.detach().numpy()))
+
     def test_pipeline_pandas(self):
         X = pd.DataFrame(np.random.randn(100, 10))
         y = np.ones(X.shape[0])
