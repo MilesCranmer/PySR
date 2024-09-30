@@ -30,7 +30,7 @@ class TestTorch(unittest.TestCase):
 
     def test_sympy2torch_number_symbol(self):
         x, y, z = sympy.symbols("x y z")
-        expr = sin(sign(-0.041662704))
+        expr = sympy.sin(sympy.sign(-0.041662704))
 
         X = self.torch.tensor(np.random.randn(1000, 3))
         true = self.torch.sin(self.torch.tensor(-1))
