@@ -89,7 +89,10 @@ def _initialize_torch():
 
                 self._sympy_func = expr.func
 
-                if issubclass(expr.func, sympy.Float) or expr.func is sympy.core.numbers.One:
+                if (
+                    issubclass(expr.func, sympy.Float)
+                    or expr.func is sympy.core.numbers.One
+                ):
                     self._value = torch.nn.Parameter(torch.tensor(float(expr)))
                     self._torch_func = lambda: self._value
                     self._args = ()
