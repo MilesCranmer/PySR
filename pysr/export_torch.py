@@ -89,7 +89,7 @@ def _initialize_torch():
 
                 self._sympy_func = expr.func
 
-                if issubclass(expr.func, sympy.Float):
+                if issubclass(expr.func, sympy.Float) or expr.func is sympy.core.numbers.One:
                     self._value = torch.nn.Parameter(torch.tensor(float(expr)))
                     self._torch_func = lambda: self._value
                     self._args = ()
@@ -116,7 +116,7 @@ def _initialize_torch():
                     self._args = ()
                 elif issubclass(expr.func, sympy.NumberSymbol):
                     # Can get here from exp(1) or exact pi
-                    self._value = torch.tensor(float(expr))
+                    self._value = float(expr)
                     self._torch_func = lambda: self._value
                     self._args = ()
                 elif issubclass(expr.func, sympy.Symbol):
