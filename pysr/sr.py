@@ -138,6 +138,7 @@ def _check_assertions(
     X,
     use_custom_variable_names,
     variable_names,
+    display_variable_names,
     complexity_of_variables,
     weights,
     y,
@@ -153,6 +154,7 @@ def _check_assertions(
         assert X.shape[0] == weights.shape[0]
     if use_custom_variable_names:
         assert len(variable_names) == X.shape[1]
+        assert len(display_variable_names) == X.shape[1]
         # Check none of the variable names are function names:
         for var_name in variable_names:
             # Check if alphanumeric only:
@@ -1361,6 +1363,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Xresampled,
         weights,
         variable_names,
+        display_variable_names,
         complexity_of_variables,
         X_units,
         y_units,
@@ -1370,6 +1373,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Optional[ndarray],
         Optional[ndarray],
         ArrayLike[str],
+        Optional[ArrayLike[str]],
         Union[int, float, List[Union[int, float]]],
         Optional[ArrayLike[str]],
         Optional[Union[str, ArrayLike[str]]],
@@ -1395,6 +1399,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             for that particular element of y.
         variable_names : ndarray of length n_features
             Names of each feature in the training dataset, `X`.
+        display_variable_names : ndarray of length n_features
+            Custom variable names to display in the progress bar output.
         complexity_of_variables : int | float | list[int | float]
             Complexity of each feature in the training dataset, `X`.
         X_units : list[str] of length n_features
@@ -1412,12 +1418,21 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Validated resampled training data used for denoising.
         variable_names_validated : list[str] of length n_features
             Validated list of variable names for each feature in `X`.
+        display_variable_names_validated : list[str] of length n_features
+            Validated list of variable names to display in the progress bar output.
         X_units : list[str] of length n_features
             Validated units for `X`.
         y_units : str | list[str] of length n_out
             Validated units for `y`.
 
         """
+        if display_variable_names is not None:
+            assert (
+                variable_names is not None
+            ), "`variable_names` must be provided if `display_variable_names` is provided."
+            assert len(display_variable_names) == len(
+                variable_names
+            ), "`display_variable_names` must be the same length as `variable_names`."
         if isinstance(X, pd.DataFrame):
             if variable_names:
                 variable_names = None
@@ -1478,9 +1493,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 [f"x{_subscriptify(i)}" for i in range(X.shape[1])]
             )
             variable_names = self.feature_names_in_
+            display_variable_names = self.display_feature_names_in_
         else:
-            self.display_feature_names_in_ = self.feature_names_in_
+            if display_variable_names is None:
+                self.display_feature_names_in_ = self.feature_names_in_
+            else:
+                self.display_feature_names_in_ = display_variable_names
             variable_names = self.feature_names_in_
+            display_variable_names = self.display_feature_names_in_
 
         # Handle multioutput data
         if len(y.shape) == 1 or (len(y.shape) == 2 and y.shape[1] == 1):
@@ -1500,6 +1520,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Xresampled,
             weights,
             variable_names,
+            display_variable_names,
             complexity_of_variables,
             X_units,
             y_units,
@@ -1519,6 +1540,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         y: ndarray,
         Xresampled: Union[ndarray, None],
         variable_names: ArrayLike[str],
+        display_variable_names: ArrayLike[str],
         complexity_of_variables: Union[int, float, List[Union[int, float]]],
         X_units: Union[ArrayLike[str], None],
         y_units: Union[ArrayLike[str], str, None],
@@ -1541,6 +1563,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             used for denoising.
         variable_names : list[str]
             Names of each variable in the training dataset, `X`.
+            Of length `n_features`.
+        display_variable_names : list[str]
+            Custom variable names to display in the progress bar output.
             Of length `n_features`.
         complexity_of_variables : int | float | list[int | float]
             Complexity of each variable in the training dataset, `X`.
@@ -1569,6 +1594,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         variable_names_transformed : list[str] of length n_features
             Names of each variable in the transformed dataset,
             `X_transformed`.
+        display_variable_names_transformed : list[str] of length n_features
+            Custom variable names to display in the progress bar output.
         X_units_transformed : list[str] of length n_features
             Units of each variable in the transformed dataset.
         y_units_transformed : str | list[str] of length n_out
@@ -1593,6 +1620,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     if selection_mask[i]
                 ],
             )
+            display_variable_names = cast(
+                ArrayLike[str],
+                [
+                    display_variable_names[i]
+                    for i in range(len(display_variable_names))
+                    if selection_mask[i]
+                ],
+            )
 
             if isinstance(complexity_of_variables, list):
                 complexity_of_variables = [
@@ -1614,7 +1649,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             # Update feature names with selected variable names
             self.selection_mask_ = selection_mask
             self.feature_names_in_ = _check_feature_names_in(self, variable_names)
-            self.display_feature_names_in_ = self.feature_names_in_
+            self.display_feature_names_in_ = display_variable_names
             print(f"Using features {self.feature_names_in_}")
 
         # Denoising transformation
@@ -1626,7 +1661,15 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             else:
                 X, y = denoise(X, y, Xresampled=Xresampled, random_state=random_state)
 
-        return X, y, variable_names, complexity_of_variables, X_units, y_units
+        return (
+            X,
+            y,
+            variable_names,
+            display_variable_names,
+            complexity_of_variables,
+            X_units,
+            y_units,
+        )
 
     def _run(
         self,
@@ -1934,6 +1977,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Xresampled=None,
         weights=None,
         variable_names: Optional[ArrayLike[str]] = None,
+        display_variable_names: Optional[ArrayLike[str]] = None,
         complexity_of_variables: Optional[
             Union[int, float, List[Union[int, float]]]
         ] = None,
@@ -1966,6 +2010,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             instead of `variable_names`. Cannot contain spaces or special
             characters. Avoid variable names which are also
             function names in `sympy`, such as "N".
+        display_variable_names : list[str]
+            Custom variable names to display in the progress bar output, if
+            different from `variable_names`. For example, if you want to print
+            specific unicode characters which are not allowed in `variable_names`,
+            you can use `display_variable_names` to specify the names.
         X_units : list[str]
             A list of units for each variable in `X`. Each unit should be
             a string representing a Julia expression. See DynamicQuantities.jl
@@ -2011,6 +2060,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Xresampled,
             weights,
             variable_names,
+            display_variable_names,
             complexity_of_variables,
             X_units,
             y_units,
@@ -2020,6 +2070,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Xresampled,
             weights,
             variable_names,
+            display_variable_names,
             complexity_of_variables,
             X_units,
             y_units,
@@ -2040,17 +2091,24 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         seed = cast(int, random_state.randint(0, 2**31 - 1))  # For julia random
 
         # Pre transformations (feature selection and denoising)
-        X, y, variable_names, complexity_of_variables, X_units, y_units = (
-            self._pre_transform_training_data(
-                X,
-                y,
-                Xresampled,
-                variable_names,
-                complexity_of_variables,
-                X_units,
-                y_units,
-                random_state,
-            )
+        (
+            X,
+            y,
+            variable_names,
+            display_variable_names,
+            complexity_of_variables,
+            X_units,
+            y_units,
+        ) = self._pre_transform_training_data(
+            X,
+            y,
+            Xresampled,
+            variable_names,
+            cast(ArrayLike[str], display_variable_names),
+            complexity_of_variables,
+            X_units,
+            y_units,
+            random_state,
         )
 
         # Warn about large feature counts (still warn if feature count is large
@@ -2071,6 +2129,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             X,
             use_custom_variable_names,
             variable_names,
+            display_variable_names,
             complexity_of_variables,
             weights,
             y,
@@ -2493,6 +2552,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         indices=None,
         precision=3,
         columns=["equation", "complexity", "loss", "score"],
+        output_variable_names=None,
     ):
         """Create a LaTeX/booktabs table for all, or some, of the equations.
 
@@ -2525,7 +2585,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 assert len(indices) == self.nout_
 
             table_string = sympy2multilatextable(
-                self.equations_, indices=indices, precision=precision, columns=columns
+                self.equations_,
+                indices=indices,
+                precision=precision,
+                columns=columns,
+                output_variable_names=output_variable_names,
             )
         elif isinstance(self.equations_, pd.DataFrame):
             if indices is not None:
@@ -2533,7 +2597,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 assert isinstance(indices[0], int)
 
             table_string = sympy2latextable(
-                self.equations_, indices=indices, precision=precision, columns=columns
+                self.equations_,
+                indices=indices,
+                precision=precision,
+                columns=columns,
+                output_variable_name=output_variable_names,
             )
         else:
             raise ValueError(
