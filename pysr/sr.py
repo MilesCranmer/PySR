@@ -495,9 +495,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Using procs=0 will turn off both. Default is `True`.
     cluster_manager : str
         For distributed computing, this sets the job queue system. Set
-        to one of "slurm", "pbs", "lsf", "sge", "qrsh", "scyld", or
-        "htc". If set to one of these, PySR will run in distributed
+        to one of "slurm", "pbs", "lsf", "sge", "qrsh", "scyld",
+        "htc", or "mpi". If set to one of these, PySR will run in distributed
         mode, and use `procs` to figure out how many processes to launch.
+        Default is `None`.
+    mpi_flags : str
+        (Experimental API) String of options to pass to `mpiexec`.
+        For example, `"-host worker1,worker2"`.
         Default is `None`.
     heap_size_hint_in_bytes : int
         For multiprocessing, this sets the `--heap-size-hint` parameter
@@ -773,8 +777,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         procs: int = cpu_count(),
         multithreading: Optional[bool] = None,
         cluster_manager: Optional[
-            Literal["slurm", "pbs", "lsf", "sge", "qrsh", "scyld", "htc"]
+            Literal["slurm", "pbs", "lsf", "sge", "qrsh", "scyld", "htc", "mpi"]
         ] = None,
+        mpi_flags: str = "",
         heap_size_hint_in_bytes: Optional[int] = None,
         batching: bool = False,
         batch_size: int = 50,
@@ -872,6 +877,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.procs = procs
         self.multithreading = multithreading
         self.cluster_manager = cluster_manager
+        self.mpi_flags = mpi_flags
         self.heap_size_hint_in_bytes = heap_size_hint_in_bytes
         self.batching = batching
         self.batch_size = batch_size
@@ -1690,9 +1696,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if not ALREADY_RAN and update_verbosity != 0:
             print("Compiling Julia backend...")
 
-        if cluster_manager is not None:
-            cluster_manager = _load_cluster_manager(cluster_manager)
-
         # TODO(mcranmer): These functions should be part of this class.
         binary_operators, unary_operators = _maybe_create_inline_operators(
             binary_operators=binary_operators,
@@ -1752,6 +1755,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             enable_autodiff=self.enable_autodiff,
             cluster_manager=cluster_manager,
         )
+
+        if cluster_manager is not None:
+            cluster_manager = _load_cluster_manager(cluster_manager, self.mpi_flags)
 
         mutation_weights = SymbolicRegression.MutationWeights(
             mutate_constant=self.weight_mutate_constant,
