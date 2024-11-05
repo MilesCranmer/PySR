@@ -4,15 +4,12 @@ import copy
 import os
 import pickle as pkl
 import re
-import shutil
 import sys
-import tempfile
 import warnings
 from dataclasses import dataclass, fields
 from datetime import datetime
 from io import StringIO
 from multiprocessing import cpu_count
-from pathlib import Path
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union, cast
 
 import numpy as np
@@ -356,6 +353,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         different variables, pass a list of complexities to the `fit` method
         with keyword `complexity_of_variables`. You cannot use both.
         Default is `1`.
+    complexity_mapping : str
+        A string of Julia code specifying a custom complexity calculation.
+        This should take in an expression, and return an integer.
+        The string will be evaluated in the `Main` namespace.
+        Default is `None`.
     parsimony : float
         Multiplicative factor for how much to punish complexity.
         Default is `0.0032`.
@@ -563,8 +565,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     progress : bool
         Whether to use a progress bar instead of printing to stdout.
         Default is `True`.
-    equation_file : str
-        Where to save the files (.csv extension).
+    run_id : str
+        Identification of the search.
         Default is `None`.
     temp_equation_file : bool
         Whether to put the hall of fame file in the temp directory.
@@ -706,8 +708,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     y_units_: Union[str, ArrayLike[str], None]
     nout_: int
     selection_mask_: Union[NDArray[np.bool_], None]
-    tempdir_: Path
-    equation_file_: PathLike
     julia_state_stream_: Union[NDArray[np.uint8], None]
     julia_options_stream_: Union[NDArray[np.uint8], None]
     equation_file_contents_: Union[List[pd.DataFrame], None]
@@ -734,6 +734,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         complexity_of_operators: Optional[Dict[str, Union[int, float]]] = None,
         complexity_of_constants: Union[int, float] = 1,
         complexity_of_variables: Optional[Union[int, float]] = None,
+        complexity_mapping: Optional[str] = None,
         parsimony: float = 0.0032,
         dimensional_constraint_penalty: Optional[float] = None,
         dimensionless_constants_only: bool = False,
@@ -790,7 +791,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         update_verbosity: Optional[int] = None,
         print_precision: int = 5,
         progress: bool = True,
-        equation_file: Optional[str] = None,
+        run_id: Optional[str] = None,
         temp_equation_file: bool = False,
         tempdir: Optional[str] = None,
         delete_tempfiles: bool = True,
@@ -830,6 +831,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.complexity_of_operators = complexity_of_operators
         self.complexity_of_constants = complexity_of_constants
         self.complexity_of_variables = complexity_of_variables
+        self.complexity_mapping = complexity_mapping
         self.parsimony = parsimony
         self.dimensional_constraint_penalty = dimensional_constraint_penalty
         self.dimensionless_constants_only = dimensionless_constants_only
@@ -890,7 +892,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.print_precision = print_precision
         self.progress = progress
         # - Project management
-        self.equation_file = equation_file
+        self.run_id = run_id
         self.temp_equation_file = temp_equation_file
         self.tempdir = tempdir
         self.delete_tempfiles = delete_tempfiles
@@ -1010,16 +1012,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 model = pkl.load(f)
             # Change equation_file_ to be in the same dir as the pickle file
             base_dir = os.path.dirname(pkl_filename)
-            base_equation_file = os.path.basename(model.equation_file_)
-            model.equation_file_ = os.path.join(base_dir, base_equation_file)
-
-            # Update any parameters if necessary, such as
-            # extra_sympy_mappings:
-            model.set_params(**pysr_kwargs)
-            if "equations_" not in model.__dict__ or model.equations_ is None:
-                model.refresh()
-
-            return model
+            raise RuntimeError(f"Not implemented!")
 
         # Else, we re-create it.
         print(
@@ -1163,9 +1156,29 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         """
         # Save model state:
         self.show_pickle_warnings_ = False
-        with open(_csv_filename_to_pkl_filename(self.equation_file_), "wb") as f:
+        with open(
+            _csv_filename_to_pkl_filename(
+                os.path.join(self.get_output_directory(), "hall_of_fame.pkl")
+            ),
+            "wb",
+        ) as f:
             pkl.dump(self, f)
         self.show_pickle_warnings_ = True
+
+    def get_output_directory(self):
+        assert self.run_id_ is not None
+        output_dir = os.path.join("outputs", self.run_id_)
+        os.makedirs(output_dir, exist_ok=True)
+        return output_dir
+
+    @property
+    def equation_file_(self):
+        assert self.run_id_ is not None
+        return os.path.join(self.get_output_directory(), "hall_of_fame.csv")
+
+    def get_equation_file_for_i(self, i):
+        assert self.run_id_ is not None
+        return os.path.join(self.get_output_directory(), f"hall_of_fame_output{i}.csv")
 
     @property
     def equations(self):  # pragma: no cover
@@ -1250,19 +1263,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         `equation_file`.
         """
         # Cast tempdir string as a Path object
-        self.tempdir_ = Path(tempfile.mkdtemp(dir=self.tempdir))
-        if self.temp_equation_file:
-            self.equation_file_ = self.tempdir_ / "hall_of_fame.csv"
-        elif self.equation_file is None:
-            if self.warm_start and (
-                hasattr(self, "equation_file_") and self.equation_file_
-            ):
-                pass
-            else:
-                date_time = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")[:-3]
-                self.equation_file_ = "hall_of_fame_" + date_time + ".csv"
-        else:
-            self.equation_file_ = self.equation_file
+        self.run_id_ = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")[:-3]
         self.equation_file_contents_ = None
 
     def _validate_and_modify_params(self) -> _DynamicallySetParams:
@@ -1457,8 +1458,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             complexity_of_variables = complexity_of_variables
         elif self.complexity_of_variables is not None:
             complexity_of_variables = self.complexity_of_variables
-        else:
-            complexity_of_variables = 1
 
         # Data validation and feature name fetching via sklearn
         # This method sets the n_features_in_ attribute
@@ -1519,7 +1518,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         y: ndarray,
         Xresampled: Union[ndarray, None],
         variable_names: ArrayLike[str],
-        complexity_of_variables: Union[int, float, List[Union[int, float]]],
+        complexity_of_variables: Optional[Union[int, float, List[Union[int, float]]]],
         X_units: Union[ArrayLike[str], None],
         y_units: Union[ArrayLike[str], str, None],
         random_state: np.random.RandomState,
@@ -1739,6 +1738,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         custom_full_objective = jl.seval(
             str(self.loss_function) if self.loss_function is not None else "nothing"
         )
+        custom_complexity_mapping = jl.seval(
+            str(self.complexity_mapping)
+            if self.complexity_mapping is not None
+            else "nothing"
+        )
 
         early_stop_condition = jl.seval(
             str(self.early_stop_condition)
@@ -1787,14 +1791,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             unary_operators=jl_array(jl_unary_operators, dtype=jl.Function),
             bin_constraints=jl_array(bin_constraints),
             una_constraints=jl_array(una_constraints),
-            complexity_of_operators=complexity_of_operators,
-            complexity_of_constants=self.complexity_of_constants,
-            complexity_of_variables=complexity_of_variables,
+            complexity_of_operators=None,  # HACK: TODO: fix this
+            complexity_of_constants=None,  # HACK: TODO: fix this
+            complexity_of_variables=None,  # HACK: TODO: fix this
+            complexity_mapping=custom_complexity_mapping,
             nested_constraints=nested_constraints,
             elementwise_loss=custom_loss,
             loss_function=custom_full_objective,
             maxsize=int(self.maxsize),
-            output_file=_escape_filename(self.equation_file_),
             npopulations=int(self.populations),
             batching=self.batching,
             batch_size=int(min([batch_size, len(X)]) if self.batching else len(X)),
@@ -1912,6 +1916,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             heap_size_hint_in_bytes=self.heap_size_hint_in_bytes,
             progress=progress and self.verbosity > 0 and len(y.shape) == 1,
             verbosity=int(self.verbosity),
+            run_id=self.run_id_,
         )
         PythonCall.GC.enable()
 
@@ -1919,9 +1924,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # Set attributes
         self.equations_ = self.get_hof()
-
-        if self.delete_tempfiles:
-            shutil.rmtree(self.tempdir_)
 
         ALREADY_RAN = True
 
@@ -2107,8 +2109,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             The default will use the set `equation_file_`.
         """
         if checkpoint_file is not None:
-            self.equation_file_ = checkpoint_file
-            self.equation_file_contents_ = None
+            raise RuntimeError(f"Not implemented!")
         check_is_fitted(self, attributes=["equation_file_"])
         self.equations_ = self.get_hof()
 
@@ -2315,9 +2316,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             if self.nout_ > 1:
                 all_outputs = []
                 for i in range(1, self.nout_ + 1):
-                    cur_filename = str(self.equation_file_) + f".out{i}" + ".bkup"
-                    if not os.path.exists(cur_filename):
-                        cur_filename = str(self.equation_file_) + f".out{i}"
+                    cur_filename = self.get_equation_file_for_i(i)
                     with open(cur_filename, "r", encoding="utf-8") as f:
                         buf = f.read()
                     buf = _preprocess_julia_floats(buf)
@@ -2326,9 +2325,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
                     all_outputs.append(df)
             else:
-                filename = str(self.equation_file_) + ".bkup"
-                if not os.path.exists(filename):
-                    filename = str(self.equation_file_)
+                filename = self.equation_file_
                 with open(filename, "r", encoding="utf-8") as f:
                     buf = f.read()
                 buf = _preprocess_julia_floats(buf)
