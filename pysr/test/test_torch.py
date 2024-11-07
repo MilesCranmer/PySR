@@ -48,9 +48,7 @@ class TestTorch(unittest.TestCase):
             }
         )
 
-        equations["Complexity Loss Equation".split(" ")].to_csv(
-            "equation_file.csv.bkup"
-        )
+        equations["Complexity Loss Equation".split(" ")].to_csv("equation_file.csv.bak")
 
         model.refresh(checkpoint_file="equation_file.csv")
         tformat = model.pytorch()
@@ -81,9 +79,7 @@ class TestTorch(unittest.TestCase):
             }
         )
 
-        equations["Complexity Loss Equation".split(" ")].to_csv(
-            "equation_file.csv.bkup"
-        )
+        equations["Complexity Loss Equation".split(" ")].to_csv("equation_file.csv.bak")
 
         model.refresh(checkpoint_file="equation_file.csv")
 
@@ -134,7 +130,7 @@ class TestTorch(unittest.TestCase):
         )
 
         equations["Complexity Loss Equation".split(" ")].to_csv(
-            "equation_file_custom_operator.csv.bkup"
+            "equation_file_custom_operator.csv.bak"
         )
 
         model.set_params(

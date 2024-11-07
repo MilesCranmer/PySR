@@ -449,7 +449,7 @@ class TestPipeline(unittest.TestCase):
         for from_backup in [False, True]:
             rand_dir = Path(tempfile.mkdtemp())
             equation_filename = str(rand_dir / "equation.csv")
-            with open(equation_filename + (".bkup" if from_backup else ""), "w") as f:
+            with open(equation_filename + (".bak" if from_backup else ""), "w") as f:
                 f.write(csv_file_data)
             model = PySRRegressor.from_file(
                 equation_filename,
@@ -492,7 +492,7 @@ class TestPipeline(unittest.TestCase):
         np.testing.assert_allclose(model.predict(self.X), model2.predict(self.X))
 
         # Try again, but using only the pickle file:
-        for file_to_delete in [str(equation_file), str(equation_file) + ".bkup"]:
+        for file_to_delete in [str(equation_file), str(equation_file) + ".bak"]:
             if os.path.exists(file_to_delete):
                 os.remove(file_to_delete)
 
@@ -535,16 +535,14 @@ def manually_create_model(equations, feature_names=None):
         model.feature_names_in_ = np.array(feature_names, dtype=object)
         for i in range(model.nout_):
             equations[i]["complexity loss equation".split(" ")].to_csv(
-                f"equation_file.csv.out{i+1}.bkup"
+                f"equation_file.csv.out{i+1}.bak"
             )
     else:
         model.equation_file_ = "equation_file.csv"
         model.nout_ = 1
         model.selection_mask_ = None
         model.feature_names_in_ = np.array(feature_names, dtype=object)
-        equations["complexity loss equation".split(" ")].to_csv(
-            "equation_file.csv.bkup"
-        )
+        equations["complexity loss equation".split(" ")].to_csv("equation_file.csv.bak")
 
     model.refresh()
 
@@ -662,7 +660,7 @@ class TestMiscellaneous(unittest.TestCase):
 
         equation_file_base = model.equation_file_
         for i in range(1, nout + 1):
-            assert not os.path.exists(str(equation_file_base) + f".out{i}.bkup")
+            assert not os.path.exists(str(equation_file_base) + f".out{i}.bak")
 
         with tempfile.NamedTemporaryFile() as pickle_file:
             pkl.dump(model, pickle_file)

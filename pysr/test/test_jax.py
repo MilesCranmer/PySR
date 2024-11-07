@@ -46,9 +46,7 @@ class TestJAX(unittest.TestCase):
             }
         )
 
-        equations["Complexity Loss Equation".split(" ")].to_csv(
-            "equation_file.csv.bkup"
-        )
+        equations["Complexity Loss Equation".split(" ")].to_csv("equation_file.csv.bak")
 
         model.refresh(checkpoint_file="equation_file.csv")
         jformat = model.jax()
@@ -73,9 +71,7 @@ class TestJAX(unittest.TestCase):
             }
         )
 
-        equations["Complexity Loss Equation".split(" ")].to_csv(
-            "equation_file.csv.bkup"
-        )
+        equations["Complexity Loss Equation".split(" ")].to_csv("equation_file.csv.bak")
 
         model.refresh(checkpoint_file="equation_file.csv")
         jformat = model.jax()
