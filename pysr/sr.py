@@ -4,7 +4,6 @@ import copy
 import os
 import pickle as pkl
 import re
-import shutil
 import sys
 import tempfile
 import warnings
@@ -1937,9 +1936,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # Set attributes
         self.equations_ = self.get_hof()
-
-        if self.delete_tempfiles:
-            shutil.rmtree(self.tempdir_)
 
         ALREADY_RAN = True
 
