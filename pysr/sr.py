@@ -8,7 +8,6 @@ import sys
 import tempfile
 import warnings
 from dataclasses import dataclass, fields
-from datetime import datetime
 from io import StringIO
 from multiprocessing import cpu_count
 from pathlib import Path
@@ -653,10 +652,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Number of output dimensions.
     selection_mask_ : ndarray of shape (`n_features_in_`,)
         Mask of which features of `X` to use when `select_k_features` is set.
-    tempdir_ : Path
+    tempdir_ : Optional[Path]
         Path to the temporary equations directory.
-    equation_file_ : Union[str, Path]
-        Output equation file name produced by the julia backend.
     julia_state_stream_ : ndarray
         The serialized state for the julia SymbolicRegression.jl backend (after fitting),
         stored as an array of uint8, produced by Julia's Serialization.serialize function.
@@ -717,8 +714,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     y_units_: Union[str, ArrayLike[str], None]
     nout_: int
     selection_mask_: Union[NDArray[np.bool_], None]
-    tempdir_: Path
-    equation_file_: PathLike
+    run_id_: str
+    output_directory_: str
     julia_state_stream_: Union[NDArray[np.uint8], None]
     julia_options_stream_: Union[NDArray[np.uint8], None]
     equation_file_contents_: Union[List[pd.DataFrame], None]
@@ -1178,9 +1175,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         """
         # Save model state:
         self.show_pickle_warnings_ = False
-        with open(_csv_filename_to_pkl_filename(self.equation_file_), "wb") as f:
+        with open(self.get_pkl_filename(), "wb") as f:
             pkl.dump(self, f)
         self.show_pickle_warnings_ = True
+
+    def get_pkl_filename(self) -> Path:
+        path = Path(self.output_directory_) / self.run_id_ / "checkpoint.pkl"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        return path
 
     @property
     def equations(self):  # pragma: no cover
@@ -1258,27 +1260,33 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             )
 
     def _setup_equation_file(self):
-        """
-        Set the full pathname of the equation file.
-
-        This is performed using `tempdir` and
-        `equation_file`.
-        """
-        # Cast tempdir string as a Path object
-        self.tempdir_ = Path(tempfile.mkdtemp(dir=self.tempdir))
-        if self.temp_equation_file:
-            self.equation_file_ = self.tempdir_ / "hall_of_fame.csv"
-        elif self.equation_file is None:
-            if self.warm_start and (
-                hasattr(self, "equation_file_") and self.equation_file_
-            ):
-                pass
-            else:
-                date_time = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")[:-3]
-                self.equation_file_ = "hall_of_fame_" + date_time + ".csv"
+        """Set the pathname of the output directory."""
+        if self.warm_start and (
+            hasattr(self, "run_id_") or hasattr(self, "output_directory_")
+        ):
+            assert hasattr(self, "output_directory_")
+            assert hasattr(self, "run_id_")
+            if self.run_id is not None:
+                assert self.run_id_ == self.run_id
+            if self.output_directory is not None:
+                assert self.output_directory_ == self.output_directory
         else:
-            self.equation_file_ = self.equation_file
-        self.equation_file_contents_ = None
+            self.output_directory_ = (
+                tempfile.mkdtemp()
+                if self.temp_equation_file
+                else (
+                    "outputs"
+                    if self.output_directory is None
+                    else self.output_directory
+                )
+            )
+            self.run_id_ = (
+                cast(str, SymbolicRegression.SearchUtilsModule.generate_run_id())
+                if self.run_id is None
+                else self.run_id
+            )
+            if self.temp_equation_file:
+                assert self.output_directory is None
 
     def _validate_and_modify_params(self) -> _DynamicallySetParams:
         """
@@ -1810,7 +1818,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             elementwise_loss=custom_loss,
             loss_function=custom_full_objective,
             maxsize=int(self.maxsize),
-            output_directory=_escape_filename(self.output_directory),
+            output_directory=_escape_filename(self.output_directory_),
             npopulations=int(self.populations),
             batching=self.batching,
             batch_size=int(min([batch_size, len(X)]) if self.batching else len(X)),
@@ -1924,7 +1932,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             parallelism=parallelism,
             saved_state=self.julia_state_,
             return_state=True,
-            run_id=self.run_id,
+            run_id=self.run_id_,
             addprocs_function=cluster_manager,
             heap_size_hint_in_bytes=self.heap_size_hint_in_bytes,
             progress=progress and self.verbosity > 0 and len(y.shape) == 1,
@@ -2123,7 +2131,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if checkpoint_file is not None:
             self.equation_file_ = checkpoint_file
             self.equation_file_contents_ = None
-        check_is_fitted(self, attributes=["equation_file_"])
+        check_is_fitted(self, attributes=["run_id_", "output_directory_"])
         self.equations_ = self.get_hof()
 
     def predict(self, X, index=None):
@@ -2322,6 +2330,16 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         else:
             return best_equation["torch_format"]
 
+    def get_equation_file(self, i: Optional[int] = None) -> Path:
+        if i is not None:
+            return (
+                Path(self.output_directory_)
+                / self.run_id_
+                / f"hall_of_fame_output{i}.csv"
+            )
+        else:
+            return Path(self.output_directory_) / self.run_id_ / "hall_of_fame.csv"
+
     def _read_equation_file(self):
         """Read the hall of fame file created by `SymbolicRegression.jl`."""
 
@@ -2329,20 +2347,18 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             if self.nout_ > 1:
                 all_outputs = []
                 for i in range(1, self.nout_ + 1):
-                    cur_filename = str(self.equation_file_) + f".out{i}" + ".bak"
+                    cur_filename = str(self.get_equation_file(i)) + ".bak"
                     if not os.path.exists(cur_filename):
-                        cur_filename = str(self.equation_file_) + f".out{i}"
+                        cur_filename = str(self.get_equation_file(i))
                     with open(cur_filename, "r", encoding="utf-8") as f:
                         buf = f.read()
                     buf = _preprocess_julia_floats(buf)
-
                     df = self._postprocess_dataframe(pd.read_csv(StringIO(buf)))
-
                     all_outputs.append(df)
             else:
-                filename = str(self.equation_file_) + ".bak"
+                filename = str(self.get_equation_file()) + ".bak"
                 if not os.path.exists(filename):
-                    filename = str(self.equation_file_)
+                    filename = str(self.get_equation_file())
                 with open(filename, "r", encoding="utf-8") as f:
                     buf = f.read()
                 buf = _preprocess_julia_floats(buf)
@@ -2376,7 +2392,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self,
             attributes=[
                 "nout_",
-                "equation_file_",
+                "run_id_",
+                "output_directory_",
                 "selection_mask_",
                 "feature_names_in_",
             ],
