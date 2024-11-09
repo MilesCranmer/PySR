@@ -36,7 +36,7 @@ nav:
   - interactive-docs.md
 
 extra:
-  homepage: https://astroautomata.com/PySR
+  homepage: https://ai.damtp.cam.ac.uk/pysr
 
 extra_css:
   - stylesheets/extra.css

@@ -33,9 +33,9 @@ The main search code can be found in `src/SymbolicRegression.jl`.
 
 Here are some tips:
 
--  The documentation for the backend is given [here](https://astroautomata.com/SymbolicRegression.jl/dev/).
+-  The documentation for the backend is given [here](https://ai.damtp.cam.ac.uk/symbolicregression/dev/).
 - Throughout the package, you will often see template functions which typically use a symbol `T` (such as in the string `where {T<:Real}`). Here, `T` is simply the datatype of the input data and stored constants, such as `Float32` or `Float64`. Writing functions in this way lets us write functions generic to types, while still having access to the specific type specified at compilation time.
-- Expressions are stored as binary trees, using the `Node{T}` type, described [here](https://astroautomata.com/SymbolicRegression.jl/dev/types/#SymbolicRegression.CoreModule.EquationModule.Node).
+- Expressions are stored as binary trees, using the `Node{T}` type, described [here](https://ai.damtp.cam.ac.uk/symbolicregression/dev/types/#SymbolicRegression.CoreModule.EquationModule.Node).
 - For reference, the main loop itself is found in the `equation_search` function inside [`src/SymbolicRegression.jl`](https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/SymbolicRegression.jl).
 - Parts of the code which are typically edited by users include:
     - [`src/CheckConstraints.jl`](https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/CheckConstraints.jl), particularly the function `check_constraints`. This function checks whether a given expression satisfies constraints, such as having a complexity lower than `maxsize`, and whether it contains any forbidden nestings of functions.
@@ -70,6 +70,6 @@ For more information on `juliapkg.json`, see [`pyjuliapkg`](https://github.com/J
 
 ## Additional notes
 
-If you get comfortable enough with the backend, you might consider using the Julia package directly: the API is given on the [SymbolicRegression.jl documentation](https://astroautomata.com/SymbolicRegression.jl/dev/).
+If you get comfortable enough with the backend, you might consider using the Julia package directly: the API is given on the [SymbolicRegression.jl documentation](https://ai.damtp.cam.ac.uk/symbolicregression/dev/).
 
 If you make a change that you think could be useful to other users, don't hesitate to open a pull request on either the PySR or SymbolicRegression.jl repositories! Contributions are very appreciated.

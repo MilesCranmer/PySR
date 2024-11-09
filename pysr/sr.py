@@ -76,7 +76,7 @@ def _process_constraints(binary_operators, unary_operators, constraints):
                     "One typical constraint is to use `constraints={..., '^': (-1, 1)}`, which "
                     "will allow arbitrary-complexity base (-1) but only powers such as "
                     "a constant or variable (1). "
-                    "For more tips, please see https://astroautomata.com/PySR/tuning/"
+                    "For more tips, please see https://ai.damtp.cam.ac.uk/pysr/tuning/"
                 )
             constraints[op] = (-1, -1)
         if op in ["plus", "sub", "+", "-"]:
@@ -221,7 +221,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     Most default parameters have been tuned over several example equations,
     but you should adjust `niterations`, `binary_operators`, `unary_operators`
     to your requirements. You can view more detailed explanations of the options
-    on the [options page](https://astroautomata.com/PySR/options) of the
+    on the [options page](https://ai.damtp.cam.ac.uk/pysr/options) of the
     documentation.
 
     Parameters
@@ -241,7 +241,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         most accurate model.
     binary_operators : list[str]
         List of strings for binary operators used in the search.
-        See the [operators page](https://astroautomata.com/PySR/operators/)
+        See the [operators page](https://ai.damtp.cam.ac.uk/pysr/operators/)
         for more details.
         Default is `["+", "-", "*", "/"]`.
     unary_operators : list[str]
@@ -943,7 +943,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 elif k == "julia_project":
                     warnings.warn(
                         "The `julia_project` parameter has been deprecated. To use a custom "
-                        "julia project, please see `https://astroautomata.com/PySR/backend`.",
+                        "julia project, please see `https://ai.damtp.cam.ac.uk/pysr/backend`.",
                         FutureWarning,
                     )
                 elif k == "julia_kwargs":
@@ -2046,7 +2046,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if X.shape[0] > 10000 and not self.batching:
             warnings.warn(
                 "Note: you are running with more than 10,000 datapoints. "
-                "You should consider turning on batching (https://astroautomata.com/PySR/options/#batching). "
+                "You should consider turning on batching (https://ai.damtp.cam.ac.uk/pysr/options/#batching). "
                 "You should also reconsider if you need that many datapoints. "
                 "Unless you have a large amount of noise (in which case you "
                 "should smooth your dataset first), generally < 10,000 datapoints "

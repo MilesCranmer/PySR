@@ -345,7 +345,7 @@ a real number from the loss function). But, you don't need to worry about this, 
 make sure to return a scalar number of type `L`.
 
 The `tree` argument is the current expression being evaluated. You can read
-about the `tree` fields [here](https://astroautomata.com/SymbolicRegression.jl/stable/types/).
+about the `tree` fields [here](https://ai.damtp.cam.ac.uk/symbolicregression/stable/types/).
 
 For example, let's fix a symbolic form of an expression,
 as a rational function. i.e., $P(X)/Q(X)$ for polynomials $P$ and $Q$.
