@@ -133,8 +133,6 @@ class TestStartup(unittest.TestCase):
             self.assertIn(warning_test["msg"], result.stderr.decode())
 
     def test_notebook(self):
-        if jl_version < (1, 9, 0):
-            self.skipTest("Julia version too old")
         if platform.system() == "Windows":
             self.skipTest("Notebook test incompatible with Windows")
         if not os.access(Path(__file__).parent, os.W_OK):
