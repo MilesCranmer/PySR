@@ -43,7 +43,8 @@ class TestStartup(unittest.TestCase):
             )
             model.warm_start = True
             model.temp_equation_file = False
-            model.equation_file = Path(tmpdirname) / "equations.csv"
+            model.output_directory = tmpdirname
+            model.run_id = "test"
             model.deterministic = True
             model.multithreading = False
             model.random_state = 0
@@ -76,7 +77,9 @@ class TestStartup(unittest.TestCase):
                         y = np.load("{y_file}")
 
                         print("Loading model from file")
-                        model = PySRRegressor.from_file("{model.equation_file}")
+                        model = PySRRegressor.from_file(
+                            run_directory="{str(Path(tmpdirname) / model.run_id_)}"
+                        )
 
                         assert model.julia_state_ is not None
 
