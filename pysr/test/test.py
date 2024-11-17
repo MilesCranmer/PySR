@@ -517,32 +517,42 @@ def manually_create_model(equations, feature_names=None):
     if feature_names is None:
         feature_names = ["x0", "x1"]
 
+    output_directory = tempfile.mkdtemp()
+    run_id = "test"
     model = PySRRegressor(
         progress=False,
         niterations=1,
         extra_sympy_mappings={},
         output_jax_format=False,
         model_selection="accuracy",
-        equation_file="equation_file.csv",
+        output_directory=output_directory,
+        run_id=run_id,
     )
+    model.output_directory_ = output_directory
+    model.run_id_ = run_id
+    os.makedirs(Path(output_directory) / run_id, exist_ok=True)
 
     # Set up internal parameters as if it had been fitted:
     if isinstance(equations, list):
         # Multi-output.
-        model.equation_file_ = "equation_file.csv"
         model.nout_ = len(equations)
         model.selection_mask_ = None
         model.feature_names_in_ = np.array(feature_names, dtype=object)
         for i in range(model.nout_):
             equations[i]["complexity loss equation".split(" ")].to_csv(
-                f"equation_file.csv.out{i+1}.bak"
+                str(
+                    Path(output_directory)
+                    / run_id
+                    / f"hall_of_fame_output{i+1}.csv.bak"
+                )
             )
     else:
-        model.equation_file_ = "equation_file.csv"
         model.nout_ = 1
         model.selection_mask_ = None
         model.feature_names_in_ = np.array(feature_names, dtype=object)
-        equations["complexity loss equation".split(" ")].to_csv("equation_file.csv.bak")
+        equations["complexity loss equation".split(" ")].to_csv(
+            str(Path(output_directory) / run_id / "hall_of_fame.csv.bak")
+        )
 
     model.refresh()
 
