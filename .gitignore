@@ -25,3 +25,4 @@ site
 venv
 requirements-dev.lock
 requirements.lock
+outputs
