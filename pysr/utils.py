@@ -1,6 +1,5 @@
 import difflib
 import inspect
-import os
 import re
 from pathlib import Path
 from typing import Any, List, TypeVar, Union
@@ -12,22 +11,6 @@ T = TypeVar("T", bound=Any)
 
 ArrayLike = Union[ndarray, List[T]]
 PathLike = Union[str, Path]
-
-
-def _csv_filename_to_pkl_filename(csv_filename: PathLike) -> PathLike:
-    if os.path.splitext(csv_filename)[1] == ".pkl":
-        return csv_filename
-
-    # Assume that the csv filename is of the form "foo.csv"
-    assert str(csv_filename).endswith(".csv")
-
-    dirname = str(os.path.dirname(csv_filename))
-    basename = str(os.path.basename(csv_filename))
-    base = str(os.path.splitext(basename)[0])
-
-    pkl_basename = base + ".pkl"
-
-    return os.path.join(dirname, pkl_basename)
 
 
 _regexp_im = re.compile(r"\b(\d+\.\d+)im\b")

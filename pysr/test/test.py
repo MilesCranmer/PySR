@@ -22,7 +22,6 @@ from pysr.sr import (
     _suggest_keywords,
     idx_model_selection,
 )
-from pysr.utils import _csv_filename_to_pkl_filename
 
 from .params import (
     DEFAULT_NCYCLES,
@@ -447,12 +446,12 @@ class TestPipeline(unittest.TestCase):
         csv_file_data = "\n".join([line.strip() for line in csv_file_data.split("\n")])
 
         for from_backup in [False, True]:
-            rand_dir = Path(tempfile.mkdtemp())
-            equation_filename = str(rand_dir / "equation.csv")
+            output_directory = Path(tempfile.mkdtemp())
+            equation_filename = str(output_directory / "hall_of_fame.csv")
             with open(equation_filename + (".bak" if from_backup else ""), "w") as f:
                 f.write(csv_file_data)
             model = PySRRegressor.from_file(
-                equation_filename,
+                run_directory=output_directory,
                 n_features_in=5,
                 feature_names_in=["f0", "f1", "f2", "f3", "f4"],
                 binary_operators=["+", "*", "/", "-", "^"],
@@ -478,15 +477,16 @@ class TestPipeline(unittest.TestCase):
             early_stop_condition="stop_if(loss, complexity) = loss < 0.05 && complexity == 2",
         )
         rand_dir = Path(tempfile.mkdtemp())
-        equation_file = rand_dir / "equations.csv"
+        equation_file = rand_dir / "1" / "hall_of_fame.csv"
         model.set_params(temp_equation_file=False)
-        model.set_params(equation_file=equation_file)
+        model.set_params(output_directory=rand_dir)
+        model.set_params(run_id="1")
         model.fit(self.X, y)
 
         # lambda functions are removed from the pickling, so we need
         # to pass it during the loading:
         model2 = PySRRegressor.from_file(
-            model.equation_file_, extra_sympy_mappings={"sq": lambda x: x**2}
+            run_directory=rand_dir / "1", extra_sympy_mappings={"sq": lambda x: x**2}
         )
 
         np.testing.assert_allclose(model.predict(self.X), model2.predict(self.X))
@@ -498,7 +498,7 @@ class TestPipeline(unittest.TestCase):
 
         # pickle_file = rand_dir / "equations.pkl"
         model3 = PySRRegressor.from_file(
-            model.equation_file_, extra_sympy_mappings={"sq": lambda x: x**2}
+            run_directory=rand_dir / "1", extra_sympy_mappings={"sq": lambda x: x**2}
         )
         np.testing.assert_allclose(model.predict(self.X), model3.predict(self.X))
 
@@ -628,20 +628,6 @@ class TestFeatureSelection(unittest.TestCase):
 class TestMiscellaneous(unittest.TestCase):
     """Test miscellaneous functions."""
 
-    def test_csv_to_pkl_conversion(self):
-        """Test that csv filename to pkl filename works as expected."""
-        tmpdir = Path(tempfile.mkdtemp())
-        equation_file = tmpdir / "equations.389479384.28378374.csv"
-        expected_pkl_file = tmpdir / "equations.389479384.28378374.pkl"
-
-        # First, test inputting the paths:
-        test_pkl_file = _csv_filename_to_pkl_filename(equation_file)
-        self.assertEqual(test_pkl_file, str(expected_pkl_file))
-
-        # Next, test inputting the strings.
-        test_pkl_file = _csv_filename_to_pkl_filename(str(equation_file))
-        self.assertEqual(test_pkl_file, str(expected_pkl_file))
-
     def test_pickle_with_temp_equation_file(self):
         """If we have a temporary equation file, unpickle the estimator."""
         model = PySRRegressor(
@@ -658,9 +644,15 @@ class TestMiscellaneous(unittest.TestCase):
 
         y_predictions = model.predict(X)
 
-        equation_file_base = model.equation_file_
+        equation_file_base = Path("outputs") / model.run_id_ / "hall_of_fame"
         for i in range(1, nout + 1):
-            assert not os.path.exists(str(equation_file_base) + f".out{i}.bak")
+            assert not os.path.exists(str(equation_file_base) + f"_output{i}.csv.bak")
+
+        equation_file_base = (
+            Path(model.output_directory_) / model.run_id_ / "hall_of_fame"
+        )
+        for i in range(1, nout + 1):
+            assert os.path.exists(str(equation_file_base) + f"_output{i}.csv.bak")
 
         with tempfile.NamedTemporaryFile() as pickle_file:
             pkl.dump(model, pickle_file)

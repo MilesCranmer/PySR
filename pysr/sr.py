@@ -49,7 +49,6 @@ from .julia_import import SymbolicRegression, jl
 from .utils import (
     ArrayLike,
     PathLike,
-    _csv_filename_to_pkl_filename,
     _preprocess_julia_floats,
     _safe_check_feature_names_in,
     _subscriptify,
@@ -961,8 +960,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     @classmethod
     def from_file(
         cls,
-        equation_file: PathLike,
+        equation_file=None,
         *,
+        run_directory: str,
         binary_operators: Optional[List[str]] = None,
         unary_operators: Optional[List[str]] = None,
         n_features_in: Optional[int] = None,
@@ -976,9 +976,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         Parameters
         ----------
-        equation_file : str or Path
-            Path to a pickle file containing a saved model, or a csv file
-            containing equations.
+        run_directory : str
+            The directory containing outputs from a previous run.
+            This is of the form `[output_directory]/[run_id]`.
+            Default is `None`.
         binary_operators : list[str]
             The same binary operators used when creating the model.
             Not needed if loading from a pickle file.
@@ -1008,68 +1009,73 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         model : PySRRegressor
             The model with fitted equations.
         """
+        if equation_file is not None:
+            raise ValueError(
+                "Passing `equation_file` is deprecated and no longer compatible with "
+                "the most recent versions of PySR's backend. Please pass `run_directory` "
+                "instead, which contains all checkpoint files."
+            )
 
-        pkl_filename = _csv_filename_to_pkl_filename(equation_file)
-
-        # Try to load model from <equation_file>.pkl
-        print(f"Checking if {pkl_filename} exists...")
-        if os.path.exists(pkl_filename):
-            print(f"Loading model from {pkl_filename}")
+        pkl_filename = Path(run_directory) / "checkpoint.pkl"
+        if pkl_filename.exists():
+            print(f"Attempting to load model from {pkl_filename}...")
             assert binary_operators is None
             assert unary_operators is None
             assert n_features_in is None
             with open(pkl_filename, "rb") as f:
                 model = pkl.load(f)
-            # Change equation_file_ to be in the same dir as the pickle file
-            base_dir = os.path.dirname(pkl_filename)
-            base_equation_file = os.path.basename(model.equation_file_)
-            model.equation_file_ = os.path.join(base_dir, base_equation_file)
 
             # Update any parameters if necessary, such as
             # extra_sympy_mappings:
             model.set_params(**pysr_kwargs)
+
             if "equations_" not in model.__dict__ or model.equations_ is None:
                 model.refresh()
 
             return model
-
-        # Else, we re-create it.
-        print(
-            f"{pkl_filename} does not exist, "
-            "so we must create the model from scratch."
-        )
-        assert binary_operators is not None or unary_operators is not None
-        assert n_features_in is not None
-
-        # TODO: copy .bak file if exists.
-        model = cls(
-            equation_file=str(equation_file),
-            binary_operators=binary_operators,
-            unary_operators=unary_operators,
-            **pysr_kwargs,
-        )
-
-        model.nout_ = nout
-        model.n_features_in_ = n_features_in
-
-        if feature_names_in is None:
-            model.feature_names_in_ = np.array([f"x{i}" for i in range(n_features_in)])
-            model.display_feature_names_in_ = np.array(
-                [f"x{_subscriptify(i)}" for i in range(n_features_in)]
+        else:
+            print(
+                f"Checkpoint file {pkl_filename} does not exist. "
+                "Attempting to recreate model from scratch..."
             )
-        else:
-            assert len(feature_names_in) == n_features_in
-            model.feature_names_in_ = feature_names_in
-            model.display_feature_names_in_ = feature_names_in
+            csv_filename = Path(run_directory) / "hall_of_fame.csv"
+            csv_filename_bak = Path(run_directory) / "hall_of_fame.csv.bak"
+            if not csv_filename.exists() and not csv_filename_bak.exists():
+                raise FileNotFoundError(
+                    f"Hall of fame file `{csv_filename}` or `{csv_filename_bak}` does not exist. "
+                    "Please pass a `run_directory` containing a valid checkpoint file."
+                )
+            assert binary_operators is not None
+            assert unary_operators is not None
+            assert n_features_in is not None
+            model = cls(
+                binary_operators=binary_operators,
+                unary_operators=unary_operators,
+                **pysr_kwargs,
+            )
+            model.nout_ = nout
+            model.n_features_in_ = n_features_in
 
-        if selection_mask is None:
-            model.selection_mask_ = np.ones(n_features_in, dtype=np.bool_)
-        else:
-            model.selection_mask_ = selection_mask
+            if feature_names_in is None:
+                model.feature_names_in_ = np.array(
+                    [f"x{i}" for i in range(n_features_in)]
+                )
+                model.display_feature_names_in_ = np.array(
+                    [f"x{_subscriptify(i)}" for i in range(n_features_in)]
+                )
+            else:
+                assert len(feature_names_in) == n_features_in
+                model.feature_names_in_ = feature_names_in
+                model.display_feature_names_in_ = feature_names_in
 
-        model.refresh(checkpoint_file=equation_file)
+            if selection_mask is None:
+                model.selection_mask_ = np.ones(n_features_in, dtype=np.bool_)
+            else:
+                model.selection_mask_ = selection_mask
 
-        return model
+            model.refresh(run_directory=run_directory)
+
+            return model
 
     def __repr__(self):
         """
@@ -1258,6 +1264,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 pd.Series,
                 equations_.loc[idx_model_selection(equations_, self.model_selection)],
             )
+
+    @property
+    def equation_file_(self):
+        raise NotImplementedError(
+            "PySRRegressor.equation_file_ is now deprecated. "
+            "Please use PySRRegressor.output_directory_ and PySRRegressor.run_id_ "
+            "instead. For loading, you should pass `run_directory`."
+        )
 
     def _setup_equation_file(self):
         """Set the pathname of the output directory."""
@@ -2115,7 +2129,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         return self
 
-    def refresh(self, checkpoint_file: Optional[PathLike] = None) -> None:
+    def refresh(self, run_directory: Optional[str] = None) -> None:
         """
         Update self.equations_ with any new options passed.
 
@@ -2128,8 +2142,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Path to checkpoint hall of fame file to be loaded.
             The default will use the set `equation_file_`.
         """
-        if checkpoint_file is not None:
-            self.equation_file_ = checkpoint_file
+        if run_directory is not None:
+            self.output_directory_ = Path(run_directory).parent
+            self.run_id_ = Path(run_directory).name
             self.equation_file_contents_ = None
         check_is_fitted(self, attributes=["run_id_", "output_directory_"])
         self.equations_ = self.get_hof()
