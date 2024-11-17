@@ -22,6 +22,7 @@
     - complexity_of_operators
     - complexity_of_constants
     - complexity_of_variables
+    - complexity_mapping
     - warmup_maxsize_by
     - use_frequency
     - use_frequency_in_tournament
@@ -92,7 +93,8 @@
   - delete_tempfiles
   - update
 - Exporting the Results:
-  - equation_file
+  - output_directory
+  - run_id
   - output_jax_format
   - output_torch_format
   - extra_sympy_mappings

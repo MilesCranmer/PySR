@@ -1207,8 +1207,8 @@ class TestDimensionalConstraints(unittest.TestCase):
         """
         X = np.ones((100, 3))
         y = np.ones((100, 1))
-        temp_dir = Path(tempfile.mkdtemp())
-        equation_file = str(temp_dir / "equation_file.csv")
+        output_dir = tempfile.mkdtemp()
+        run_id = "test"
         model = PySRRegressor(
             binary_operators=["+", "*"],
             early_stop_condition="(l, c) -> l < 1e-6 && c == 3",
@@ -1223,7 +1223,8 @@ class TestDimensionalConstraints(unittest.TestCase):
             deterministic=True,
             procs=0,
             random_state=0,
-            equation_file=equation_file,
+            output_directory=output_dir,
+            run_id=run_id,
             warm_start=True,
         )
         model.fit(
@@ -1243,16 +1244,18 @@ class TestDimensionalConstraints(unittest.TestCase):
         )
 
         # With pkl file:
-        pkl_file = str(temp_dir / "equation_file.pkl")
-        model2 = PySRRegressor.from_file(pkl_file)
+        run_directory = str(Path(output_dir) / run_id)
+        model2 = PySRRegressor.from_file(run_directory=run_directory)
         best2 = model2.get_best()
         self.assertIn("x0", best2["equation"])
 
         # From csv file alone (we need to delete pkl file:)
         # First, we delete the pkl file:
-        os.remove(pkl_file)
+        os.remove(Path(run_directory) / "checkpoint.pkl")
         model3 = PySRRegressor.from_file(
-            equation_file, binary_operators=["+", "*"], n_features_in=X.shape[1]
+            run_directory=run_directory,
+            binary_operators=["+", "*"],
+            n_features_in=X.shape[1],
         )
         best3 = model3.get_best()
         self.assertIn("x0", best3["equation"])

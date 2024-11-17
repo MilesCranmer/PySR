@@ -1045,8 +1045,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     f"Hall of fame file `{csv_filename}` or `{csv_filename_bak}` does not exist. "
                     "Please pass a `run_directory` containing a valid checkpoint file."
                 )
-            assert binary_operators is not None
-            assert unary_operators is not None
+            assert binary_operators is not None or unary_operators is not None
             assert n_features_in is not None
             model = cls(
                 binary_operators=binary_operators,
