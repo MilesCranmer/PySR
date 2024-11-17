@@ -97,8 +97,8 @@ jobs:
         julia-version: ['1']
         include:
           - os: ubuntu-latest
-            python-version: '3.8'
-            julia-version: '1.6'
+            python-version: '3.9'
+            julia-version: '1.10'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
