@@ -1,5 +1,6 @@
 import unittest
 from functools import partial
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -46,9 +47,12 @@ class TestJAX(unittest.TestCase):
             }
         )
 
-        equations["Complexity Loss Equation".split(" ")].to_csv("equation_file.csv.bak")
+        for fname in ["hall_of_fame.csv.bak", "hall_of_fame.csv"]:
+            equations["Complexity Loss Equation".split(" ")].to_csv(
+                Path(model.output_directory_) / model.run_id_ / fname
+            )
 
-        model.refresh(checkpoint_file="equation_file.csv")
+        model.refresh(run_directory=str(Path(model.output_directory_) / model.run_id_))
         jformat = model.jax()
 
         np.testing.assert_almost_equal(
@@ -71,9 +75,12 @@ class TestJAX(unittest.TestCase):
             }
         )
 
-        equations["Complexity Loss Equation".split(" ")].to_csv("equation_file.csv.bak")
+        for fname in ["hall_of_fame.csv.bak", "hall_of_fame.csv"]:
+            equations["Complexity Loss Equation".split(" ")].to_csv(
+                Path(model.output_directory_) / model.run_id_ / fname
+            )
 
-        model.refresh(checkpoint_file="equation_file.csv")
+        model.refresh(run_directory=str(Path(model.output_directory_) / model.run_id_))
         jformat = model.jax()
 
         np.testing.assert_almost_equal(
