@@ -245,3 +245,28 @@ papers:
     abstract: "How can we find interpretable, domain-appropriate models of natural phenomena given some complex, raw data such as images? Can we use such models to derive scientific insight from the data? In this paper, we propose some methods for achieving this. In particular, we implement disentangled representation learning, sparse deep neural network training and symbolic regression, and assess their usefulness in forming interpretable models of complex image data. We demonstrate their relevance to the field of bioimaging using a well-studied test problem of classifying cell states in microscopy data. We find that such methods can produce highly parsimonious models that achieve ~98% of the accuracy of black-box benchmark models, with a tiny fraction of the complexity. We explore the utility of such interpretable models in producing scientific explanations of the underlying biological phenomenon."
     image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/master/images/cell_state_classification.jpg
     date: 2024-02-05
+  - title: SymbolFit: Automatic Parametric Modeling with Symbolic Regression
+    authors:
+      - Ho Fung Tsoi (1)
+      - Dylan Rankin (1)
+      - Cecile Caillol (2)
+      - Miles Cranmer (3)
+      - Sridhara Dasu (4)
+      - Javier Duarte (5)
+      - Philip Harris (6, 7)
+      - Elliot Lipeles (1)
+      - Vladimir Loncar (6, 8)
+    affiliations:
+      1: University of Pennsylvania
+      2: European Organization for Nuclear Research (CERN)
+      3: University of Cambridge
+      4: University of Wisconsin-Madison
+      5: University of California San Diego
+      6: Massachusetts Institute of Technology
+      7: Institute for Artificial Intelligence and Fundamental Interactions
+      8: Institute of Physics Belgrade
+    link: https://arxiv.org/abs/2411.09851
+    abstract: "We introduce SymbolFit, a framework that automates parametric modeling by using symbolic regression to perform a machine-search for functions that fit the data, while simultaneously providing uncertainty estimates in a single run. Traditionally, constructing a parametric model to accurately describe binned data has been a manual and iterative process, requiring an adequate functional form to be determined before the fit can be performed. The main challenge arises when the appropriate functional forms cannot be derived from first principles, especially when there is no underlying true closed-form function for the distribution. In this work, we address this problem by utilizing symbolic regression, a machine learning technique that explores a vast space of candidate functions without needing a predefined functional form, treating the functional form itself as a trainable parameter. Our approach is demonstrated in data analysis applications in high-energy physics experiments at the CERN Large Hadron Collider (LHC). We demonstrate its effectiveness and efficiency using five real proton-proton collision datasets from new physics searches at the LHC, namely the background modeling in resonance searches for high-mass dijet, trijet, paired-dijet, diphoton, and dimuon events. We also validate the framework using several toy datasets with one and more variables."
+    image: symbolfit_sampling.png
+    date: 2024-11-15
+
