@@ -1,0 +1,8 @@
+# Research
+Below is a showcase of papers which have used PySR to discover
+or rediscover a symbolic model.
+These are sorted by the date of release, with most recent papers at the top.
+
+
+If you have used PySR in your research,
+please submit a pull request to add your paper to [this file](https://github.com/MilesCranmer/PySR/blob/master/docs/papers.yml).
