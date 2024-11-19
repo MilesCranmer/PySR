@@ -269,3 +269,18 @@ papers:
     abstract: "We introduce SymbolFit, a framework that automates parametric modeling by using symbolic regression to perform a machine-search for functions that fit the data, while simultaneously providing uncertainty estimates in a single run. Traditionally, constructing a parametric model to accurately describe binned data has been a manual and iterative process, requiring an adequate functional form to be determined before the fit can be performed. The main challenge arises when the appropriate functional forms cannot be derived from first principles, especially when there is no underlying true closed-form function for the distribution. In this work, we address this problem by utilizing symbolic regression, a machine learning technique that explores a vast space of candidate functions without needing a predefined functional form, treating the functional form itself as a trainable parameter. Our approach is demonstrated in data analysis applications in high-energy physics experiments at the CERN Large Hadron Collider (LHC). We demonstrate its effectiveness and efficiency using five real proton-proton collision datasets from new physics searches at the LHC, namely the background modeling in resonance searches for high-mass dijet, trijet, paired-dijet, diphoton, and dimuon events. We also validate the framework using several toy datasets with one and more variables."
     image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/refs/heads/master/images/symbolfit_sampling.png
     date: 2024-11-15
+  - title: "The automated discovery of kinetic rate models – methodological frameworks"
+    authors:
+      - Miguel Ángel de Carvalho Servia (1)
+      - Ilya Orson Sandoval (1)
+      - King Kuok (Mimi) Hii (1)
+      - Klaus Hellgardt (1)
+      - Dongda Zhang (2)
+      - Ehecatl Antonio del Rio Chanona (1)
+    affiliations:
+      1: Imperial College London
+      2: University of Manchester
+    link: https://arxiv.org/abs/2301.11356
+    abstract: "The industrialization of catalytic processes requires reliable kinetic models for their design, optimization and control. Mechanistic models require significant domain knowledge, while data-driven and hybrid models lack interpretability. Automated knowledge discovery methods, such as ALAMO (Automated Learning of Algebraic Models for Optimization), SINDy (Sparse Identification of Nonlinear Dynamics), and genetic programming, have gained popularity but suffer from limitations such as needing model structure assumptions, exhibiting poor scalability, and displaying sensitivity to noise. To overcome these challenges, we propose two methodological frameworks, ADoK-S and ADoK-W (Automated Discovery of Kinetic rate models using a Strong/Weak formulation of symbolic regression), for the automated generation of catalytic kinetic models using a robust criterion for model selection. We leverage genetic programming for model generation and a sequential optimization routine for model refinement. The frameworks are tested against three case studies of increasing complexity, demonstrating their ability to retrieve the underlying kinetic rate model with limited noisy data from the catalytic systems, showcasing their potential for chemical reaction engineering applications."
+    image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/refs/heads/master/images/adok_s_results.jpg
+    date: 2024-03-22
