@@ -245,3 +245,18 @@ papers:
     abstract: "How can we find interpretable, domain-appropriate models of natural phenomena given some complex, raw data such as images? Can we use such models to derive scientific insight from the data? In this paper, we propose some methods for achieving this. In particular, we implement disentangled representation learning, sparse deep neural network training and symbolic regression, and assess their usefulness in forming interpretable models of complex image data. We demonstrate their relevance to the field of bioimaging using a well-studied test problem of classifying cell states in microscopy data. We find that such methods can produce highly parsimonious models that achieve ~98% of the accuracy of black-box benchmark models, with a tiny fraction of the complexity. We explore the utility of such interpretable models in producing scientific explanations of the underlying biological phenomenon."
     image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/master/images/cell_state_classification.jpg
     date: 2024-02-05
+  - title: "The automated discovery of kinetic rate models – methodological frameworks"
+    authors:
+      - Miguel Ángel de Carvalho Servia (1)
+      - Ilya Orson Sandoval (1)
+      - King Kuok (Mimi) Hii (1)
+      - Klaus Hellgardt (1)
+      - Dongda Zhang (2)
+      - Ehecatl Antonio del Rio Chanona (1)
+    affiliations:
+      1: Imperial College London
+      2: University of Manchester
+    link: https://arxiv.org/abs/2301.11356
+    abstract: "The industrialization of catalytic processes requires reliable kinetic models for their design, optimization and control. Mechanistic models require significant domain knowledge, while data-driven and hybrid models lack interpretability. Automated knowledge discovery methods, such as ALAMO (Automated Learning of Algebraic Models for Optimization), SINDy (Sparse Identification of Nonlinear Dynamics), and genetic programming, have gained popularity but suffer from limitations such as needing model structure assumptions, exhibiting poor scalability, and displaying sensitivity to noise. To overcome these challenges, we propose two methodological frameworks, ADoK-S and ADoK-W (Automated Discovery of Kinetic rate models using a Strong/Weak formulation of symbolic regression), for the automated generation of catalytic kinetic models using a robust criterion for model selection. We leverage genetic programming for model generation and a sequential optimization routine for model refinement. The frameworks are tested against three case studies of increasing complexity, demonstrating their ability to retrieve the underlying kinetic rate model with limited noisy data from the catalytic systems, showcasing their potential for chemical reaction engineering applications."
+    image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/refs/heads/master/images/adok_s_results.jpg
+    date: 2024-03-22
