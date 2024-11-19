@@ -245,6 +245,17 @@ papers:
     abstract: "How can we find interpretable, domain-appropriate models of natural phenomena given some complex, raw data such as images? Can we use such models to derive scientific insight from the data? In this paper, we propose some methods for achieving this. In particular, we implement disentangled representation learning, sparse deep neural network training and symbolic regression, and assess their usefulness in forming interpretable models of complex image data. We demonstrate their relevance to the field of bioimaging using a well-studied test problem of classifying cell states in microscopy data. We find that such methods can produce highly parsimonious models that achieve ~98% of the accuracy of black-box benchmark models, with a tiny fraction of the complexity. We explore the utility of such interpretable models in producing scientific explanations of the underlying biological phenomenon."
     image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/master/images/cell_state_classification.jpg
     date: 2024-02-05
+  - title: Analytical formulae for design of one-dimensional sonic crystals with smooth geometry based on symbolic regression
+    authors:
+      - Viktor Hruška (1)
+      - Aneta Furmanová (1)
+      - Michal Bednařík (1)
+    affiliations:
+       1: Czech Technical University in Prague, Faculty of Electrical Engineering
+    link: https://doi.org/10.1016/j.jsv.2024.118821
+    abstract: Even though locally periodic structures have been studied for more than three decades, the known analytical expressions relating the waveguide geometry and the acoustic transmission are limited to a few special cases. Having an access to numerical model is a great opportunity for data-driven discovery. Our choice of cubic splines to parametrize the waveguide unit cell geometry offers enough variability for waveguide design. Using Webster equation for unit cell and Floquet–Bloch theory for periodic structures, a dataset of numerical solutions was prepared. Employing the methods of physics-informed machine learning, we have extracted analytical formulae relating the waveguide geometry and the corresponding dispersion relation or directly the bandgap widths. The results contribute to the overall readability of the system and enable a deeper understanding of the underlying principles. Specifically, it allows for assessing the influence of the waveguide geometry, offering more efficient alternative to computationally demanding numerical optimization.
+    image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/refs/heads/master/images/sonic_crystals.jpg
+    date: 2024-11-15
   - title: "SymbolFit: Automatic Parametric Modeling with Symbolic Regression"
     authors:
       - Ho Fung Tsoi (1)
