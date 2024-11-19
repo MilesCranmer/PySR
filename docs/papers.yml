@@ -251,9 +251,8 @@ papers:
       - Aneta Furmanová (1)
       - Michal Bednařík (1)
     affiliations:
-       1: Czech Technical University in Prague, Faculty of Electrical Engineering  
+       1: Czech Technical University in Prague, Faculty of Electrical Engineering
     link: https://doi.org/10.1016/j.jsv.2024.118821
     abstract: Even though locally periodic structures have been studied for more than three decades, the known analytical expressions relating the waveguide geometry and the acoustic transmission are limited to a few special cases. Having an access to numerical model is a great opportunity for data-driven discovery. Our choice of cubic splines to parametrize the waveguide unit cell geometry offers enough variability for waveguide design. Using Webster equation for unit cell and Floquet–Bloch theory for periodic structures, a dataset of numerical solutions was prepared. Employing the methods of physics-informed machine learning, we have extracted analytical formulae relating the waveguide geometry and the corresponding dispersion relation or directly the bandgap widths. The results contribute to the overall readability of the system and enable a deeper understanding of the underlying principles. Specifically, it allows for assessing the influence of the waveguide geometry, offering more efficient alternative to computationally demanding numerical optimization.
     image: sonic_crystals.png
     date: 2025-02-17
-
