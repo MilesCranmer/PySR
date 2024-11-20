@@ -12,7 +12,7 @@ import pandas as pd
 import sympy  # type: ignore
 from sklearn.utils.estimator_checks import check_estimator
 
-from pysr import PySRRegressor, install, jl, load_all_packages
+from pysr import PySRRegressor, PySRSequenceRegressor, install, jl, load_all_packages
 from pysr.export_latex import sympy2latex
 from pysr.feature_selection import _handle_feature_selection, run_feature_selection
 from pysr.julia_helpers import init_julia
@@ -511,6 +511,344 @@ class TestPipeline(unittest.TestCase):
             "When building `unary_operators`, `'1'` did not return a Julia function",
             str(cm.exception),
         )
+
+
+class TestSequenceRegressor(unittest.TestCase):
+    def setUp(self):
+        # Using inspect,
+        # get default niterations from PySRRegressor, and double them:
+        self.default_test_kwargs = dict(
+            progress=False,
+            model_selection="accuracy",
+            niterations=DEFAULT_NITERATIONS * 2,
+            populations=DEFAULT_POPULATIONS * 2,
+            temp_equation_file=True,
+            recursive_history_length=3,
+        )
+
+    def test_sequence(self):
+        # simple tribbonaci sequence
+        X = [1, 1, 1]
+        for i in range(3, 30):
+            X.append(X[i - 1] + X[i - 2] + X[i - 3])
+        X = np.asarray(X).reshape(-1, 1)
+        model = PySRSequenceRegressor(
+            **self.default_test_kwargs,
+            binary_operators=["+"],
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
+        )
+        model.fit(X)
+        print(model.equations_)
+        self.assertLessEqual(model.get_best()["loss"], 1e-4)
+        self.assertIn("x_{tm}", model.latex_table())
+
+    def test_sequence_named(self):
+        X = [1, 1, 1]
+        for i in range(3, 30):
+            X.append(X[i - 1] + X[i - 2] + X[i - 3])
+        X = np.asarray(X).reshape(-1, 1)
+        model = PySRSequenceRegressor(
+            **self.default_test_kwargs,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
+        )
+        model.fit(X, variable_names=["c1"])
+        self.assertIn("c1_tm1", model.equations_.iloc[-1]["equation"])
+        self.assertIn("c1_{tm}", model.latex_table())
+
+    def test_sequence_custom_variable_complexity(self):
+        for outer in (True, False):
+            for case in (1, 2):
+                X = [1, 1]
+                for i in range(2, 30):
+                    X.append(X[i - 1] + X[i - 2])
+                X = np.asarray(X).reshape(-1, 1)
+                if case == 1:
+                    kwargs = dict(complexity_of_variables=[2, 3, 2])
+                elif case == 2:
+                    kwargs = dict(complexity_of_variables=2)
+
+                if outer:
+                    outer_kwargs = kwargs
+                    inner_kwargs = dict()
+                else:
+                    outer_kwargs = dict()
+                    inner_kwargs = kwargs
+
+                model = PySRSequenceRegressor(
+                    binary_operators=["+"],
+                    verbosity=0,
+                    **self.default_test_kwargs,
+                    early_stop_condition=(
+                        f"stop_if_{case}(l, c) = l < 1e-8 && c <= {3 if case == 1 else 2}"
+                    ),
+                    **outer_kwargs,
+                )
+                model.fit(X, **inner_kwargs)
+                self.assertLessEqual(model.get_best()["loss"], 1e-8)
+
+    def test_sequence_error_message_custom_variable_complexity(self):
+        X = [1, 1]
+        for i in range(2, 100):
+            X.append(X[i - 1] + X[i - 2])
+        X = np.asarray(X).reshape(-1, 1)
+        model = PySRSequenceRegressor(recursive_history_length=3)
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, complexity_of_variables=[1])
+
+        self.assertIn(
+            "number of elements in `complexity_of_variables`", str(cm.exception)
+        )
+
+    def test_sequence_multidimensional_data_error(self):
+        X = np.zeros((10, 1, 1))
+        model = PySRSequenceRegressor(
+            **self.default_test_kwargs,
+        )
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X)
+            self.assertIn(
+                "Recursive symbolic regression only supports up to 2D data; please flatten your data first",
+                str(cm.exception),
+            )
+
+    def test_sequence_2D_data(self):
+        X = [[1, 2], [2, 3]]
+        for i in range(2, 10):
+            X.append(
+                [
+                    X[i - 1][1] + X[i - 2][0],
+                    X[i - 1][0] - X[i - 2][1],
+                ]
+            )
+        X = np.asarray(X)
+        model = PySRSequenceRegressor(
+            progress=False,
+            model_selection="accuracy",
+            niterations=DEFAULT_NITERATIONS * 2,
+            populations=DEFAULT_POPULATIONS * 2,
+            temp_equation_file=True,
+            recursive_history_length=2,
+        )
+        model.fit(X)
+        self.assertLessEqual(model.get_best()[0]["loss"], 1e-4)
+        self.assertIn("x_{1 tm}", model.latex_table(indices=[[0, 1], [1, 1]]))
+        self.assertListEqual(model.predict(X).tolist(), [[4.0, 0.0]])
+        self.assertListEqual(
+            model.predict(X, num_predictions=9).tolist(),
+            [
+                [4.0, 0.0],
+                [2.0, 1.0],
+                [5.0, 2.0],
+                [4.0, 4.0],
+                [9.0, 2.0],
+                [6.0, 5.0],
+                [14.0, 4.0],
+                [10.0, 9.0],
+                [23.0, 6.0],
+            ],
+        )
+        self.assertListEqual(
+            model.predict(X, num_predictions=14).tolist(),
+            [
+                [4.0, 0.0],
+                [2.0, 1.0],
+                [5.0, 2.0],
+                [4.0, 4.0],
+                [9.0, 2.0],
+                [6.0, 5.0],
+                [14.0, 4.0],
+                [10.0, 9.0],
+                [23.0, 6.0],
+                [16.0, 14.0],
+                [37.0, 10.0],
+                [26.0, 23.0],
+                [60.0, 16.0],
+                [42.0, 37.0],
+            ],
+        )
+
+    def test_sequence_named_2D_data(self):
+        X = [
+            [1, 2, 3],
+            [8, 7, 6],
+            [3, 6, 4],
+        ]
+        for i in range(3, 20):
+            X.append(
+                [
+                    X[i - 1][2] * X[i - 2][1],
+                    X[i - 2][1] - X[i - 3][0],
+                    X[i - 3][2] / X[i - 1][0],
+                ]
+            )
+        X = np.asarray(X)
+        model = PySRSequenceRegressor(
+            **self.default_test_kwargs,
+        )
+        model.fit(X, variable_names=["a", "b", "c"])
+        self.assertLessEqual(model.get_best()[0]["loss"], 1e-4)
+        self.assertIn("a_{tm}", model.latex_table())
+        self.assertIn("b_{tm}", model.latex_table())
+        self.assertIn("c_{tm}", model.latex_table())
+        self.assertIn("a_{tm1}", model.latex()[2])
+
+    def test_sequence_variable_names(self):
+        model = PySRSequenceRegressor(
+            **self.default_test_kwargs,
+        )
+        sequence_variable_names = model._construct_variable_names(
+            3, variable_names=None
+        )
+        self.assertListEqual(
+            list(sequence_variable_names),
+            [
+                [
+                    "x0_tm3",
+                    "x1_tm3",
+                    "x2_tm3",
+                    "x0_tm2",
+                    "x1_tm2",
+                    "x2_tm2",
+                    "x0_tm1",
+                    "x1_tm1",
+                    "x2_tm1",
+                ],
+                [
+                    "x₀[t-3]",
+                    "x₁[t-3]",
+                    "x₂[t-3]",
+                    "x₀[t-2]",
+                    "x₁[t-2]",
+                    "x₂[t-2]",
+                    "x₀[t-1]",
+                    "x₁[t-1]",
+                    "x₂[t-1]",
+                ],
+            ],
+        )
+
+    def test_sequence_custom_variable_names(self):
+        model = PySRSequenceRegressor(
+            **self.default_test_kwargs,
+        )
+        variable_names = ["a", "b", "c"]
+        sequence_variable_names = model._construct_variable_names(3, variable_names)
+        self.assertListEqual(
+            list(sequence_variable_names),
+            [
+                [
+                    "a_tm3",
+                    "b_tm3",
+                    "c_tm3",
+                    "a_tm2",
+                    "b_tm2",
+                    "c_tm2",
+                    "a_tm1",
+                    "b_tm1",
+                    "c_tm1",
+                ],
+                [
+                    "a[t-3]",
+                    "b[t-3]",
+                    "c[t-3]",
+                    "a[t-2]",
+                    "b[t-2]",
+                    "c[t-2]",
+                    "a[t-1]",
+                    "b[t-1]",
+                    "c[t-1]",
+                ],
+            ],
+        )
+
+    def test_sequence_unused_variables(self):
+        X = [1, 1]
+        for i in range(2, 30):
+            X.append(X[i - 1] + X[i - 2])
+        X = np.asarray(X).reshape(-1, 1)
+        y = np.asarray([1] * len(X))
+        model = PySRSequenceRegressor(
+            **self.default_test_kwargs,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
+        )
+        with self.assertRaises(TypeError):
+            model.fit(X, y, Xresampled=X, y_units=["doesn't matter"])
+
+    def test_sequence_0_recursive_history_length_error(self):
+        model = PySRSequenceRegressor(recursive_history_length=0)
+        with self.assertRaises(ValueError):
+            model.fit([[1, 2, 3]])
+
+    def test_sequence_short_data_error(self):
+        X = [1]
+        model = PySRSequenceRegressor(
+            **self.default_test_kwargs,
+        )
+        with self.assertRaises(ValueError):
+            model.fit(X)
+
+    def test_sequence_bad_weight_length_error(self):
+        X = np.zeros((10, 1))
+        model = PySRSequenceRegressor(
+            **self.default_test_kwargs,
+        )
+        with self.assertRaises(ValueError):
+            model.fit(X, weights=np.zeros(9))
+
+    def test_sequence_weights(self):
+        X = np.ones((100, 1))
+        weights = np.ones((100,))
+        model = PySRSequenceRegressor(
+            recursive_history_length=2,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
+        )
+        model.fit(X, weights=weights)
+        self.assertLessEqual(model.get_best()["loss"], 1e-4)
+
+    def test_sequence_repr(self):
+        model = PySRSequenceRegressor(
+            **self.default_test_kwargs,
+        )
+        self.assertIn("PySRSequenceRegressor", model.__repr__())
+
+    def test_sequence_from_file(self):
+        X = [1, 1]
+        for i in range(2, 100):
+            X.append(X[i - 1] + X[i - 2])
+        X = np.asarray(X).reshape(-1, 1)
+
+        temp_dir = Path(tempfile.mkdtemp())
+        equation_file = str(temp_dir / "equation_file.csv")
+        model = PySRSequenceRegressor(
+            recursive_history_length=2,
+            equation_file=equation_file,
+            niterations=10,
+        )
+
+        pkl_file = str(temp_dir / "equation_file.pkl")
+        model.fit(X)
+
+        model2 = PySRSequenceRegressor.from_file(pkl_file, recursive_history_length=2)
+        self.assertIn("x_tm1", model2.get_best()["equation"])
+
+        os.remove(pkl_file)
+        model3 = PySRSequenceRegressor.from_file(
+            equation_file,
+            binary_operators=["+"],
+            n_features_in=2,
+            recursive_history_length=2,
+        )
+        self.assertIn("x_tm1", model3.get_best()["equation"])
+
+        model4 = PySRSequenceRegressor.from_file(
+            equation_file,
+            binary_operators=["+"],
+            n_features_in=2,
+            recursive_history_length=2,
+            feature_names_in=["xt_1", "xt_2"],
+            selection_mask=np.ones(2, dtype=np.bool_),
+        )
+        self.assertIn("x_tm1", model4.get_best()["equation"])
 
 
 def manually_create_model(equations, feature_names=None):
@@ -1160,11 +1498,13 @@ class TestDimensionalConstraints(unittest.TestCase):
         """This just checks the number of units passed"""
         use_custom_variable_names = False
         variable_names = None
+        display_variable_names = None
         complexity_of_variables = 1
         weights = None
         args = (
             use_custom_variable_names,
             variable_names,
+            display_variable_names,
             complexity_of_variables,
             weights,
         )
@@ -1272,6 +1612,7 @@ def runtests(just_tests=False):
     """Run all tests in test.py."""
     test_cases = [
         TestPipeline,
+        TestSequenceRegressor,
         TestBest,
         TestFeatureSelection,
         TestMiscellaneous,

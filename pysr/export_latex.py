@@ -76,6 +76,9 @@ def sympy2latextable(
     if indices is None:
         indices = list(equations.index)
 
+    if output_variable_name == None:
+        output_variable_name = "y"
+
     for i in indices:
         latex_equation = sympy2latex(
             equations.iloc[i]["sympy_format"],
