@@ -85,7 +85,7 @@ class TestPipeline(unittest.TestCase):
             jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.bumper), True
         )
 
-    def test_multiprocessing_turbo_custom_objective(self):
+    def _multiprocessing_turbo_custom_objective(self, cluster_manager):
         rstate = np.random.RandomState(0)
         y = self.X[:, 0]
         y += rstate.randn(*y.shape) * 1e-4
@@ -95,6 +95,7 @@ class TestPipeline(unittest.TestCase):
             unary_operators=["sqrt"],
             procs=2,
             multithreading=False,
+            cluster_manager=cluster_manager,
             turbo=True,
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-10 && complexity == 1",
             loss_function="""
@@ -116,6 +117,12 @@ class TestPipeline(unittest.TestCase):
         self.assertEqual(
             jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.turbo), True
         )
+
+    def test_multiprocessing_turbo_custom_objective(self):
+        self._multiprocessing_turbo_custom_objective(None)
+
+    def test_multiprocessing_turbo_custom_objective_mpi(self):
+        self._multiprocessing_turbo_custom_objective("mpi")
 
     def test_multiline_seval(self):
         # The user should be able to run multiple things in a single seval call:

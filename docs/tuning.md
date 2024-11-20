@@ -6,7 +6,13 @@ First, my general tips would be to avoid using redundant operators, like how `po
 
 When running PySR, I usually do the following:
 
-I run from IPython (Jupyter Notebooks don't work as well[^1]) on the head node of a slurm cluster. Passing `cluster_manager="slurm"` will make PySR set up a run over the entire allocation. I set `procs` equal to the total number of cores over my entire allocation.
+I run from IPython (Jupyter Notebooks don't work as well[^1]) on the head node of a slurm cluster.
+Passing `cluster_manager="slurm"` will make PySR set up a run over the entire allocation (another common option is `cluster_manager="mpi"` which will use MPI).
+I set `procs` equal to the total number of cores over my entire allocation.
+
+> [!NOTE]
+> When running on a cluster, you should only launch the search from a single task on the head node, rather than starting PySR on every node simultaneously.
+> The way that ClusterManagers.jl works will automatically call the correct command to spread out the processing over the topology of nodes, such as `srun` for slurm.
 
 [^1]: Jupyter Notebooks are supported by PySR, but miss out on some useful features available in IPython and Python: the progress bar, and early stopping with "q". In Jupyter you cannot interrupt a search once it has started; you have to restart the kernel. See [this issue](https://github.com/MilesCranmer/PySR/issues/260) for updates.
 

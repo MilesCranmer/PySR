@@ -27,9 +27,26 @@ def _escape_filename(filename):
     return str_repr
 
 
-def _load_cluster_manager(cluster_manager: str):
-    jl.seval(f"using ClusterManagers: addprocs_{cluster_manager}")
-    return jl.seval(f"addprocs_{cluster_manager}")
+def _load_cluster_manager(cluster_manager: str, mpi_flags: str):
+    if cluster_manager == "mpi":
+        jl.seval("using Distributed: addprocs")
+        jl.seval("using MPIClusterManagers: MPIWorkerManager")
+
+        return jl.seval(
+            "(np; exeflags=``, kws...) -> "
+            + "addprocs(MPIWorkerManager(np);"
+            + ",".join(
+                [
+                    "exeflags=`$exeflags --project=$(Base.active_project())`",
+                    f"mpiflags=`{mpi_flags}`",
+                    "kws...",
+                ]
+            )
+            + ")"
+        )
+    else:
+        jl.seval(f"using ClusterManagers: addprocs_{cluster_manager}")
+        return jl.seval(f"addprocs_{cluster_manager}")
 
 
 def jl_array(x, dtype=None):
@@ -42,7 +59,9 @@ def jl_array(x, dtype=None):
 
 
 def jl_is_function(f) -> bool:
-    return cast(bool, jl.seval("op -> op isa Function")(f))
+    # We name it so we only compile it once
+    is_function = jl.seval("__pysr_jl_is_function(op) = op isa Function")
+    return cast(bool, is_function(f))
 
 
 def jl_serialize(obj: Any) -> NDArray[np.uint8]:
