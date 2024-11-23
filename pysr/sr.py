@@ -1301,6 +1301,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             if self.temp_equation_file:
                 assert self.output_directory is None
 
+    def _clear_equation_file_contents(self):
+        self.equation_file_contents_ = None
+
     def _validate_and_modify_params(self) -> _DynamicallySetParams:
         """
         Ensure parameters passed at initialization are valid.
@@ -2037,6 +2040,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self.y_units_ = None
 
         self._setup_equation_file()
+        self._clear_equation_file_contents()
 
         runtime_params = self._validate_and_modify_params()
 
