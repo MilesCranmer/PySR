@@ -2146,7 +2146,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             The default will use the set `equation_file_`.
         """
         if run_directory is not None:
-            self.output_directory_ = Path(run_directory).parent
+            self.output_directory_ = str(Path(run_directory).parent)
             self.run_id_ = Path(run_directory).name
             self.equation_file_contents_ = None
         check_is_fitted(self, attributes=["run_id_", "output_directory_"])
