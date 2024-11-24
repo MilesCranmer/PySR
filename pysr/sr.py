@@ -47,7 +47,6 @@ from .julia_helpers import (
 from .julia_import import SymbolicRegression, jl
 from .utils import (
     ArrayLike,
-    PathLike,
     _preprocess_julia_floats,
     _safe_check_feature_names_in,
     _subscriptify,
@@ -2444,7 +2443,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 "feature_names_in_",
             ],
         )
-        should_read_from_file = self.expression_options.load_from() == "file" and (
+        should_read_from_file = (
             not hasattr(self, "equation_file_contents_")
             or self.equation_file_contents_ is None
         )
@@ -2452,16 +2451,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self.equation_file_contents_ = self._read_equation_file()
 
         ret_outputs = [
-            add_export_formats(
-                output,
-                feature_names_in=self.feature_names_in_,
-                selection_mask=self.selection_mask_,
-                extra_sympy_mappings=self.extra_sympy_mappings,
-                extra_torch_mappings=self.extra_torch_mappings,
-                output_jax_format=self.output_jax_format,
-                extra_jax_mappings=self.extra_jax_mappings,
-                output_torch_format=self.output_torch_format,
-            )
+            self.expression_options.create_exports(self, output, search_output)
             for output in self.equation_file_contents_
         ]
 

@@ -1,7 +1,16 @@
+import copy
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Literal, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional
 
+import numpy as np
+import pandas as pd
+
+from .export import add_export_formats
+from .julia_helpers import jl_array
 from .julia_import import SymbolicRegression, jl
+
+if TYPE_CHECKING:
+    from .sr import PySRRegressor
 
 
 class AbstractExpressionOptions(ABC):
@@ -17,6 +26,9 @@ class AbstractExpressionOptions(ABC):
     2. julia_expression_options(): Method to create the expression options, returned as a Julia object.
         These will get stored as `expression_options` in `SymbolicRegression.Options`.
     3. load_from(): whether expressions are read from the hall of fame file, or loaded from Julia.
+
+    You can also optionally implement create_exports(), which will be used to
+    create the exports of the equations.
     """
 
     @abstractmethod
@@ -34,6 +46,23 @@ class AbstractExpressionOptions(ABC):
         """If expressions are read from the hall of fame file, or loaded from Julia"""
         pass
 
+    def create_exports(
+        self,
+        model: "PySRRegressor",
+        equations: pd.DataFrame,
+        search_output: Any,
+    ) -> pd.DataFrame:
+        return add_export_formats(
+            equations,
+            feature_names_in=model.feature_names_in_,
+            selection_mask=model.selection_mask_,
+            extra_sympy_mappings=model.extra_sympy_mappings,
+            extra_torch_mappings=model.extra_torch_mappings,
+            output_jax_format=model.output_jax_format,
+            extra_jax_mappings=model.extra_jax_mappings,
+            output_torch_format=model.output_torch_format,
+        )
+
 
 class ExpressionOptions(AbstractExpressionOptions):
     """Options for the regular Expression expression type"""
@@ -46,6 +75,17 @@ class ExpressionOptions(AbstractExpressionOptions):
 
     def load_from(self):
         return "file"
+
+
+class CallableJuliaExpression:
+    def __init__(self, expression):
+        self.expression = expression
+
+    def __call__(self, X: np.ndarray):
+        if not isinstance(X, np.ndarray):
+            raise ValueError("X must be a numpy array")
+        raw_output = self.expression(jl_array(X.T))
+        return np.array(raw_output).T
 
 
 class TemplateExpressionOptions(AbstractExpressionOptions):
@@ -124,3 +164,43 @@ class TemplateExpressionOptions(AbstractExpressionOptions):
 
     def load_from(self):
         return "julia"
+
+    def create_exports(
+        self,
+        model: "PySRRegressor",
+        equations: pd.DataFrame,
+        search_output: Any,
+    ) -> pd.DataFrame:
+        equations = copy.deepcopy(equations)
+
+        (_, out_hof) = search_output
+        expressions = []
+        callables = []
+        scores = []
+
+        lastMSE = None
+        lastComplexity = 0
+
+        for _, row in equations.iterrows():
+            curComplexity = row["complexity"]
+            curMSE = row["loss"]
+            expression = out_hof.members[curComplexity - 1].tree
+            expressions.append(expression)
+            callables.append(CallableJuliaExpression(expression))
+
+            if lastMSE is None:
+                cur_score = 0.0
+            else:
+                if curMSE > 0.0:
+                    # TODO Move this to more obvious function/file.
+                    cur_score = -np.log(curMSE / lastMSE) / (
+                        curComplexity - lastComplexity
+                    )
+                else:
+                    cur_score = np.inf
+            scores.append(cur_score)
+
+        equations["julia_expression"] = expressions
+        equations["lambda_format"] = callables
+        equations["score"] = np.array(scores)
+        return equations
