@@ -13,8 +13,8 @@ if TYPE_CHECKING:
     from .sr import PySRRegressor
 
 
-class AbstractExpressionOptions(ABC):
-    """Abstract base class for expression types.
+class AbstractExpressionSpec(ABC):
+    """Abstract base class describing expression types.
 
     This basically just holds the options for the expression type,
     as well as explains how to parse and evaluate them.
@@ -50,7 +50,7 @@ class AbstractExpressionOptions(ABC):
         pass
 
 
-class ExpressionOptions(AbstractExpressionOptions):
+class ExpressionSpec(AbstractExpressionSpec):
     """Options for the regular Expression expression type"""
 
     def julia_expression_type(self):
@@ -88,7 +88,7 @@ class CallableJuliaExpression:
         return np.array(raw_output).T
 
 
-class TemplateExpressionOptions(AbstractExpressionOptions):
+class TemplateExpressionSpec(AbstractExpressionSpec):
     """The structure of a template expression.
 
     This class allows you to specify how multiple sub-expressions should be combined
@@ -115,7 +115,7 @@ class TemplateExpressionOptions(AbstractExpressionOptions):
     --------
     ```python
     # Create template that combines f(x1, x2) and g(x3):
-    template_options = TemplateExpressionOptions(
+    template_options = TemplateExpressionSpec(
         function_symbols=["f", "g"],
         combine="((; f, g), (x1, x2, x3)) -> sin(f(x1, x2)) + g(x3)^2",
     )

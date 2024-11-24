@@ -31,7 +31,7 @@ from .export_latex import (
     with_preamble,
 )
 from .export_sympy import assert_valid_sympy_symbol
-from .expression_types import AbstractExpressionOptions, ExpressionOptions
+from .expression_specs import AbstractExpressionSpec, ExpressionSpec
 from .feature_selection import run_feature_selection
 from .julia_extensions import load_required_packages
 from .julia_helpers import (
@@ -261,12 +261,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Operators which only take a single scalar as input.
         For example, `"cos"` or `"exp"`.
         Default is `None`.
-    expression_options : AbstractExpressionOptions
+    expression_spec : AbstractExpressionSpec
         The type of expression to search for. By default,
-        this is just `ExpressionOptions()`. You can also use
-        `TemplateExpressionOptions(...)` which allows you to specify
+        this is just `ExpressionSpec()`. You can also use
+        `TemplateExpressionSpec(...)` which allows you to specify
         a custom template for the expressions.
-        Default is `ExpressionOptions()`.
+        Default is `ExpressionSpec()`.
     niterations : int
         Number of iterations of the algorithm to run. The best
         equations are printed and migrate between populations at the
@@ -748,7 +748,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         *,
         binary_operators: Optional[List[str]] = None,
         unary_operators: Optional[List[str]] = None,
-        expression_options: Optional[AbstractExpressionOptions] = None,
+        expression_spec: Optional[AbstractExpressionSpec] = None,
         niterations: int = 40,
         populations: int = 15,
         population_size: int = 33,
@@ -841,7 +841,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.model_selection = model_selection
         self.binary_operators = binary_operators
         self.unary_operators = unary_operators
-        self.expression_options = expression_options
+        self.expression_spec = expression_spec
         self.niterations = niterations
         self.populations = populations
         self.population_size = population_size
@@ -1835,7 +1835,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             optimize=self.weight_optimize,
         )
 
-        expression_options = self.expression_options or ExpressionOptions()
+        expression_spec = self.expression_spec or ExpressionSpec()
 
         jl_binary_operators: List[Any] = []
         jl_unary_operators: List[Any] = []
@@ -1862,8 +1862,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             complexity_of_constants=self.complexity_of_constants,
             complexity_of_variables=complexity_of_variables,
             complexity_mapping=self.complexity_mapping,
-            expression_type=expression_options.julia_expression_type(),
-            expression_options=expression_options.julia_expression_options(),
+            expression_type=expression_spec.julia_expression_type(),
+            expression_options=expression_spec.julia_expression_options(),
             nested_constraints=nested_constraints,
             elementwise_loss=custom_loss,
             loss_function=custom_full_objective,
@@ -2457,7 +2457,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if should_read_from_file:
             self.equation_file_contents_ = self._read_equation_file()
 
-        expression_options = self.expression_options or ExpressionOptions()
+        expression_spec = self.expression_spec or ExpressionSpec()
 
         ret_outputs = []
         for output in cast(List[pd.DataFrame], self.equation_file_contents_):
@@ -2466,7 +2466,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 [
                     output,
                     calculate_scores(output),
-                    expression_options.create_exports(self, output, search_output),
+                    expression_spec.create_exports(self, output, search_output),
                 ],
                 axis=1,
             )
