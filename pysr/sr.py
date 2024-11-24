@@ -749,7 +749,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         *,
         binary_operators: Optional[List[str]] = None,
         unary_operators: Optional[List[str]] = None,
-        expression_options: AbstractExpressionOptions = ExpressionOptions(),
+        expression_options: Optional[AbstractExpressionOptions] = None,
         niterations: int = 40,
         populations: int = 15,
         population_size: int = 33,
@@ -1836,6 +1836,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             optimize=self.weight_optimize,
         )
 
+        expression_options = self.expression_options or ExpressionOptions()
+
         jl_binary_operators: List[Any] = []
         jl_unary_operators: List[Any] = []
         for input_list, output_list, name in [
@@ -1861,8 +1863,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             complexity_of_constants=self.complexity_of_constants,
             complexity_of_variables=complexity_of_variables,
             complexity_mapping=self.complexity_mapping,
-            expression_type=self.expression_options.julia_expression_type(),
-            expression_options=self.expression_options.julia_expression_options(),
+            expression_type=expression_options.julia_expression_type(),
+            expression_options=expression_options.julia_expression_options(),
             nested_constraints=nested_constraints,
             elementwise_loss=custom_loss,
             loss_function=custom_full_objective,
@@ -2456,8 +2458,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if should_read_from_file:
             self.equation_file_contents_ = self._read_equation_file()
 
+        expression_options = self.expression_options or ExpressionOptions()
         ret_outputs = [
-            self.expression_options.create_exports(self, output, search_output)
+            expression_options.create_exports(self, output, search_output)
             for output in self.equation_file_contents_
         ]
 
