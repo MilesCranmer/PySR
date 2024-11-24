@@ -113,17 +113,6 @@ class ExpressionSpec(AbstractExpressionSpec):
         return True
 
 
-class CallableJuliaExpression:
-    def __init__(self, expression):
-        self.expression = expression
-
-    def __call__(self, X: np.ndarray):
-        if not isinstance(X, np.ndarray):
-            raise ValueError("X must be a numpy array")
-        raw_output = self.expression(jl_array(X.T))
-        return np.array(raw_output).T
-
-
 class TemplateExpressionSpec(AbstractExpressionSpec):
     """The structure of a template expression.
 
@@ -207,19 +196,34 @@ class TemplateExpressionSpec(AbstractExpressionSpec):
         # We try to load the raw julia state from a saved binary stream
         # if not provided.
         search_output = search_output or model.julia_state_
+        return _search_output_to_callable_expressions(equations, search_output)
 
-        equations = copy.deepcopy(equations)
 
-        (_, out_hof) = search_output
-        expressions = []
-        callables = []
+class CallableJuliaExpression:
+    def __init__(self, expression):
+        self.expression = expression
 
-        for _, row in equations.iterrows():
-            curComplexity = row["complexity"]
-            expression = out_hof.members[curComplexity - 1].tree
-            expressions.append(expression)
-            callables.append(CallableJuliaExpression(expression))
+    def __call__(self, X: np.ndarray):
+        if not isinstance(X, np.ndarray):
+            raise ValueError("X must be a numpy array")
+        raw_output = self.expression(jl_array(X.T))
+        return np.array(raw_output).T
 
-        equations["julia_expression"] = expressions
-        equations["lambda_format"] = callables
-        return equations
+
+def _search_output_to_callable_expressions(
+    equations: pd.DataFrame, search_output
+) -> pd.DataFrame:
+    equations = copy.deepcopy(equations)
+    (_, out_hof) = search_output
+    expressions = []
+    callables = []
+
+    for _, row in equations.iterrows():
+        curComplexity = row["complexity"]
+        expression = out_hof.members[curComplexity - 1].tree
+        expressions.append(expression)
+        callables.append(CallableJuliaExpression(expression))
+
+    equations["julia_expression"] = expressions
+    equations["lambda_format"] = callables
+    return equations
