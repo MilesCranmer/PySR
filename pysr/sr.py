@@ -1201,7 +1201,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # Save model state:
         self.show_pickle_warnings_ = False
         with open(self.get_pkl_filename(), "wb") as f:
-            pkl.dump(self, f)
+            try:
+                pkl.dump(self, f)
+            except Exception as e:
+                print(f"Error checkpointing model: {e}")
         self.show_pickle_warnings_ = True
 
     def get_pkl_filename(self) -> Path:
