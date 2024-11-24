@@ -171,6 +171,8 @@ class TemplateExpressionOptions(AbstractExpressionOptions):
         equations: pd.DataFrame,
         search_output: Any,
     ) -> pd.DataFrame:
+        assert search_output is not None
+
         equations = copy.deepcopy(equations)
 
         (_, out_hof) = search_output
