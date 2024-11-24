@@ -2461,7 +2461,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         expression_options = self.expression_options or ExpressionOptions()
         ret_outputs = [
             expression_options.create_exports(self, output, search_output)
-            for output in self.equation_file_contents_
+            for output in cast(List[pd.DataFrame], self.equation_file_contents_)
         ]
 
         if self.nout_ > 1:
