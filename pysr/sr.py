@@ -262,6 +262,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Operators which only take a single scalar as input.
         For example, `"cos"` or `"exp"`.
         Default is `None`.
+    expression_options : AbstractExpressionOptions
+        The type of expression to search for. By default,
+        this is just `ExpressionOptions()`. You can also use
+        `TemplateExpressionOptions(...)` which allows you to specify
+        a custom template for the expressions.
+        Default is `ExpressionOptions()`.
     niterations : int
         Number of iterations of the algorithm to run. The best
         equations are printed and migrate between populations at the

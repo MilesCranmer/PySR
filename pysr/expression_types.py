@@ -1,6 +1,6 @@
 import copy
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -25,7 +25,6 @@ class AbstractExpressionOptions(ABC):
         This will get stored as `expression_type` in `SymbolicRegression.Options`.
     2. julia_expression_options(): Method to create the expression options, returned as a Julia object.
         These will get stored as `expression_options` in `SymbolicRegression.Options`.
-    3. load_from(): whether expressions are read from the hall of fame file, or loaded from Julia.
 
     You can also optionally implement create_exports(), which will be used to
     create the exports of the equations.
@@ -39,11 +38,6 @@ class AbstractExpressionOptions(ABC):
     @abstractmethod
     def julia_expression_options(self) -> Any:
         """The expression options"""
-        pass
-
-    @abstractmethod
-    def load_from(self) -> Literal["file", "julia"]:
-        """If expressions are read from the hall of fame file, or loaded from Julia"""
         pass
 
     def create_exports(
@@ -72,9 +66,6 @@ class ExpressionOptions(AbstractExpressionOptions):
 
     def julia_expression_options(self):
         return jl.NamedTuple()
-
-    def load_from(self):
-        return "file"
 
 
 class CallableJuliaExpression:
@@ -161,9 +152,6 @@ class TemplateExpressionOptions(AbstractExpressionOptions):
         )
         structure = creator(self.function_symbols, f_combine, self.num_features)
         return jl.seval("NamedTuple{(:structure,)}")((structure,))
-
-    def load_from(self):
-        return "julia"
 
     def create_exports(
         self,
