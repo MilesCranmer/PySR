@@ -680,6 +680,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         stored as an array of uint8, produced by Julia's Serialization.serialize function.
     julia_options_stream_ : ndarray
         The serialized julia options, stored as an array of uint8,
+    expression_spec_ : AbstractExpressionSpec
+        The expression specification used for this fit. This is equal to
+        `self.expression_spec` if provided, or `ExpressionSpec()` otherwise.
     equation_file_contents_ : list[pandas.DataFrame]
         Contents of the equation file output by the Julia backend.
     show_pickle_warnings_ : bool
@@ -1244,6 +1247,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             FutureWarning,
         )
         return self.julia_state_
+
+    @property
+    def expression_spec_(self):
+        return self.expression_spec or ExpressionSpec()
 
     def get_best(self, index=None) -> Union[pd.Series, List[pd.Series]]:
         """
@@ -1835,8 +1842,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             optimize=self.weight_optimize,
         )
 
-        expression_spec = self.expression_spec or ExpressionSpec()
-
         jl_binary_operators: List[Any] = []
         jl_unary_operators: List[Any] = []
         for input_list, output_list, name in [
@@ -1862,8 +1867,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             complexity_of_constants=self.complexity_of_constants,
             complexity_of_variables=complexity_of_variables,
             complexity_mapping=self.complexity_mapping,
-            expression_type=expression_spec.julia_expression_type(),
-            expression_options=expression_spec.julia_expression_options(),
+            expression_type=self.expression_spec_.julia_expression_type(),
+            expression_options=self.expression_spec_.julia_expression_options(),
             nested_constraints=nested_constraints,
             elementwise_loss=custom_loss,
             loss_function=custom_full_objective,
@@ -2309,6 +2314,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         best_equation : str or list[str] of length nout_
             LaTeX expression of the best equation.
         """
+        if not self.expression_spec_.supports_latex:
+            raise ValueError(
+                f"`expression_spec={self.expression_spec_}` does not support latex export."
+            )
         self.refresh()
         sympy_representation = self.sympy(index=index)
         if self.nout_ > 1:
@@ -2342,6 +2351,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Dictionary of callable jax function in "callable" key,
             and jax array of parameters as "parameters" key.
         """
+        if not self.expression_spec_.supports_jax:
+            raise ValueError(
+                f"`expression_spec={self.expression_spec_}` does not support jax export."
+            )
         self.set_params(output_jax_format=True)
         self.refresh()
         best_equation = self.get_best(index=index)
@@ -2374,6 +2387,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         best_equation : torch.nn.Module
             PyTorch module representing the expression.
         """
+        if not self.expression_spec_.supports_torch:
+            raise ValueError(
+                f"`expression_spec={self.expression_spec_}` does not support torch export."
+            )
         self.set_params(output_torch_format=True)
         self.refresh()
         best_equation = self.get_best(index=index)
@@ -2457,21 +2474,19 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if should_read_from_file:
             self.equation_file_contents_ = self._read_equation_file()
 
-        expression_spec = self.expression_spec or ExpressionSpec()
+        equation_file_contents = cast(List[pd.DataFrame], self.equation_file_contents_)
 
-        ret_outputs = []
-        for output in cast(List[pd.DataFrame], self.equation_file_contents_):
-            # Calculate scores on base dataframe
-            final_df = pd.concat(
+        ret_outputs = [
+            pd.concat(
                 [
                     output,
                     calculate_scores(output),
-                    expression_spec.create_exports(self, output, search_output),
+                    self.expression_spec_.create_exports(self, output, search_output),
                 ],
                 axis=1,
             )
-
-            ret_outputs.append(final_df)
+            for output in equation_file_contents
+        ]
 
         if self.nout_ > 1:
             return ret_outputs
@@ -2505,6 +2520,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         latex_table_str : str
             A string that will render a table in LaTeX of the equations.
         """
+        if not self.expression_spec_.supports_latex:
+            raise ValueError(
+                f"`expression_spec={self.expression_spec_}` does not support latex export."
+            )
         self.refresh()
 
         if isinstance(self.equations_, list):

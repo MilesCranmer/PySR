@@ -27,6 +27,10 @@ class AbstractExpressionSpec(ABC):
         These will get stored as `expression_options` in `SymbolicRegression.Options`.
     3. create_exports(), which will be used to create the exports of the equations, such as
         the executable format, the SymPy format, etc.
+
+    It may also optionally implement:
+
+    - supports_sympy, supports_torch, supports_jax, supports_latex: Whether this expression type supports the corresponding export format.
     """
 
     @abstractmethod
@@ -48,6 +52,22 @@ class AbstractExpressionSpec(ABC):
     ) -> pd.DataFrame:
         """Create additional columns in the equations dataframe."""
         pass
+
+    @property
+    def supports_sympy(self) -> bool:
+        return False
+
+    @property
+    def supports_torch(self) -> bool:
+        return False
+
+    @property
+    def supports_jax(self) -> bool:
+        return False
+
+    @property
+    def supports_latex(self) -> bool:
+        return False
 
 
 class ExpressionSpec(AbstractExpressionSpec):
@@ -75,6 +95,22 @@ class ExpressionSpec(AbstractExpressionSpec):
             extra_jax_mappings=model.extra_jax_mappings,
             output_torch_format=model.output_torch_format,
         )
+
+    @property
+    def supports_sympy(self):
+        return True
+
+    @property
+    def supports_torch(self):
+        return True
+
+    @property
+    def supports_jax(self):
+        return True
+
+    @property
+    def supports_latex(self):
+        return True
 
 
 class CallableJuliaExpression:
@@ -168,7 +204,9 @@ class TemplateExpressionSpec(AbstractExpressionSpec):
         equations: pd.DataFrame,
         search_output: Any,
     ) -> pd.DataFrame:
-        assert search_output is not None
+        # We try to load the raw julia state from a saved binary stream
+        # if not provided.
+        search_output = search_output or model.julia_state_
 
         equations = copy.deepcopy(equations)
 
