@@ -788,7 +788,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         migration: bool = True,
         hof_migration: bool = True,
         topn: int = 12,
-        should_simplify: Optional[bool] = None,
+        should_simplify: bool = True,
         should_optimize_constants: bool = True,
         optimizer_algorithm: Literal["BFGS", "NelderMead"] = "BFGS",
         optimizer_nrestarts: int = 2,
@@ -1758,14 +1758,17 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             unary_operators=unary_operators,
             extra_sympy_mappings=self.extra_sympy_mappings,
         )
-        constraints = _process_constraints(
-            binary_operators=binary_operators,
-            unary_operators=unary_operators,
-            constraints=constraints,
-        )
-
-        una_constraints = [constraints[op] for op in unary_operators]
-        bin_constraints = [constraints[op] for op in binary_operators]
+        if constraints is not None:
+            constraints = _process_constraints(
+                binary_operators=binary_operators,
+                unary_operators=unary_operators,
+                constraints=constraints,
+            )
+            una_constraints = [constraints[op] for op in unary_operators]
+            bin_constraints = [constraints[op] for op in binary_operators]
+        else:
+            una_constraints = None
+            bin_constraints = None
 
         # Parse dict into Julia Dict for nested constraints::
         if nested_constraints is not None:
