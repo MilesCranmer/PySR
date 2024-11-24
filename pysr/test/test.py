@@ -456,6 +456,7 @@ class TestPipeline(unittest.TestCase):
                 feature_names_in=["f0", "f1", "f2", "f3", "f4"],
                 binary_operators=["+", "*", "/", "-", "^"],
                 unary_operators=["cos"],
+                precision=64,
             )
             X = self.rstate.rand(100, 5)
             y_truth = 2.2683423 ** np.cos(X[:, 3])

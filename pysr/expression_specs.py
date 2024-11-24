@@ -199,14 +199,34 @@ class TemplateExpressionSpec(AbstractExpressionSpec):
         return _search_output_to_callable_expressions(equations, search_output)
 
 
+class ParametricExpressionSpec(AbstractExpressionSpec):
+    def __init__(self, max_parameters: int):
+        self.max_parameters = max_parameters
+
+    def julia_expression_type(self):
+        return SymbolicRegression.ParametricExpression
+
+    def julia_expression_options(self):
+        return jl.seval("NamedTuple{(:max_parameters,)}")((self.max_parameters,))
+
+    def create_exports(
+        self,
+        model: "PySRRegressor",
+        equations: pd.DataFrame,
+        search_output: Any,
+    ):
+        search_output = search_output or model.julia_state_
+        return _search_output_to_callable_expressions(equations, search_output)
+
+
 class CallableJuliaExpression:
     def __init__(self, expression):
         self.expression = expression
 
-    def __call__(self, X: np.ndarray):
+    def __call__(self, X: np.ndarray, *args):
         if not isinstance(X, np.ndarray):
             raise ValueError("X must be a numpy array")
-        raw_output = self.expression(jl_array(X.T))
+        raw_output = self.expression(jl_array(X.T), *args)
         return np.array(raw_output).T
 
 

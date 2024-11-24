@@ -2,7 +2,7 @@
   - Creating the Search Space:
     - binary_operators
     - unary_operators
-    - expression_options
+    - expression_spec
     - maxsize
     - maxdepth
   - Setting the Search Size:

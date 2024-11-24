@@ -31,7 +31,11 @@ from .export_latex import (
     with_preamble,
 )
 from .export_sympy import assert_valid_sympy_symbol
-from .expression_specs import AbstractExpressionSpec, ExpressionSpec
+from .expression_specs import (
+    AbstractExpressionSpec,
+    ExpressionSpec,
+    ParametricExpressionSpec,
+)
 from .feature_selection import run_feature_selection
 from .julia_extensions import load_required_packages
 from .julia_helpers import (
@@ -1715,6 +1719,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         y: ndarray,
         runtime_params: _DynamicallySetParams,
         weights: Optional[ndarray],
+        category: Optional[ndarray],
         seed: int,
     ):
         """
@@ -1733,6 +1738,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Weight array of the same shape as `y`.
             Each element is how to weight the mean-square-error loss
             for that particular element of y.
+        category : ndarray | None
+            If `expression_spec` is a `ParametricExpressionSpec`, then this
+            argument should be a list of integers representing the category
+            of each sample in `X`.
         seed : int
             Random seed for julia backend process.
 
@@ -1948,6 +1957,15 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         else:
             jl_weights = None
 
+        if category is not None:
+            offset_for_julia_indexing = 1
+            jl_category = jl_array(
+                (category + offset_for_julia_indexing).astype(np.int64)
+            )
+            jl_extra = jl.seval("NamedTuple{(:class,)}")((jl_category,))
+        else:
+            jl_extra = jl.NamedTuple()
+
         if self.procs == 0 and not multithreading:
             parallelism = "serial"
         elif multithreading:
@@ -1973,6 +1991,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             jl_X,
             jl_y,
             weights=jl_weights,
+            extra=jl_extra,
             niterations=int(self.niterations),
             variable_names=jl_array([str(v) for v in self.feature_names_in_]),
             display_variable_names=jl_array(
@@ -2011,6 +2030,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self,
         X,
         y,
+        *,
         Xresampled=None,
         weights=None,
         variable_names: Optional[ArrayLike[str]] = None,
@@ -2019,6 +2039,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         ] = None,
         X_units: Optional[ArrayLike[str]] = None,
         y_units: Optional[Union[str, ArrayLike[str]]] = None,
+        category: Optional[ArrayLike[int]] = None,
     ) -> "PySRRegressor":
         """
         Search for equations to fit the dataset and store them in `self.equations_`.
@@ -2055,6 +2076,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Similar to `X_units`, but as a unit for the target variable, `y`.
             If `y` is a matrix, a list of units should be passed. If `X_units`
             is given but `y_units` is not, then `y_units` will be arbitrary.
+        category : list[int]
+            If `expression_spec` is a `ParametricExpressionSpec`, then this
+            argument should be a list of integers representing the category
+            of each sample.
 
         Returns
         -------
@@ -2086,6 +2111,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         runtime_params = self._validate_and_modify_params()
 
+        if category is not None:
+            assert Xresampled is None
+
+        if isinstance(self.expression_spec, ParametricExpressionSpec):
+            assert category is not None
+
+        # TODO: Put `category` here
         (
             X,
             y,
@@ -2165,7 +2197,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self._checkpoint()
 
         # Perform the search:
-        self._run(X, y, runtime_params, weights=weights, seed=seed)
+        self._run(X, y, runtime_params, weights=weights, seed=seed, category=category)
 
         # Then, after fit, we save again, so the pickle file contains
         # the equations:
@@ -2194,7 +2226,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         check_is_fitted(self, attributes=["run_id_", "output_directory_"])
         self.equations_ = self.get_hof()
 
-    def predict(self, X, index=None):
+    def predict(self, X, index=None, *, category: Optional[ndarray] = None):
         """
         Predict y from input X using the equation chosen by `model_selection`.
 
@@ -2210,6 +2242,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             particular row of `self.equations_`, you may specify the index here.
             For multiple output equations, you must pass a list of indices
             in the same order.
+        category : ndarray | None
+            If `expression_spec` is a `ParametricExpressionSpec`, then this
+            argument should be a list of integers representing the category
+            of each sample in `X`.
 
         Returns
         -------
@@ -2252,15 +2288,20 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         X = X.reindex(columns=self.feature_names_in_)
         X = self._validate_data_X(X)
         X = X.astype(self._get_precision_mapped_dtype(X))
+        if category is not None:
+            offset_for_julia_indexing = 1
+            args = (jl_array((category + offset_for_julia_indexing).astype(np.int64)),)
+        else:
+            args = ()
 
         try:
             if isinstance(best_equation, list):
                 assert self.nout_ > 1
                 return np.stack(
-                    [eq["lambda_format"](X) for eq in best_equation], axis=1
+                    [eq["lambda_format"](X, *args) for eq in best_equation], axis=1
                 )
             else:
-                return best_equation["lambda_format"](X)
+                return best_equation["lambda_format"](X, *args)
         except Exception as error:
             raise ValueError(
                 "Failed to evaluate the expression. "
