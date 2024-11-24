@@ -7,6 +7,11 @@ from . import sklearn_monkeypatch
 from .deprecated import best, best_callable, best_row, best_tex, install, pysr
 from .export_jax import sympy2jax
 from .export_torch import sympy2torch
+from .expression_types import (
+    AbstractExpressionOptions,
+    ExpressionOptions,
+    TemplateExpressionOptions,
+)
 from .julia_extensions import load_all_packages
 from .sr import PySRRegressor
 
@@ -22,6 +27,9 @@ __all__ = [
     "install",
     "load_all_packages",
     "PySRRegressor",
+    "AbstractExpressionOptions",
+    "ExpressionOptions",
+    "TemplateExpressionOptions",
     "best",
     "best_callable",
     "best_row",

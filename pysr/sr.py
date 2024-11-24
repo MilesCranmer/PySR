@@ -24,16 +24,15 @@ from sklearn.utils.validation import check_is_fitted
 
 from .denoising import denoise, multi_denoise
 from .deprecated import DEPRECATED_KWARGS
-from .export_jax import sympy2jax
+from .export import add_export_formats
 from .export_latex import (
     sympy2latex,
     sympy2latextable,
     sympy2multilatextable,
     with_preamble,
 )
-from .export_numpy import sympy2numpy
-from .export_sympy import assert_valid_sympy_symbol, create_sympy_symbols, pysr2sympy
-from .export_torch import sympy2torch
+from .export_sympy import assert_valid_sympy_symbol
+from .expression_types import AbstractExpressionOptions, ExpressionOptions
 from .feature_selection import run_feature_selection
 from .julia_extensions import load_required_packages
 from .julia_helpers import (
@@ -185,6 +184,25 @@ def _check_assertions(
             raise ValueError(
                 "The number of units in `y_units` must equal the number of output features in `y`."
             )
+
+
+def _validate_export_mappings(extra_jax_mappings, extra_torch_mappings):
+    # It is expected extra_jax/torch_mappings will be updated after fit.
+    # Thus, validation is performed here instead of in _validate_init_params
+    if extra_jax_mappings is not None:
+        for value in extra_jax_mappings.values():
+            if not isinstance(value, str):
+                raise ValueError(
+                    "extra_jax_mappings must have keys that are strings! "
+                    "e.g., {sympy.sqrt: 'jnp.sqrt'}."
+                )
+    if extra_torch_mappings is not None:
+        for value in extra_torch_mappings.values():
+            if not callable(value):
+                raise ValueError(
+                    "extra_torch_mappings must be callable functions! "
+                    "e.g., {sympy.sqrt: torch.sqrt}."
+                )
 
 
 # Class validation constants
@@ -726,6 +744,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         *,
         binary_operators: Optional[List[str]] = None,
         unary_operators: Optional[List[str]] = None,
+        expression_options: AbstractExpressionOptions = ExpressionOptions(),
         niterations: int = 40,
         populations: int = 15,
         population_size: int = 33,
@@ -818,6 +837,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.model_selection = model_selection
         self.binary_operators = binary_operators
         self.unary_operators = unary_operators
+        self.expression_options = expression_options
         self.niterations = niterations
         self.populations = populations
         self.population_size = population_size
@@ -1830,6 +1850,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             complexity_of_constants=self.complexity_of_constants,
             complexity_of_variables=complexity_of_variables,
             complexity_mapping=self.complexity_mapping,
+            expression_type=self.expression_options.julia_expression_type(),
+            expression_options=self.expression_options.julia_expression_options(),
             nested_constraints=nested_constraints,
             elementwise_loss=custom_loss,
             loss_function=custom_full_objective,
@@ -1959,7 +1981,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.julia_state_stream_ = jl_serialize(out)
 
         # Set attributes
-        self.equations_ = self.get_hof()
+        self.equations_ = self.get_hof(out)
 
         ALREADY_RAN = True
 
@@ -2148,7 +2170,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if run_directory is not None:
             self.output_directory_ = str(Path(run_directory).parent)
             self.run_id_ = Path(run_directory).name
-            self.equation_file_contents_ = None
+            self._clear_equation_file_contents()
         check_is_fitted(self, attributes=["run_id_", "output_directory_"])
         self.equations_ = self.get_hof()
 
@@ -2400,8 +2422,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         return df
 
-    def get_hof(self):
-        """Get the equations from a hall of fame file.
+    def get_hof(self, search_output: Optional[Any] = None):
+        """Get the equations from a hall of fame file or search output.
 
         If no arguments entered, the ones used
         previously from a call to PySR will be used.
@@ -2416,122 +2438,26 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 "feature_names_in_",
             ],
         )
-        if (
+        should_read_from_file = self.expression_options.load_from() == "file" and (
             not hasattr(self, "equation_file_contents_")
-        ) or self.equation_file_contents_ is None:
+            or self.equation_file_contents_ is None
+        )
+        if should_read_from_file:
             self.equation_file_contents_ = self._read_equation_file()
 
-        # It is expected extra_jax/torch_mappings will be updated after fit.
-        # Thus, validation is performed here instead of in _validate_init_params
-        extra_jax_mappings = self.extra_jax_mappings
-        extra_torch_mappings = self.extra_torch_mappings
-        if extra_jax_mappings is not None:
-            for value in extra_jax_mappings.values():
-                if not isinstance(value, str):
-                    raise ValueError(
-                        "extra_jax_mappings must have keys that are strings! "
-                        "e.g., {sympy.sqrt: 'jnp.sqrt'}."
-                    )
-        else:
-            extra_jax_mappings = {}
-        if extra_torch_mappings is not None:
-            for value in extra_torch_mappings.values():
-                if not callable(value):
-                    raise ValueError(
-                        "extra_torch_mappings must be callable functions! "
-                        "e.g., {sympy.sqrt: torch.sqrt}."
-                    )
-        else:
-            extra_torch_mappings = {}
-
-        ret_outputs = []
-
-        equation_file_contents = copy.deepcopy(self.equation_file_contents_)
-
-        for output in equation_file_contents:
-            scores = []
-            lastMSE = None
-            lastComplexity = 0
-            sympy_format = []
-            lambda_format = []
-            jax_format = []
-            torch_format = []
-
-            for _, eqn_row in output.iterrows():
-                eqn = pysr2sympy(
-                    eqn_row["equation"],
-                    feature_names_in=self.feature_names_in_,
-                    extra_sympy_mappings=self.extra_sympy_mappings,
-                )
-                sympy_format.append(eqn)
-
-                # NumPy:
-                sympy_symbols = create_sympy_symbols(self.feature_names_in_)
-                lambda_format.append(
-                    sympy2numpy(
-                        eqn,
-                        sympy_symbols,
-                        selection=self.selection_mask_,
-                    )
-                )
-
-                # JAX:
-                if self.output_jax_format:
-                    func, params = sympy2jax(
-                        eqn,
-                        sympy_symbols,
-                        selection=self.selection_mask_,
-                        extra_jax_mappings=self.extra_jax_mappings,
-                    )
-                    jax_format.append({"callable": func, "parameters": params})
-
-                # Torch:
-                if self.output_torch_format:
-                    module = sympy2torch(
-                        eqn,
-                        sympy_symbols,
-                        selection=self.selection_mask_,
-                        extra_torch_mappings=self.extra_torch_mappings,
-                    )
-                    torch_format.append(module)
-
-                curMSE = eqn_row["loss"]
-                curComplexity = eqn_row["complexity"]
-
-                if lastMSE is None:
-                    cur_score = 0.0
-                else:
-                    if curMSE > 0.0:
-                        # TODO Move this to more obvious function/file.
-                        cur_score = -np.log(curMSE / lastMSE) / (
-                            curComplexity - lastComplexity
-                        )
-                    else:
-                        cur_score = np.inf
-
-                scores.append(cur_score)
-                lastMSE = curMSE
-                lastComplexity = curComplexity
-
-            output["score"] = np.array(scores)
-            output["sympy_format"] = sympy_format
-            output["lambda_format"] = lambda_format
-            output_cols = [
-                "complexity",
-                "loss",
-                "score",
-                "equation",
-                "sympy_format",
-                "lambda_format",
-            ]
-            if self.output_jax_format:
-                output_cols += ["jax_format"]
-                output["jax_format"] = jax_format
-            if self.output_torch_format:
-                output_cols += ["torch_format"]
-                output["torch_format"] = torch_format
-
-            ret_outputs.append(output[output_cols])
+        ret_outputs = [
+            add_export_formats(
+                output,
+                feature_names_in=self.feature_names_in_,
+                selection_mask=self.selection_mask_,
+                extra_sympy_mappings=self.extra_sympy_mappings,
+                extra_torch_mappings=self.extra_torch_mappings,
+                output_jax_format=self.output_jax_format,
+                extra_jax_mappings=self.extra_jax_mappings,
+                output_torch_format=self.output_torch_format,
+            )
+            for output in self.equation_file_contents_
+        ]
 
         if self.nout_ > 1:
             return ret_outputs
