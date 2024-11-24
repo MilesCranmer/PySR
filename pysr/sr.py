@@ -24,7 +24,6 @@ from sklearn.utils.validation import check_is_fitted
 
 from .denoising import denoise, multi_denoise
 from .deprecated import DEPRECATED_KWARGS
-from .export import add_export_formats
 from .export_latex import (
     sympy2latex,
     sympy2latextable,
@@ -2459,10 +2458,20 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self.equation_file_contents_ = self._read_equation_file()
 
         expression_options = self.expression_options or ExpressionOptions()
-        ret_outputs = [
-            expression_options.create_exports(self, output, search_output)
-            for output in cast(List[pd.DataFrame], self.equation_file_contents_)
-        ]
+
+        ret_outputs = []
+        for output in cast(List[pd.DataFrame], self.equation_file_contents_):
+            # Calculate scores on base dataframe
+            final_df = pd.concat(
+                [
+                    output,
+                    calculate_scores(output),
+                    expression_options.create_exports(self, output, search_output),
+                ],
+                axis=1,
+            )
+
+            ret_outputs.append(final_df)
 
         if self.nout_ > 1:
             return ret_outputs
@@ -2539,6 +2548,40 @@ def idx_model_selection(equations: pd.DataFrame, model_selection: str):
             f"{model_selection} is not a valid model selection strategy."
         )
     return chosen_idx
+
+
+def calculate_scores(df: pd.DataFrame) -> pd.DataFrame:
+    """Calculate scores for each equation based on loss and complexity.
+
+    Score is defined as the negated derivative of the log-loss with respect to complexity.
+    A higher score means the equation achieved a much better loss at a slightly higher complexity.
+    """
+    scores = []
+    lastMSE = None
+    lastComplexity = 0
+
+    for _, row in df.iterrows():
+        curMSE = row["loss"]
+        curComplexity = row["complexity"]
+
+        if lastMSE is None:
+            cur_score = 0.0
+        else:
+            if curMSE > 0.0:
+                cur_score = -np.log(curMSE / lastMSE) / (curComplexity - lastComplexity)
+            else:
+                cur_score = np.inf
+
+        scores.append(cur_score)
+        lastMSE = curMSE
+        lastComplexity = curComplexity
+
+    return pd.DataFrame(
+        {
+            "score": np.array(scores),
+        },
+        index=df.index,
+    )
 
 
 def _mutate_parameter(param_name: str, param_value):

@@ -23,12 +23,12 @@ def add_export_formats(
     extra_jax_mappings: Optional[Dict[Callable, str]] = None,
     output_jax_format: bool = False,
 ) -> pd.DataFrame:
+    """Create export formats for an equations dataframe.
 
+    Returns a new dataframe containing only the exported formats.
+    """
     output = copy.deepcopy(output)
 
-    scores = []
-    lastMSE = None
-    lastComplexity = 0
     sympy_format = []
     lambda_format = []
     jax_format = []
@@ -72,38 +72,17 @@ def add_export_formats(
             )
             torch_format.append(module)
 
-        curMSE = eqn_row["loss"]
-        curComplexity = eqn_row["complexity"]
+    exports = pd.DataFrame(
+        {
+            "sympy_format": sympy_format,
+            "lambda_format": lambda_format,
+        },
+        index=output.index,
+    )
 
-        if lastMSE is None:
-            cur_score = 0.0
-        else:
-            if curMSE > 0.0:
-                # TODO Move this to more obvious function/file.
-                cur_score = -np.log(curMSE / lastMSE) / (curComplexity - lastComplexity)
-            else:
-                cur_score = np.inf
-
-        scores.append(cur_score)
-        lastMSE = curMSE
-        lastComplexity = curComplexity
-
-    output["score"] = np.array(scores)
-    output["sympy_format"] = sympy_format
-    output["lambda_format"] = lambda_format
-    output_cols = [
-        "complexity",
-        "loss",
-        "score",
-        "equation",
-        "sympy_format",
-        "lambda_format",
-    ]
     if output_jax_format:
-        output_cols += ["jax_format"]
-        output["jax_format"] = jax_format
+        exports["jax_format"] = jax_format
     if output_torch_format:
-        output_cols += ["torch_format"]
-        output["torch_format"] = torch_format
+        exports["torch_format"] = torch_format
 
-    return output[output_cols]
+    return exports
