@@ -224,6 +224,8 @@ def _search_output_to_callable_expressions(
         expressions.append(expression)
         callables.append(CallableJuliaExpression(expression))
 
-    equations["julia_expression"] = expressions
-    equations["lambda_format"] = callables
-    return equations
+    df = pd.DataFrame(
+        {"julia_expression": expressions, "lambda_format": callables},
+        index=equations.index,
+    )
+    return df

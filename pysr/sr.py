@@ -1586,6 +1586,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         raw_out = self._validate_data(X=X, reset=False)  # type: ignore
         return cast(Tuple[ndarray], raw_out)
 
+    def _get_precision_mapped_dtype(self, X: np.ndarray) -> np.dtype:
+        is_complex = np.issubdtype(X.dtype, np.complexfloating)
+        is_real = not is_complex
+        if is_real:
+            return {16: np.float16, 32: np.float32, 64: np.float64}[self.precision]
+        else:
+            return {32: np.complex64, 64: np.complex128}[self.precision]
+
     def _pre_transform_training_data(
         self,
         X: ndarray,
@@ -1924,12 +1932,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # Convert data to desired precision
         test_X = np.array(X)
-        is_complex = np.issubdtype(test_X.dtype, np.complexfloating)
-        is_real = not is_complex
-        if is_real:
-            np_dtype = {16: np.float16, 32: np.float32, 64: np.float64}[self.precision]
-        else:
-            np_dtype = {32: np.complex64, 64: np.complex128}[self.precision]
+        np_dtype = self._get_precision_mapped_dtype(test_X)
 
         # This converts the data into a Julia array:
         jl_X = jl_array(np.array(X, dtype=np_dtype).T)
@@ -2248,6 +2251,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # feature selected) X in fit.
         X = X.reindex(columns=self.feature_names_in_)
         X = self._validate_data_X(X)
+        X = X.astype(self._get_precision_mapped_dtype(X))
 
         try:
             if isinstance(best_equation, list):
