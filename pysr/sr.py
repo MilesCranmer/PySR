@@ -1774,13 +1774,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # specified in init, so we define them here locally:
         binary_operators = runtime_params.binary_operators
         unary_operators = runtime_params.unary_operators
-        maxdepth = runtime_params.maxdepth
         constraints = runtime_params.constraints
-        multithreading = runtime_params.multithreading
-        batch_size = runtime_params.batch_size
-        update_verbosity = runtime_params.update_verbosity
-        progress = runtime_params.progress
-        warmup_maxsize_by = runtime_params.warmup_maxsize_by
 
         nested_constraints = self.nested_constraints
         complexity_of_operators = self.complexity_of_operators
@@ -1788,7 +1782,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         cluster_manager = self.cluster_manager
 
         # Start julia backend processes
-        if not ALREADY_RAN and update_verbosity != 0:
+        if not ALREADY_RAN and runtime_params.update_verbosity != 0:
             print("Compiling Julia backend...")
 
         if cluster_manager is not None:
@@ -1904,7 +1898,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             output_directory=_escape_filename(self.output_directory_),
             npopulations=int(self.populations),
             batching=self.batching,
-            batch_size=int(min([batch_size, len(X)]) if self.batching else len(X)),
+            batch_size=int(
+                min([runtime_params.batch_size, len(X)]) if self.batching else len(X)
+            ),
             mutation_weights=mutation_weights,
             tournament_selection_p=self.tournament_selection_p,
             tournament_selection_n=self.tournament_selection_n,
@@ -1913,7 +1909,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             dimensional_constraint_penalty=self.dimensional_constraint_penalty,
             dimensionless_constants_only=self.dimensionless_constants_only,
             alpha=self.alpha,
-            maxdepth=maxdepth,
+            maxdepth=runtime_params.maxdepth,
             fast_cycle=self.fast_cycle,
             turbo=self.turbo,
             bumper=self.bumper,
@@ -1923,7 +1919,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             fraction_replaced_hof=self.fraction_replaced_hof,
             should_simplify=self.should_simplify,
             should_optimize_constants=self.should_optimize_constants,
-            warmup_maxsize_by=warmup_maxsize_by,
+            warmup_maxsize_by=runtime_params.warmup_maxsize_by,
             use_frequency=self.use_frequency,
             use_frequency_in_tournament=self.use_frequency_in_tournament,
             adaptive_parsimony_scaling=self.adaptive_parsimony_scaling,
@@ -1977,9 +1973,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         else:
             jl_extra = jl.NamedTuple()
 
-        if self.procs == 0 and not multithreading:
+        if self.procs == 0 and not runtime_params.multithreading:
             parallelism = "serial"
-        elif multithreading:
+        elif runtime_params.multithreading:
             parallelism = "multithreading"
         else:
             parallelism = "multiprocessing"
@@ -2023,7 +2019,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             run_id=self.run_id_,
             addprocs_function=cluster_manager,
             heap_size_hint_in_bytes=self.heap_size_hint_in_bytes,
-            progress=progress and self.verbosity > 0 and len(y.shape) == 1,
+            progress=runtime_params.progress
+            and self.verbosity > 0
+            and len(y.shape) == 1,
             verbosity=int(self.verbosity),
         )
         PythonCall.GC.enable()
