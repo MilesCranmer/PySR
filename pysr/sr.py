@@ -830,7 +830,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         fast_cycle: bool = False,
         turbo: bool = False,
         bumper: bool = False,
-        precision: int = 32,
+        precision: Literal[16, 32, 64] = 32,
         enable_autodiff: bool = False,
         random_state=None,
         deterministic: bool = False,
