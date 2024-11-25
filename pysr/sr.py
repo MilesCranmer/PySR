@@ -11,7 +11,18 @@ from dataclasses import dataclass, fields
 from io import StringIO
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 import numpy as np
 import pandas as pd
@@ -1590,7 +1601,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         raw_out = self._validate_data(X=X, reset=False)  # type: ignore
         return cast(Tuple[ndarray], raw_out)
 
-    def _get_precision_mapped_dtype(self, X: np.ndarray) -> np.dtype:
+    def _get_precision_mapped_dtype(self, X: np.ndarray) -> Type:
         is_complex = np.issubdtype(X.dtype, np.complexfloating)
         is_real = not is_complex
         if is_real:
@@ -2039,7 +2050,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         ] = None,
         X_units: Optional[ArrayLike[str]] = None,
         y_units: Optional[Union[str, ArrayLike[str]]] = None,
-        category: Optional[ArrayLike[int]] = None,
+        category: Optional[ndarray] = None,
     ) -> "PySRRegressor":
         """
         Search for equations to fit the dataset and store them in `self.equations_`.
@@ -2290,7 +2301,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         X = X.astype(self._get_precision_mapped_dtype(X))
         if category is not None:
             offset_for_julia_indexing = 1
-            args = (jl_array((category + offset_for_julia_indexing).astype(np.int64)),)
+            args: tuple = (
+                jl_array((category + offset_for_julia_indexing).astype(np.int64)),
+            )
         else:
             args = ()
 
