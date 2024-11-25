@@ -61,6 +61,7 @@ from .julia_helpers import (
 from .julia_import import AnyValue, SymbolicRegression, VectorValue, jl
 from .utils import (
     ArrayLike,
+    PathLike,
     _preprocess_julia_floats,
     _safe_check_feature_names_in,
     _subscriptify,
@@ -1009,7 +1010,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         cls,
         equation_file: None = None,  # Deprecated
         *,
-        run_directory: str,
+        run_directory: PathLike,
         binary_operators: Optional[List[str]] = None,
         unary_operators: Optional[List[str]] = None,
         n_features_in: Optional[int] = None,
@@ -1468,7 +1469,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Optional[ndarray],
         Optional[ndarray],
         ArrayLike[str],
-        Union[int, float, List[Union[int, float]]],
+        Optional[Union[int, float, List[Union[int, float]]]],
         Optional[ArrayLike[str]],
         Optional[Union[str, ArrayLike[str]]],
     ]:
@@ -1607,9 +1608,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         raw_out = self._validate_data(X=X, y=y, reset=True, multi_output=True)  # type: ignore
         return cast(Tuple[ndarray, ndarray], raw_out)
 
-    def _validate_data_X(self, X: Any) -> Tuple[ndarray]:
+    def _validate_data_X(self, X: Any) -> ndarray:
         raw_out = self._validate_data(X=X, reset=False)  # type: ignore
-        return cast(Tuple[ndarray], raw_out)
+        return cast(ndarray, raw_out)
 
     def _get_precision_mapped_dtype(self, X: np.ndarray) -> Type:
         is_complex = np.issubdtype(X.dtype, np.complexfloating)
@@ -2225,7 +2226,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         return self
 
-    def refresh(self, run_directory: Optional[str] = None) -> None:
+    def refresh(self, run_directory: Optional[PathLike] = None) -> None:
         """
         Update self.equations_ with any new options passed.
 

@@ -1,16 +1,21 @@
 import copy
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, NewType, Optional, TypeAlias
 
 import numpy as np
 import pandas as pd
 
 from .export import add_export_formats
 from .julia_helpers import jl_array
-from .julia_import import SymbolicRegression, jl
+from .julia_import import AnyValue, SymbolicRegression, jl
 
+# For type checking purposes
 if TYPE_CHECKING:
     from .sr import PySRRegressor
+
+    PySRRegressor: TypeAlias = PySRRegressor
+else:
+    PySRRegressor = NewType("PySRRegressor", Any)
 
 
 class AbstractExpressionSpec(ABC):
@@ -34,19 +39,19 @@ class AbstractExpressionSpec(ABC):
     """
 
     @abstractmethod
-    def julia_expression_type(self) -> Any:
+    def julia_expression_type(self) -> AnyValue:
         """The expression type"""
         pass
 
     @abstractmethod
-    def julia_expression_options(self) -> Any:
+    def julia_expression_options(self) -> AnyValue:
         """The expression options"""
         pass
 
     @abstractmethod
     def create_exports(
         self,
-        model: "PySRRegressor",
+        model: PySRRegressor,
         equations: pd.DataFrame,
         search_output: Any,
     ) -> pd.DataFrame:
@@ -81,7 +86,7 @@ class ExpressionSpec(AbstractExpressionSpec):
 
     def create_exports(
         self,
-        model: "PySRRegressor",
+        model: PySRRegressor,
         equations: pd.DataFrame,
         search_output: Any,
     ):
@@ -189,7 +194,7 @@ class TemplateExpressionSpec(AbstractExpressionSpec):
 
     def create_exports(
         self,
-        model: "PySRRegressor",
+        model: PySRRegressor,
         equations: pd.DataFrame,
         search_output: Any,
     ) -> pd.DataFrame:
@@ -211,7 +216,7 @@ class ParametricExpressionSpec(AbstractExpressionSpec):
 
     def create_exports(
         self,
-        model: "PySRRegressor",
+        model: PySRRegressor,
         equations: pd.DataFrame,
         search_output: Any,
     ):
