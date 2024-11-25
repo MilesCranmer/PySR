@@ -1,13 +1,13 @@
 """Functions for initializing the Julia environment and installing deps."""
 
-from typing import Any, Callable, Union, cast
+from typing import Any, Callable, cast, overload
 
 import numpy as np
 from juliacall import convert as jl_convert  # type: ignore
 from numpy.typing import NDArray
 
 from .deprecated import init_julia, install
-from .julia_import import jl
+from .julia_import import AnyValue, jl
 
 jl_convert = cast(Callable[[Any, Any], Any], jl_convert)
 
@@ -53,7 +53,11 @@ def jl_serialize(obj: Any) -> NDArray[np.uint8]:
     return np.array(jl.take_b(buf))
 
 
-def jl_deserialize(s: Union[NDArray[np.uint8], None]):
+@overload
+def jl_deserialize(s: NDArray[np.uint8]) -> AnyValue: ...
+@overload
+def jl_deserialize(s: None) -> None: ...
+def jl_deserialize(s):
     if s is None:
         return s
     buf = jl.IOBuffer()

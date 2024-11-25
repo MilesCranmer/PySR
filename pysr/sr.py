@@ -58,7 +58,7 @@ from .julia_helpers import (
     jl_is_function,
     jl_serialize,
 )
-from .julia_import import SymbolicRegression, jl
+from .julia_import import AnyValue, SymbolicRegression, VectorValue, jl
 from .utils import (
     ArrayLike,
     _preprocess_julia_floats,
@@ -70,7 +70,11 @@ from .utils import (
 ALREADY_RAN = False
 
 
-def _process_constraints(binary_operators, unary_operators, constraints):
+def _process_constraints(
+    binary_operators: List[str],
+    unary_operators: List[Union[Any, str]],
+    constraints: Dict[str, Union[int, Tuple[int, int]]],
+) -> Dict[str, Union[int, Tuple[int, int]]]:
     constraints = constraints.copy()
     for op in unary_operators:
         if op not in constraints:
@@ -88,27 +92,28 @@ def _process_constraints(binary_operators, unary_operators, constraints):
                     "For more tips, please see https://ai.damtp.cam.ac.uk/pysr/tuning/"
                 )
             constraints[op] = (-1, -1)
+
+        constraint_tuple = cast(Tuple[int, int], constraints[op])
         if op in ["plus", "sub", "+", "-"]:
-            if constraints[op][0] != constraints[op][1]:
+            if constraint_tuple[0] != constraint_tuple[1]:
                 raise NotImplementedError(
                     "You need equal constraints on both sides for - and +, "
                     "due to simplification strategies."
                 )
         elif op in ["mult", "*"]:
             # Make sure the complex expression is in the left side.
-            if constraints[op][0] == -1:
+            if constraint_tuple[0] == -1:
                 continue
-            if constraints[op][1] == -1 or constraints[op][0] < constraints[op][1]:
-                constraints[op][0], constraints[op][1] = (
-                    constraints[op][1],
-                    constraints[op][0],
-                )
+            if constraint_tuple[1] == -1 or constraint_tuple[0] < constraint_tuple[1]:
+                constraints[op] = (constraint_tuple[1], constraint_tuple[0])
     return constraints
 
 
 def _maybe_create_inline_operators(
-    binary_operators, unary_operators, extra_sympy_mappings
-):
+    binary_operators: List[str],
+    unary_operators: List[str],
+    extra_sympy_mappings: Optional[Dict[str, Callable]],
+) -> Tuple[List[str], List[str]]:
     binary_operators = binary_operators.copy()
     unary_operators = unary_operators.copy()
     for op_list in [binary_operators, unary_operators]:
@@ -229,7 +234,7 @@ class _DynamicallySetParams:
     binary_operators: List[str]
     unary_operators: List[str]
     maxdepth: int
-    constraints: Dict[str, str]
+    constraints: Dict[str, Union[int, Tuple[int, int]]]
     multithreading: bool
     batch_size: int
     update_verbosity: int
@@ -1002,7 +1007,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     @classmethod
     def from_file(
         cls,
-        equation_file=None,
+        equation_file: None = None,  # Deprecated
         *,
         run_directory: str,
         binary_operators: Optional[List[str]] = None,
@@ -1012,7 +1017,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         selection_mask: Optional[NDArray[np.bool_]] = None,
         nout: int = 1,
         **pysr_kwargs,
-    ):
+    ) -> "PySRRegressor":
         """
         Create a model from a saved model checkpoint or equation file.
 
@@ -1065,7 +1070,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             assert unary_operators is None
             assert n_features_in is None
             with open(pkl_filename, "rb") as f:
-                model = pkl.load(f)
+                model: "PySRRegressor" = pkl.load(f)
 
             # Update any parameters if necessary, such as
             # extra_sympy_mappings:
@@ -1118,7 +1123,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
             return model
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         Print all current equations fitted by the model.
 
@@ -1165,7 +1170,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         output += "]"
         return output
 
-    def __getstate__(self):
+    def __getstate__(self) -> Dict[str, Any]:
         """
         Handle pickle serialization for PySRRegressor.
 
@@ -1251,7 +1256,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     @property
     def julia_state_(self):
         """The deserialized state."""
-        return jl_deserialize(self.julia_state_stream_)
+        return cast(
+            Optional[Tuple[VectorValue, AnyValue]],
+            jl_deserialize(self.julia_state_stream_),
+        )
 
     @property
     def raw_julia_state_(self):
@@ -1267,7 +1275,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     def expression_spec_(self):
         return self.expression_spec or ExpressionSpec()
 
-    def get_best(self, index=None) -> Union[pd.Series, List[pd.Series]]:
+    def get_best(
+        self, index: Optional[Union[int, List[int]]] = None
+    ) -> Union[pd.Series, List[pd.Series]]:
         """
         Get best equation using `model_selection`.
 
@@ -1593,11 +1603,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             y_units,
         )
 
-    def _validate_data_X_y(self, X, y) -> Tuple[ndarray, ndarray]:
+    def _validate_data_X_y(self, X: Any, y: Any) -> Tuple[ndarray, ndarray]:
         raw_out = self._validate_data(X=X, y=y, reset=True, multi_output=True)  # type: ignore
         return cast(Tuple[ndarray, ndarray], raw_out)
 
-    def _validate_data_X(self, X) -> Tuple[ndarray]:
+    def _validate_data_X(self, X: Any) -> Tuple[ndarray]:
         raw_out = self._validate_data(X=X, reset=False)  # type: ignore
         return cast(Tuple[ndarray], raw_out)
 
@@ -1795,13 +1805,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             extra_sympy_mappings=self.extra_sympy_mappings,
         )
         if constraints is not None:
-            constraints = _process_constraints(
+            _constraints = _process_constraints(
                 binary_operators=binary_operators,
                 unary_operators=unary_operators,
                 constraints=constraints,
             )
-            una_constraints = [constraints[op] for op in unary_operators]
-            bin_constraints = [constraints[op] for op in binary_operators]
+            una_constraints = [_constraints[op] for op in unary_operators]
+            bin_constraints = [_constraints[op] for op in binary_operators]
         else:
             una_constraints = None
             bin_constraints = None
@@ -2235,7 +2245,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         check_is_fitted(self, attributes=["run_id_", "output_directory_"])
         self.equations_ = self.get_hof()
 
-    def predict(self, X, index=None, *, category: Optional[ndarray] = None):
+    def predict(
+        self,
+        X,
+        index: Optional[Union[int, List[int]]] = None,
+        *,
+        category: Optional[ndarray] = None,
+    ) -> ndarray:
         """
         Predict y from input X using the equation chosen by `model_selection`.
 
@@ -2309,10 +2325,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             if isinstance(best_equation, list):
                 assert self.nout_ > 1
                 return np.stack(
-                    [eq["lambda_format"](X, *args) for eq in best_equation], axis=1
+                    [
+                        cast(ndarray, eq["lambda_format"](X, *args))
+                        for eq in best_equation
+                    ],
+                    axis=1,
                 )
             else:
-                return best_equation["lambda_format"](X, *args)
+                return cast(ndarray, best_equation["lambda_format"](X, *args))
         except Exception as error:
             raise ValueError(
                 "Failed to evaluate the expression. "
@@ -2322,7 +2342,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 "You can then run `model.refresh()` to re-load the expressions."
             ) from error
 
-    def sympy(self, index=None):
+    def sympy(self, index: Optional[Union[int, List[int]]] = None):
         """
         Return sympy representation of the equation(s) chosen by `model_selection`.
 
@@ -2348,7 +2368,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         else:
             return best_equation["sympy_format"]
 
-    def latex(self, index=None, precision=3):
+    def latex(
+        self, index: Optional[Union[int, List[int]]] = None, precision: int = 3
+    ) -> Union[str, List[str]]:
         """
         Return latex representation of the equation(s) chosen by `model_selection`.
 
@@ -2465,7 +2487,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         else:
             return Path(self.output_directory_) / self.run_id_ / "hall_of_fame.csv"
 
-    def _read_equation_file(self):
+    def _read_equation_file(self) -> List[pd.DataFrame]:
         """Read the hall of fame file created by `SymbolicRegression.jl`."""
 
         try:
@@ -2507,7 +2529,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         return df
 
-    def get_hof(self, search_output: Optional[Any] = None):
+    def get_hof(
+        self, search_output: Optional[Any] = None
+    ) -> Union[pd.DataFrame, List[pd.DataFrame]]:
         """Get the equations from a hall of fame file or search output.
 
         If no arguments entered, the ones used
@@ -2550,10 +2574,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
     def latex_table(
         self,
-        indices=None,
-        precision=3,
-        columns=["equation", "complexity", "loss", "score"],
-    ):
+        indices: Optional[List[int]] = None,
+        precision: int = 3,
+        columns: List[str] = ["equation", "complexity", "loss", "score"],
+    ) -> str:
         """Create a LaTeX/booktabs table for all, or some, of the equations.
 
         Parameters
