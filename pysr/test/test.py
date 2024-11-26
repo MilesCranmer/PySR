@@ -12,7 +12,7 @@ import pandas as pd
 import sympy  # type: ignore
 from sklearn.utils.estimator_checks import check_estimator
 
-from pysr import PySRRegressor, install, jl, load_all_packages
+from pysr import PySRRegressor, TemplateExpressionSpec, install, jl, load_all_packages
 from pysr.export_latex import sympy2latex
 from pysr.feature_selection import _handle_feature_selection, run_feature_selection
 from pysr.julia_helpers import init_julia
@@ -512,6 +512,35 @@ class TestPipeline(unittest.TestCase):
             "When building `unary_operators`, `'1'` did not return a Julia function",
             str(cm.exception),
         )
+
+    def test_template_sin_addition(self):
+        # Create random data between -1 and 1
+        X = self.rstate.uniform(-1, 1, (100, 2))
+
+        # Ground truth: sin(x + y)
+        y = np.sin(X[:, 0] + X[:, 1])
+
+        # Create model with template that includes the missing sin operator
+        model = PySRRegressor(
+            expression_spec=TemplateExpressionSpec(
+                ["f"], "((; f), (x, y)) -> sin(f(x, y))"
+            ),
+            binary_operators=["+", "-", "*", "/"],
+            unary_operators=[],  # No sin operator!
+            maxsize=10,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-10 && complexity == 3",
+            **self.default_test_kwargs,
+        )
+
+        model.fit(X, y)
+
+        # Test on out of domain data - this should still work due to sin template!
+        X_test = self.rstate.uniform(2, 10, (25, 2))
+        y_test = np.sin(X_test[:, 0] + X_test[:, 1])
+        y_pred = model.predict(X_test)
+
+        test_mse = np.mean((y_test - y_pred) ** 2)
+        self.assertLess(test_mse, 1e-5)
 
 
 def manually_create_model(equations, feature_names=None):
