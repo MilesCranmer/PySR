@@ -185,12 +185,12 @@ class TemplateExpressionSpec(AbstractExpressionSpec):
             else
                 (; num_features...)
             end
-            return SymbolicRegression.TemplateStructure{tuple_symbol}(combine, num_features)
+            structure = SymbolicRegression.TemplateStructure{tuple_symbol}(combine, num_features)
+            return (; structure)
         end
         """
         )
-        structure = creator(self.function_symbols, f_combine, self.num_features)
-        return jl.seval("NamedTuple{(:structure,)}")((structure,))
+        return creator(self.function_symbols, f_combine, self.num_features)
 
     def create_exports(
         self,

@@ -1071,7 +1071,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             assert unary_operators is None
             assert n_features_in is None
             with open(pkl_filename, "rb") as f:
-                model: "PySRRegressor" = pkl.load(f)
+                model: "pysr.sr.PySRRegressor" = pkl.load(f)
 
             # Update any parameters if necessary, such as
             # extra_sympy_mappings:
