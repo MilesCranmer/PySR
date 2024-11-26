@@ -523,7 +523,7 @@ class TestPipeline(unittest.TestCase):
         # Create model with template that includes the missing sin operator
         model = PySRRegressor(
             expression_spec=TemplateExpressionSpec(
-                ["f"], "((; f), (x, y)) -> sin(f(x, y))"
+                ["f"], "sin_of_f((; f), (x, y)) = sin(f(x, y))"
             ),
             binary_operators=["+", "-", "*", "/"],
             unary_operators=[],  # No sin operator!
