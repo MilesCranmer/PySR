@@ -12,7 +12,14 @@ import pandas as pd
 import sympy  # type: ignore
 from sklearn.utils.estimator_checks import check_estimator
 
-from pysr import PySRRegressor, TemplateExpressionSpec, install, jl, load_all_packages
+from pysr import (
+    ParametricExpressionSpec,
+    PySRRegressor,
+    TemplateExpressionSpec,
+    install,
+    jl,
+    load_all_packages,
+)
 from pysr.export_latex import sympy2latex
 from pysr.feature_selection import _handle_feature_selection, run_feature_selection
 from pysr.julia_helpers import init_julia
@@ -513,7 +520,7 @@ class TestPipeline(unittest.TestCase):
             str(cm.exception),
         )
 
-    def test_template_sin_addition(self):
+    def test_template_expressions(self):
         # Create random data between -1 and 1
         X = self.rstate.uniform(-1, 1, (100, 2))
 
@@ -541,6 +548,50 @@ class TestPipeline(unittest.TestCase):
 
         test_mse = np.mean((y_test - y_pred) ** 2)
         self.assertLess(test_mse, 1e-5)
+
+    def test_parametric_expression(self):
+        # Create data with two classes
+        n_points = 100
+        X = self.rstate.uniform(-3, 3, (n_points, 2))  # x1, x2
+        category = self.rstate.randint(0, 3, n_points)  # class (0 or 1)
+
+        # True parameters for each class
+        P1 = [0.1, 1.5, -5.2]  # phase shift for each class
+        P2 = [3.2, 0.5, 1.2]  # offset for each class
+
+        # Ground truth: 2*cos(x2 + P1[class]) + x1^2 - P2[class]
+        y = np.array(
+            [
+                2 * np.cos(x2 + P1[c]) + x1**2 - P2[c]
+                for x1, x2, c in zip(X[:, 0], X[:, 1], category)
+            ]
+        )
+
+        model = PySRRegressor(
+            expression_spec=ParametricExpressionSpec(max_parameters=2),
+            binary_operators=["+", "*", "/", "-"],
+            unary_operators=["cos", "exp"],
+            maxsize=20,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity <= 14",
+            **self.default_test_kwargs,
+        )
+
+        model.fit(X, y, category=category)
+
+        # Test on new data points
+        X_test = self.rstate.uniform(-6, 6, (10, 2))
+        category_test = self.rstate.randint(0, 3, 10)
+
+        y_test = np.array(
+            [
+                2 * np.cos(x2 + P1[c]) + x1**2 - P2[c]
+                for x1, x2, c in zip(X_test[:, 0], X_test[:, 1], category_test)
+            ]
+        )
+
+        y_test_pred = model.predict(X_test, category=category_test)
+        test_mse = np.mean((y_test - y_test_pred) ** 2)
+        self.assertLess(test_mse, 1e-3)
 
 
 def manually_create_model(equations, feature_names=None):
