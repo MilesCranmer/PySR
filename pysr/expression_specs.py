@@ -1,6 +1,11 @@
 import copy
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, List, NewType, Optional, TypeAlias
+from typing import TYPE_CHECKING, Any, Dict, List, NewType, Optional
+
+try:
+    from typing import TypeAlias
+except ImportError:
+    TypeAlias = Any
 
 import numpy as np
 import pandas as pd

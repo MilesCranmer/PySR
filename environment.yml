@@ -2,7 +2,7 @@ name: test
 channels:
   - conda-forge
 dependencies:
-  - python>=3.8
+  - python>=3.9
   - sympy>=1.0.0,<2.0.0
   - pandas>=0.21.0,<3.0.0
   - numpy>=1.13.0,<2.0.0
