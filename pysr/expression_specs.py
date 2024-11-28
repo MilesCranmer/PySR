@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, NewType, Optional
 try:
     from typing import TypeAlias
 except ImportError:
-    TypeAlias = NewType("TypeAlias", Any)
+    from typing_extensions import TypeAlias
 
 import numpy as np
 import pandas as pd
