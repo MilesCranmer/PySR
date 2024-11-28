@@ -472,6 +472,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     weight_swap_operands : float
         Relative likehood for swapping operands in binary operators.
         Default is `0.1`.
+    weight_rotate_tree : float
+        How often to perform a tree rotation at a random node.
+        Default is `1.42`
     weight_randomize : float
         Relative likelihood for mutation to completely delete and then
         randomly generate the equation
@@ -513,6 +516,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Number of time to restart the constants optimization process with
         different initial conditions.
         Default is `2`.
+    optimizer_f_calls_limit : int
+        How many function calls to allow during optimization.
+        Default is `10_000`.
     optimize_probability : float
         Probability of optimizing the constants during a single iteration of
         the evolutionary algorithm.
@@ -525,6 +531,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         (perturbation_factor*T + 1). Either multiplied by this or
         divided by this.
         Default is `0.076`.
+    probability_negate_constant : float
+        Probability of negating a constant in the equation when mutating it.
+        Default is `0.00743`.
     tournament_selection_n : int
         Number of expressions to consider in each tournament.
         Default is `10`.
@@ -808,6 +817,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         weight_mutate_constant: float = 0.048,
         weight_mutate_operator: float = 0.47,
         weight_swap_operands: float = 0.1,
+        weight_rotate_tree: float = 1.42,
         weight_randomize: float = 0.00023,
         weight_simplify: float = 0.0020,
         weight_optimize: float = 0.0,
@@ -820,9 +830,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         should_optimize_constants: bool = True,
         optimizer_algorithm: Literal["BFGS", "NelderMead"] = "BFGS",
         optimizer_nrestarts: int = 2,
+        optimizer_f_calls_limit: Optional[int] = None,
         optimize_probability: float = 0.14,
         optimizer_iterations: int = 8,
         perturbation_factor: float = 0.076,
+        probability_negate_constant: float = 0.00743,
         tournament_selection_n: int = 10,
         tournament_selection_p: float = 0.86,
         procs: int = cpu_count(),
@@ -905,6 +917,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.weight_mutate_constant = weight_mutate_constant
         self.weight_mutate_operator = weight_mutate_operator
         self.weight_swap_operands = weight_swap_operands
+        self.weight_rotate_tree = weight_rotate_tree
         self.weight_randomize = weight_randomize
         self.weight_simplify = weight_simplify
         self.weight_optimize = weight_optimize
@@ -920,9 +933,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.should_optimize_constants = should_optimize_constants
         self.optimizer_algorithm = optimizer_algorithm
         self.optimizer_nrestarts = optimizer_nrestarts
+        self.optimizer_f_calls_limit = optimizer_f_calls_limit
         self.optimize_probability = optimize_probability
         self.optimizer_iterations = optimizer_iterations
         self.perturbation_factor = perturbation_factor
+        self.probability_negate_constant = probability_negate_constant
         # -- Selection parameters
         self.tournament_selection_n = tournament_selection_n
         self.tournament_selection_p = tournament_selection_p
@@ -1866,6 +1881,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             mutate_constant=self.weight_mutate_constant,
             mutate_operator=self.weight_mutate_operator,
             swap_operands=self.weight_swap_operands,
+            rotate_tree=self.weight_rotate_tree,
             add_node=self.weight_add_node,
             insert_node=self.weight_insert_node,
             delete_node=self.weight_delete_node,
@@ -1945,9 +1961,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             print_precision=self.print_precision,
             optimizer_algorithm=self.optimizer_algorithm,
             optimizer_nrestarts=self.optimizer_nrestarts,
+            optimizer_f_calls_limit=self.optimizer_f_calls_limit,
             optimizer_probability=self.optimize_probability,
             optimizer_iterations=self.optimizer_iterations,
             perturbation_factor=self.perturbation_factor,
+            probability_negate_constant=self.probability_negate_constant,
             annealing=self.annealing,
             timeout_in_seconds=self.timeout_in_seconds,
             crossover_probability=self.crossover_probability,

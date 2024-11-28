@@ -37,6 +37,7 @@
     - weight_mutate_constant
     - weight_mutate_operator
     - weight_swap_operands
+    - weight_rotate_tree
     - weight_randomize
     - weight_simplify
     - weight_optimize
@@ -44,6 +45,7 @@
     - annealing
     - alpha
     - perturbation_factor
+    - probability_negate_constant
     - skip_mutation_failures
   - Tournament Selection:
     - tournament_selection_n
@@ -51,6 +53,7 @@
   - Constant Optimization:
     - optimizer_algorithm
     - optimizer_nrestarts
+    - optimizer_f_calls_limit
     - optimize_probability
     - optimizer_iterations
     - should_optimize_constants
