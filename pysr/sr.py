@@ -871,8 +871,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         extra_jax_mappings: Optional[Dict[Callable, str]] = None,
         denoise: bool = False,
         select_k_features: Optional[int] = None,
-        # Deprecated parameters:
-        multithreading: Optional[bool] = None,
         **kwargs,
     ):
         # Hyperparameters
@@ -981,9 +979,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.denoise = denoise
         self.select_k_features = select_k_features
 
-        # Deprecated but still supported parameters
-        self.multithreading = multithreading
-
         # Once all valid parameters have been assigned handle the
         # deprecated kwargs
         if len(kwargs) > 0:  # pragma: no cover
@@ -997,6 +992,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                         "Please use that instead.",
                         FutureWarning,
                     )
+                elif k == "multithreading":
+                    # Specific advice given in `_map_parallelism_params`
+                    self.multithreading: Optional[bool] = v
                 # Handle kwargs that have been moved to the fit method
                 elif k in ["weights", "variable_names", "Xresampled"]:
                     warnings.warn(
@@ -1799,13 +1797,20 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             print("Compiling Julia backend...")
 
         parallelism, numprocs = _map_parallelism_params(
-            self.parallelism, self.procs, self.multithreading
+            self.parallelism, self.procs, getattr(self, "multithreading", None)
         )
 
         if self.deterministic and parallelism != "serial":
             raise ValueError(
                 "To ensure deterministic searches, you must set `parallelism='serial'`. "
                 "Additionally, make sure to set `random_state` to a seed."
+            )
+        if self.random_state is not None and (
+            parallelism != "serial" or not self.deterministic
+        ):
+            warnings.warn(
+                "Note: Setting `random_state` without also setting `deterministic=True` "
+                "and `parallelism='serial'` will result in non-deterministic searches."
             )
 
         if cluster_manager is not None:

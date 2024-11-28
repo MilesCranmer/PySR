@@ -935,7 +935,7 @@ class TestHelpMessages(unittest.TestCase):
             warnings.simplefilter("error")
             with self.assertRaises(Exception) as context:
                 model.fit(X, y)
-            self.assertIn("`deterministic`", str(context.exception))
+            self.assertIn("`deterministic=True`", str(context.exception))
 
     def test_deterministic_errors(self):
         """Setting deterministic without random_state should error"""
