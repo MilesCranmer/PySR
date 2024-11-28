@@ -17,9 +17,9 @@ from .julia_import import AnyValue, SymbolicRegression, jl
 
 # For type checking purposes
 if TYPE_CHECKING:
-    from .sr import PySRRegressor
+    from .sr import PySRRegressor  # pragma: no cover
 
-    PySRRegressor: TypeAlias = PySRRegressor
+    PySRRegressor: TypeAlias = PySRRegressor  # pragma: no cover
 else:
     PySRRegressor = NewType("PySRRegressor", Any)
 
@@ -47,12 +47,12 @@ class AbstractExpressionSpec(ABC):
     @abstractmethod
     def julia_expression_type(self) -> AnyValue:
         """The expression type"""
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def julia_expression_options(self) -> AnyValue:
         """The expression options"""
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def create_exports(
@@ -62,7 +62,7 @@ class AbstractExpressionSpec(ABC):
         search_output: Any,
     ) -> pd.DataFrame:
         """Create additional columns in the equations dataframe."""
-        pass
+        pass  # pragma: no cover
 
     @property
     def evaluates_in_julia(self) -> bool:
@@ -247,8 +247,6 @@ class CallableJuliaExpression:
         self.expression = expression
 
     def __call__(self, X: np.ndarray, *args):
-        if not isinstance(X, np.ndarray):
-            raise ValueError("X must be a numpy array")
         raw_output = self.expression(jl_array(X.T), *args)
         return np.array(raw_output).T
 

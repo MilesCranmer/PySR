@@ -549,6 +549,23 @@ class TestPipeline(unittest.TestCase):
         test_mse = np.mean((y_test - y_pred) ** 2)
         self.assertLess(test_mse, 1e-5)
 
+        # Make sure that a nice error is raised if we try to get the sympy expression:
+        # f"`expression_spec={self.expression_spec_}` does not support sympy export."
+        with self.assertRaises(ValueError) as cm:
+            model.sympy()
+        self.assertRegex(
+            str(cm.exception),
+            r"`expression_spec=.*TemplateExpressionSpec.*` does not support sympy export.",
+        )
+        with self.assertRaises(ValueError):
+            model.latex()
+        with self.assertRaises(ValueError):
+            model.jax()
+        with self.assertRaises(ValueError):
+            model.pytorch()
+        with self.assertRaises(ValueError):
+            model.latex_table()
+
     def test_parametric_expression(self):
         # Create data with two classes
         n_points = 100
@@ -592,6 +609,17 @@ class TestPipeline(unittest.TestCase):
         y_test_pred = model.predict(X_test, category=category_test)
         test_mse = np.mean((y_test - y_test_pred) ** 2)
         self.assertLess(test_mse, 1e-3)
+
+        with self.assertRaises(ValueError):
+            model.sympy()
+        with self.assertRaises(ValueError):
+            model.latex()
+        with self.assertRaises(ValueError):
+            model.jax()
+        with self.assertRaises(ValueError):
+            model.pytorch()
+        with self.assertRaises(ValueError):
+            model.latex_table()
 
 
 def manually_create_model(equations, feature_names=None):
@@ -840,6 +868,14 @@ class TestHelpMessages(unittest.TestCase):
 
         # The correct value should be set:
         self.assertEqual(model.fraction_replaced, 0.2)
+
+        with self.assertRaises(NotImplementedError):
+            model.equation_file_
+
+        with self.assertRaises(ValueError) as cm:
+            PySRRegressor.from_file(equation_file="", run_directory="")
+
+        self.assertIn("Passing `equation_file` is deprecated", str(cm.exception))
 
     def test_deprecated_functions(self):
         with self.assertWarns(FutureWarning):

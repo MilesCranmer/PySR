@@ -2364,6 +2364,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         best_equation : str, list[str] of length nout_
             SymPy representation of the best equation.
         """
+        if not self.expression_spec_.supports_sympy:
+            raise ValueError(
+                f"`expression_spec={self.expression_spec_}` does not support sympy export."
+            )
         self.refresh()
         best_equation = self.get_best(index=index)
         if isinstance(best_equation, list):
@@ -2557,6 +2561,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         )
         if should_read_from_file:
             self.equation_file_contents_ = self._read_equation_file()
+
+        _validate_export_mappings(self.extra_jax_mappings, self.extra_torch_mappings)
 
         equation_file_contents = cast(List[pd.DataFrame], self.equation_file_contents_)
 
