@@ -42,4 +42,6 @@ dev-dependencies = [
     "types-pytz>=2024.1.0.20240417",
     "types-openpyxl>=3.1.0.20240428",
     "coverage>=7.5.3",
+    "pytest>=8.3.3",
+    "nbval>=0.11.0",
 ]
