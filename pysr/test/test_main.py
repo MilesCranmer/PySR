@@ -520,7 +520,7 @@ class TestPipeline(unittest.TestCase):
             str(cm.exception),
         )
 
-    def test_template_expressions(self):
+    def test_template_expressions_and_custom_complexity(self):
         # Create random data between -1 and 1
         X = self.rstate.uniform(-1, 1, (100, 2))
 
@@ -535,7 +535,9 @@ class TestPipeline(unittest.TestCase):
             binary_operators=["+", "-", "*", "/"],
             unary_operators=[],  # No sin operator!
             maxsize=10,
-            early_stop_condition="stop_if(loss, complexity) = loss < 1e-10 && complexity == 3",
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-10 && complexity == 6",
+            # Custom complexity *function*:
+            complexity_mapping="my_complexity(ex) = sum(t -> 2, get_tree(ex))",
             **self.default_test_kwargs,
         )
 
@@ -548,6 +550,15 @@ class TestPipeline(unittest.TestCase):
 
         test_mse = np.mean((y_test - y_pred) ** 2)
         self.assertLess(test_mse, 1e-5)
+
+        # Check there is a row with complexity 6 and MSE < 1e-10
+        df = model.equations_
+        good_rows = df[(df.complexity == 6) & (df.loss < 1e-10)]
+        self.assertGreater(len(good_rows), 0)
+
+        # Check there are NO rows with lower complexity and MSE < 1e-10
+        simpler_good_rows = df[(df.complexity < 6) & (df.loss < 1e-10)]
+        self.assertEqual(len(simpler_good_rows), 0)
 
         # Make sure that a nice error is raised if we try to get the sympy expression:
         # f"`expression_spec={self.expression_spec_}` does not support sympy export."

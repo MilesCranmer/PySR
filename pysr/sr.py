@@ -786,7 +786,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         elementwise_loss: Optional[str] = None,
         loss_function: Optional[str] = None,
         complexity_of_operators: Optional[Dict[str, Union[int, float]]] = None,
-        complexity_of_constants: Union[int, float] = 1,
+        complexity_of_constants: Optional[Union[int, float]] = None,
         complexity_of_variables: Optional[Union[int, float]] = None,
         complexity_mapping: Optional[str] = None,
         parsimony: float = 0.0032,
@@ -1889,6 +1889,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     )
                 output_list.append(jl_op)
 
+        complexity_mapping = (
+            jl.seval(self.complexity_mapping) if self.complexity_mapping else None
+        )
+
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/OptionsStruct.jl
         options = SymbolicRegression.Options(
@@ -1899,7 +1903,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             complexity_of_operators=complexity_of_operators,
             complexity_of_constants=self.complexity_of_constants,
             complexity_of_variables=complexity_of_variables,
-            complexity_mapping=self.complexity_mapping,
+            complexity_mapping=complexity_mapping,
             expression_type=self.expression_spec_.julia_expression_type(),
             expression_options=self.expression_spec_.julia_expression_options(),
             nested_constraints=nested_constraints,
