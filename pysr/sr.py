@@ -236,7 +236,6 @@ class _DynamicallySetParams:
     unary_operators: List[str]
     maxdepth: int
     constraints: Dict[str, Union[int, Tuple[int, int]]]
-    multithreading: bool
     batch_size: int
     update_verbosity: int
     progress: bool
@@ -542,12 +541,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         tournament. The probability will decay as p*(1-p)^n for other
         expressions, sorted by loss.
         Default is `0.982`.
-    procs : int
-        Number of processes (=number of populations running).
-        Default is `cpu_count()`.
-    multithreading : bool
-        Use multithreading instead of distributed backend.
-        Using procs=0 will turn off both. Default is `True`.
+    parallelism: Optional[Literal["serial", "multithreading", "multiprocessing"]]
+        Parallelism to use for the search. Can be `"serial"`, `"multithreading"`, or `"multiprocessing"`.
+        Default is `"multithreading"`.
+    procs: Optional[int]
+        Number of processes to use for parallelism. If `None`, defaults to `cpu_count()`.
+        Default is `None`.
     cluster_manager : str
         For distributed computing, this sets the job queue system. Set
         to one of "slurm", "pbs", "lsf", "sge", "qrsh", "scyld", or
@@ -599,7 +598,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     deterministic : bool
         Make a PySR search give the same result every run.
         To use this, you must turn off parallelism
-        (with `procs`=0, `multithreading`=False),
+        (with `parallelism="serial"`),
         and set `random_state` to a fixed seed.
         Default is `False`.
     warm_start : bool
@@ -837,8 +836,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         probability_negate_constant: float = 0.00743,
         tournament_selection_n: int = 15,
         tournament_selection_p: float = 0.982,
-        procs: int = cpu_count(),
-        multithreading: Optional[bool] = None,
+        parallelism: Optional[
+            Literal["serial", "multithreading", "multiprocessing"]
+        ] = None,
+        procs: Optional[int] = None,
         cluster_manager: Optional[
             Literal["slurm", "pbs", "lsf", "sge", "qrsh", "scyld", "htc"]
         ] = None,
@@ -870,6 +871,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         extra_jax_mappings: Optional[Dict[Callable, str]] = None,
         denoise: bool = False,
         select_k_features: Optional[int] = None,
+        # Deprecated parameters:
+        multithreading: Optional[bool] = None,
         **kwargs,
     ):
         # Hyperparameters
@@ -942,8 +945,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.tournament_selection_n = tournament_selection_n
         self.tournament_selection_p = tournament_selection_p
         # -- Performance parameters
+        self.parallelism = parallelism
         self.procs = procs
-        self.multithreading = multithreading
         self.cluster_manager = cluster_manager
         self.heap_size_hint_in_bytes = heap_size_hint_in_bytes
         self.batching = batching
@@ -977,6 +980,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # Pre-modelling transformation
         self.denoise = denoise
         self.select_k_features = select_k_features
+
+        # Deprecated but still supported parameters
+        self.multithreading = multithreading
 
         # Once all valid parameters have been assigned handle the
         # deprecated kwargs
@@ -1408,24 +1414,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         elif self.maxsize < 7:
             raise ValueError("PySR requires a maxsize of at least 7")
 
-        if self.deterministic and not (
-            self.multithreading in [False, None]
-            and self.procs == 0
-            and self.random_state is not None
-        ):
-            raise ValueError(
-                "To ensure deterministic searches, you must set `random_state` to a seed, "
-                "`procs` to `0`, and `multithreading` to `False` or `None`."
-            )
-
-        if self.random_state is not None and (
-            not self.deterministic or self.procs != 0
-        ):
-            warnings.warn(
-                "Note: Setting `random_state` without also setting `deterministic` "
-                "to True and `procs` to 0 will result in non-deterministic searches. "
-            )
-
         if self.elementwise_loss is not None and self.loss_function is not None:
             raise ValueError(
                 "You cannot set both `elementwise_loss` and `loss_function`."
@@ -1442,7 +1430,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             unary_operators=[],
             maxdepth=self.maxsize,
             constraints={},
-            multithreading=self.procs != 0 and self.cluster_manager is None,
             batch_size=1,
             update_verbosity=int(self.verbosity),
             progress=self.progress,
@@ -1811,7 +1798,21 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if not ALREADY_RAN and runtime_params.update_verbosity != 0:
             print("Compiling Julia backend...")
 
+        parallelism, numprocs = _map_parallelism_params(
+            self.parallelism, self.procs, self.multithreading
+        )
+
+        if self.deterministic and parallelism != "serial":
+            raise ValueError(
+                "To ensure deterministic searches, you must set `parallelism='serial'`. "
+                "Additionally, make sure to set `random_state` to a seed."
+            )
+
         if cluster_manager is not None:
+            if parallelism != "multiprocessing":
+                raise ValueError(
+                    "To use cluster managers, you must set `parallelism='multiprocessing'`."
+                )
             cluster_manager = _load_cluster_manager(cluster_manager)
 
         # TODO(mcranmer): These functions should be part of this class.
@@ -2006,17 +2007,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         else:
             jl_extra = jl.NamedTuple()
 
-        if self.procs == 0 and not runtime_params.multithreading:
-            parallelism = "serial"
-        elif runtime_params.multithreading:
-            parallelism = "multithreading"
-        else:
-            parallelism = "multiprocessing"
-
-        cprocs = (
-            None if parallelism in ["serial", "multithreading"] else int(self.procs)
-        )
-
         if len(y.shape) > 1:
             # We set these manually so that they respect Python's 0 indexing
             # (by default Julia will use y1, y2...)
@@ -2045,7 +2035,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 else self.y_units_
             ),
             options=options,
-            numprocs=cprocs,
+            numprocs=numprocs,
             parallelism=parallelism,
             saved_state=self.julia_state_,
             return_state=True,
@@ -2740,3 +2730,84 @@ def _mutate_parameter(param_name: str, param_value):
         return False
 
     return param_value
+
+
+def _map_parallelism_params(
+    parallelism: Optional[Literal["serial", "multithreading", "multiprocessing"]],
+    procs: Optional[int],
+    multithreading: Optional[bool],
+) -> Tuple[Literal["serial", "multithreading", "multiprocessing"], Optional[int]]:
+    """Map old and new parallelism parameters to the new format.
+
+    Parameters
+    ----------
+    parallelism : str or None
+        New parallelism parameter. Can be "serial", "multithreading", or "multiprocessing".
+    procs : int or None
+        Number of processes parameter.
+    multithreading : bool or None
+        Old multithreading parameter.
+
+    Returns
+    -------
+    parallelism : str
+        Mapped parallelism mode.
+    procs : int or None
+        Mapped number of processes.
+
+    Raises
+    ------
+    ValueError
+        If both old and new parameters are specified, or if invalid combinations are given.
+    """
+    # Check for mixing old and new parameters
+    using_new = parallelism is not None
+    using_old = multithreading is not None
+
+    if using_new and using_old:
+        raise ValueError(
+            "Cannot mix old and new parallelism parameters. "
+            "Use either `parallelism` and `numprocs`, or `procs` and `multithreading`."
+        )
+    elif using_old:
+        warnings.warn(
+            "The `multithreading: bool` parameter has been deprecated in favor "
+            "of `parallelism: Literal['multithreading', 'serial', 'multiprocessing']`.\n"
+            "Previous usage of `multithreading=True` (default) is now `parallelism='multithreading'`; "
+            "`multithreading=False, procs=0` is now `parallelism='serial'`; and "
+            "`multithreading=True, procs={int}` is now `parallelism='multiprocessing', procs={int}`."
+        )
+        if multithreading:
+            _parallelism = "multithreading"
+            _procs = None
+        elif procs is not None and procs > 0:
+            _parallelism = "multiprocessing"
+            _procs = procs
+        else:
+            _parallelism = "serial"
+            _procs = None
+    elif using_new:
+        _parallelism = parallelism
+        _procs = procs
+    else:
+        _parallelism = "multithreading"
+        _procs = None
+
+    if _parallelism not in {"serial", "multithreading", "multiprocessing"}:
+        raise ValueError(
+            "`parallelism` must be one of 'serial', 'multithreading', or 'multiprocessing'"
+        )
+    elif _parallelism == "serial" and _procs is not None:
+        warnings.warn(
+            "`numprocs` is specified but will be ignored since `parallelism='serial'`"
+        )
+        _procs = None
+    elif parallelism == "multithreading" and _procs is not None:
+        warnings.warn(
+            "`numprocs` is specified but will be ignored since `parallelism='multithreading'`"
+        )
+        _procs = None
+    elif parallelism == "multiprocessing" and _procs is None:
+        _procs = cpu_count()
+
+    return _parallelism, _procs

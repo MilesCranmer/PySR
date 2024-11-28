@@ -71,8 +71,8 @@
   - timeout_in_seconds
   - early_stop_condition
 - Performance and Parallelization:
+  - parallelism
   - procs
-  - multithreading
   - cluster_manager
   - heap_size_hint_in_bytes
   - batching
