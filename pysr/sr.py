@@ -2313,7 +2313,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # feature selected) X in fit.
         X = X.reindex(columns=self.feature_names_in_)
         X = self._validate_data_X(X)
-        X = X.astype(self._get_precision_mapped_dtype(X))
+        if self.expression_spec_.evaluates_in_julia:
+            # Julia wants the right dtype
+            X = X.astype(self._get_precision_mapped_dtype(X))
+
         if category is not None:
             offset_for_julia_indexing = 1
             args: tuple = (

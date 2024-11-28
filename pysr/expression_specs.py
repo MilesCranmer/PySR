@@ -64,6 +64,10 @@ class AbstractExpressionSpec(ABC):
         pass
 
     @property
+    def evaluates_in_julia(self) -> bool:
+        return False
+
+    @property
     def supports_sympy(self) -> bool:
         return False
 
@@ -197,6 +201,10 @@ class TemplateExpressionSpec(AbstractExpressionSpec):
         )
         return creator(self.function_symbols, f_combine, self.num_features)
 
+    @property
+    def evaluates_in_julia(self):
+        return True
+
     def create_exports(
         self,
         model: PySRRegressor,
@@ -218,6 +226,10 @@ class ParametricExpressionSpec(AbstractExpressionSpec):
 
     def julia_expression_options(self):
         return jl.seval("NamedTuple{(:max_parameters,)}")((self.max_parameters,))
+
+    @property
+    def evaluates_in_julia(self):
+        return True
 
     def create_exports(
         self,
