@@ -292,18 +292,18 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Number of iterations of the algorithm to run. The best
         equations are printed and migrate between populations at the
         end of each iteration.
-        Default is `40`.
+        Default is `100`.
     populations : int
         Number of populations running.
-        Default is `15`.
+        Default is `31`.
     population_size : int
         Number of individuals in each population.
-        Default is `33`.
+        Default is `27`.
     max_evals : int
         Limits the total number of evaluations of expressions to
         this number.  Default is `None`.
     maxsize : int
-        Max complexity of an equation.  Default is `20`.
+        Max complexity of an equation.  Default is `30`.
     maxdepth : int
         Max depth of an equation. You can use both `maxsize` and
         `maxdepth`. `maxdepth` is by default not used.
@@ -404,7 +404,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Default is `None`.
     parsimony : float
         Multiplicative factor for how much to punish complexity.
-        Default is `0.0032`.
+        Default is `0.0`.
     dimensional_constraint_penalty : float
         Additive penalty for if dimensional analysis of an expression fails.
         By default, this is `1000.0`.
@@ -426,11 +426,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         weight the contribution. If you find that the search is only optimizing
         the most complex expressions while the simpler expressions remain stagnant,
         you should increase this value.
-        Default is `20.0`.
+        Default is `1040.0`.
     alpha : float
         Initial temperature for simulated annealing
         (requires `annealing` to be `True`).
-        Default is `0.1`.
+        Default is `3.17`.
     annealing : bool
         Whether to use annealing.  Default is `False`.
     early_stop_condition : float | str
@@ -442,46 +442,46 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     ncycles_per_iteration : int
         Number of total mutations to run, per 10 samples of the
         population, per iteration.
-        Default is `550`.
+        Default is `380`.
     fraction_replaced : float
         How much of population to replace with migrating equations from
         other populations.
-        Default is `0.000364`.
+        Default is `0.00036`.
     fraction_replaced_hof : float
         How much of population to replace with migrating equations from
-        hall of fame. Default is `0.035`.
+        hall of fame. Default is `0.0614`.
     weight_add_node : float
         Relative likelihood for mutation to add a node.
-        Default is `0.79`.
+        Default is `2.47`.
     weight_insert_node : float
         Relative likelihood for mutation to insert a node.
-        Default is `5.1`.
+        Default is `0.0112`.
     weight_delete_node : float
         Relative likelihood for mutation to delete a node.
-        Default is `1.7`.
+        Default is `0.870`.
     weight_do_nothing : float
         Relative likelihood for mutation to leave the individual.
-        Default is `0.21`.
+        Default is `0.273`.
     weight_mutate_constant : float
         Relative likelihood for mutation to change the constant slightly
         in a random direction.
-        Default is `0.048`.
+        Default is `0.0346`.
     weight_mutate_operator : float
         Relative likelihood for mutation to swap an operator.
-        Default is `0.47`.
+        Default is `0.293`.
     weight_swap_operands : float
         Relative likehood for swapping operands in binary operators.
-        Default is `0.1`.
+        Default is `0.198`.
     weight_rotate_tree : float
         How often to perform a tree rotation at a random node.
-        Default is `1.42`
+        Default is `4.26`.
     weight_randomize : float
         Relative likelihood for mutation to completely delete and then
         randomly generate the equation
-        Default is `0.00023`.
+        Default is `0.000502`.
     weight_simplify : float
         Relative likelihood for mutation to simplify constant parts by evaluation
-        Default is `0.0020`.
+        Default is `0.00209`.
     weight_optimize: float
         Constant optimization can also be performed as a mutation, in addition to
         the normal strategy controlled by `optimize_probability` which happens
@@ -490,7 +490,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Default is `0.0`.
     crossover_probability : float
         Absolute probability of crossover-type genetic operation, instead of a mutation.
-        Default is `0.066`.
+        Default is `0.0259`.
     skip_mutation_failures : bool
         Whether to skip mutation and crossover failures, rather than
         simply re-sampling the current member.
@@ -530,18 +530,18 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Constants are perturbed by a max factor of
         (perturbation_factor*T + 1). Either multiplied by this or
         divided by this.
-        Default is `0.076`.
+        Default is `0.129`.
     probability_negate_constant : float
         Probability of negating a constant in the equation when mutating it.
         Default is `0.00743`.
     tournament_selection_n : int
         Number of expressions to consider in each tournament.
-        Default is `10`.
+        Default is `15`.
     tournament_selection_p : float
         Probability of selecting the best expression in each
         tournament. The probability will decay as p*(1-p)^n for other
         expressions, sorted by loss.
-        Default is `0.86`.
+        Default is `0.982`.
     procs : int
         Number of processes (=number of populations running).
         Default is `cpu_count()`.
@@ -782,11 +782,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         binary_operators: Optional[List[str]] = None,
         unary_operators: Optional[List[str]] = None,
         expression_spec: Optional[AbstractExpressionSpec] = None,
-        niterations: int = 40,
-        populations: int = 15,
-        population_size: int = 33,
+        niterations: int = 100,
+        populations: int = 31,
+        population_size: int = 27,
         max_evals: Optional[int] = None,
-        maxsize: int = 20,
+        maxsize: int = 30,
         maxdepth: Optional[int] = None,
         warmup_maxsize_by: Optional[float] = None,
         timeout_in_seconds: Optional[float] = None,
@@ -798,30 +798,30 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         complexity_of_constants: Optional[Union[int, float]] = None,
         complexity_of_variables: Optional[Union[int, float]] = None,
         complexity_mapping: Optional[str] = None,
-        parsimony: float = 0.0032,
+        parsimony: float = 0.0,
         dimensional_constraint_penalty: Optional[float] = None,
         dimensionless_constants_only: bool = False,
         use_frequency: bool = True,
         use_frequency_in_tournament: bool = True,
-        adaptive_parsimony_scaling: float = 20.0,
-        alpha: float = 0.1,
+        adaptive_parsimony_scaling: float = 1040.0,
+        alpha: float = 3.17,
         annealing: bool = False,
         early_stop_condition: Optional[Union[float, str]] = None,
-        ncycles_per_iteration: int = 550,
-        fraction_replaced: float = 0.000364,
-        fraction_replaced_hof: float = 0.035,
-        weight_add_node: float = 0.79,
-        weight_insert_node: float = 5.1,
-        weight_delete_node: float = 1.7,
-        weight_do_nothing: float = 0.21,
-        weight_mutate_constant: float = 0.048,
-        weight_mutate_operator: float = 0.47,
-        weight_swap_operands: float = 0.1,
-        weight_rotate_tree: float = 1.42,
-        weight_randomize: float = 0.00023,
-        weight_simplify: float = 0.0020,
+        ncycles_per_iteration: int = 380,
+        fraction_replaced: float = 0.00036,
+        fraction_replaced_hof: float = 0.0614,
+        weight_add_node: float = 2.47,
+        weight_insert_node: float = 0.0112,
+        weight_delete_node: float = 0.870,
+        weight_do_nothing: float = 0.273,
+        weight_mutate_constant: float = 0.0346,
+        weight_mutate_operator: float = 0.293,
+        weight_swap_operands: float = 0.198,
+        weight_rotate_tree: float = 4.26,
+        weight_randomize: float = 0.000502,
+        weight_simplify: float = 0.00209,
         weight_optimize: float = 0.0,
-        crossover_probability: float = 0.066,
+        crossover_probability: float = 0.0259,
         skip_mutation_failures: bool = True,
         migration: bool = True,
         hof_migration: bool = True,
@@ -833,10 +833,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         optimizer_f_calls_limit: Optional[int] = None,
         optimize_probability: float = 0.14,
         optimizer_iterations: int = 8,
-        perturbation_factor: float = 0.076,
+        perturbation_factor: float = 0.129,
         probability_negate_constant: float = 0.00743,
-        tournament_selection_n: int = 10,
-        tournament_selection_p: float = 0.86,
+        tournament_selection_n: int = 15,
+        tournament_selection_p: float = 0.982,
         procs: int = cpu_count(),
         multithreading: Optional[bool] = None,
         cluster_manager: Optional[
