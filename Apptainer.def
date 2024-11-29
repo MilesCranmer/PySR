@@ -19,7 +19,6 @@ Stage: runtime
 	/usr/local/julia /usr/local/julia
 
 %files
-	./requirements.txt /pysr/requirements.txt
 	./pyproject.toml /pysr/pyproject.toml
 	./setup.py /pysr/setup.py
 	./pysr /pysr/pysr

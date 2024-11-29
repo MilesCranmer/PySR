@@ -15,10 +15,6 @@ ENV PATH="/usr/local/julia/bin:${PATH}"
 
 WORKDIR /pysr
 
-# Caches install (https://stackoverflow.com/questions/25305788/how-to-avoid-reinstalling-packages-when-building-docker-image-for-python-project)
-ADD ./requirements.txt /pysr/requirements.txt
-RUN pip3 install --no-cache-dir -r /pysr/requirements.txt
-
 # Install PySR:
 # We do a minimal copy so it doesn't need to rerun at every file change:
 ADD ./pyproject.toml /pysr/pyproject.toml
