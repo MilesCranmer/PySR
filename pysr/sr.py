@@ -2783,7 +2783,9 @@ def _map_parallelism_params(
             "`multithreading=True, procs={int}` is now `parallelism='multiprocessing', procs={int}`."
         )
         if multithreading:
-            _parallelism = "multithreading"
+            _parallelism: Literal["multithreading", "multiprocessing", "serial"] = (
+                "multithreading"
+            )
             _procs = None
         elif procs is not None and procs > 0:
             _parallelism = "multiprocessing"
@@ -2792,7 +2794,9 @@ def _map_parallelism_params(
             _parallelism = "serial"
             _procs = None
     elif using_new:
-        _parallelism = parallelism
+        _parallelism = cast(
+            Literal["serial", "multithreading", "multiprocessing"], parallelism
+        )
         _procs = procs
     else:
         _parallelism = "multithreading"
