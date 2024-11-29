@@ -28,6 +28,25 @@ dependencies = [
     "typing-extensions>=4.0.0,<5.0.0",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "beartype>=0.19,<0.20",
+    "coverage>=7,<8",
+    "coveralls>=4,<5",
+    "ipykernel>=6,<7",
+    "ipython>=8,<9",
+    "jax[cpu]>=0.4,<0.5",
+    "jupyter>=1,<2",
+    "mypy>=1,<2",
+    "nbval>=0.11,<0.12",
+    "pandas-stubs",
+    "pre-commit>=3.7,<5",
+    "pytest>=8,<9",
+    "torch>=2,<3",
+    "types-openpyxl",
+    "types-pytz",
+]
+
 [tool.setuptools]
 packages = ["pysr", "pysr._cli", "pysr.test"]
 include-package-data = false
@@ -38,19 +57,3 @@ dependencies = {file = "requirements.txt"}
 
 [tool.isort]
 profile = "black"
-
-[tool.rye]
-dev-dependencies = [
-    "pre-commit>=3.7.0",
-    "ipython>=8.23.0",
-    "ipykernel>=6.29.4",
-    "mypy>=1.10.0",
-    "jax[cpu]>=0.4.26",
-    "torch>=2.3.0",
-    "pandas-stubs>=2.2.1.240316",
-    "types-pytz>=2024.1.0.20240417",
-    "types-openpyxl>=3.1.0.20240428",
-    "coverage>=7.5.3",
-    "pytest>=8.3.3",
-    "nbval>=0.11.0",
-]
