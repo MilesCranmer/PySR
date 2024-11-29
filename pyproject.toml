@@ -45,6 +45,7 @@ dev = [
     "torch>=2,<3",
     "types-openpyxl",
     "types-pytz",
+    "pytest-cov>=5,<7",
 ]
 
 [tool.setuptools]

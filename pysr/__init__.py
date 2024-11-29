@@ -1,3 +1,10 @@
+import os
+
+if os.environ.get("PYSR_USE_BEARTYPE", "0") == "1":
+    from beartype.claw import beartype_this_package
+
+    beartype_this_package()
+
 # This must be imported as early as possible to prevent
 # library linking issues caused by numpy/pytorch/etc. importing
 # old libraries:

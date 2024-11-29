@@ -20,6 +20,7 @@ jobs:
     timeout-minutes: 60
     env:
       COVERAGE_PROCESS_START: "${{ github.workspace }}/.coveragerc"
+      PYSR_USE_BEARTYPE: "1"
     defaults:
       run:
         shell: bash
