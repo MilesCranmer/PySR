@@ -1,6 +1,8 @@
 """Functions for doing feature selection during preprocessing."""
 
-from typing import Optional, cast
+from __future__ import annotations
+
+from typing import cast
 
 import numpy as np
 from numpy import ndarray
@@ -13,7 +15,7 @@ def run_feature_selection(
     X: ndarray,
     y: ndarray,
     select_k_features: int,
-    random_state: Optional[np.random.RandomState] = None,
+    random_state: np.random.RandomState | None = None,
 ) -> NDArray[np.bool_]:
     """
     Find most important features.
@@ -38,7 +40,7 @@ def run_feature_selection(
 # Function has not been removed only due to usage in module tests
 def _handle_feature_selection(
     X: ndarray,
-    select_k_features: Optional[int],
+    select_k_features: int | None,
     y: ndarray,
     variable_names: ArrayLike[str],
 ):

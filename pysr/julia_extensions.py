@@ -1,6 +1,6 @@
 """This file installs and loads extensions for SymbolicRegression."""
 
-from typing import Optional
+from __future__ import annotations
 
 from .julia_import import Pkg, jl
 
@@ -10,7 +10,7 @@ def load_required_packages(
     turbo: bool = False,
     bumper: bool = False,
     enable_autodiff: bool = False,
-    cluster_manager: Optional[str] = None,
+    cluster_manager: str | None = None,
 ):
     if turbo:
         load_package("LoopVectorization", "bdcacae8-1622-11e9-2a5c-532679323890")

@@ -1,5 +1,7 @@
 """Define the PySRRegressor scikit-learn interface."""
 
+from __future__ import annotations
+
 import copy
 import os
 import pickle as pkl
@@ -11,18 +13,12 @@ from dataclasses import dataclass, fields
 from io import StringIO
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-    cast,
-)
+from typing import Any, Literal, cast
+
+if sys.version_info >= (3, 10):
+    from collections.abc import Callable
+else:
+    from typing import Callable
 
 import numpy as np
 import pandas as pd
@@ -72,10 +68,10 @@ ALREADY_RAN = False
 
 
 def _process_constraints(
-    binary_operators: List[str],
-    unary_operators: List[Union[Any, str]],
-    constraints: Dict[str, Union[int, Tuple[int, int]]],
-) -> Dict[str, Union[int, Tuple[int, int]]]:
+    binary_operators: list[str],
+    unary_operators: list,
+    constraints: dict[str, int | tuple[int, int]],
+) -> dict[str, int | tuple[int, int]]:
     constraints = constraints.copy()
     for op in unary_operators:
         if op not in constraints:
@@ -94,7 +90,7 @@ def _process_constraints(
                 )
             constraints[op] = (-1, -1)
 
-        constraint_tuple = cast(Tuple[int, int], constraints[op])
+        constraint_tuple = cast(tuple[int, int], constraints[op])
         if op in ["plus", "sub", "+", "-"]:
             if constraint_tuple[0] != constraint_tuple[1]:
                 raise NotImplementedError(
@@ -111,10 +107,10 @@ def _process_constraints(
 
 
 def _maybe_create_inline_operators(
-    binary_operators: List[str],
-    unary_operators: List[str],
-    extra_sympy_mappings: Optional[Dict[str, Callable]],
-) -> Tuple[List[str], List[str]]:
+    binary_operators: list[str],
+    unary_operators: list[str],
+    extra_sympy_mappings: dict[str, Callable] | None,
+) -> tuple[list[str], list[str]]:
     binary_operators = binary_operators.copy()
     unary_operators = unary_operators.copy()
     for op_list in [binary_operators, unary_operators]:
@@ -232,10 +228,10 @@ VALID_OPTIMIZER_ALGORITHMS = ["BFGS", "NelderMead"]
 class _DynamicallySetParams:
     """Defines some parameters that are set at runtime."""
 
-    binary_operators: List[str]
-    unary_operators: List[str]
+    binary_operators: list[str]
+    unary_operators: list[str]
     maxdepth: int
-    constraints: Dict[str, Union[int, Tuple[int, int]]]
+    constraints: dict[str, int | tuple[int, int]]
     batch_size: int
     update_verbosity: int
     progress: bool
@@ -379,7 +375,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         `idx` argument to the function, which is `nothing`
         for non-batched, and a 1D array of indices for batched.
         Default is `None`.
-    complexity_of_operators : dict[str, Union[int, float]]
+    complexity_of_operators : dict[str, int | float]
         If you would like to use a complexity other than 1 for an
         operator, specify the complexity here. For example,
         `{"sin": 2, "+": 1}` would give a complexity of 2 for each use
@@ -541,10 +537,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         tournament. The probability will decay as p*(1-p)^n for other
         expressions, sorted by loss.
         Default is `0.982`.
-    parallelism: Optional[Literal["serial", "multithreading", "multiprocessing"]]
+    parallelism: Literal["serial", "multithreading", "multiprocessing"] | None
         Parallelism to use for the search. Can be `"serial"`, `"multithreading"`, or `"multiprocessing"`.
         Default is `"multithreading"`.
-    procs: Optional[int]
+    procs: int | None
         Number of processes to use for parallelism. If `None`, defaults to `cpu_count()`.
         Default is `None`.
     cluster_manager : str
@@ -702,7 +698,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Number of output dimensions.
     selection_mask_ : ndarray of shape (`n_features_in_`,)
         Mask of which features of `X` to use when `select_k_features` is set.
-    tempdir_ : Optional[Path]
+    tempdir_ : Path | None
         Path to the temporary equations directory.
     julia_state_stream_ : ndarray
         The serialized state for the julia SymbolicRegression.jl backend (after fitting),
@@ -758,54 +754,54 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     ```
     """
 
-    equations_: Union[pd.DataFrame, List[pd.DataFrame], None]
+    equations_: pd.DataFrame | list[pd.DataFrame] | None
     n_features_in_: int
     feature_names_in_: ArrayLike[str]
     display_feature_names_in_: ArrayLike[str]
-    complexity_of_variables_: Union[int, float, List[Union[int, float]], None]
-    X_units_: Union[ArrayLike[str], None]
-    y_units_: Union[str, ArrayLike[str], None]
+    complexity_of_variables_: int | float | list[int | float] | None
+    X_units_: ArrayLike[str] | None
+    y_units_: str | ArrayLike[str] | None
     nout_: int
-    selection_mask_: Union[NDArray[np.bool_], None]
+    selection_mask_: NDArray[np.bool_] | None
     run_id_: str
     output_directory_: str
-    julia_state_stream_: Union[NDArray[np.uint8], None]
-    julia_options_stream_: Union[NDArray[np.uint8], None]
-    equation_file_contents_: Union[List[pd.DataFrame], None]
+    julia_state_stream_: NDArray[np.uint8] | None
+    julia_options_stream_: NDArray[np.uint8] | None
+    equation_file_contents_: list[pd.DataFrame] | None
     show_pickle_warnings_: bool
 
     def __init__(
         self,
         model_selection: Literal["best", "accuracy", "score"] = "best",
         *,
-        binary_operators: Optional[List[str]] = None,
-        unary_operators: Optional[List[str]] = None,
-        expression_spec: Optional[AbstractExpressionSpec] = None,
+        binary_operators: list[str] | None = None,
+        unary_operators: list[str] | None = None,
+        expression_spec: AbstractExpressionSpec | None = None,
         niterations: int = 100,
         populations: int = 31,
         population_size: int = 27,
-        max_evals: Optional[int] = None,
+        max_evals: int | None = None,
         maxsize: int = 30,
-        maxdepth: Optional[int] = None,
-        warmup_maxsize_by: Optional[float] = None,
-        timeout_in_seconds: Optional[float] = None,
-        constraints: Optional[Dict[str, Union[int, Tuple[int, int]]]] = None,
-        nested_constraints: Optional[Dict[str, Dict[str, int]]] = None,
-        elementwise_loss: Optional[str] = None,
-        loss_function: Optional[str] = None,
-        complexity_of_operators: Optional[Dict[str, Union[int, float]]] = None,
-        complexity_of_constants: Optional[Union[int, float]] = None,
-        complexity_of_variables: Optional[Union[int, float]] = None,
-        complexity_mapping: Optional[str] = None,
+        maxdepth: int | None = None,
+        warmup_maxsize_by: float | None = None,
+        timeout_in_seconds: float | None = None,
+        constraints: dict[str, int | tuple[int, int]] | None = None,
+        nested_constraints: dict[str, dict[str, int]] | None = None,
+        elementwise_loss: str | None = None,
+        loss_function: str | None = None,
+        complexity_of_operators: dict[str, int | float] | None = None,
+        complexity_of_constants: int | float | None = None,
+        complexity_of_variables: int | float | list[int | float] | None = None,
+        complexity_mapping: str | None = None,
         parsimony: float = 0.0,
-        dimensional_constraint_penalty: Optional[float] = None,
+        dimensional_constraint_penalty: float | None = None,
         dimensionless_constants_only: bool = False,
         use_frequency: bool = True,
         use_frequency_in_tournament: bool = True,
         adaptive_parsimony_scaling: float = 1040.0,
         alpha: float = 3.17,
         annealing: bool = False,
-        early_stop_condition: Optional[Union[float, str]] = None,
+        early_stop_condition: float | str | None = None,
         ncycles_per_iteration: int = 380,
         fraction_replaced: float = 0.00036,
         fraction_replaced_hof: float = 0.0614,
@@ -829,21 +825,21 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         should_optimize_constants: bool = True,
         optimizer_algorithm: Literal["BFGS", "NelderMead"] = "BFGS",
         optimizer_nrestarts: int = 2,
-        optimizer_f_calls_limit: Optional[int] = None,
+        optimizer_f_calls_limit: int | None = None,
         optimize_probability: float = 0.14,
         optimizer_iterations: int = 8,
         perturbation_factor: float = 0.129,
         probability_negate_constant: float = 0.00743,
         tournament_selection_n: int = 15,
         tournament_selection_p: float = 0.982,
-        parallelism: Optional[
-            Literal["serial", "multithreading", "multiprocessing"]
-        ] = None,
-        procs: Optional[int] = None,
-        cluster_manager: Optional[
-            Literal["slurm", "pbs", "lsf", "sge", "qrsh", "scyld", "htc"]
-        ] = None,
-        heap_size_hint_in_bytes: Optional[int] = None,
+        parallelism: (
+            Literal["serial", "multithreading", "multiprocessing"] | None
+        ) = None,
+        procs: int | None = None,
+        cluster_manager: (
+            Literal["slurm", "pbs", "lsf", "sge", "qrsh", "scyld", "htc"] | None
+        ) = None,
+        heap_size_hint_in_bytes: int | None = None,
         batching: bool = False,
         batch_size: int = 50,
         fast_cycle: bool = False,
@@ -855,22 +851,22 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         deterministic: bool = False,
         warm_start: bool = False,
         verbosity: int = 1,
-        update_verbosity: Optional[int] = None,
+        update_verbosity: int | None = None,
         print_precision: int = 5,
         progress: bool = True,
-        run_id: Optional[str] = None,
-        output_directory: Optional[str] = None,
+        run_id: str | None = None,
+        output_directory: str | None = None,
         temp_equation_file: bool = False,
-        tempdir: Optional[str] = None,
+        tempdir: str | None = None,
         delete_tempfiles: bool = True,
         update: bool = False,
         output_jax_format: bool = False,
         output_torch_format: bool = False,
-        extra_sympy_mappings: Optional[Dict[str, Callable]] = None,
-        extra_torch_mappings: Optional[Dict[Callable, Callable]] = None,
-        extra_jax_mappings: Optional[Dict[Callable, str]] = None,
+        extra_sympy_mappings: dict[str, Callable] | None = None,
+        extra_torch_mappings: dict[Callable, Callable] | None = None,
+        extra_jax_mappings: dict[Callable, str] | None = None,
         denoise: bool = False,
-        select_k_features: Optional[int] = None,
+        select_k_features: int | None = None,
         **kwargs,
     ):
         # Hyperparameters
@@ -994,7 +990,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     )
                 elif k == "multithreading":
                     # Specific advice given in `_map_parallelism_params`
-                    self.multithreading: Optional[bool] = v
+                    self.multithreading: bool | None = v
                 # Handle kwargs that have been moved to the fit method
                 elif k in ["weights", "variable_names", "Xresampled"]:
                     warnings.warn(
@@ -1030,11 +1026,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         equation_file: None = None,  # Deprecated
         *,
         run_directory: PathLike,
-        binary_operators: Optional[List[str]] = None,
-        unary_operators: Optional[List[str]] = None,
-        n_features_in: Optional[int] = None,
-        feature_names_in: Optional[ArrayLike[str]] = None,
-        selection_mask: Optional[NDArray[np.bool_]] = None,
+        binary_operators: list[str] | None = None,
+        unary_operators: list[str] | None = None,
+        n_features_in: int | None = None,
+        feature_names_in: ArrayLike[str] | None = None,
+        selection_mask: NDArray[np.bool_] | None = None,
         nout: int = 1,
         **pysr_kwargs,
     ) -> "PySRRegressor":
@@ -1090,7 +1086,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             assert unary_operators is None
             assert n_features_in is None
             with open(pkl_filename, "rb") as f:
-                model: "PySRRegressor" = pkl.load(f)
+                model: "pysr.sr.PySRRegressor" = pkl.load(f)
 
             # Update any parameters if necessary, such as
             # extra_sympy_mappings:
@@ -1190,7 +1186,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         output += "]"
         return output
 
-    def __getstate__(self) -> Dict[str, Any]:
+    def __getstate__(self) -> dict[str, Any]:
         """
         Handle pickle serialization for PySRRegressor.
 
@@ -1277,7 +1273,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     def julia_state_(self):
         """The deserialized state."""
         return cast(
-            Optional[Tuple[VectorValue, AnyValue]],
+            tuple[VectorValue, AnyValue] | None,
             jl_deserialize(self.julia_state_stream_),
         )
 
@@ -1296,8 +1292,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         return self.expression_spec or ExpressionSpec()
 
     def get_best(
-        self, index: Optional[Union[int, List[int]]] = None
-    ) -> Union[pd.Series, List[pd.Series]]:
+        self, index: int | list[int] | None = None
+    ) -> pd.Series | list[pd.Series]:
         """
         Get best equation using `model_selection`.
 
@@ -1463,15 +1459,15 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         complexity_of_variables,
         X_units,
         y_units,
-    ) -> Tuple[
+    ) -> tuple[
         ndarray,
         ndarray,
-        Optional[ndarray],
-        Optional[ndarray],
+        ndarray | None,
+        ndarray | None,
         ArrayLike[str],
-        Optional[Union[int, float, List[Union[int, float]]]],
-        Optional[ArrayLike[str]],
-        Optional[Union[str, ArrayLike[str]]],
+        int | float | list[int | float] | None,
+        ArrayLike[str] | None,
+        str | ArrayLike[str] | None,
     ]:
         """
         Validate the parameters passed to the :term`fit` method.
@@ -1604,15 +1600,15 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             y_units,
         )
 
-    def _validate_data_X_y(self, X: Any, y: Any) -> Tuple[ndarray, ndarray]:
+    def _validate_data_X_y(self, X: Any, y: Any) -> tuple[ndarray, ndarray]:
         raw_out = self._validate_data(X=X, y=y, reset=True, multi_output=True)  # type: ignore
-        return cast(Tuple[ndarray, ndarray], raw_out)
+        return cast(tuple[ndarray, ndarray], raw_out)
 
     def _validate_data_X(self, X: Any) -> ndarray:
         raw_out = self._validate_data(X=X, reset=False)  # type: ignore
         return cast(ndarray, raw_out)
 
-    def _get_precision_mapped_dtype(self, X: np.ndarray) -> Type:
+    def _get_precision_mapped_dtype(self, X: np.ndarray) -> type:
         is_complex = np.issubdtype(X.dtype, np.complexfloating)
         is_real = not is_complex
         if is_real:
@@ -1624,11 +1620,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self,
         X: ndarray,
         y: ndarray,
-        Xresampled: Union[ndarray, None],
+        Xresampled: ndarray | None,
         variable_names: ArrayLike[str],
-        complexity_of_variables: Optional[Union[int, float, List[Union[int, float]]]],
-        X_units: Union[ArrayLike[str], None],
-        y_units: Union[ArrayLike[str], str, None],
+        complexity_of_variables: int | float | list[int | float] | None,
+        X_units: ArrayLike[str] | None,
+        y_units: ArrayLike[str] | str | None,
         random_state: np.random.RandomState,
     ):
         """
@@ -1740,8 +1736,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         X: ndarray,
         y: ndarray,
         runtime_params: _DynamicallySetParams,
-        weights: Optional[ndarray],
-        category: Optional[ndarray],
+        weights: ndarray | None,
+        category: ndarray | None,
         seed: int,
     ):
         """
@@ -1897,8 +1893,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             optimize=self.weight_optimize,
         )
 
-        jl_binary_operators: List[Any] = []
-        jl_unary_operators: List[Any] = []
+        jl_binary_operators: list[Any] = []
+        jl_unary_operators: list[Any] = []
         for input_list, output_list, name in [
             (binary_operators, jl_binary_operators, "binary"),
             (unary_operators, jl_unary_operators, "unary"),
@@ -2070,13 +2066,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         *,
         Xresampled=None,
         weights=None,
-        variable_names: Optional[ArrayLike[str]] = None,
-        complexity_of_variables: Optional[
-            Union[int, float, List[Union[int, float]]]
-        ] = None,
-        X_units: Optional[ArrayLike[str]] = None,
-        y_units: Optional[Union[str, ArrayLike[str]]] = None,
-        category: Optional[ndarray] = None,
+        variable_names: ArrayLike[str] | None = None,
+        complexity_of_variables: int | float | list[int | float] | None = None,
+        X_units: ArrayLike[str] | None = None,
+        y_units: str | ArrayLike[str] | None = None,
+        category: ndarray | None = None,
     ) -> "PySRRegressor":
         """
         Search for equations to fit the dataset and store them in `self.equations_`.
@@ -2243,7 +2237,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         return self
 
-    def refresh(self, run_directory: Optional[PathLike] = None) -> None:
+    def refresh(self, run_directory: PathLike | None = None) -> None:
         """
         Update self.equations_ with any new options passed.
 
@@ -2266,9 +2260,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     def predict(
         self,
         X,
-        index: Optional[Union[int, List[int]]] = None,
+        index: int | list[int] | None = None,
         *,
-        category: Optional[ndarray] = None,
+        category: ndarray | None = None,
     ) -> ndarray:
         """
         Predict y from input X using the equation chosen by `model_selection`.
@@ -2363,7 +2357,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 "You can then run `model.refresh()` to re-load the expressions."
             ) from error
 
-    def sympy(self, index: Optional[Union[int, List[int]]] = None):
+    def sympy(self, index: int | list[int] | None = None):
         """
         Return sympy representation of the equation(s) chosen by `model_selection`.
 
@@ -2394,8 +2388,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             return best_equation["sympy_format"]
 
     def latex(
-        self, index: Optional[Union[int, List[int]]] = None, precision: int = 3
-    ) -> Union[str, List[str]]:
+        self, index: int | list[int] | None = None, precision: int = 3
+    ) -> str | list[str]:
         """
         Return latex representation of the equation(s) chosen by `model_selection`.
 
@@ -2502,7 +2496,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         else:
             return best_equation["torch_format"]
 
-    def get_equation_file(self, i: Optional[int] = None) -> Path:
+    def get_equation_file(self, i: int | None = None) -> Path:
         if i is not None:
             return (
                 Path(self.output_directory_)
@@ -2512,7 +2506,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         else:
             return Path(self.output_directory_) / self.run_id_ / "hall_of_fame.csv"
 
-    def _read_equation_file(self) -> List[pd.DataFrame]:
+    def _read_equation_file(self) -> list[pd.DataFrame]:
         """Read the hall of fame file created by `SymbolicRegression.jl`."""
 
         try:
@@ -2554,9 +2548,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         return df
 
-    def get_hof(
-        self, search_output: Optional[Any] = None
-    ) -> Union[pd.DataFrame, List[pd.DataFrame]]:
+    def get_hof(self, search_output=None) -> pd.DataFrame | list[pd.DataFrame]:
         """Get the equations from a hall of fame file or search output.
 
         If no arguments entered, the ones used
@@ -2581,7 +2573,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         _validate_export_mappings(self.extra_jax_mappings, self.extra_torch_mappings)
 
-        equation_file_contents = cast(List[pd.DataFrame], self.equation_file_contents_)
+        equation_file_contents = cast(list[pd.DataFrame], self.equation_file_contents_)
 
         ret_outputs = [
             pd.concat(
@@ -2601,9 +2593,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
     def latex_table(
         self,
-        indices: Optional[List[int]] = None,
+        indices: list[int] | None = None,
         precision: int = 3,
-        columns: List[str] = ["equation", "complexity", "loss", "score"],
+        columns: list[str] = ["equation", "complexity", "loss", "score"],
     ) -> str:
         """Create a LaTeX/booktabs table for all, or some, of the equations.
 
@@ -2711,11 +2703,6 @@ def calculate_scores(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _mutate_parameter(param_name: str, param_value):
-    if param_name in ["binary_operators", "unary_operators"] and isinstance(
-        param_value, str
-    ):
-        return [param_value]
-
     if param_name == "batch_size" and param_value < 1:
         warnings.warn(
             "Given `batch_size` must be greater than or equal to one. "
@@ -2738,10 +2725,10 @@ def _mutate_parameter(param_name: str, param_value):
 
 
 def _map_parallelism_params(
-    parallelism: Optional[Literal["serial", "multithreading", "multiprocessing"]],
-    procs: Optional[int],
-    multithreading: Optional[bool],
-) -> Tuple[Literal["serial", "multithreading", "multiprocessing"], Optional[int]]:
+    parallelism: Literal["serial", "multithreading", "multiprocessing"] | None,
+    procs: int | None,
+    multithreading: bool | None,
+) -> tuple[Literal["serial", "multithreading", "multiprocessing"], int | None]:
     """Map old and new parallelism parameters to the new format.
 
     Parameters

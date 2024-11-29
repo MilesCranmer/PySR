@@ -1,6 +1,12 @@
 """Functions for initializing the Julia environment and installing deps."""
 
-from typing import Any, Callable, cast, overload
+import sys
+from typing import Any, cast, overload
+
+if sys.version_info >= (3, 10):
+    from typing import Callable
+else:
+    from collections.abc import Callable
 
 import numpy as np
 from juliacall import convert as jl_convert  # type: ignore

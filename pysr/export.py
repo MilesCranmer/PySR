@@ -1,5 +1,12 @@
+from __future__ import annotations
+
 import copy
-from typing import Callable, Dict, Optional, Union
+import sys
+
+if sys.version_info >= (3, 10):
+    from collections.abc import Callable
+else:
+    from typing import Callable
 
 import numpy as np
 import pandas as pd
@@ -16,11 +23,11 @@ def add_export_formats(
     output: pd.DataFrame,
     *,
     feature_names_in: ArrayLike[str],
-    selection_mask: Union[NDArray[np.bool_], None] = None,
-    extra_sympy_mappings: Optional[Dict[str, Callable]] = None,
-    extra_torch_mappings: Optional[Dict[Callable, Callable]] = None,
+    selection_mask: NDArray[np.bool_] | None = None,
+    extra_sympy_mappings: dict[str, Callable] | None = None,
+    extra_torch_mappings: dict[Callable, Callable] | None = None,
     output_torch_format: bool = False,
-    extra_jax_mappings: Optional[Dict[Callable, str]] = None,
+    extra_jax_mappings: dict[Callable, str] | None = None,
     output_jax_format: bool = False,
 ) -> pd.DataFrame:
     """Create export formats for an equations dataframe.

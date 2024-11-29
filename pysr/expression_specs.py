@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import copy
 import sys
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, List, NewType, Optional
+from typing import TYPE_CHECKING, Any, NewType
 
 if sys.version_info >= (3, 10):
     from typing import TypeAlias
@@ -59,7 +61,7 @@ class AbstractExpressionSpec(ABC):
         self,
         model: PySRRegressor,
         equations: pd.DataFrame,
-        search_output: Any,
+        search_output,
     ) -> pd.DataFrame:
         """Create additional columns in the equations dataframe."""
         pass  # pragma: no cover
@@ -98,7 +100,7 @@ class ExpressionSpec(AbstractExpressionSpec):
         self,
         model: PySRRegressor,
         equations: pd.DataFrame,
-        search_output: Any,
+        search_output,
     ):
         return add_export_formats(
             equations,
@@ -169,9 +171,9 @@ class TemplateExpressionSpec(AbstractExpressionSpec):
 
     def __init__(
         self,
-        function_symbols: List[str],
+        function_symbols: list[str],
         combine: str,
-        num_features: Optional[Dict[str, int]] = None,
+        num_features: dict[str, int] | None = None,
     ):
         self.function_symbols = function_symbols
         self.combine = combine
@@ -210,7 +212,7 @@ class TemplateExpressionSpec(AbstractExpressionSpec):
         self,
         model: PySRRegressor,
         equations: pd.DataFrame,
-        search_output: Any,
+        search_output,
     ) -> pd.DataFrame:
         # We try to load the raw julia state from a saved binary stream
         # if not provided.
@@ -236,7 +238,7 @@ class ParametricExpressionSpec(AbstractExpressionSpec):
         self,
         model: PySRRegressor,
         equations: pd.DataFrame,
-        search_output: Any,
+        search_output,
     ):
         search_output = search_output or model.julia_state_
         return _search_output_to_callable_expressions(equations, search_output)
