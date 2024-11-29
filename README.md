@@ -267,9 +267,8 @@ For details on what each parameter does, check out the [API page](https://ai.dam
 
 ```python
 model = PySRRegressor(
-    procs=4,
     populations=8,
-    # ^ 2 populations per core, so one is always running.
+    # ^ Assuming we have 4 cores, this means 2 populations per core, so one is always running.
     population_size=50,
     # ^ Slightly larger populations, for greater diversity.
     ncycles_per_iteration=500,
