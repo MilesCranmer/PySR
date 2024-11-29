@@ -138,8 +138,7 @@ class TestJAX(unittest.TestCase):
             },
             random_state=0,
             deterministic=True,
-            procs=0,
-            multithreading=False,
+            parallelism="serial",
         )
         np.random.seed(0)
         model.fit(X.values, y.values)

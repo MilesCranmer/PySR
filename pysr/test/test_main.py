@@ -100,7 +100,7 @@ class TestPipeline(unittest.TestCase):
             # Turbo needs to work with unsafe operators:
             unary_operators=["sqrt"],
             procs=2,
-            multithreading=False,
+            parallelism="multiprocessing",
             turbo=True,
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-10 && complexity == 1",
             loss_function="""
@@ -763,8 +763,7 @@ class TestMiscellaneous(unittest.TestCase):
         model = PySRRegressor(
             populations=int(1 + DEFAULT_POPULATIONS / 5),
             temp_equation_file=True,
-            procs=0,
-            multithreading=False,
+            parallelism="serial",
         )
         nout = 3
         X = np.random.randn(100, 2)
@@ -807,8 +806,7 @@ class TestMiscellaneous(unittest.TestCase):
             progress=False,
             random_state=0,
             deterministic=True,  # Deterministic as tests require this.
-            procs=0,
-            multithreading=False,
+            parallelism="serial",
             warm_start=False,
             temp_equation_file=True,
         )  # Return early.
@@ -1347,9 +1345,8 @@ class TestDimensionalConstraints(unittest.TestCase):
             complexity_of_constants=10,
             weight_mutate_constant=0.0,
             should_optimize_constants=False,
-            multithreading=False,
+            parallelism="serial",
             deterministic=True,
-            procs=0,
             random_state=0,
             output_directory=output_dir,
             run_id=run_id,

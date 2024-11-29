@@ -207,8 +207,7 @@ class TestTorch(unittest.TestCase):
             extra_torch_mappings={"cos_approx": cos_approx},
             random_state=0,
             deterministic=True,
-            procs=0,
-            multithreading=False,
+            parallelism="serial",
         )
         np.random.seed(0)
         model.fit(X.values, y.values)
