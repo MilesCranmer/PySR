@@ -178,6 +178,7 @@ PySR's main interface is in the style of scikit-learn:
 from pysr import PySRRegressor
 
 model = PySRRegressor(
+    maxsize=20,
     niterations=40,  # < Increase me for better results
     binary_operators=["+", "*"],
     unary_operators=[
