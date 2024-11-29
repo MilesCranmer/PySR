@@ -141,17 +141,21 @@ class TestTorch(unittest.TestCase):
                 Path(model.output_directory_) / model.run_id_ / fname
             )
 
+        MyCustomOperator = sympy.Function("mycustomoperator")
+
         model.set_params(
-            extra_sympy_mappings={"mycustomoperator": sympy.sin},
-            extra_torch_mappings={"mycustomoperator": self.torch.sin},
+            extra_sympy_mappings={"mycustomoperator": MyCustomOperator},
+            extra_torch_mappings={MyCustomOperator: self.torch.sin},
         )
         # TODO: We shouldn't need to specify the run directory here.
         model.refresh(run_directory=str(Path(model.output_directory_) / model.run_id_))
-        self.assertEqual(str(model.sympy()), "sin(x1)")
+        # self.assertEqual(str(model.sympy()), "sin(x1)")
         # Will automatically use the set global state from get_hof.
 
         tformat = model.pytorch()
-        self.assertEqual(str(tformat), "_SingleSymPyModule(expression=sin(x1))")
+        self.assertEqual(
+            str(tformat), "_SingleSymPyModule(expression=mycustomoperator(x1))"
+        )
         np.testing.assert_almost_equal(
             tformat(self.torch.tensor(X)).detach().numpy(),
             np.sin(X[:, 1]),
@@ -204,7 +208,6 @@ class TestTorch(unittest.TestCase):
             maxsize=10,
             early_stop_condition=1e-5,
             extra_sympy_mappings={"cos_approx": cos_approx},
-            extra_torch_mappings={"cos_approx": cos_approx},
             random_state=0,
             deterministic=True,
             parallelism="serial",

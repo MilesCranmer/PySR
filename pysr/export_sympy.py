@@ -81,7 +81,7 @@ def create_sympy_symbols(
 
 
 def pysr2sympy(
-    equation: str,
+    equation: str | float | int,
     *,
     feature_names_in: ArrayLike[str] | None = None,
     extra_sympy_mappings: dict[str, Callable] | None = None,

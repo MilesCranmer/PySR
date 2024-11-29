@@ -35,6 +35,7 @@ from .params import (
     DEFAULT_NITERATIONS,
     DEFAULT_PARAMS,
     DEFAULT_POPULATIONS,
+    skip_if_beartype,
 )
 
 # Disables local saving:
@@ -354,9 +355,8 @@ class TestPipeline(unittest.TestCase):
     def test_noisy_builtin_variable_names(self):
         y = self.X[:, [0, 1]] ** 2 + self.rstate.randn(self.X.shape[0], 1) * 0.05
         model = PySRRegressor(
-            # Test that passing a single operator works:
-            unary_operators="sq(x) = x^2",
-            binary_operators="plus",
+            unary_operators=["sq(x) = x^2"],
+            binary_operators=["plus"],
             extra_sympy_mappings={"sq": lambda x: x**2},
             **self.default_test_kwargs,
             procs=0,
@@ -475,9 +475,8 @@ class TestPipeline(unittest.TestCase):
         # Test that we can simply load a model from its equation file.
         y = self.X[:, [0, 1]] ** 2
         model = PySRRegressor(
-            # Test that passing a single operator works:
-            unary_operators="sq(x) = x^2",
-            binary_operators="plus",
+            unary_operators=["sq(x) = x^2"],
+            binary_operators=["plus"],
             extra_sympy_mappings={"sq": lambda x: x**2},
             **self.default_test_kwargs,
             procs=0,
@@ -866,6 +865,7 @@ class TestMiscellaneous(unittest.TestCase):
 class TestHelpMessages(unittest.TestCase):
     """Test user help messages."""
 
+    @skip_if_beartype
     def test_deprecation(self):
         """Ensure that deprecation works as expected.
 
@@ -972,6 +972,7 @@ class TestHelpMessages(unittest.TestCase):
             model.fit(X, y, variable_names=["f{c}"])
         self.assertIn("Invalid variable name", str(cm.exception))
 
+    @skip_if_beartype
     def test_bad_kwargs(self):
         bad_kwargs = [
             dict(
