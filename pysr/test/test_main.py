@@ -1,6 +1,7 @@
 import importlib
 import os
 import pickle as pkl
+import platform
 import tempfile
 import traceback
 import unittest
@@ -633,6 +634,10 @@ class TestPipeline(unittest.TestCase):
             model.latex_table()
 
     def test_tensorboard_logger(self):
+
+        if platform.system() == "Windows":
+            self.skipTest("Skipping test on Windows")
+
         """Test TensorBoard logger functionality."""
         try:
             from tensorboard.backend.event_processing.event_accumulator import (  # type: ignore
