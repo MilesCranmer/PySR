@@ -523,7 +523,93 @@ Note that this expression has a large dynamic range so may be difficult to find.
 Note that you can also search for exclusively dimensionless constants by settings
 `dimensionless_constants_only` to `true`.
 
-## 11. Additional features
+## 11. Expression Specifications
+
+PySR 1.0 introduces powerful expression specifications that allow you to define structured equations. Here are two examples:
+
+### Template Expressions
+
+`TemplateExpressionSpec` allows you to define a specific structure for the equation.
+For example, let's say we want to learn an equation of the form:
+
+$$ y = \sin(f(x_1, x_2)) + g(x_3) $$
+
+We can do this as follows:
+
+```python
+import numpy as np
+from pysr import PySRRegressor, TemplateExpressionSpec
+
+# Create data
+X = np.random.randn(1000, 3)
+y = np.sin(X[:, 0] + X[:, 1]) + X[:, 2]**2
+
+# Define template: we want sin(f(x1, x2)) + g(x3)
+template = TemplateExpressionSpec(
+    function_symbols=["f", "g"],
+    combine="((; f, g), (x1, x2, x3)) -> sin(f(x1, x2)) + g(x3)",
+)
+
+model = PySRRegressor(
+    expression_spec=template,
+    binary_operators=["+", "*", "-", "/"],
+    unary_operators=["sin"],
+    maxsize=10,
+)
+model.fit(X, y)
+```
+
+You can also use no argument-functions for learning constants, like:
+
+```python
+template = TemplateExpressionSpec(
+    function_symbols=["a", "f"],
+    combine="((; a, f), (x, y)) -> a() * sin(f(x, y))",
+)
+```
+
+### Parametric Expressions
+
+When your data has categories with shared equation structure but different parameters,
+you can use a `ParametricExpressionSpec`. Let's say we would like to learn the expression:
+
+$$ y = \alpha \sin(x_1) + \beta $$
+
+for three different values of $\alpha$ and $\beta$.
+
+```python
+import numpy as np
+from pysr import PySRRegressor, ParametricExpressionSpec
+
+# Create data with 3 categories
+X = np.random.uniform(-3, 3, (1000, 2))
+category = np.random.randint(0, 3, 1000)
+
+# Parameters for each category
+offsets = [0.1, 1.5, -0.5]
+scales = [1.0, 2.0, 0.5]
+
+# y = scale[category] * sin(x1) + offset[category]
+y = np.array([
+    scales[c] * np.sin(x1) + offsets[c]
+    for x1, c in zip(X[:, 0], category)
+])
+
+model = PySRRegressor(
+    expression_spec=ParametricExpressionSpec(max_parameters=2),
+    binary_operators=["+", "*", "-", "/"],
+    unary_operators=["sin"],
+    maxsize=10,
+)
+model.fit(X, y, category=category)
+
+# Predicting on new data:
+# model.predict(X_test, category=category_test)
+```
+
+See [Expression Specifications](expression-specs.md) for more details.
+
+## 12. Additional features
 
 For the many other features available in PySR, please
 read the [Options section](options.md).
