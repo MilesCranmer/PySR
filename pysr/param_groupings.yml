@@ -81,7 +81,7 @@
   - fast_cycle
   - turbo
   - bumper
-  - enable_autodiff
+  - autodiff_backend
 - Determinism:
   - random_state
   - deterministic

@@ -576,11 +576,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         If you pass complex data, the corresponding complex precision
         will be used (i.e., `64` for complex128, `32` for complex64).
         Default is `32`.
-    enable_autodiff : bool
-        Whether to create derivative versions of operators for automatic
-        differentiation. This is only necessary if you wish to compute
-        the gradients of an expression within a custom loss function.
-        Default is `False`.
+    autodiff_backend : Literal["Zygote"] | None
+        Which backend to use for automatic differentiation during constant
+        optimization. Currently only `"Zygote"` is supported. The default,
+        `None`, uses forward-mode or finite difference.
+        Default is `None`.
     random_state : int, Numpy RandomState instance or None
         Pass an int for reproducible results across multiple function calls.
         See :term:`Glossary <random_state>`.
@@ -840,7 +840,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         turbo: bool = False,
         bumper: bool = False,
         precision: Literal[16, 32, 64] = 32,
-        enable_autodiff: bool = False,
+        autodiff_backend: Literal["Zygote"] | None = None,
         random_state: int | np.random.RandomState | None = None,
         deterministic: bool = False,
         warm_start: bool = False,
@@ -943,7 +943,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.turbo = turbo
         self.bumper = bumper
         self.precision = precision
-        self.enable_autodiff = enable_autodiff
+        self.autodiff_backend = autodiff_backend
         self.random_state = random_state
         self.deterministic = deterministic
         self.warm_start = warm_start
@@ -1869,9 +1869,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         load_required_packages(
             turbo=self.turbo,
             bumper=self.bumper,
-            enable_autodiff=self.enable_autodiff,
+            autodiff_backend=self.autodiff_backend,
             cluster_manager=cluster_manager,
         )
+
+        if self.autodiff_backend is not None:
+            autodiff_backend = jl.Symbol(self.autodiff_backend)
+        else:
+            autodiff_backend = None
 
         mutation_weights = SymbolicRegression.MutationWeights(
             mutate_constant=self.weight_mutate_constant,
@@ -1940,7 +1945,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             fast_cycle=self.fast_cycle,
             turbo=self.turbo,
             bumper=self.bumper,
-            enable_autodiff=self.enable_autodiff,
+            autodiff_backend=autodiff_backend,
             migration=self.migration,
             hof_migration=self.hof_migration,
             fraction_replaced_hof=self.fraction_replaced_hof,
