@@ -80,3 +80,23 @@ PARAMSKEY
         show_root_heading: true
         heading_level: 3
         show_root_full_path: false
+
+::: pysr.AbstractExpressionSpec
+    options:
+        show_root_heading: true
+        heading_level: 3
+        show_root_full_path: false
+
+## Logger Specifications
+
+::: pysr.TensorBoardLoggerSpec
+    options:
+        show_root_heading: true
+        heading_level: 3
+        show_root_full_path: false
+
+::: pysr.AbstractLoggerSpec
+    options:
+        show_root_heading: true
+        heading_level: 3
+        show_root_full_path: false

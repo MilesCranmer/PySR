@@ -609,7 +609,42 @@ model.fit(X, y, category=category)
 
 See [Expression Specifications](expression-specs.md) for more details.
 
-## 12. Additional features
+## 12. Using TensorBoard for Logging
+
+You can use TensorBoard to visualize the search progress, as well as
+record hyperparameters and final metrics (like `min_loss` and `pareto_volume` - the latter of which
+is a performance measure of the entire Pareto front).
+
+```python
+import numpy as np
+from pysr import PySRRegressor, TensorBoardLoggerSpec
+
+rstate = np.random.RandomState(42)
+
+# Uniform dist between -3 and 3:
+X = rstate.uniform(-3, 3, (1000, 2))
+y = np.exp(X[:, 0]) + X[:, 1]
+
+# Create a logger that writes to "logs/run*":
+logger_spec = TensorBoardLoggerSpec(
+    log_dir="logs/run",
+    log_interval=10,  # Log every 10 iterations
+)
+
+model = PySRRegressor(
+    binary_operators=["+", "*", "-", "/"],
+    logger_spec=logger_spec,
+)
+model.fit(X, y)
+```
+
+You can then view the logs with:
+
+```bash
+tensorboard --logdir logs/
+```
+
+## 13. Additional features
 
 For the many other features available in PySR, please
 read the [Options section](options.md).
