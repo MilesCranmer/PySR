@@ -3,6 +3,7 @@
 from typing import Literal
 
 from .julia_import import Pkg, jl
+from .logger_specs import AbstractLoggerSpec, TensorBoardLoggerSpec
 
 
 def load_required_packages(
@@ -11,6 +12,7 @@ def load_required_packages(
     bumper: bool = False,
     autodiff_backend: Literal["Zygote"] | None = None,
     cluster_manager: str | None = None,
+    logger: AbstractLoggerSpec | None = None,
 ):
     if turbo:
         load_package("LoopVectorization", "bdcacae8-1622-11e9-2a5c-532679323890")
@@ -20,12 +22,18 @@ def load_required_packages(
         load_package("Zygote", "e88e6eb3-aa80-5325-afca-941959d7151f")
     if cluster_manager is not None:
         load_package("ClusterManagers", "34f1f09b-3a8b-5176-ab39-66d58a4d544e")
+    if isinstance(logger, TensorBoardLoggerSpec):
+        load_package("TensorBoardLogger", "899adc3e-224a-11e9-021f-63837185c80f")
 
 
 def load_all_packages():
     """Install and load all Julia extensions available to PySR."""
     load_required_packages(
-        turbo=True, bumper=True, autodiff_backend="Zygote", cluster_manager="slurm"
+        turbo=True,
+        bumper=True,
+        autodiff_backend="Zygote",
+        cluster_manager="slurm",
+        logger=TensorBoardLoggerSpec(log_dir="logs"),
     )
 
 

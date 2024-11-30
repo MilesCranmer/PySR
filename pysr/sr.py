@@ -48,6 +48,7 @@ from .julia_helpers import (
     jl_serialize,
 )
 from .julia_import import AnyValue, SymbolicRegression, VectorValue, jl
+from .logger_specs import AbstractLoggerSpec
 from .utils import (
     ArrayLike,
     PathLike,
@@ -379,7 +380,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Default is `None`.
     complexity_of_constants : int | float
         Complexity of constants. Default is `1`.
-    complexity_of_variables : int | float
+    complexity_of_variables : int | float | list[int | float]
         Global complexity of variables. To set different complexities for
         different variables, pass a list of complexities to the `fit` method
         with keyword `complexity_of_variables`. You cannot use both.
@@ -606,6 +607,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     progress : bool
         Whether to use a progress bar instead of printing to stdout.
         Default is `True`.
+    logger: AbstractLoggerSpec | None
+        Logger specification for the Julia backend. See, for example,
+        `TensorBoardLoggerSpec`.
+        Default is `None`.
     run_id : str
         A unique identifier for the run. Will be generated using the
         current date and time if not provided.
@@ -847,6 +852,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         update_verbosity: int | None = None,
         print_precision: int = 5,
         progress: bool = True,
+        logger: AbstractLoggerSpec | None = None,
         run_id: str | None = None,
         output_directory: str | None = None,
         temp_equation_file: bool = False,
@@ -952,6 +958,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.update_verbosity = update_verbosity
         self.print_precision = print_precision
         self.progress = progress
+        self.logger = logger
         # - Project management
         self.run_id = run_id
         self.output_directory = output_directory
@@ -1870,6 +1877,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             bumper=self.bumper,
             autodiff_backend=self.autodiff_backend,
             cluster_manager=cluster_manager,
+            logger=self.logger,
         )
 
         if self.autodiff_backend is not None:
@@ -1908,6 +1916,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         complexity_mapping = (
             jl.seval(self.complexity_mapping) if self.complexity_mapping else None
         )
+
+        logger = self.logger.create_logger() if self.logger else None
 
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/OptionsStruct.jl
@@ -2044,6 +2054,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             and self.verbosity > 0
             and len(y.shape) == 1,
             verbosity=int(self.verbosity),
+            logger=logger,
         )
 
         self.julia_state_stream_ = jl_serialize(out)

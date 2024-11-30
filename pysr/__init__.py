@@ -21,6 +21,7 @@ from .expression_specs import (
     TemplateExpressionSpec,
 )
 from .julia_extensions import load_all_packages
+from .logger_specs import AbstractLoggerSpec, TensorBoardLoggerSpec
 from .sr import PySRRegressor
 
 # This file is created by setuptools_scm during the build process:
@@ -39,6 +40,8 @@ __all__ = [
     "ExpressionSpec",
     "TemplateExpressionSpec",
     "ParametricExpressionSpec",
+    "AbstractLoggerSpec",
+    "TensorBoardLoggerSpec",
     "best",
     "best_callable",
     "best_row",
