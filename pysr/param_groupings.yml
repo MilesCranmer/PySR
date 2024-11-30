@@ -91,6 +91,7 @@
   - update_verbosity
   - print_precision
   - progress
+  - logger_spec
 - Environment:
   - temp_equation_file
   - tempdir
