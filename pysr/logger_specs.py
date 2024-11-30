@@ -12,6 +12,10 @@ class AbstractLoggerSpec(ABC):
         """Create a logger instance."""
         pass
 
+    def close(self, logger: AnyValue) -> None:
+        """Close the logger."""
+        jl.close(logger)
+
 
 @dataclass
 class TensorBoardLoggerSpec(AbstractLoggerSpec):

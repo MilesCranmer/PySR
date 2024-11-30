@@ -607,7 +607,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     progress : bool
         Whether to use a progress bar instead of printing to stdout.
         Default is `True`.
-    logger: AbstractLoggerSpec | None
+    logger_spec: AbstractLoggerSpec | None
         Logger specification for the Julia backend. See, for example,
         `TensorBoardLoggerSpec`.
         Default is `None`.
@@ -852,7 +852,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         update_verbosity: int | None = None,
         print_precision: int = 5,
         progress: bool = True,
-        logger: AbstractLoggerSpec | None = None,
+        logger_spec: AbstractLoggerSpec | None = None,
         run_id: str | None = None,
         output_directory: str | None = None,
         temp_equation_file: bool = False,
@@ -958,7 +958,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.update_verbosity = update_verbosity
         self.print_precision = print_precision
         self.progress = progress
-        self.logger = logger
+        self.logger_spec = logger_spec
         # - Project management
         self.run_id = run_id
         self.output_directory = output_directory
@@ -1877,7 +1877,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             bumper=self.bumper,
             autodiff_backend=self.autodiff_backend,
             cluster_manager=cluster_manager,
-            logger=self.logger,
+            logger_spec=self.logger_spec,
         )
 
         if self.autodiff_backend is not None:
@@ -1917,7 +1917,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             jl.seval(self.complexity_mapping) if self.complexity_mapping else None
         )
 
-        logger = self.logger.create_logger() if self.logger else None
+        logger = self.logger_spec.create_logger() if self.logger_spec else None
 
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/OptionsStruct.jl
@@ -2058,6 +2058,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         )
 
         self.julia_state_stream_ = jl_serialize(out)
+
+        if logger:
+            self.logger_spec.close(logger)
 
         # Set attributes
         self.equations_ = self.get_hof(out)
