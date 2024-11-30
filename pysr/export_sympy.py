@@ -1,6 +1,6 @@
 """Define utilities to export to sympy"""
 
-from typing import Callable, Dict, List, Optional
+from collections.abc import Callable
 
 import sympy  # type: ignore
 from sympy import sympify
@@ -63,21 +63,21 @@ sympy_mappings = {
 
 def create_sympy_symbols_map(
     feature_names_in: ArrayLike[str],
-) -> Dict[str, sympy.Symbol]:
+) -> dict[str, sympy.Symbol]:
     return {variable: sympy.Symbol(variable) for variable in feature_names_in}
 
 
 def create_sympy_symbols(
     feature_names_in: ArrayLike[str],
-) -> List[sympy.Symbol]:
+) -> list[sympy.Symbol]:
     return [sympy.Symbol(variable) for variable in feature_names_in]
 
 
 def pysr2sympy(
-    equation: str,
+    equation: str | float | int,
     *,
-    feature_names_in: Optional[ArrayLike[str]] = None,
-    extra_sympy_mappings: Optional[Dict[str, Callable]] = None,
+    feature_names_in: ArrayLike[str] | None = None,
+    extra_sympy_mappings: dict[str, Callable] | None = None,
 ):
     if feature_names_in is None:
         feature_names_in = []

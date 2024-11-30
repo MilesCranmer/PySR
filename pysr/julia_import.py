@@ -42,6 +42,8 @@ if autoload_extensions is not None:
     # Deprecated; so just pass to juliacall
     os.environ["PYTHON_JULIACALL_AUTOLOAD_IPYTHON_EXTENSION"] = autoload_extensions
 
+from juliacall import AnyValue  # type: ignore
+from juliacall import VectorValue  # type: ignore
 from juliacall import Main as jl  # type: ignore
 
 jl = cast(ModuleType, jl)

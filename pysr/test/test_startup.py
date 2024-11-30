@@ -43,7 +43,8 @@ class TestStartup(unittest.TestCase):
             )
             model.warm_start = True
             model.temp_equation_file = False
-            model.equation_file = Path(tmpdirname) / "equations.csv"
+            model.output_directory = tmpdirname
+            model.run_id = "test"
             model.deterministic = True
             model.multithreading = False
             model.random_state = 0
@@ -76,7 +77,9 @@ class TestStartup(unittest.TestCase):
                         y = np.load("{y_file}")
 
                         print("Loading model from file")
-                        model = PySRRegressor.from_file("{model.equation_file}")
+                        model = PySRRegressor.from_file(
+                            run_directory="{str(Path(tmpdirname) / model.run_id_)}"
+                        )
 
                         assert model.julia_state_ is not None
 
@@ -130,8 +133,6 @@ class TestStartup(unittest.TestCase):
             self.assertIn(warning_test["msg"], result.stderr.decode())
 
     def test_notebook(self):
-        if jl_version < (1, 9, 0):
-            self.skipTest("Julia version too old")
         if platform.system() == "Windows":
             self.skipTest("Notebook test incompatible with Windows")
         if not os.access(Path(__file__).parent, os.W_OK):
