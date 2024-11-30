@@ -841,7 +841,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         bumper: bool = False,
         precision: Literal[16, 32, 64] = 32,
         enable_autodiff: bool = False,
-        random_state=None,
+        random_state: int | np.random.RandomState | None = None,
         deterministic: bool = False,
         warm_start: bool = False,
         verbosity: int = 1,
