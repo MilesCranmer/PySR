@@ -40,7 +40,6 @@ from .expression_specs import (
 from .feature_selection import run_feature_selection
 from .julia_extensions import load_required_packages
 from .julia_helpers import (
-    PythonCall,
     _escape_filename,
     _load_cluster_manager,
     jl_array,
@@ -2016,7 +2015,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         else:
             jl_y_variable_names = None
 
-        PythonCall.GC.disable()
         out = SymbolicRegression.equation_search(
             jl_X,
             jl_y,
@@ -2047,7 +2045,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             and len(y.shape) == 1,
             verbosity=int(self.verbosity),
         )
-        PythonCall.GC.enable()
 
         self.julia_state_stream_ = jl_serialize(out)
 
