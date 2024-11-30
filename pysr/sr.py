@@ -2056,7 +2056,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             verbosity=int(self.verbosity),
             logger=logger,
         )
-        if logger:
+        if self.logger_spec is not None:
             self.logger_spec.write_hparams(logger, self.get_params())
 
         self.julia_state_stream_ = jl_serialize(out)

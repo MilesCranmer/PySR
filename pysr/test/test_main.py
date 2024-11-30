@@ -635,7 +635,7 @@ class TestPipeline(unittest.TestCase):
     def test_tensorboard_logger(self):
         """Test TensorBoard logger functionality."""
         try:
-            from tensorboard.backend.event_processing.event_accumulator import (
+            from tensorboard.backend.event_processing.event_accumulator import (  # type: ignore
                 EventAccumulator,
             )
         except ImportError:
