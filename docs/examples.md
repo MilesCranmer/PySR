@@ -607,7 +607,7 @@ model.fit(X, y, category=category)
 # model.predict(X_test, category=category_test)
 ```
 
-See [Expression Specifications](expression-specs.md) for more details.
+See [Expression Specifications](/api/#expression-specifications) for more details.
 
 ## 12. Using TensorBoard for Logging
 
