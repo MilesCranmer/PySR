@@ -16,6 +16,7 @@ from pysr import (
     ParametricExpressionSpec,
     PySRRegressor,
     TemplateExpressionSpec,
+    TensorBoardLoggerSpec,
     install,
     jl,
     load_all_packages,
@@ -630,6 +631,52 @@ class TestPipeline(unittest.TestCase):
             model.pytorch()
         with self.assertRaises(ValueError):
             model.latex_table()
+
+    def test_tensorboard_logger(self):
+        """Test TensorBoard logger functionality."""
+        try:
+            from tensorboard.backend.event_processing.event_accumulator import (
+                EventAccumulator,
+            )
+        except ImportError:
+            self.skipTest("TensorBoard not installed. Skipping test.")
+
+        y = self.X[:, 0]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            logger_spec = TensorBoardLoggerSpec(
+                log_dir=tmpdir, log_interval=2, overwrite=True
+            )
+            model = PySRRegressor(
+                **self.default_test_kwargs,
+                logger_spec=logger_spec,
+                early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
+            )
+            model.fit(self.X, y)
+
+            # Verify log directory exists and contains TensorBoard files
+            log_dir = Path(tmpdir)
+            assert log_dir.exists()
+            files = list(log_dir.glob("events.out.tfevents.*"))
+            assert len(files) == 1
+
+            # Load and verify TensorBoard events
+            event_acc = EventAccumulator(str(log_dir))
+            event_acc.Reload()
+
+            # Check that we have the expected scalar summaries
+            scalars = event_acc.Tags()["scalars"]
+            self.assertIn("search/data/summaries/pareto_volume", scalars)
+            self.assertIn("search/data/summaries/min_loss", scalars)
+
+            # Check that we have multiple events for each summary
+            pareto_events = event_acc.Scalars("search/data/summaries/pareto_volume")
+            min_loss_events = event_acc.Scalars("search/data/summaries/min_loss")
+
+            self.assertGreater(len(pareto_events), 0)
+            self.assertGreater(len(min_loss_events), 0)
+
+            # Verify model still works as expected
+            self.assertLessEqual(model.get_best()["loss"], 1e-4)
 
 
 def manually_create_model(equations, feature_names=None):

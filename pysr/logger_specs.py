@@ -36,7 +36,7 @@ class TensorBoardLoggerSpec(AbstractLoggerSpec):
     """
 
     log_dir: str = "logs/run"
-    log_interval: int = 10
+    log_interval: int = 1
     overwrite: bool = False
 
     def create_logger(self) -> AnyValue:
