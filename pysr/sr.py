@@ -2056,11 +2056,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             verbosity=int(self.verbosity),
             logger=logger,
         )
+        if logger:
+            self.logger_spec.write_hparams(logger, self.get_params())
 
         self.julia_state_stream_ = jl_serialize(out)
-
-        if logger:
-            self.logger_spec.close(logger)
 
         # Set attributes
         self.equations_ = self.get_hof(out)
