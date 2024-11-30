@@ -1,12 +1,5 @@
-from __future__ import annotations
-
 import copy
-import sys
-
-if sys.version_info >= (3, 10):
-    from collections.abc import Callable
-else:
-    from typing import Callable
+from collections.abc import Callable
 
 import numpy as np
 import pandas as pd

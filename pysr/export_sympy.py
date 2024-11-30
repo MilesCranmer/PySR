@@ -1,13 +1,6 @@
 """Define utilities to export to sympy"""
 
-from __future__ import annotations
-
-import sys
-
-if sys.version_info >= (3, 10):
-    from collections.abc import Callable
-else:
-    from typing import Callable
+from collections.abc import Callable
 
 import sympy  # type: ignore
 from sympy import sympify

@@ -1,14 +1,6 @@
-from __future__ import annotations
-
 import copy
-import sys
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, NewType
-
-if sys.version_info >= (3, 10):
-    from typing import TypeAlias
-else:
-    from typing_extensions import TypeAlias
+from typing import TYPE_CHECKING, Any, NewType, TypeAlias
 
 import numpy as np
 import pandas as pd

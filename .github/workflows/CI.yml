@@ -31,7 +31,7 @@ jobs:
         test-id: [main]
         include:
           - julia-version: '1.10'
-            python-version: '3.9'
+            python-version: '3.10'
             os: ubuntu-latest
             test-id: include
           - julia-version: '1'
@@ -89,7 +89,7 @@ jobs:
         julia-version: ['1']
         include:
           - os: ubuntu-latest
-            python-version: '3.9'
+            python-version: '3.10'
             julia-version: '1.10'
     steps:
       - uses: actions/checkout@v4
@@ -168,7 +168,7 @@ jobs:
       matrix:
         python-version:
           - '3.12'
-          - '3.9'
+          - '3.10'
         os: ['ubuntu-latest']
 
     steps:
@@ -184,10 +184,10 @@ jobs:
             pip install '.[dev]'
       - name: "Run mypy"
         run: python -m mypy --install-types --non-interactive pysr
-        if: ${{ matrix.python-version != '3.9' }}
+        if: ${{ matrix.python-version != '3.10' }}
       - name: "Run compatible mypy"
         run: python -m mypy --ignore-missing-imports pysr
-        if: ${{ matrix.python-version == '3.9' }}
+        if: ${{ matrix.python-version == '3.10' }}
 
   beartype:
     name: Test with beartype

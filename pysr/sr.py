@@ -1,7 +1,5 @@
 """Define the PySRRegressor scikit-learn interface."""
 
-from __future__ import annotations
-
 import copy
 import os
 import pickle as pkl
@@ -9,16 +7,12 @@ import re
 import sys
 import tempfile
 import warnings
+from collections.abc import Callable
 from dataclasses import dataclass, fields
 from io import StringIO
 from multiprocessing import cpu_count
 from pathlib import Path
 from typing import Any, Literal, cast
-
-if sys.version_info >= (3, 10):
-    from collections.abc import Callable
-else:
-    from typing import Callable
 
 import numpy as np
 import pandas as pd
