@@ -1,4 +1,4 @@
-# PySRRegressor Reference
+# API Reference
 
 `PySRRegressor` has many options for controlling a symbolic regression search.
 Let's look at them below.
