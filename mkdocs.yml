@@ -33,7 +33,6 @@ nav:
   - papers.md
   - api-advanced.md
   - backend.md
-  - interactive-docs.md
 
 extra:
   homepage: https://ai.damtp.cam.ac.uk/pysr
