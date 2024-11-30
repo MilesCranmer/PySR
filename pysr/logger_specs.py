@@ -20,16 +20,17 @@ class TensorBoardLoggerSpec(AbstractLoggerSpec):
     Attributes:
     ----------
     log_dir : str
-        Directory where TensorBoard logs will be saved.
+        Directory where TensorBoard logs will be saved. If `overwrite` is `False`,
+        new logs will be saved to `{log_dir}_1`, and so on. Default is `"logs/run"`.
     log_interval : int, optional
         Interval (in steps) at which logs are written. Default is 2.
     overwrite : bool, optional
-        Whether to overwrite existing logs in the directory. Default is True.
+        Whether to overwrite existing logs in the directory. Default is False.
     """
 
-    log_dir: str
+    log_dir: str = "logs/run"
     log_interval: int = 2
-    overwrite: bool = True
+    overwrite: bool = False
 
     def create_logger(self) -> AnyValue:
         make_logger = jl.seval(
