@@ -24,7 +24,7 @@ class AbstractLoggerSpec(ABC):
 class TensorBoardLoggerSpec(AbstractLoggerSpec):
     """Specification for TensorBoard logger.
 
-    Attributes:
+    Parameters
     ----------
     log_dir : str
         Directory where TensorBoard logs will be saved. If `overwrite` is `False`,
