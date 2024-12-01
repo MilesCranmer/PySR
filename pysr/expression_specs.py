@@ -80,7 +80,7 @@ class AbstractExpressionSpec(ABC):
 
 
 class ExpressionSpec(AbstractExpressionSpec):
-    """Options for the regular Expression expression type"""
+    """The default expression specification, with no special behavior."""
 
     def julia_expression_type(self):
         return SymbolicRegression.Expression
@@ -123,11 +123,11 @@ class ExpressionSpec(AbstractExpressionSpec):
 
 
 class TemplateExpressionSpec(AbstractExpressionSpec):
-    """The structure of a template expression.
+    """Spec for templated expressions.
 
     This class allows you to specify how multiple sub-expressions should be combined
     in a structured way, with constraints on which variables each sub-expression can use.
-    Pass this to PySRRegressor with the `expression_options` argument when you are using
+    Pass this to PySRRegressor with the `expression_spec` argument when you are using
     the `TemplateExpression` expression type.
 
     Parameters
@@ -149,14 +149,14 @@ class TemplateExpressionSpec(AbstractExpressionSpec):
     --------
     ```python
     # Create template that combines f(x1, x2) and g(x3):
-    template_options = TemplateExpressionSpec(
+    expression_spec = TemplateExpressionSpec(
         function_symbols=["f", "g"],
         combine="((; f, g), (x1, x2, x3)) -> sin(f(x1, x2)) + g(x3)^2",
     )
 
     # Use in PySRRegressor:
     model = PySRRegressor(
-        expression_options=template_options
+        expression_spec=expression_spec
     )
     ```
     """
@@ -213,6 +213,33 @@ class TemplateExpressionSpec(AbstractExpressionSpec):
 
 
 class ParametricExpressionSpec(AbstractExpressionSpec):
+    """Spec for parametric expressions that vary by category.
+
+    This class allows you to specify expressions with parameters that vary across different
+    categories in your dataset. The expression structure remains the same, but parameters
+    are optimized separately for each category.
+
+    Parameters
+    ----------
+    max_parameters : int
+        Maximum number of parameters that can appear in the expression. Each parameter
+        will take on different values for each category in the data.
+
+    Examples
+    --------
+    For example, if we want to allow for a model with up to 2 parameters (each category
+    can have a different value for these parameters), we can use:
+
+    ```python
+    model = PySRRegressor(
+        expression_spec=ParametricExpressionSpec(max_parameters=2),
+        binary_operators=["+", "*"],
+        unary_operators=["sin"]
+    )
+    model.fit(X, y, category=category)
+    ```
+    """
+
     def __init__(self, max_parameters: int):
         self.max_parameters = max_parameters
 
