@@ -19,6 +19,11 @@ class AbstractLoggerSpec(ABC):
         """Write hyperparameters to the logger."""
         pass  # pragma: no cover
 
+    @abstractmethod
+    def close(self, logger: AnyValue) -> None:
+        """Close the logger instance."""
+        pass  # pragma: no cover
+
 
 @dataclass
 class TensorBoardLoggerSpec(AbstractLoggerSpec):
@@ -74,3 +79,18 @@ class TensorBoardLoggerSpec(AbstractLoggerSpec):
                 ],
             ),
         )
+
+    def close(self, logger: AnyValue) -> None:
+        base_logger = jl.SymbolicRegression.get_logger(logger)
+        close_logger = jl.seval(
+            """
+            function close_files!(lg::TensorBoardLogger.TBLogger)
+                # close open streams
+                for k=keys(lg.all_files)
+                    close(lg.all_files[k])
+                end
+            end
+        """
+        )
+        close_logger(base_logger)
+        
