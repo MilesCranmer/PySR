@@ -84,7 +84,7 @@ class TensorBoardLoggerSpec(AbstractLoggerSpec):
         base_logger = jl.SymbolicRegression.get_logger(logger)
         close_logger = jl.seval(
             """
-            function close_files!(lg::TensorBoardLogger.TBLogger)
+            function close_logger(lg::TensorBoardLogger.TBLogger)
                 # close open streams
                 for k=keys(lg.all_files)
                     close(lg.all_files[k])
