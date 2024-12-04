@@ -93,4 +93,3 @@ class TensorBoardLoggerSpec(AbstractLoggerSpec):
         """
         )
         close_logger(base_logger)
-        
