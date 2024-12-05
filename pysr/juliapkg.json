@@ -1,5 +1,5 @@
 {
-    "julia": "=1.10.0, 1.10.3",
+    "julia": "=1.10.0, ~1.10.3",
     "packages": {
         "SymbolicRegression": {
             "uuid": "8254be44-1295-4e6a-a16d-46603ac705cb",
