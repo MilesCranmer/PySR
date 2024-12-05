@@ -3,6 +3,7 @@
 from typing import Literal
 
 from .julia_import import Pkg, jl
+from .julia_registry_helper import with_juliaregistrypref
 from .logger_specs import AbstractLoggerSpec, TensorBoardLoggerSpec
 
 
@@ -46,6 +47,11 @@ def isinstalled(uuid_s: str):
 
 
 def load_package(package_name: str, uuid_s: str) -> None:
+    with_juliaregistrypref(_load_package, package_name, uuid_s)
+    return None
+
+
+def _load_package(package_name: str, uuid_s: str) -> None:
     if not isinstalled(uuid_s):
         Pkg.add(name=package_name, uuid=uuid_s)
         Pkg.resolve()
