@@ -1,4 +1,5 @@
 import os
+import sys
 
 
 def get_juliaregistrypref_envvarname():
@@ -32,7 +33,7 @@ def backup_juliaregistrypref():
         """.format(
             name=name  # TODO: get rid of this line?
         )
-        print(info_msg)
+        print(info_msg, file=sys.stderr)
         os.environ["JULIA_PKG_SERVER_REGISTRY_PREFERENCE"] = "eager"
     return old_value
 
@@ -63,9 +64,9 @@ def with_juliaregistrypref(f, *args):
             name=name  # TODO: get rid of this line?
         )
         if old_value is not None:
-            print()
-            print(error_msg)
-            print()
+            print("", file=sys.stderr)
+            print(error_msg, file=sys.stderr)
+            print("", file=sys.stderr)
 
             # In this case, we know that the user had set JULIA_PKG_SERVER_REGISTRY_PREFERENCE,
             # and thus we respect that value, and we don't override it.
@@ -89,9 +90,9 @@ def with_juliaregistrypref(f, *args):
                 # https://github.com/JuliaPy/pyjuliapkg/blob/3a2c66019f098c1ebf84f933a46e7ca70e82792b/src/juliapkg/deps.py#L334-L334
                 f(args)
             except:
-                print()
-                print(error_msg)
-                print()
+                print("", file=sys.stderr)
+                print(error_msg, file=sys.stderr)
+                print("", file=sys.stderr)
                 # Now, we just rethrow the caught exception:
                 restore_juliaregistrypref(
                     old_value
