@@ -161,14 +161,12 @@ class TestStartup(unittest.TestCase):
 
 
 class TestRegistryHelper(unittest.TestCase):
-    """Test suite for Julia registry preference handling."""
+    """Test the custom Julia registry preference handling."""
 
     def setUp(self):
-        """Store original environment."""
         self.old_value = os.environ.get(PREFERENCE_KEY, None)
 
     def tearDown(self):
-        """Restore original environment."""
         if self.old_value is not None:
             os.environ[PREFERENCE_KEY] = self.old_value
         else:
@@ -178,13 +176,11 @@ class TestRegistryHelper(unittest.TestCase):
         self.assertEqual(try_with_registry_fallback(lambda s: s, "success"), "success")
 
     def test_non_julia_errors_reraised(self):
-        """Test that non-Julia errors are re-raised without modification."""
         with self.assertRaises(SyntaxError) as context:
             try_with_registry_fallback(lambda: exec("invalid syntax !@#$"))
         self.assertNotIn("JuliaError", str(context.exception))
 
     def test_julia_error_triggers_fallback(self):
-        """Test that Julia registry errors trigger the fallback to eager mode."""
         os.environ[PREFERENCE_KEY] = "conservative"
         recorded_env_vars = []
 
@@ -213,7 +209,6 @@ class TestRegistryHelper(unittest.TestCase):
         self.assertEqual(os.environ[PREFERENCE_KEY], "conservative")
 
     def test_eager_mode_fails_directly(self):
-        """Test that eager mode errors don't trigger fallback."""
         os.environ[PREFERENCE_KEY] = "eager"
 
         recorded_env_vars = []
