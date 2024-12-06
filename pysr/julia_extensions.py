@@ -3,6 +3,7 @@
 from typing import Literal
 
 from .julia_import import Pkg, jl
+from .julia_registry_helpers import try_with_registry_fallback
 from .logger_specs import AbstractLoggerSpec, TensorBoardLoggerSpec
 
 
@@ -47,8 +48,12 @@ def isinstalled(uuid_s: str):
 
 def load_package(package_name: str, uuid_s: str) -> None:
     if not isinstalled(uuid_s):
-        Pkg.add(name=package_name, uuid=uuid_s)
-        Pkg.resolve()
+
+        def _add_package():
+            Pkg.add(name=package_name, uuid=uuid_s)
+            Pkg.resolve()
+
+        try_with_registry_fallback(_add_package)
 
     # TODO: Protect against loading the same symbol from two packages,
     #       maybe with a @gensym here.
