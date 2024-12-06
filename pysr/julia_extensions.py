@@ -47,14 +47,13 @@ def isinstalled(uuid_s: str):
 
 
 def load_package(package_name: str, uuid_s: str) -> None:
-    with_juliaregistrypref(_load_package, package_name, uuid_s)
-    return None
-
-
-def _load_package(package_name: str, uuid_s: str) -> None:
     if not isinstalled(uuid_s):
-        Pkg.add(name=package_name, uuid=uuid_s)
-        Pkg.resolve()
+
+        def _add_package():
+            Pkg.add(name=package_name, uuid=uuid_s)
+            Pkg.resolve()
+
+        with_juliaregistrypref(_add_package)
 
     # TODO: Protect against loading the same symbol from two packages,
     #       maybe with a @gensym here.

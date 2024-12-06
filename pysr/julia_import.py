@@ -10,8 +10,6 @@ from .julia_registry_helpers import with_juliaregistrypref
 def import_juliacall():
     import juliacall  # type: ignore
 
-    return None
-
 
 # Check if JuliaCall is already loaded, and if so, warn the user
 # about the relevant environment variables. If not loaded,
@@ -51,11 +49,9 @@ if autoload_extensions is not None:
     # Deprecated; so just pass to juliacall
     os.environ["PYTHON_JULIACALL_AUTOLOAD_IPYTHON_EXTENSION"] = autoload_extensions
 
-# Run `import juliacall`, but inside our `with_juliaregistrypref()` wrapper:
 with_juliaregistrypref(import_juliacall)
 
 
-import juliacall
 from juliacall import AnyValue  # type: ignore
 from juliacall import VectorValue  # type: ignore
 from juliacall import Main as jl  # type: ignore

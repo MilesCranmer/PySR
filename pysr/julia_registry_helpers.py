@@ -34,8 +34,8 @@ def restore_juliaregistrypref(old_value: str | None):
 def with_juliaregistrypref(f: Callable[..., None], *args):
     """Execute function with modified Julia registry preference.
 
-    Temporarily modifies the registry preference to 'eager', falling back to
-    'conservative' if network errors occur. Restores original preference after
+    First tries with existing registry preference. If that fails with a Julia registry error,
+    temporarily modifies the registry preference to 'eager'. Restores original preference after
     execution.
 
     Parameters
@@ -45,26 +45,31 @@ def with_juliaregistrypref(f: Callable[..., None], *args):
     *args : Any
         Arguments to pass to the function.
     """
-    old_value = backup_juliaregistrypref()
     try:
         f(*args)
-    except Exception as e:
-        error_msg = (
-            "ERROR: Encountered a network error.\n"
-            "    Are you behind a firewall, or are there network restrictions that would "
-            "prevent access to certain websites or domains?\n"
-            "    Try setting the `JULIA_PKG_SERVER_REGISTRY_PREFERENCE` environment "
-            "variable to `conservative`."
+        return
+    except Exception as initial_error:
+        # Check if this is a Julia registry error by looking at the error message
+        error_str = str(initial_error)
+        if (
+            "JuliaError" not in error_str
+            or "Unsatisfiable requirements detected" not in error_str
+        ):
+            raise initial_error
+
+        old_value = os.environ.get("JULIA_PKG_SERVER_REGISTRY_PREFERENCE", None)
+        if old_value == "eager":
+            raise initial_error
+
+        warnings.warn(
+            "Initial Julia registry operation failed. Attempting to use the `eager` registry flavor of the Julia "
+            "General registry from the Julia Pkg server (via the `JULIA_PKG_SERVER_REGISTRY_PREFERENCE` environment variable)."
         )
-        if old_value is not None:
-            warnings.warn(error_msg)
-            restore_juliaregistrypref(old_value)
-            raise e
-        else:
-            os.environ["JULIA_PKG_SERVER_REGISTRY_PREFERENCE"] = "conservative"
-            try:
-                f(args)
-            except Exception as e:
-                warnings.warn(error_msg)
-                restore_juliaregistrypref(old_value)
-                raise e
+        os.environ["JULIA_PKG_SERVER_REGISTRY_PREFERENCE"] = "eager"
+        try:
+            f(*args)
+        finally:
+            if old_value is not None:
+                os.environ["JULIA_PKG_SERVER_REGISTRY_PREFERENCE"] = old_value
+            else:
+                del os.environ["JULIA_PKG_SERVER_REGISTRY_PREFERENCE"]
