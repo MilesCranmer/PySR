@@ -7,6 +7,8 @@ from typing import TypeVar
 
 T = TypeVar("T")
 
+PREFERENCE_KEY = "JULIA_PKG_SERVER_REGISTRY_PREFERENCE"
+
 
 def try_with_registry_fallback(f: Callable[..., T], *args, **kwargs) -> T:
     """Execute function with modified Julia registry preference.
@@ -26,19 +28,19 @@ def try_with_registry_fallback(f: Callable[..., T], *args, **kwargs) -> T:
         ):
             raise initial_error
 
-        old_value = os.environ.get("JULIA_PKG_SERVER_REGISTRY_PREFERENCE", None)
+        old_value = os.environ.get(PREFERENCE_KEY, None)
         if old_value == "eager":
             raise initial_error
 
         warnings.warn(
             "Initial Julia registry operation failed. Attempting to use the `eager` registry flavor of the Julia "
-            "General registry from the Julia Pkg server (via the `JULIA_PKG_SERVER_REGISTRY_PREFERENCE` environment variable)."
+            + f"General registry from the Julia Pkg server (via the `{PREFERENCE_KEY}` environment variable)."
         )
-        os.environ["JULIA_PKG_SERVER_REGISTRY_PREFERENCE"] = "eager"
+        os.environ[PREFERENCE_KEY] = "eager"
         try:
             return f(*args, **kwargs)
         finally:
             if old_value is not None:
-                os.environ["JULIA_PKG_SERVER_REGISTRY_PREFERENCE"] = old_value
+                os.environ[PREFERENCE_KEY] = old_value
             else:
-                del os.environ["JULIA_PKG_SERVER_REGISTRY_PREFERENCE"]
+                del os.environ[PREFERENCE_KEY]
