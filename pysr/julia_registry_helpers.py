@@ -21,11 +21,9 @@ def try_with_registry_fallback(f: Callable[..., T], *args, **kwargs) -> T:
         return f(*args, **kwargs)
     except Exception as initial_error:
         # Check if this is a Julia registry error by looking at the error message
-        error_str = str(initial_error)
-        if (
-            "JuliaError" not in error_str
-            or "Unsatisfiable requirements detected" not in error_str
-        ):
+        if "JuliaError" not in str(
+            type(initial_error)
+        ) or "Unsatisfiable requirements detected" not in str(initial_error):
             raise initial_error
 
         old_value = os.environ.get(PREFERENCE_KEY, None)

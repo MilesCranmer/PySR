@@ -9,7 +9,7 @@ from pathlib import Path
 
 import numpy as np
 
-from pysr import PySRRegressor
+from pysr import PySRRegressor, jl
 from pysr.julia_import import jl_version
 from pysr.julia_registry_helpers import PREFERENCE_KEY, try_with_registry_fallback
 
@@ -186,17 +186,16 @@ class TestRegistryHelper(unittest.TestCase):
 
         def failing_operation():
             recorded_env_vars.append(os.environ[PREFERENCE_KEY])
-            # Just fake the error message, as not sure how to realistically
-            # trigger a `conservative` registry-related error.
-            raise Exception(
-                "JuliaError\nUnsatisfiable requirements detected for package Test [8dfed614-e22c-5e08-85e1-65c5234f0b40]"
-            )
+            # Just add some package I know will not exist and also not be in the dependency chain:
+            jl.Pkg.add(name="AirspeedVelocity", version="100.0.0")
 
         with self.assertWarns(Warning) as warn_context:
             with self.assertRaises(Exception) as error_context:
                 try_with_registry_fallback(failing_operation)
 
-        self.assertIn("JuliaError", str(error_context.exception))
+        self.assertIn(
+            "Unsatisfiable requirements detected", str(error_context.exception)
+        )
         self.assertIn(
             "Initial Julia registry operation failed. Attempting to use the `eager` registry flavor of the Julia",
             str(warn_context.warning),
