@@ -45,11 +45,11 @@ if autoload_extensions is not None:
     os.environ["PYTHON_JULIACALL_AUTOLOAD_IPYTHON_EXTENSION"] = autoload_extensions
 
 
-def import_juliacall():
+def _import_juliacall():
     import juliacall  # type: ignore
 
 
-try_with_registry_fallback(import_juliacall)
+try_with_registry_fallback(_import_juliacall)
 
 
 from juliacall import AnyValue  # type: ignore
