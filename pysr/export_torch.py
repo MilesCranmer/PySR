@@ -5,6 +5,7 @@ import functools as ft
 
 import numpy as np  # noqa: F401
 import sympy  # type: ignore
+from sympy.codegen.cfunctions import log2, log10
 
 
 def _reduce(fn):
@@ -41,6 +42,8 @@ def _initialize_torch():
             sympy.ceiling: torch.ceil,
             sympy.floor: torch.floor,
             sympy.log: torch.log,
+            log2: torch.log2,
+            log10: torch.log10,
             sympy.exp: torch.exp,
             sympy.sqrt: torch.sqrt,
             sympy.cos: torch.cos,
