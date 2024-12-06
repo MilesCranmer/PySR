@@ -1,6 +1,6 @@
 import numpy as np  # noqa: F401
 import sympy  # type: ignore
-from sympy.codegen.cfunctions import log2, log10
+from sympy.codegen.cfunctions import log2, log10  # type: ignore
 
 # Special since need to reduce arguments.
 MUL = 0

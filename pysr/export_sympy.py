@@ -4,7 +4,7 @@ from collections.abc import Callable
 
 import sympy  # type: ignore
 from sympy import sympify
-from sympy.codegen.cfunctions import log2, log10
+from sympy.codegen.cfunctions import log2, log10  # type: ignore
 
 from .utils import ArrayLike
 

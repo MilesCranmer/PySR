@@ -5,7 +5,7 @@ import functools as ft
 
 import numpy as np  # noqa: F401
 import sympy  # type: ignore
-from sympy.codegen.cfunctions import log2, log10
+from sympy.codegen.cfunctions import log2, log10  # type: ignore
 
 
 def _reduce(fn):
