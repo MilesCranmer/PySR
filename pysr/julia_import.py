@@ -8,7 +8,7 @@ from .julia_registry_helper import with_juliaregistrypref
 
 
 def import_juliacall():
-    import juliacall # type: ignore
+    import juliacall  # type: ignore
 
     return None
 
