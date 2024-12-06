@@ -3,7 +3,7 @@
 from typing import Literal
 
 from .julia_import import Pkg, jl
-from .julia_registry_helper import with_juliaregistrypref
+from .julia_registry_helpers import with_juliaregistrypref
 from .logger_specs import AbstractLoggerSpec, TensorBoardLoggerSpec
 
 

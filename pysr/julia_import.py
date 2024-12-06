@@ -4,7 +4,7 @@ import warnings
 from types import ModuleType
 from typing import cast
 
-from .julia_registry_helper import with_juliaregistrypref
+from .julia_registry_helpers import with_juliaregistrypref
 
 
 def import_juliacall():
