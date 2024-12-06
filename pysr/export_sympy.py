@@ -4,6 +4,7 @@ from collections.abc import Callable
 
 import sympy  # type: ignore
 from sympy import sympify
+from sympy.codegen.cfunctions import log2, log10  # type: ignore
 
 from .utils import ArrayLike
 
@@ -39,8 +40,8 @@ sympy_mappings = {
     "erf": sympy.erf,
     "erfc": sympy.erfc,
     "log": lambda x: sympy.log(x),
-    "log10": lambda x: sympy.log(x, 10),
-    "log2": lambda x: sympy.log(x, 2),
+    "log10": lambda x: log10(x),
+    "log2": lambda x: log2(x),
     "log1p": lambda x: sympy.log(x + 1),
     "log_abs": lambda x: sympy.log(abs(x)),
     "log10_abs": lambda x: sympy.log(abs(x), 10),
