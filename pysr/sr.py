@@ -703,6 +703,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         stored as an array of uint8, produced by Julia's Serialization.serialize function.
     julia_options_stream_ : ndarray
         The serialized julia options, stored as an array of uint8,
+    logger_ : AnyValue | None
+        The logger instance used for this fit, if any.
     expression_spec_ : AbstractExpressionSpec
         The expression specification used for this fit. This is equal to
         `self.expression_spec` if provided, or `ExpressionSpec()` otherwise.
@@ -765,6 +767,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     output_directory_: str
     julia_state_stream_: NDArray[np.uint8] | None
     julia_options_stream_: NDArray[np.uint8] | None
+    logger_: AnyValue | None
     equation_file_contents_: list[pd.DataFrame] | None
     show_pickle_warnings_: bool
 
@@ -1917,7 +1920,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             jl.seval(self.complexity_mapping) if self.complexity_mapping else None
         )
 
-        logger = self.logger_spec.create_logger() if self.logger_spec else None
+        if hasattr(self, "logger_") and self.logger_ is not None and self.warm_start:
+            logger = self.logger_
+        else:
+            logger = self.logger_spec.create_logger() if self.logger_spec else None
+
+        self.logger_ = logger
 
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/OptionsStruct.jl
@@ -2058,7 +2066,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         )
         if self.logger_spec is not None:
             self.logger_spec.write_hparams(logger, self.get_params())
-            self.logger_spec.close(logger)
+            if not self.warm_start:
+                self.logger_spec.close(logger)
 
         self.julia_state_stream_ = jl_serialize(out)
 

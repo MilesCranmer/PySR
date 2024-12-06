@@ -647,41 +647,52 @@ class TestPipeline(unittest.TestCase):
             self.skipTest("TensorBoard not installed. Skipping test.")
 
         y = self.X[:, 0]
-        with tempfile.TemporaryDirectory() as tmpdir:
-            logger_spec = TensorBoardLoggerSpec(
-                log_dir=tmpdir, log_interval=2, overwrite=True
-            )
-            model = PySRRegressor(
-                **self.default_test_kwargs,
-                logger_spec=logger_spec,
-                early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
-            )
-            model.fit(self.X, y)
+        for warm_start in [False, True]:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                logger_spec = TensorBoardLoggerSpec(
+                    log_dir=tmpdir, log_interval=2, overwrite=True
+                )
+                model = PySRRegressor(
+                    **self.default_test_kwargs,
+                    logger_spec=logger_spec,
+                    early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
+                    warm_start=warm_start,
+                )
+                model.fit(self.X, y)
+                logger = model.logger_
+                # Should restart from same logger if warm_start is True
+                model.fit(self.X, y)
+                logger2 = model.logger_
 
-            # Verify log directory exists and contains TensorBoard files
-            log_dir = Path(tmpdir)
-            assert log_dir.exists()
-            files = list(log_dir.glob("events.out.tfevents.*"))
-            assert len(files) == 1
+                if warm_start:
+                    self.assertEqual(logger, logger2)
+                else:
+                    self.assertNotEqual(logger, logger2)
 
-            # Load and verify TensorBoard events
-            event_acc = EventAccumulator(str(log_dir))
-            event_acc.Reload()
+                # Verify log directory exists and contains TensorBoard files
+                log_dir = Path(tmpdir)
+                assert log_dir.exists()
+                files = list(log_dir.glob("events.out.tfevents.*"))
+                assert len(files) == 1 if warm_start else 2
 
-            # Check that we have the expected scalar summaries
-            scalars = event_acc.Tags()["scalars"]
-            self.assertIn("search/data/summaries/pareto_volume", scalars)
-            self.assertIn("search/data/summaries/min_loss", scalars)
+                # Load and verify TensorBoard events
+                event_acc = EventAccumulator(str(log_dir))
+                event_acc.Reload()
 
-            # Check that we have multiple events for each summary
-            pareto_events = event_acc.Scalars("search/data/summaries/pareto_volume")
-            min_loss_events = event_acc.Scalars("search/data/summaries/min_loss")
+                # Check that we have the expected scalar summaries
+                scalars = event_acc.Tags()["scalars"]
+                self.assertIn("search/data/summaries/pareto_volume", scalars)
+                self.assertIn("search/data/summaries/min_loss", scalars)
 
-            self.assertGreater(len(pareto_events), 0)
-            self.assertGreater(len(min_loss_events), 0)
+                # Check that we have multiple events for each summary
+                pareto_events = event_acc.Scalars("search/data/summaries/pareto_volume")
+                min_loss_events = event_acc.Scalars("search/data/summaries/min_loss")
 
-            # Verify model still works as expected
-            self.assertLessEqual(model.get_best()["loss"], 1e-4)
+                self.assertGreater(len(pareto_events), 0)
+                self.assertGreater(len(min_loss_events), 0)
+
+                # Verify model still works as expected
+                self.assertLessEqual(model.get_best()["loss"], 1e-4)
 
 
 def manually_create_model(equations, feature_names=None):
