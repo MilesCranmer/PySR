@@ -345,7 +345,7 @@ a real number from the loss function). But, you don't need to worry about this, 
 make sure to return a scalar number of type `L`.
 
 The `tree` argument is the current expression being evaluated. You can read
-about the `tree` fields [here](https://astroautomata.com/SymbolicRegression.jl/stable/types/).
+about the `tree` fields [here](https://ai.damtp.cam.ac.uk/symbolicregression/stable/types/).
 
 For example, let's fix a symbolic form of an expression,
 as a rational function. i.e., $P(X)/Q(X)$ for polynomials $P$ and $Q$.
@@ -523,7 +523,128 @@ Note that this expression has a large dynamic range so may be difficult to find.
 Note that you can also search for exclusively dimensionless constants by settings
 `dimensionless_constants_only` to `true`.
 
-## 11. Additional features
+## 11. Expression Specifications
+
+PySR 1.0 introduces powerful expression specifications that allow you to define structured equations. Here are two examples:
+
+### Template Expressions
+
+`TemplateExpressionSpec` allows you to define a specific structure for the equation.
+For example, let's say we want to learn an equation of the form:
+
+$$ y = \sin(f(x_1, x_2)) + g(x_3) $$
+
+We can do this as follows:
+
+```python
+import numpy as np
+from pysr import PySRRegressor, TemplateExpressionSpec
+
+# Create data
+X = np.random.randn(1000, 3)
+y = np.sin(X[:, 0] + X[:, 1]) + X[:, 2]**2
+
+# Define template: we want sin(f(x1, x2)) + g(x3)
+template = TemplateExpressionSpec(
+    function_symbols=["f", "g"],
+    combine="((; f, g), (x1, x2, x3)) -> sin(f(x1, x2)) + g(x3)",
+)
+
+model = PySRRegressor(
+    expression_spec=template,
+    binary_operators=["+", "*", "-", "/"],
+    unary_operators=["sin"],
+    maxsize=10,
+)
+model.fit(X, y)
+```
+
+You can also use no argument-functions for learning constants, like:
+
+```python
+template = TemplateExpressionSpec(
+    function_symbols=["a", "f"],
+    combine="((; a, f), (x, y)) -> a() * sin(f(x, y))",
+)
+```
+
+### Parametric Expressions
+
+When your data has categories with shared equation structure but different parameters,
+you can use a `ParametricExpressionSpec`. Let's say we would like to learn the expression:
+
+$$ y = \alpha \sin(x_1) + \beta $$
+
+for three different values of $\alpha$ and $\beta$.
+
+```python
+import numpy as np
+from pysr import PySRRegressor, ParametricExpressionSpec
+
+# Create data with 3 categories
+X = np.random.uniform(-3, 3, (1000, 2))
+category = np.random.randint(0, 3, 1000)
+
+# Parameters for each category
+offsets = [0.1, 1.5, -0.5]
+scales = [1.0, 2.0, 0.5]
+
+# y = scale[category] * sin(x1) + offset[category]
+y = np.array([
+    scales[c] * np.sin(x1) + offsets[c]
+    for x1, c in zip(X[:, 0], category)
+])
+
+model = PySRRegressor(
+    expression_spec=ParametricExpressionSpec(max_parameters=2),
+    binary_operators=["+", "*", "-", "/"],
+    unary_operators=["sin"],
+    maxsize=10,
+)
+model.fit(X, y, category=category)
+
+# Predicting on new data:
+# model.predict(X_test, category=category_test)
+```
+
+See [Expression Specifications](/api/#expression-specifications) for more details.
+
+## 12. Using TensorBoard for Logging
+
+You can use TensorBoard to visualize the search progress, as well as
+record hyperparameters and final metrics (like `min_loss` and `pareto_volume` - the latter of which
+is a performance measure of the entire Pareto front).
+
+```python
+import numpy as np
+from pysr import PySRRegressor, TensorBoardLoggerSpec
+
+rstate = np.random.RandomState(42)
+
+# Uniform dist between -3 and 3:
+X = rstate.uniform(-3, 3, (1000, 2))
+y = np.exp(X[:, 0]) + X[:, 1]
+
+# Create a logger that writes to "logs/run*":
+logger_spec = TensorBoardLoggerSpec(
+    log_dir="logs/run",
+    log_interval=10,  # Log every 10 iterations
+)
+
+model = PySRRegressor(
+    binary_operators=["+", "*", "-", "/"],
+    logger_spec=logger_spec,
+)
+model.fit(X, y)
+```
+
+You can then view the logs with:
+
+```bash
+tensorboard --logdir logs/
+```
+
+## 13. Additional features
 
 For the many other features available in PySR, please
 read the [Options section](options.md).

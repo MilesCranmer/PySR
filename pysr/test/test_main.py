@@ -1,6 +1,7 @@
 import importlib
 import os
 import pickle as pkl
+import platform
 import tempfile
 import traceback
 import unittest
@@ -12,7 +13,15 @@ import pandas as pd
 import sympy  # type: ignore
 from sklearn.utils.estimator_checks import check_estimator
 
-from pysr import PySRRegressor, install, jl, load_all_packages
+from pysr import (
+    ParametricExpressionSpec,
+    PySRRegressor,
+    TemplateExpressionSpec,
+    TensorBoardLoggerSpec,
+    install,
+    jl,
+    load_all_packages,
+)
 from pysr.export_latex import sympy2latex
 from pysr.feature_selection import _handle_feature_selection, run_feature_selection
 from pysr.julia_helpers import init_julia
@@ -22,13 +31,13 @@ from pysr.sr import (
     _suggest_keywords,
     idx_model_selection,
 )
-from pysr.utils import _csv_filename_to_pkl_filename
 
 from .params import (
     DEFAULT_NCYCLES,
     DEFAULT_NITERATIONS,
     DEFAULT_PARAMS,
     DEFAULT_POPULATIONS,
+    skip_if_beartype,
 )
 
 # Disables local saving:
@@ -94,7 +103,7 @@ class TestPipeline(unittest.TestCase):
             # Turbo needs to work with unsafe operators:
             unary_operators=["sqrt"],
             procs=2,
-            multithreading=False,
+            parallelism="multiprocessing",
             turbo=True,
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-10 && complexity == 1",
             loss_function="""
@@ -348,9 +357,8 @@ class TestPipeline(unittest.TestCase):
     def test_noisy_builtin_variable_names(self):
         y = self.X[:, [0, 1]] ** 2 + self.rstate.randn(self.X.shape[0], 1) * 0.05
         model = PySRRegressor(
-            # Test that passing a single operator works:
-            unary_operators="sq(x) = x^2",
-            binary_operators="plus",
+            unary_operators=["sq(x) = x^2"],
+            binary_operators=["plus"],
             extra_sympy_mappings={"sq": lambda x: x**2},
             **self.default_test_kwargs,
             procs=0,
@@ -447,16 +455,17 @@ class TestPipeline(unittest.TestCase):
         csv_file_data = "\n".join([line.strip() for line in csv_file_data.split("\n")])
 
         for from_backup in [False, True]:
-            rand_dir = Path(tempfile.mkdtemp())
-            equation_filename = str(rand_dir / "equation.csv")
-            with open(equation_filename + (".bkup" if from_backup else ""), "w") as f:
+            output_directory = Path(tempfile.mkdtemp())
+            equation_filename = str(output_directory / "hall_of_fame.csv")
+            with open(equation_filename + (".bak" if from_backup else ""), "w") as f:
                 f.write(csv_file_data)
             model = PySRRegressor.from_file(
-                equation_filename,
+                run_directory=output_directory,
                 n_features_in=5,
                 feature_names_in=["f0", "f1", "f2", "f3", "f4"],
                 binary_operators=["+", "*", "/", "-", "^"],
                 unary_operators=["cos"],
+                precision=64,
             )
             X = self.rstate.rand(100, 5)
             y_truth = 2.2683423 ** np.cos(X[:, 3])
@@ -468,9 +477,8 @@ class TestPipeline(unittest.TestCase):
         # Test that we can simply load a model from its equation file.
         y = self.X[:, [0, 1]] ** 2
         model = PySRRegressor(
-            # Test that passing a single operator works:
-            unary_operators="sq(x) = x^2",
-            binary_operators="plus",
+            unary_operators=["sq(x) = x^2"],
+            binary_operators=["plus"],
             extra_sympy_mappings={"sq": lambda x: x**2},
             **self.default_test_kwargs,
             procs=0,
@@ -478,27 +486,28 @@ class TestPipeline(unittest.TestCase):
             early_stop_condition="stop_if(loss, complexity) = loss < 0.05 && complexity == 2",
         )
         rand_dir = Path(tempfile.mkdtemp())
-        equation_file = rand_dir / "equations.csv"
+        equation_file = rand_dir / "1" / "hall_of_fame.csv"
         model.set_params(temp_equation_file=False)
-        model.set_params(equation_file=equation_file)
+        model.set_params(output_directory=rand_dir)
+        model.set_params(run_id="1")
         model.fit(self.X, y)
 
         # lambda functions are removed from the pickling, so we need
         # to pass it during the loading:
         model2 = PySRRegressor.from_file(
-            model.equation_file_, extra_sympy_mappings={"sq": lambda x: x**2}
+            run_directory=rand_dir / "1", extra_sympy_mappings={"sq": lambda x: x**2}
         )
 
         np.testing.assert_allclose(model.predict(self.X), model2.predict(self.X))
 
         # Try again, but using only the pickle file:
-        for file_to_delete in [str(equation_file), str(equation_file) + ".bkup"]:
+        for file_to_delete in [str(equation_file), str(equation_file) + ".bak"]:
             if os.path.exists(file_to_delete):
                 os.remove(file_to_delete)
 
         # pickle_file = rand_dir / "equations.pkl"
         model3 = PySRRegressor.from_file(
-            model.equation_file_, extra_sympy_mappings={"sq": lambda x: x**2}
+            run_directory=rand_dir / "1", extra_sympy_mappings={"sq": lambda x: x**2}
         )
         np.testing.assert_allclose(model.predict(self.X), model3.predict(self.X))
 
@@ -512,38 +521,219 @@ class TestPipeline(unittest.TestCase):
             str(cm.exception),
         )
 
+    def test_template_expressions_and_custom_complexity(self):
+        # Create random data between -1 and 1
+        X = self.rstate.uniform(-1, 1, (100, 2))
+
+        # Ground truth: sin(x + y)
+        y = np.sin(X[:, 0] + X[:, 1])
+
+        # Create model with template that includes the missing sin operator
+        model = PySRRegressor(
+            expression_spec=TemplateExpressionSpec(
+                ["f"], "sin_of_f((; f), (x, y)) = sin(f(x, y))"
+            ),
+            binary_operators=["+", "-", "*", "/"],
+            unary_operators=[],  # No sin operator!
+            maxsize=10,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-10 && complexity == 6",
+            # Custom complexity *function*:
+            complexity_mapping="my_complexity(ex) = sum(t -> 2, get_tree(ex))",
+            **self.default_test_kwargs,
+        )
+
+        model.fit(X, y)
+
+        # Test on out of domain data - this should still work due to sin template!
+        X_test = self.rstate.uniform(2, 10, (25, 2))
+        y_test = np.sin(X_test[:, 0] + X_test[:, 1])
+        y_pred = model.predict(X_test)
+
+        test_mse = np.mean((y_test - y_pred) ** 2)
+        self.assertLess(test_mse, 1e-5)
+
+        # Check there is a row with complexity 6 and MSE < 1e-10
+        df = model.equations_
+        good_rows = df[(df.complexity == 6) & (df.loss < 1e-10)]
+        self.assertGreater(len(good_rows), 0)
+
+        # Check there are NO rows with lower complexity and MSE < 1e-10
+        simpler_good_rows = df[(df.complexity < 6) & (df.loss < 1e-10)]
+        self.assertEqual(len(simpler_good_rows), 0)
+
+        # Make sure that a nice error is raised if we try to get the sympy expression:
+        # f"`expression_spec={self.expression_spec_}` does not support sympy export."
+        with self.assertRaises(ValueError) as cm:
+            model.sympy()
+        self.assertRegex(
+            str(cm.exception),
+            r"`expression_spec=.*TemplateExpressionSpec.*` does not support sympy export.",
+        )
+        with self.assertRaises(ValueError):
+            model.latex()
+        with self.assertRaises(ValueError):
+            model.jax()
+        with self.assertRaises(ValueError):
+            model.pytorch()
+        with self.assertRaises(ValueError):
+            model.latex_table()
+
+    def test_parametric_expression(self):
+        # Create data with two classes
+        n_points = 100
+        X = self.rstate.uniform(-3, 3, (n_points, 2))  # x1, x2
+        category = self.rstate.randint(0, 3, n_points)  # class (0 or 1)
+
+        # True parameters for each class
+        P1 = [0.1, 1.5, -5.2]  # phase shift for each class
+        P2 = [3.2, 0.5, 1.2]  # offset for each class
+
+        # Ground truth: 2*cos(x2 + P1[class]) + x1^2 - P2[class]
+        y = np.array(
+            [
+                2 * np.cos(x2 + P1[c]) + x1**2 - P2[c]
+                for x1, x2, c in zip(X[:, 0], X[:, 1], category)
+            ]
+        )
+
+        model = PySRRegressor(
+            expression_spec=ParametricExpressionSpec(max_parameters=2),
+            binary_operators=["+", "*", "/", "-"],
+            unary_operators=["cos", "exp"],
+            maxsize=20,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity <= 14",
+            **self.default_test_kwargs,
+        )
+
+        model.fit(X, y, category=category)
+
+        # Test on new data points
+        X_test = self.rstate.uniform(-6, 6, (10, 2))
+        category_test = self.rstate.randint(0, 3, 10)
+
+        y_test = np.array(
+            [
+                2 * np.cos(x2 + P1[c]) + x1**2 - P2[c]
+                for x1, x2, c in zip(X_test[:, 0], X_test[:, 1], category_test)
+            ]
+        )
+
+        y_test_pred = model.predict(X_test, category=category_test)
+        test_mse = np.mean((y_test - y_test_pred) ** 2)
+        self.assertLess(test_mse, 1e-3)
+
+        with self.assertRaises(ValueError):
+            model.sympy()
+        with self.assertRaises(ValueError):
+            model.latex()
+        with self.assertRaises(ValueError):
+            model.jax()
+        with self.assertRaises(ValueError):
+            model.pytorch()
+        with self.assertRaises(ValueError):
+            model.latex_table()
+
+    def test_tensorboard_logger(self):
+
+        if platform.system() == "Windows":
+            self.skipTest("Skipping test on Windows")
+
+        """Test TensorBoard logger functionality."""
+        try:
+            from tensorboard.backend.event_processing.event_accumulator import (  # type: ignore
+                EventAccumulator,
+            )
+        except ImportError:
+            self.skipTest("TensorBoard not installed. Skipping test.")
+
+        y = self.X[:, 0]
+        for warm_start in [False, True]:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                logger_spec = TensorBoardLoggerSpec(
+                    log_dir=tmpdir, log_interval=2, overwrite=True
+                )
+                model = PySRRegressor(
+                    **self.default_test_kwargs,
+                    logger_spec=logger_spec,
+                    early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
+                    warm_start=warm_start,
+                )
+                model.fit(self.X, y)
+                logger = model.logger_
+                # Should restart from same logger if warm_start is True
+                model.fit(self.X, y)
+                logger2 = model.logger_
+
+                if warm_start:
+                    self.assertEqual(logger, logger2)
+                else:
+                    self.assertNotEqual(logger, logger2)
+
+                # Verify log directory exists and contains TensorBoard files
+                log_dir = Path(tmpdir)
+                assert log_dir.exists()
+                files = list(log_dir.glob("events.out.tfevents.*"))
+                assert len(files) == 1 if warm_start else 2
+
+                # Load and verify TensorBoard events
+                event_acc = EventAccumulator(str(log_dir))
+                event_acc.Reload()
+
+                # Check that we have the expected scalar summaries
+                scalars = event_acc.Tags()["scalars"]
+                self.assertIn("search/data/summaries/pareto_volume", scalars)
+                self.assertIn("search/data/summaries/min_loss", scalars)
+
+                # Check that we have multiple events for each summary
+                pareto_events = event_acc.Scalars("search/data/summaries/pareto_volume")
+                min_loss_events = event_acc.Scalars("search/data/summaries/min_loss")
+
+                self.assertGreater(len(pareto_events), 0)
+                self.assertGreater(len(min_loss_events), 0)
+
+                # Verify model still works as expected
+                self.assertLessEqual(model.get_best()["loss"], 1e-4)
+
 
 def manually_create_model(equations, feature_names=None):
     if feature_names is None:
         feature_names = ["x0", "x1"]
 
+    output_directory = tempfile.mkdtemp()
+    run_id = "test"
     model = PySRRegressor(
         progress=False,
         niterations=1,
         extra_sympy_mappings={},
         output_jax_format=False,
         model_selection="accuracy",
-        equation_file="equation_file.csv",
+        output_directory=output_directory,
+        run_id=run_id,
     )
+    model.output_directory_ = output_directory
+    model.run_id_ = run_id
+    os.makedirs(Path(output_directory) / run_id, exist_ok=True)
 
     # Set up internal parameters as if it had been fitted:
     if isinstance(equations, list):
         # Multi-output.
-        model.equation_file_ = "equation_file.csv"
         model.nout_ = len(equations)
         model.selection_mask_ = None
         model.feature_names_in_ = np.array(feature_names, dtype=object)
         for i in range(model.nout_):
             equations[i]["complexity loss equation".split(" ")].to_csv(
-                f"equation_file.csv.out{i+1}.bkup"
+                str(
+                    Path(output_directory)
+                    / run_id
+                    / f"hall_of_fame_output{i+1}.csv.bak"
+                )
             )
     else:
-        model.equation_file_ = "equation_file.csv"
         model.nout_ = 1
         model.selection_mask_ = None
         model.feature_names_in_ = np.array(feature_names, dtype=object)
         equations["complexity loss equation".split(" ")].to_csv(
-            "equation_file.csv.bkup"
+            str(Path(output_directory) / run_id / "hall_of_fame.csv.bak")
         )
 
     model.refresh()
@@ -630,27 +820,12 @@ class TestFeatureSelection(unittest.TestCase):
 class TestMiscellaneous(unittest.TestCase):
     """Test miscellaneous functions."""
 
-    def test_csv_to_pkl_conversion(self):
-        """Test that csv filename to pkl filename works as expected."""
-        tmpdir = Path(tempfile.mkdtemp())
-        equation_file = tmpdir / "equations.389479384.28378374.csv"
-        expected_pkl_file = tmpdir / "equations.389479384.28378374.pkl"
-
-        # First, test inputting the paths:
-        test_pkl_file = _csv_filename_to_pkl_filename(equation_file)
-        self.assertEqual(test_pkl_file, str(expected_pkl_file))
-
-        # Next, test inputting the strings.
-        test_pkl_file = _csv_filename_to_pkl_filename(str(equation_file))
-        self.assertEqual(test_pkl_file, str(expected_pkl_file))
-
     def test_pickle_with_temp_equation_file(self):
         """If we have a temporary equation file, unpickle the estimator."""
         model = PySRRegressor(
             populations=int(1 + DEFAULT_POPULATIONS / 5),
             temp_equation_file=True,
-            procs=0,
-            multithreading=False,
+            parallelism="serial",
         )
         nout = 3
         X = np.random.randn(100, 2)
@@ -660,9 +835,15 @@ class TestMiscellaneous(unittest.TestCase):
 
         y_predictions = model.predict(X)
 
-        equation_file_base = model.equation_file_
+        equation_file_base = Path("outputs") / model.run_id_ / "hall_of_fame"
         for i in range(1, nout + 1):
-            assert not os.path.exists(str(equation_file_base) + f".out{i}.bkup")
+            assert not os.path.exists(str(equation_file_base) + f"_output{i}.csv.bak")
+
+        equation_file_base = (
+            Path(model.output_directory_) / model.run_id_ / "hall_of_fame"
+        )
+        for i in range(1, nout + 1):
+            assert os.path.exists(str(equation_file_base) + f"_output{i}.csv.bak")
 
         with tempfile.NamedTemporaryFile() as pickle_file:
             pkl.dump(model, pickle_file)
@@ -687,8 +868,7 @@ class TestMiscellaneous(unittest.TestCase):
             progress=False,
             random_state=0,
             deterministic=True,  # Deterministic as tests require this.
-            procs=0,
-            multithreading=False,
+            parallelism="serial",
             warm_start=False,
             temp_equation_file=True,
         )  # Return early.
@@ -748,6 +928,7 @@ class TestMiscellaneous(unittest.TestCase):
 class TestHelpMessages(unittest.TestCase):
     """Test user help messages."""
 
+    @skip_if_beartype
     def test_deprecation(self):
         """Ensure that deprecation works as expected.
 
@@ -759,6 +940,14 @@ class TestHelpMessages(unittest.TestCase):
 
         # The correct value should be set:
         self.assertEqual(model.fraction_replaced, 0.2)
+
+        with self.assertRaises(NotImplementedError):
+            model.equation_file_
+
+        with self.assertRaises(ValueError) as cm:
+            PySRRegressor.from_file(equation_file="", run_directory="")
+
+        self.assertIn("Passing `equation_file` is deprecated", str(cm.exception))
 
     def test_deprecated_functions(self):
         with self.assertWarns(FutureWarning):
@@ -807,7 +996,7 @@ class TestHelpMessages(unittest.TestCase):
             warnings.simplefilter("error")
             with self.assertRaises(Exception) as context:
                 model.fit(X, y)
-            self.assertIn("`deterministic`", str(context.exception))
+            self.assertIn("`deterministic=True`", str(context.exception))
 
     def test_deterministic_errors(self):
         """Setting deterministic without random_state should error"""
@@ -846,6 +1035,7 @@ class TestHelpMessages(unittest.TestCase):
             model.fit(X, y, variable_names=["f{c}"])
         self.assertIn("Invalid variable name", str(cm.exception))
 
+    @skip_if_beartype
     def test_bad_kwargs(self):
         bad_kwargs = [
             dict(
@@ -1207,8 +1397,8 @@ class TestDimensionalConstraints(unittest.TestCase):
         """
         X = np.ones((100, 3))
         y = np.ones((100, 1))
-        temp_dir = Path(tempfile.mkdtemp())
-        equation_file = str(temp_dir / "equation_file.csv")
+        output_dir = tempfile.mkdtemp()
+        run_id = "test"
         model = PySRRegressor(
             binary_operators=["+", "*"],
             early_stop_condition="(l, c) -> l < 1e-6 && c == 3",
@@ -1219,11 +1409,11 @@ class TestDimensionalConstraints(unittest.TestCase):
             complexity_of_constants=10,
             weight_mutate_constant=0.0,
             should_optimize_constants=False,
-            multithreading=False,
+            parallelism="serial",
             deterministic=True,
-            procs=0,
             random_state=0,
-            equation_file=equation_file,
+            output_directory=output_dir,
+            run_id=run_id,
             warm_start=True,
         )
         model.fit(
@@ -1243,16 +1433,18 @@ class TestDimensionalConstraints(unittest.TestCase):
         )
 
         # With pkl file:
-        pkl_file = str(temp_dir / "equation_file.pkl")
-        model2 = PySRRegressor.from_file(pkl_file)
+        run_directory = str(Path(output_dir) / run_id)
+        model2 = PySRRegressor.from_file(run_directory=run_directory)
         best2 = model2.get_best()
         self.assertIn("x0", best2["equation"])
 
         # From csv file alone (we need to delete pkl file:)
         # First, we delete the pkl file:
-        os.remove(pkl_file)
+        os.remove(Path(run_directory) / "checkpoint.pkl")
         model3 = PySRRegressor.from_file(
-            equation_file, binary_operators=["+", "*"], n_features_in=X.shape[1]
+            run_directory=run_directory,
+            binary_operators=["+", "*"],
+            n_features_in=X.shape[1],
         )
         best3 = model3.get_best()
         self.assertIn("x0", best3["equation"])

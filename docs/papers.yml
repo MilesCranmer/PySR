@@ -245,3 +245,53 @@ papers:
     abstract: "How can we find interpretable, domain-appropriate models of natural phenomena given some complex, raw data such as images? Can we use such models to derive scientific insight from the data? In this paper, we propose some methods for achieving this. In particular, we implement disentangled representation learning, sparse deep neural network training and symbolic regression, and assess their usefulness in forming interpretable models of complex image data. We demonstrate their relevance to the field of bioimaging using a well-studied test problem of classifying cell states in microscopy data. We find that such methods can produce highly parsimonious models that achieve ~98% of the accuracy of black-box benchmark models, with a tiny fraction of the complexity. We explore the utility of such interpretable models in producing scientific explanations of the underlying biological phenomenon."
     image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/master/images/cell_state_classification.jpg
     date: 2024-02-05
+  - title: Analytical formulae for design of one-dimensional sonic crystals with smooth geometry based on symbolic regression
+    authors:
+      - Viktor Hruška (1)
+      - Aneta Furmanová (1)
+      - Michal Bednařík (1)
+    affiliations:
+       1: Czech Technical University in Prague, Faculty of Electrical Engineering
+    link: https://doi.org/10.1016/j.jsv.2024.118821
+    abstract: Even though locally periodic structures have been studied for more than three decades, the known analytical expressions relating the waveguide geometry and the acoustic transmission are limited to a few special cases. Having an access to numerical model is a great opportunity for data-driven discovery. Our choice of cubic splines to parametrize the waveguide unit cell geometry offers enough variability for waveguide design. Using Webster equation for unit cell and Floquet–Bloch theory for periodic structures, a dataset of numerical solutions was prepared. Employing the methods of physics-informed machine learning, we have extracted analytical formulae relating the waveguide geometry and the corresponding dispersion relation or directly the bandgap widths. The results contribute to the overall readability of the system and enable a deeper understanding of the underlying principles. Specifically, it allows for assessing the influence of the waveguide geometry, offering more efficient alternative to computationally demanding numerical optimization.
+    image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/refs/heads/master/images/sonic_crystals.jpg
+    date: 2024-11-15
+  - title: "SymbolFit: Automatic Parametric Modeling with Symbolic Regression"
+    authors:
+      - Ho Fung Tsoi (1)
+      - Dylan Rankin (1)
+      - Cecile Caillol (2)
+      - Miles Cranmer (3)
+      - Sridhara Dasu (4)
+      - Javier Duarte (5)
+      - Philip Harris (6, 7)
+      - Elliot Lipeles (1)
+      - Vladimir Loncar (6, 8)
+    affiliations:
+      1: University of Pennsylvania
+      2: European Organization for Nuclear Research (CERN)
+      3: University of Cambridge
+      4: University of Wisconsin-Madison
+      5: University of California San Diego
+      6: Massachusetts Institute of Technology
+      7: Institute for Artificial Intelligence and Fundamental Interactions
+      8: Institute of Physics Belgrade
+    link: https://arxiv.org/abs/2411.09851
+    abstract: "We introduce SymbolFit, a framework that automates parametric modeling by using symbolic regression to perform a machine-search for functions that fit the data, while simultaneously providing uncertainty estimates in a single run. Traditionally, constructing a parametric model to accurately describe binned data has been a manual and iterative process, requiring an adequate functional form to be determined before the fit can be performed. The main challenge arises when the appropriate functional forms cannot be derived from first principles, especially when there is no underlying true closed-form function for the distribution. In this work, we address this problem by utilizing symbolic regression, a machine learning technique that explores a vast space of candidate functions without needing a predefined functional form, treating the functional form itself as a trainable parameter. Our approach is demonstrated in data analysis applications in high-energy physics experiments at the CERN Large Hadron Collider (LHC). We demonstrate its effectiveness and efficiency using five real proton-proton collision datasets from new physics searches at the LHC, namely the background modeling in resonance searches for high-mass dijet, trijet, paired-dijet, diphoton, and dimuon events. We also validate the framework using several toy datasets with one and more variables."
+    image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/refs/heads/master/images/symbolfit_sampling.png
+    date: 2024-11-15
+  - title: "The automated discovery of kinetic rate models – methodological frameworks"
+    authors:
+      - Miguel Ángel de Carvalho Servia (1)
+      - Ilya Orson Sandoval (1)
+      - King Kuok (Mimi) Hii (1)
+      - Klaus Hellgardt (1)
+      - Dongda Zhang (2)
+      - Ehecatl Antonio del Rio Chanona (1)
+    affiliations:
+      1: Imperial College London
+      2: University of Manchester
+    link: https://arxiv.org/abs/2301.11356
+    abstract: "The industrialization of catalytic processes requires reliable kinetic models for their design, optimization and control. Mechanistic models require significant domain knowledge, while data-driven and hybrid models lack interpretability. Automated knowledge discovery methods, such as ALAMO (Automated Learning of Algebraic Models for Optimization), SINDy (Sparse Identification of Nonlinear Dynamics), and genetic programming, have gained popularity but suffer from limitations such as needing model structure assumptions, exhibiting poor scalability, and displaying sensitivity to noise. To overcome these challenges, we propose two methodological frameworks, ADoK-S and ADoK-W (Automated Discovery of Kinetic rate models using a Strong/Weak formulation of symbolic regression), for the automated generation of catalytic kinetic models using a robust criterion for model selection. We leverage genetic programming for model generation and a sequential optimization routine for model refinement. The frameworks are tested against three case studies of increasing complexity, demonstrating their ability to retrieve the underlying kinetic rate model with limited noisy data from the catalytic systems, showcasing their potential for chemical reaction engineering applications."
+    image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/refs/heads/master/images/adok_s_results.jpg
+    date: 2024-03-22
