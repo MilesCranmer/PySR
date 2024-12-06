@@ -4,12 +4,7 @@ import warnings
 from types import ModuleType
 from typing import cast
 
-from .julia_registry_helpers import with_juliaregistrypref
-
-
-def import_juliacall():
-    import juliacall  # type: ignore
-
+from .julia_registry_helpers import try_with_registry_fallback
 
 # Check if JuliaCall is already loaded, and if so, warn the user
 # about the relevant environment variables. If not loaded,
@@ -49,7 +44,12 @@ if autoload_extensions is not None:
     # Deprecated; so just pass to juliacall
     os.environ["PYTHON_JULIACALL_AUTOLOAD_IPYTHON_EXTENSION"] = autoload_extensions
 
-with_juliaregistrypref(import_juliacall)
+
+def import_juliacall():
+    import juliacall  # type: ignore
+
+
+try_with_registry_fallback(import_juliacall)
 
 
 from juliacall import AnyValue  # type: ignore
