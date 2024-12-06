@@ -165,6 +165,16 @@ class TestRegistryHelper(unittest.TestCase):
 
     def setUp(self):
         self.old_value = os.environ.get(PREFERENCE_KEY, None)
+        self.recorded_env_vars = []
+        self.hits = 0
+
+        def failing_operation():
+            self.recorded_env_vars.append(os.environ[PREFERENCE_KEY])
+            self.hits += 1
+            # Just add some package I know will not exist and also not be in the dependency chain:
+            jl.Pkg.add(name="AirspeedVelocity", version="100.0.0")
+
+        self.failing_operation = failing_operation
 
     def tearDown(self):
         if self.old_value is not None:
@@ -182,16 +192,10 @@ class TestRegistryHelper(unittest.TestCase):
 
     def test_julia_error_triggers_fallback(self):
         os.environ[PREFERENCE_KEY] = "conservative"
-        recorded_env_vars = []
-
-        def failing_operation():
-            recorded_env_vars.append(os.environ[PREFERENCE_KEY])
-            # Just add some package I know will not exist and also not be in the dependency chain:
-            jl.Pkg.add(name="AirspeedVelocity", version="100.0.0")
 
         with self.assertWarns(Warning) as warn_context:
             with self.assertRaises(Exception) as error_context:
-                try_with_registry_fallback(failing_operation)
+                try_with_registry_fallback(self.failing_operation)
 
         self.assertIn(
             "Unsatisfiable requirements detected", str(error_context.exception)
@@ -202,7 +206,8 @@ class TestRegistryHelper(unittest.TestCase):
         )
 
         # Verify both modes are tried in order
-        self.assertEqual(recorded_env_vars, ["conservative", "eager"])
+        self.assertEqual(self.recorded_env_vars, ["conservative", "eager"])
+        self.assertEqual(self.hits, 2)
 
         # Verify environment is restored
         self.assertEqual(os.environ[PREFERENCE_KEY], "conservative")
@@ -210,22 +215,14 @@ class TestRegistryHelper(unittest.TestCase):
     def test_eager_mode_fails_directly(self):
         os.environ[PREFERENCE_KEY] = "eager"
 
-        recorded_env_vars = []
-        hits = 0
-
-        def failing_operation():
-            recorded_env_vars.append(os.environ[PREFERENCE_KEY])
-            nonlocal hits
-            hits += 1
-            raise Exception(
-                "JuliaError\nUnsatisfiable requirements detected for package Test [8dfed614-e22c-5e08-85e1-65c5234f0b40]"
-            )
-
         with self.assertRaises(Exception) as context:
-            try_with_registry_fallback(failing_operation)
-        self.assertIn("JuliaError", str(context.exception))
-        self.assertEqual(recorded_env_vars, ["eager"])  # Should only try eager mode
-        self.assertEqual(hits, 1)
+            try_with_registry_fallback(self.failing_operation)
+
+        self.assertIn("Unsatisfiable requirements detected", str(context.exception))
+        self.assertEqual(
+            self.recorded_env_vars, ["eager"]
+        )  # Should only try eager mode
+        self.assertEqual(self.hits, 1)
 
 
 def runtests(just_tests=False):
