@@ -11,6 +11,7 @@ import numpy as np
 
 from pysr import PySRRegressor
 from pysr.julia_import import jl_version
+from pysr.julia_registry_helpers import PREFERENCE_KEY, try_with_registry_fallback
 
 from .params import DEFAULT_NITERATIONS, DEFAULT_POPULATIONS
 
@@ -159,8 +160,82 @@ class TestStartup(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
 
 
+class TestRegistryHelper(unittest.TestCase):
+    """Test suite for Julia registry preference handling."""
+
+    def setUp(self):
+        """Store original environment."""
+        self.old_value = os.environ.get(PREFERENCE_KEY, None)
+
+    def tearDown(self):
+        """Restore original environment."""
+        if self.old_value is not None:
+            os.environ[PREFERENCE_KEY] = self.old_value
+        else:
+            os.environ.pop(PREFERENCE_KEY, None)
+
+    def test_successful_operation(self):
+        self.assertEqual(try_with_registry_fallback(lambda s: s, "success"), "success")
+
+    def test_non_julia_errors_reraised(self):
+        """Test that non-Julia errors are re-raised without modification."""
+        with self.assertRaises(SyntaxError) as context:
+            try_with_registry_fallback(lambda: exec("invalid syntax !@#$"))
+        self.assertNotIn("JuliaError", str(context.exception))
+
+    def test_julia_error_triggers_fallback(self):
+        """Test that Julia registry errors trigger the fallback to eager mode."""
+        os.environ[PREFERENCE_KEY] = "conservative"
+        recorded_env_vars = []
+
+        def failing_operation():
+            recorded_env_vars.append(os.environ[PREFERENCE_KEY])
+            # Just fake the error message, as not sure how to realistically
+            # trigger a `conservative` registry-related error.
+            raise Exception(
+                "JuliaError\nUnsatisfiable requirements detected for package Test [8dfed614-e22c-5e08-85e1-65c5234f0b40]"
+            )
+
+        with self.assertWarns(Warning) as warn_context:
+            with self.assertRaises(Exception) as error_context:
+                try_with_registry_fallback(failing_operation)
+
+        self.assertIn("JuliaError", str(error_context.exception))
+        self.assertIn(
+            "Initial Julia registry operation failed. Attempting to use the `eager` registry flavor of the Julia",
+            str(warn_context.warning),
+        )
+
+        # Verify both modes are tried in order
+        self.assertEqual(recorded_env_vars, ["conservative", "eager"])
+
+        # Verify environment is restored
+        self.assertEqual(os.environ[PREFERENCE_KEY], "conservative")
+
+    def test_eager_mode_fails_directly(self):
+        """Test that eager mode errors don't trigger fallback."""
+        os.environ[PREFERENCE_KEY] = "eager"
+
+        recorded_env_vars = []
+        hits = 0
+
+        def failing_operation():
+            recorded_env_vars.append(os.environ[PREFERENCE_KEY])
+            nonlocal hits
+            hits += 1
+            raise Exception(
+                "JuliaError\nUnsatisfiable requirements detected for package Test [8dfed614-e22c-5e08-85e1-65c5234f0b40]"
+            )
+
+        with self.assertRaises(Exception) as context:
+            try_with_registry_fallback(failing_operation)
+        self.assertIn("JuliaError", str(context.exception))
+        self.assertEqual(recorded_env_vars, ["eager"])  # Should only try eager mode
+        self.assertEqual(hits, 1)
+
+
 def runtests(just_tests=False):
-    tests = [TestStartup]
+    tests = [TestStartup, TestRegistryHelper]
     if just_tests:
         return tests
     suite = unittest.TestSuite()
