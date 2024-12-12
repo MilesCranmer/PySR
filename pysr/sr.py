@@ -58,6 +58,13 @@ from .utils import (
     _suggest_keywords,
 )
 
+try:
+    from sklearn.utils.validation import validate_data
+
+    OLD_SKLEARN = False
+except ImportError:
+    OLD_SKLEARN = True
+
 ALREADY_RAN = False
 
 
@@ -1604,11 +1611,17 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         )
 
     def _validate_data_X_y(self, X: Any, y: Any) -> tuple[ndarray, ndarray]:
-        raw_out = self._validate_data(X=X, y=y, reset=True, multi_output=True)  # type: ignore
+        if OLD_SKLEARN:
+            raw_out = self._validate_data(X=X, y=y, reset=True, multi_output=True)  # type: ignore
+        else:
+            raw_out = validate_data(self, X=X, y=y, reset=True, multi_output=True)  # type: ignore
         return cast(tuple[ndarray, ndarray], raw_out)
 
     def _validate_data_X(self, X: Any) -> ndarray:
-        raw_out = self._validate_data(X=X, reset=False)  # type: ignore
+        if OLD_SKLEARN:
+            raw_out = self._validate_data(X=X, reset=False)  # type: ignore
+        else:
+            raw_out = validate_data(self, X=X, reset=False)  # type: ignore
         return cast(ndarray, raw_out)
 
     def _get_precision_mapped_dtype(self, X: np.ndarray) -> type:
