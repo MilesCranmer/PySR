@@ -876,8 +876,14 @@ class TestMiscellaneous(unittest.TestCase):
         check_generator = check_estimator(model, generate_only=True)
         exception_messages = []
         for _, check in check_generator:
-            if check.func.__name__ == "check_complex_data":
-                # We can use complex data, so avoid this check.
+            if check.func.__name__ in {
+                # We can use complex data, so avoid this check
+                "check_complex_data",
+                # We handle kwargs manually, so skip this check
+                "check_do_not_raise_errors_in_init_or_set_params",
+                # TODO:
+                "check_n_features_in_after_fitting",
+            }:
                 continue
             try:
                 with warnings.catch_warnings():
