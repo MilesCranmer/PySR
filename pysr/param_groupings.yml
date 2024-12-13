@@ -92,6 +92,7 @@
   - print_precision
   - progress
   - logger_spec
+  - input_stream
 - Environment:
   - temp_equation_file
   - tempdir

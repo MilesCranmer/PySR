@@ -618,6 +618,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Logger specification for the Julia backend. See, for example,
         `TensorBoardLoggerSpec`.
         Default is `None`.
+    input_stream : str
+        The stream to read user input from. By default, this is `"stdin"`.
+        If you encounter issues with reading from `stdin`, like a hang,
+        you can simply pass `"devnull"` to this argument. You can also
+        reference an arbitrary Julia object in the `Main` namespace.
+        Default is `"stdin"`.
     run_id : str
         A unique identifier for the run. Will be generated using the
         current date and time if not provided.
@@ -863,6 +869,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         print_precision: int = 5,
         progress: bool = True,
         logger_spec: AbstractLoggerSpec | None = None,
+        input_stream: str = "stdin",
         run_id: str | None = None,
         output_directory: str | None = None,
         temp_equation_file: bool = False,
@@ -969,6 +976,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.print_precision = print_precision
         self.progress = progress
         self.logger_spec = logger_spec
+        self.input_stream = input_stream
         # - Project management
         self.run_id = run_id
         self.output_directory = output_directory
@@ -1888,6 +1896,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             else "nothing"
         )
 
+        input_stream = jl.seval(self.input_stream)
+
         load_required_packages(
             turbo=self.turbo,
             bumper=self.bumper,
@@ -2002,6 +2012,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             crossover_probability=self.crossover_probability,
             skip_mutation_failures=self.skip_mutation_failures,
             max_evals=self.max_evals,
+            input_stream=input_stream,
             early_stop_condition=early_stop_condition,
             seed=seed,
             deterministic=self.deterministic,
