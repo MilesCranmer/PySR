@@ -1225,6 +1225,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     f"`{state_key}` at runtime."
                 )
         state_keys_to_clear = state_keys_containing_lambdas
+        state_keys_to_clear.append("logger_")
         pickled_state = {
             key: (None if key in state_keys_to_clear else value)
             for key, value in state.items()
