@@ -652,17 +652,18 @@ The operator for this is `D` which takes an expression as the first argument,
 and the argument _index_ we are differentiating as the second argument.
 This lets you compute integrals via evolution.
 
-For example, let's say we wish to find the integral of $\sqrt(1 - x^2)$.
+For example, let's say we wish to find the integral of $\frac{1}{x^2 \sqrt{x^2 - 1}}$
+in the range $x > 1$.
 We can compute the derivative of a function $f(x)$, and compare that
-to numerical samples of $\sqrt(1 - x^2)$. Then, by extension,
-$f(x)$ represents the indefinite integral of $\sqrt(1 - x^2)$ with some constant offset.
+to numerical samples of $\frac{1}{x^2\sqrt{x^2-1}}$. Then, by extension,
+$f(x)$ represents the indefinite integral of it with some constant offset!
 
 ```python
 import numpy as np
 from pysr import PySRRegressor, TemplateExpressionSpec
 
-x = np.random.rand(1000)
-y = np.sqrt(1 - x**2)
+x = np.random.uniform(1, 10, (1000,))  # Integrand sampling points
+y = 1 / (x**2 * np.sqrt(x**2 - 1))     # Evaluation of the integrand
 
 expression_spec = TemplateExpressionSpec(
     ["f"],
@@ -675,19 +676,15 @@ expression_spec = TemplateExpressionSpec(
 )
 
 model = PySRRegressor(
-    niterations=1000,
     binary_operators=["+", "-", "*", "/"],
-    unary_operators=["sqrt", "atan"],
+    unary_operators=["sqrt"],
     expression_spec=expression_spec,
-    maxsize=30,
-    batching=True,
-    batch_size=32,
-    parsimony=1e-3
+    maxsize=20,
 )
 model.fit(x[:, np.newaxis], y)
 ```
 
-If everything works, you should
+If everything works, you should find something that simplifies to $\frac{\sqrt{x^2 - 1}}{x}$.
 
 Here, we write out a full function in Julia.
 But we can also do an anonymous function, like `((; f), (x,)) -> D(f, 1)(x)`. We can also avoid the fancy unpacking syntax and write:
