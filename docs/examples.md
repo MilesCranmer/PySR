@@ -644,7 +644,70 @@ You can then view the logs with:
 tensorboard --logdir logs/
 ```
 
-## 13. Additional features
+## 13. Using differential operators
+
+As part of the `TemplateExpressionSpec` described above,
+you can also use differential operators within the template.
+The operator for this is `D` which takes an expression as the first argument,
+and the argument _index_ we are differentiating as the second argument.
+This lets you compute integrals via evolution.
+
+For example, let's say we wish to find the integral of $\sqrt(1 - x^2)$.
+We can compute the derivative of a function $f(x)$, and compare that
+to numerical samples of $\sqrt(1 - x^2)$. Then, by extension,
+$f(x)$ represents the indefinite integral of $\sqrt(1 - x^2)$ with some constant offset.
+
+```python
+import numpy as np
+from pysr import PySRRegressor, TemplateExpressionSpec
+
+x = np.random.rand(1000)
+y = np.sqrt(1 - x**2)
+
+expression_spec = TemplateExpressionSpec(
+    ["f"],
+    """
+    function diff_f_x((; f), (x,))
+        df = D(f, 1)  # Symbolic derivative of f with respect to its first arg
+        return df(x)
+    end
+    """
+)
+
+model = PySRRegressor(
+    niterations=1000,
+    binary_operators=["+", "-", "*", "/"],
+    unary_operators=["sqrt", "atan"],
+    expression_spec=expression_spec,
+    maxsize=30,
+    batching=True,
+    batch_size=32,
+    parsimony=1e-3
+)
+model.fit(x[:, np.newaxis], y)
+```
+
+If everything works, you should
+
+Here, we write out a full function in Julia.
+But we can also do an anonymous function, like `((; f), (x,)) -> D(f, 1)(x)`. We can also avoid the fancy unpacking syntax and write:
+`(nt, xs) -> D(nt.f, 1)(xs[1])` which is completely equivalent. Note that in Julia,
+the following two syntaxes are equivalent:
+
+```julia
+nt = (; f=1, g=2)  # Create a "named tuple"
+(; f, g) = nt
+```
+
+and
+
+```julia
+f = nt.f
+g = nt.g
+```
+
+
+## 14. Additional features
 
 For the many other features available in PySR, please
 read the [Options section](options.md).
