@@ -64,5 +64,8 @@ jl_version = (jl.VERSION.major, jl.VERSION.minor, jl.VERSION.patch)
 jl.seval("using SymbolicRegression")
 SymbolicRegression = jl.SymbolicRegression
 
+# Expose `D` operator:
+jl.seval("using SymbolicRegression: D")
+
 jl.seval("using Pkg: Pkg")
 Pkg = jl.Pkg

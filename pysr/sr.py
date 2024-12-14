@@ -111,6 +111,7 @@ def _maybe_create_inline_operators(
     binary_operators: list[str],
     unary_operators: list[str],
     extra_sympy_mappings: dict[str, Callable] | None,
+    expression_spec: AbstractExpressionSpec,
 ) -> tuple[list[str], list[str]]:
     binary_operators = binary_operators.copy()
     unary_operators = unary_operators.copy()
@@ -132,9 +133,11 @@ def _maybe_create_inline_operators(
                         "Only alphanumeric characters, numbers, "
                         "and underscores are allowed."
                     )
-                if (extra_sympy_mappings is None) or (
-                    function_name not in extra_sympy_mappings
-                ):
+                missing_sympy_mapping = (
+                    extra_sympy_mappings is None
+                    or function_name not in extra_sympy_mappings
+                )
+                if missing_sympy_mapping and expression_spec.supports_sympy:
                     raise ValueError(
                         f"Custom function {function_name} is not defined in `extra_sympy_mappings`. "
                         "You can define it with, "
@@ -618,6 +621,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Logger specification for the Julia backend. See, for example,
         `TensorBoardLoggerSpec`.
         Default is `None`.
+    input_stream : str
+        The stream to read user input from. By default, this is `"stdin"`.
+        If you encounter issues with reading from `stdin`, like a hang,
+        you can simply pass `"devnull"` to this argument. You can also
+        reference an arbitrary Julia object in the `Main` namespace.
+        Default is `"stdin"`.
     run_id : str
         A unique identifier for the run. Will be generated using the
         current date and time if not provided.
@@ -863,6 +872,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         print_precision: int = 5,
         progress: bool = True,
         logger_spec: AbstractLoggerSpec | None = None,
+        input_stream: str = "stdin",
         run_id: str | None = None,
         output_directory: str | None = None,
         temp_equation_file: bool = False,
@@ -969,6 +979,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.print_precision = print_precision
         self.progress = progress
         self.logger_spec = logger_spec
+        self.input_stream = input_stream
         # - Project management
         self.run_id = run_id
         self.output_directory = output_directory
@@ -1217,6 +1228,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     f"`{state_key}` at runtime."
                 )
         state_keys_to_clear = state_keys_containing_lambdas
+        state_keys_to_clear.append("logger_")
         pickled_state = {
             key: (None if key in state_keys_to_clear else value)
             for key, value in state.items()
@@ -1837,6 +1849,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             binary_operators=binary_operators,
             unary_operators=unary_operators,
             extra_sympy_mappings=self.extra_sympy_mappings,
+            expression_spec=self.expression_spec_,
         )
         if constraints is not None:
             _constraints = _process_constraints(
@@ -1887,6 +1900,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             if self.early_stop_condition is not None
             else "nothing"
         )
+
+        input_stream = jl.seval(self.input_stream)
 
         load_required_packages(
             turbo=self.turbo,
@@ -2002,6 +2017,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             crossover_probability=self.crossover_probability,
             skip_mutation_failures=self.skip_mutation_failures,
             max_evals=self.max_evals,
+            input_stream=input_stream,
             early_stop_condition=early_stop_condition,
             seed=seed,
             deterministic=self.deterministic,
