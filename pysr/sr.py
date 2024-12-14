@@ -111,6 +111,7 @@ def _maybe_create_inline_operators(
     binary_operators: list[str],
     unary_operators: list[str],
     extra_sympy_mappings: dict[str, Callable] | None,
+    expression_spec: AbstractExpressionSpec,
 ) -> tuple[list[str], list[str]]:
     binary_operators = binary_operators.copy()
     unary_operators = unary_operators.copy()
@@ -132,9 +133,11 @@ def _maybe_create_inline_operators(
                         "Only alphanumeric characters, numbers, "
                         "and underscores are allowed."
                     )
-                if (extra_sympy_mappings is None) or (
-                    function_name not in extra_sympy_mappings
-                ):
+                missing_sympy_mapping = (
+                    extra_sympy_mappings is None
+                    or function_name not in extra_sympy_mappings
+                )
+                if missing_sympy_mapping and expression_spec.supports_sympy:
                     raise ValueError(
                         f"Custom function {function_name} is not defined in `extra_sympy_mappings`. "
                         "You can define it with, "
@@ -1846,6 +1849,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             binary_operators=binary_operators,
             unary_operators=unary_operators,
             extra_sympy_mappings=self.extra_sympy_mappings,
+            expression_spec=self.expression_spec_,
         )
         if constraints is not None:
             _constraints = _process_constraints(
