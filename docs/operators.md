@@ -7,56 +7,32 @@ takes one or two scalars as input, and returns on scalar as output,
 is likely to be a valid operator[^1].
 A selection of these and other valid operators are stated below.
 
-**Binary**
+Also, note that it's a good idea to not use too many operators, since
+it can exponentially increase the search space.
 
-- `+`
-- `-`
-- `*`
-- `/`
-- `^`
-- `max`
-- `min`
-- `mod`
-- `cond`
-    - Equal to `(x, y) -> x > 0 ? y : 0`
-- `greater`
-    - Equal to `(x, y) -> x > y ? 1 : 0`
-- `logical_or`
-    - Equal to `(x, y) -> (x > 0 || y > 0) ? 1 : 0`
-- `logical_and`
-    - Equal to `(x, y) -> (x > 0 && y > 0) ? 1 : 0`
+**Binary Operators**
 
-**Unary**
+| Arithmetic    | Comparison | Logic    |
+|--------------|------------|----------|
+| `+`          | `max`      | `logical_or`[^2] |
+| `-`          | `min`      | `logical_and`[^3]|
+| `*`          | `greater`[^4] |                 |
+| `/`          | `cond`[^5]   |                 |
+| `^`          | `mod`      |                 |
 
-- `neg`
-- `square`
-- `cube`
-- `exp`
-- `abs`
-- `log`
-- `log10`
-- `log2`
-- `log1p`
-- `sqrt`
-- `sin`
-- `cos`
-- `tan`
-- `sinh`
-- `cosh`
-- `tanh`
-- `atan`
-- `asinh`
-- `acosh`
-- `atanh_clip`
-    - Equal to `atanh(mod(x + 1, 2) - 1)`
-- `erf`
-- `erfc`
-- `gamma`
-- `relu`
-- `round`
-- `floor`
-- `ceil`
-- `sign`
+**Unary Operators**
+
+| Basic      | Exp/Log    | Trig      | Hyperbolic | Special   | Rounding   |
+|------------|------------|-----------|------------|-----------|------------|
+| `neg`      | `exp`      | `sin`     | `sinh`     | `erf`     | `round`    |
+| `square`   | `log`      | `cos`     | `cosh`     | `erfc`    | `floor`    |
+| `cube`     | `log10`    | `tan`     | `tanh`     | `gamma`   | `ceil`     |
+| `cbrt`     | `log2`     | `asin`    | `asinh`    | `relu`    |            |
+| `sqrt`     | `log1p`    | `acos`    | `acosh`    | `sinc`    |            |
+| `abs`      |            | `atan`    | `atanh`    |           |            |
+| `sign`     |            |           |            |           |            |
+| `inv`      |            |           |            |           |            |
+
 
 ## Custom
 
@@ -96,3 +72,7 @@ any invalid values over the training dataset.
 <!-- (Will say "However, you may need to define a `extra_sympy_mapping`":) -->
 
 [^1]: However, you will need to define a sympy equivalent in `extra_sympy_mapping` if you want to use a function not in the above list.
+[^2]: `logical_or` is equivalent to `(x, y) -> (x > 0 || y > 0) ? 1 : 0`
+[^3]: `logical_and` is equivalent to `(x, y) -> (x > 0 && y > 0) ? 1 : 0`
+[^4]: `greater` is equivalent to `(x, y) -> x > y ? 1 : 0`
+[^5]: `cond` is equivalent to `(x, y) -> x > 0 ? y : 0`
