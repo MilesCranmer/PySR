@@ -1,0 +1,1145 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+        <link rel="next" href="examples/">
+      
+      
+      <link rel="icon" href="assets/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.49">
+    
+    
+      
+        <title>PySR</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.6f8fc17f.min.css">
+      
+        
+        <link rel="stylesheet" href="assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="stylesheets/extra.css">
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="pysr" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#pysr-high-performance-symbolic-regression-in-python-and-julia" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="https://ai.damtp.cam.ac.uk/pysr" title="PySR" class="md-header__button md-logo" aria-label="PySR" data-md-component="logo">
+      
+  <img src="assets/pysr_logo_reduced.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            PySR
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Home
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="pysr" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 6H7c-3.31 0-6 2.69-6 6s2.69 6 6 6h10c3.31 0 6-2.69 6-6s-2.69-6-6-6m0 10H7c-2.21 0-4-1.79-4-4s1.79-4 4-4h10c2.21 0 4 1.79 4 4s-1.79 4-4 4M7 9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/MilesCranmer/PySR" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 512"><!--! Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M186.1 328.7c0 20.9-10.9 55.1-36.7 55.1s-36.7-34.2-36.7-55.1 10.9-55.1 36.7-55.1 36.7 34.2 36.7 55.1M480 278.2c0 31.9-3.2 65.7-17.5 95-37.9 76.6-142.1 74.8-216.7 74.8-75.8 0-186.2 2.7-225.6-74.8-14.6-29-20.2-63.1-20.2-95 0-41.9 13.9-81.5 41.5-113.6-5.2-15.8-7.7-32.4-7.7-48.8 0-21.5 4.9-32.3 14.6-51.8 45.3 0 74.3 9 108.8 36 29-6.9 58.8-10 88.7-10 27 0 54.2 2.9 80.4 9.2 34-26.7 63-35.2 107.8-35.2 9.8 19.5 14.6 30.3 14.6 51.8 0 16.4-2.6 32.7-7.7 48.2 27.5 32.4 39 72.3 39 114.2m-64.3 50.5c0-43.9-26.7-82.6-73.5-82.6-18.9 0-37 3.4-56 6-14.9 2.3-29.8 3.2-45.1 3.2-15.2 0-30.1-.9-45.1-3.2-18.7-2.6-37-6-56-6-46.8 0-73.5 38.7-73.5 82.6 0 87.8 80.4 101.3 150.4 101.3h48.2c70.3 0 150.6-13.4 150.6-101.3m-82.6-55.1c-25.8 0-36.7 34.2-36.7 55.1s10.9 55.1 36.7 55.1 36.7-34.2 36.7-55.1-10.9-55.1-36.7-55.1"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="https://ai.damtp.cam.ac.uk/pysr" title="PySR" class="md-nav__button md-logo" aria-label="PySR" data-md-component="logo">
+      
+  <img src="assets/pysr_logo_reduced.svg" alt="logo">
+
+    </a>
+    PySR
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/MilesCranmer/PySR" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 512"><!--! Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M186.1 328.7c0 20.9-10.9 55.1-36.7 55.1s-36.7-34.2-36.7-55.1 10.9-55.1 36.7-55.1 36.7 34.2 36.7 55.1M480 278.2c0 31.9-3.2 65.7-17.5 95-37.9 76.6-142.1 74.8-216.7 74.8-75.8 0-186.2 2.7-225.6-74.8-14.6-29-20.2-63.1-20.2-95 0-41.9 13.9-81.5 41.5-113.6-5.2-15.8-7.7-32.4-7.7-48.8 0-21.5 4.9-32.3 14.6-51.8 45.3 0 74.3 9 108.8 36 29-6.9 58.8-10 88.7-10 27 0 54.2 2.9 80.4 9.2 34-26.7 63-35.2 107.8-35.2 9.8 19.5 14.6 30.3 14.6 51.8 0 16.4-2.6 32.7-7.7 48.2 27.5 32.4 39 72.3 39 114.2m-64.3 50.5c0-43.9-26.7-82.6-73.5-82.6-18.9 0-37 3.4-56 6-14.9 2.3-29.8 3.2-45.1 3.2-15.2 0-30.1-.9-45.1-3.2-18.7-2.6-37-6-56-6-46.8 0-73.5 38.7-73.5 82.6 0 87.8 80.4 101.3 150.4 101.3h48.2c70.3 0 150.6-13.4 150.6-101.3m-82.6-55.1c-25.8 0-36.7 34.2-36.7 55.1s10.9 55.1 36.7 55.1 36.7-34.2 36.7-55.1-10.9-55.1-36.7-55.1"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="." class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pysr-high-performance-symbolic-regression-in-python-and-julia" class="md-nav__link">
+    <span class="md-ellipsis">
+      PySR: High-Performance Symbolic Regression in Python and Julia
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-pysr" class="md-nav__link">
+    <span class="md-ellipsis">
+      Why PySR?
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Installation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Installation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pip" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pip
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conda" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conda
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quickstart" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quickstart
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quickstart">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#detailed-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      Detailed Example
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docker" class="md-nav__link">
+    <span class="md-ellipsis">
+      Docker
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#contributors" class="md-nav__link">
+    <span class="md-ellipsis">
+      Contributors ✨
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="examples/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Toy Examples with Code
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    API Reference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="operators/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Operators
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tuning/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tuning and Workflow Tips
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="options/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Features and Options
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="papers/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Research
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api-advanced/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Internal Reference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="backend/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Customization
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pysr-high-performance-symbolic-regression-in-python-and-julia" class="md-nav__link">
+    <span class="md-ellipsis">
+      PySR: High-Performance Symbolic Regression in Python and Julia
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-pysr" class="md-nav__link">
+    <span class="md-ellipsis">
+      Why PySR?
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Installation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Installation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pip" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pip
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conda" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conda
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quickstart" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quickstart
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quickstart">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#detailed-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      Detailed Example
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docker" class="md-nav__link">
+    <span class="md-ellipsis">
+      Docker
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#contributors" class="md-nav__link">
+    <span class="md-ellipsis">
+      Contributors ✨
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+  <h1>Home</h1>
+
+<div style="width:100%;height:0px;position:relative;padding-bottom:56.250%;"><iframe src="https://streamable.com/e/ncvqhy" frameborder="0" width="100%" height="100%" allowfullscreen style="width:100%;height:100%;position:absolute;left:0px;top:0px;overflow:hidden;"></iframe></div>
+<p>PySR searches for symbolic expressions which optimize a particular objective.</p>
+<p>https://github.com/MilesCranmer/PySR/assets/7593028/c8511a49-b408-488f-8f18-b1749078268f</p>
+<h2 id="pysr-high-performance-symbolic-regression-in-python-and-julia">PySR: High-Performance Symbolic Regression in Python and Julia<a class="headerlink" href="#pysr-high-performance-symbolic-regression-in-python-and-julia" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;"><strong>Docs</strong></th>
+<th style="text-align: center;"><strong>Forums</strong></th>
+<th style="text-align: center;"><strong>Paper</strong></th>
+<th style="text-align: center;"><strong>colab demo</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><a href="https://ai.damtp.cam.ac.uk/pysr/"><img alt="Documentation" src="https://github.com/MilesCranmer/PySR/actions/workflows/docs.yml/badge.svg" /></a></td>
+<td style="text-align: center;"><a href="https://github.com/MilesCranmer/PySR/discussions"><img alt="Discussions" src="https://img.shields.io/badge/discussions-github-informational" /></a></td>
+<td style="text-align: center;"><a href="https://arxiv.org/abs/2305.01582"><img alt="Paper" src="https://img.shields.io/badge/arXiv-2305.01582-b31b1b" /></a></td>
+<td style="text-align: center;"><a href="https://colab.research.google.com/github/MilesCranmer/PySR/blob/master/examples/pysr_demo.ipynb"><img alt="Colab" src="https://img.shields.io/badge/colab-notebook-yellow" /></a></td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;"><strong>pip</strong></th>
+<th style="text-align: center;"><strong>conda</strong></th>
+<th style="text-align: center;"><strong>Stats</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>If you find PySR useful, please cite the paper <a href="https://arxiv.org/abs/2305.01582">arXiv:2305.01582</a>.
+If you've finished a project with PySR, please submit a PR to showcase your work on the <a href="https://ai.damtp.cam.ac.uk/pysr/papers">research showcase page</a>!</p>
+<p><strong>Contents</strong>:</p>
+<ul>
+<li><a href="#why-pysr">Why PySR?</a></li>
+<li><a href="#installation">Installation</a></li>
+<li><a href="#quickstart">Quickstart</a></li>
+<li><a href="https://ai.damtp.cam.ac.uk/PySR">→ Documentation</a></li>
+<li><a href="#contributors-">Contributors</a></li>
+</ul>
+<p><strong>Test status</strong></p>
+<table>
+<thead>
+<tr>
+<th><strong>Linux</strong></th>
+<th><strong>Windows</strong></th>
+<th><strong>macOS</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://github.com/MilesCranmer/PySR/actions/workflows/CI.yml"><img alt="Linux" src="https://github.com/MilesCranmer/PySR/actions/workflows/CI.yml/badge.svg" /></a></td>
+<td><a href="https://github.com/MilesCranmer/PySR/actions/workflows/CI_Windows.yml"><img alt="Windows" src="https://github.com/MilesCranmer/PySR/actions/workflows/CI_Windows.yml/badge.svg" /></a></td>
+<td><a href="https://github.com/MilesCranmer/PySR/actions/workflows/CI_mac.yml"><img alt="macOS" src="https://github.com/MilesCranmer/PySR/actions/workflows/CI_mac.yml/badge.svg" /></a></td>
+</tr>
+<tr>
+<td><strong>Docker</strong></td>
+<td><strong>Conda</strong></td>
+<td><strong>Coverage</strong></td>
+</tr>
+<tr>
+<td><a href="https://github.com/MilesCranmer/PySR/actions/workflows/CI_docker.yml"><img alt="Docker" src="https://github.com/MilesCranmer/PySR/actions/workflows/CI_docker.yml/badge.svg" /></a></td>
+<td><a href="https://github.com/MilesCranmer/PySR/actions/workflows/CI_conda_forge.yml"><img alt="conda-forge" src="https://github.com/MilesCranmer/PySR/actions/workflows/CI_conda_forge.yml/badge.svg" /></a></td>
+<td><a href="https://coveralls.io/github/MilesCranmer/PySR"><img alt="Coverage Status" src="https://coveralls.io/repos/github/MilesCranmer/PySR/badge.svg?branch=master&amp;service=github" /></a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="why-pysr">Why PySR?<a class="headerlink" href="#why-pysr" title="Permanent link">&para;</a></h2>
+<p>PySR is an open-source tool for <em>Symbolic Regression</em>: a machine learning
+task where the goal is to find an interpretable symbolic expression that optimizes some objective.</p>
+<p>Over a period of several years, PySR has been engineered from the ground up
+to be (1) as high-performance as possible,
+(2) as configurable as possible, and (3) easy to use.
+PySR is developed alongside the Julia library <a href="https://github.com/MilesCranmer/SymbolicRegression.jl">SymbolicRegression.jl</a>,
+which forms the powerful search engine of PySR.
+The details of these algorithms are described in the <a href="https://arxiv.org/abs/2305.01582">PySR paper</a>.</p>
+<p>Symbolic regression works best on low-dimensional datasets, but
+one can also extend these approaches to higher-dimensional
+spaces by using "<em>Symbolic Distillation</em>" of Neural Networks, as explained in
+<a href="https://arxiv.org/abs/2006.11287">2006.11287</a>, where we apply
+it to N-body problems. Here, one essentially uses
+symbolic regression to convert a neural net
+to an analytic equation. Thus, these tools simultaneously present
+an explicit and powerful way to interpret deep neural networks.</p>
+<h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
+<h3 id="pip">Pip<a class="headerlink" href="#pip" title="Permanent link">&para;</a></h3>
+<p>You can install PySR with pip:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>pysr
+</code></pre></div>
+<p>Julia dependencies will be installed at first import.</p>
+<h3 id="conda">Conda<a class="headerlink" href="#conda" title="Permanent link">&para;</a></h3>
+<p>Similarly, with conda:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>conda<span class="w"> </span>install<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>pysr
+</code></pre></div>
+<details>
+<summary>
+
+### Docker
+
+</summary>
+
+You can also use the `Dockerfile` to install PySR in a docker container
+
+1. Clone this repo.
+2. Within the repo's directory, build the docker container:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>pysr<span class="w"> </span>.
+</code></pre></div>
+3. You can then start the container with an IPython execution with:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span>pysr<span class="w"> </span>ipython
+</code></pre></div>
+
+For more details, see the [docker section](#docker).
+
+</details>
+
+<details>
+<summary>
+
+### Apptainer
+
+</summary>
+
+If you are using PySR on a cluster where you do not have root access,
+you can use [Apptainer](https://apptainer.org/) to build a container
+instead of Docker. The `Apptainer.def` file is analogous to the `Dockerfile`,
+and can be built with:
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>apptainer<span class="w"> </span>build<span class="w"> </span>--notest<span class="w"> </span>pysr.sif<span class="w"> </span>Apptainer.def
+</code></pre></div>
+
+and launched with
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>apptainer<span class="w"> </span>run<span class="w"> </span>pysr.sif
+</code></pre></div>
+
+</details>
+
+<details>
+<summary>
+
+### Troubleshooting
+
+</summary>
+
+One issue you might run into can result in a hard crash at import with
+a message like "`GLIBCXX_...` not found". This is due to another one of the Python dependencies
+loading an incorrect `libstdc++` library. To fix this, you should modify your
+`LD_LIBRARY_PATH` variable to reference the Julia libraries. For example, if the Julia
+version of `libstdc++.so` is located in `$HOME/.julia/juliaup/julia-1.10.0+0.x64.linux.gnu/lib/julia/`
+(which likely differs on your system!), you could add:
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>export LD_LIBRARY_PATH=$HOME/.julia/juliaup/julia-1.10.0+0.x64.linux.gnu/lib/julia/:$LD_LIBRARY_PATH
+</code></pre></div>
+
+to your `.bashrc` or `.zshrc` file.
+
+</details>
+
+<h2 id="quickstart">Quickstart<a class="headerlink" href="#quickstart" title="Permanent link">&para;</a></h2>
+<p>You might wish to try the interactive tutorial <a href="https://colab.research.google.com/github/MilesCranmer/PySR/blob/master/examples/pysr_demo.ipynb">here</a>, which uses the notebook in <code>examples/pysr_demo.ipynb</code>.</p>
+<p>In practice, I highly recommend using IPython rather than Jupyter, as the printing is much nicer.
+Below is a quick demo here which you can paste into a Python runtime.
+First, let's import numpy to generate some test data:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">X</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">y</span> <span class="o">=</span> <span class="mf">2.5382</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">X</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">])</span> <span class="o">+</span> <span class="n">X</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">-</span> <span class="mf">0.5</span>
+</code></pre></div>
+<p>We have created a dataset with 100 datapoints, with 5 features each.
+The relation we wish to model is <span class="arithmatex">\(2.5382 \cos(x_3) + x_0^2 - 0.5\)</span>.</p>
+<p>Now, let's create a PySR model and train it.
+PySR's main interface is in the style of scikit-learn:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">from</span> <span class="nn">pysr</span> <span class="kn">import</span> <span class="n">PySRRegressor</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="n">model</span> <span class="o">=</span> <span class="n">PySRRegressor</span><span class="p">(</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>    <span class="n">maxsize</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>    <span class="n">niterations</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span>  <span class="c1"># &lt; Increase me for better results</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>    <span class="n">binary_operators</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;+&quot;</span><span class="p">,</span> <span class="s2">&quot;*&quot;</span><span class="p">],</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>    <span class="n">unary_operators</span><span class="o">=</span><span class="p">[</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>        <span class="s2">&quot;cos&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>        <span class="s2">&quot;exp&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>        <span class="s2">&quot;sin&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>        <span class="s2">&quot;inv(x) = 1/x&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>        <span class="c1"># ^ Custom operator (julia syntax)</span>
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>    <span class="p">],</span>
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>    <span class="n">extra_sympy_mappings</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;inv&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">x</span><span class="p">},</span>
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>    <span class="c1"># ^ Define operator for SymPy as well</span>
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>    <span class="n">elementwise_loss</span><span class="o">=</span><span class="s2">&quot;loss(prediction, target) = (prediction - target)^2&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>    <span class="c1"># ^ Custom loss function (julia syntax)</span>
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a><span class="p">)</span>
+</code></pre></div>
+<p>This will set up the model for 40 iterations of the search code, which contains hundreds of thousands of mutations and equation evaluations.</p>
+<p>Let's train this model on our dataset:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</code></pre></div>
+<p>Internally, this launches a Julia process which will do a multithreaded search for equations to fit the dataset.</p>
+<p>Equations will be printed during training, and once you are satisfied, you may
+quit early by hitting 'q' and then \&lt;enter&gt;.</p>
+<p>After the model has been fit, you can run <code>model.predict(X)</code>
+to see the predictions on a given dataset using the automatically-selected expression,
+or, for example, <code>model.predict(X, 3)</code> to see the predictions of the 3rd equation.</p>
+<p>You may run:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</code></pre></div>
+<p>to print the learned equations:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">PySRRegressor</span><span class="o">.</span><span class="n">equations_</span> <span class="o">=</span> <span class="p">[</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>       <span class="n">pick</span>     <span class="n">score</span>                                           <span class="n">equation</span>       <span class="n">loss</span>  <span class="n">complexity</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>    <span class="mi">0</span>        <span class="mf">0.000000</span>                                          <span class="mf">4.4324794</span>  <span class="mf">42.354317</span>           <span class="mi">1</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>    <span class="mi">1</span>        <span class="mf">1.255691</span>                                          <span class="p">(</span><span class="n">x0</span> <span class="o">*</span> <span class="n">x0</span><span class="p">)</span>   <span class="mf">3.437307</span>           <span class="mi">3</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>    <span class="mi">2</span>        <span class="mf">0.011629</span>                          <span class="p">((</span><span class="n">x0</span> <span class="o">*</span> <span class="n">x0</span><span class="p">)</span> <span class="o">+</span> <span class="o">-</span><span class="mf">0.28087974</span><span class="p">)</span>   <span class="mf">3.358285</span>           <span class="mi">5</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>    <span class="mi">3</span>        <span class="mf">0.897855</span>                              <span class="p">((</span><span class="n">x0</span> <span class="o">*</span> <span class="n">x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">cos</span><span class="p">(</span><span class="n">x3</span><span class="p">))</span>   <span class="mf">1.368308</span>           <span class="mi">6</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>    <span class="mi">4</span>        <span class="mf">0.857018</span>                <span class="p">((</span><span class="n">x0</span> <span class="o">*</span> <span class="n">x0</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">cos</span><span class="p">(</span><span class="n">x3</span><span class="p">)</span> <span class="o">*</span> <span class="mf">2.4566472</span><span class="p">))</span>   <span class="mf">0.246483</span>           <span class="mi">8</span>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>    <span class="mi">5</span>  <span class="o">&gt;&gt;&gt;&gt;</span>       <span class="n">inf</span>  <span class="p">(((</span><span class="n">cos</span><span class="p">(</span><span class="n">x3</span><span class="p">)</span> <span class="o">+</span> <span class="o">-</span><span class="mf">0.19699033</span><span class="p">)</span> <span class="o">*</span> <span class="mf">2.5382123</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">x0</span> <span class="o">*...</span>   <span class="mf">0.000000</span>          <span class="mi">10</span>
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="p">]</span>
+</code></pre></div>
+<p>This arrow in the <code>pick</code> column indicates which equation is currently selected by your
+<code>model_selection</code> strategy for prediction.
+(You may change <code>model_selection</code> after <code>.fit(X, y)</code> as well.)</p>
+<p><code>model.equations_</code> is a pandas DataFrame containing all equations, including callable format
+(<code>lambda_format</code>),
+SymPy format (<code>sympy_format</code> - which you can also get with <code>model.sympy()</code>), and even JAX and PyTorch format
+(both of which are differentiable - which you can get with <code>model.jax()</code> and <code>model.pytorch()</code>).</p>
+<p>Note that <code>PySRRegressor</code> stores the state of the last search, and will restart from where you left off the next time you call <code>.fit()</code>, assuming you have set <code>warm_start=True</code>.
+This will cause problems if significant changes are made to the search parameters (like changing the operators). You can run <code>model.reset()</code> to reset the state.</p>
+<p>You will notice that PySR will save two files:
+<code>hall_of_fame...csv</code> and <code>hall_of_fame...pkl</code>.
+The csv file is a list of equations and their losses, and the pkl file is a saved state of the model.
+You may load the model from the <code>pkl</code> file with:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">PySRRegressor</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="s2">&quot;hall_of_fame.2022-08-10_100832.281.pkl&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>There are several other useful features such as denoising (e.g., <code>denoise=True</code>),
+feature selection (e.g., <code>select_k_features=3</code>).
+For examples of these and other features, see the <a href="https://ai.damtp.cam.ac.uk/pysr/examples">examples page</a>.
+For a detailed look at more options, see the <a href="https://ai.damtp.cam.ac.uk/pysr/options">options page</a>.
+You can also see the full API at <a href="https://ai.damtp.cam.ac.uk/pysr/api">this page</a>.
+There are also tips for tuning PySR on <a href="https://ai.damtp.cam.ac.uk/pysr/tuning">this page</a>.</p>
+<h3 id="detailed-example">Detailed Example<a class="headerlink" href="#detailed-example" title="Permanent link">&para;</a></h3>
+<p>The following code makes use of as many PySR features as possible.
+Note that is just a demonstration of features and you should not use this example as-is.
+For details on what each parameter does, check out the <a href="https://ai.damtp.cam.ac.uk/pysr/api/">API page</a>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">PySRRegressor</span><span class="p">(</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>    <span class="n">populations</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>    <span class="c1"># ^ Assuming we have 4 cores, this means 2 populations per core, so one is always running.</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>    <span class="n">population_size</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>    <span class="n">ncycles_per_iteration</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>    <span class="c1"># ^ Generations between migrations.</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>    <span class="n">niterations</span><span class="o">=</span><span class="mi">10000000</span><span class="p">,</span>  <span class="c1"># Run forever</span>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>    <span class="n">early_stop_condition</span><span class="o">=</span><span class="p">(</span>
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>        <span class="s2">&quot;stop_if(loss, complexity) = loss &lt; 1e-6 &amp;&amp; complexity &lt; 10&quot;</span>
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>        <span class="c1"># Stop early if we find a good and simple equation</span>
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>    <span class="p">),</span>
+<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a>    <span class="n">timeout_in_seconds</span><span class="o">=</span><span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">24</span><span class="p">,</span>
+<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a>    <span class="c1"># ^ Alternatively, stop after 24 hours have passed.</span>
+<a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a>    <span class="n">maxsize</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+<a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a>    <span class="c1"># ^ Allow greater complexity.</span>
+<a id="__codelineno-13-16" name="__codelineno-13-16" href="#__codelineno-13-16"></a>    <span class="n">maxdepth</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+<a id="__codelineno-13-17" name="__codelineno-13-17" href="#__codelineno-13-17"></a>    <span class="c1"># ^ But, avoid deep nesting.</span>
+<a id="__codelineno-13-18" name="__codelineno-13-18" href="#__codelineno-13-18"></a>    <span class="n">binary_operators</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;*&quot;</span><span class="p">,</span> <span class="s2">&quot;+&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">],</span>
+<a id="__codelineno-13-19" name="__codelineno-13-19" href="#__codelineno-13-19"></a>    <span class="n">unary_operators</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;square&quot;</span><span class="p">,</span> <span class="s2">&quot;cube&quot;</span><span class="p">,</span> <span class="s2">&quot;exp&quot;</span><span class="p">,</span> <span class="s2">&quot;cos2(x)=cos(x)^2&quot;</span><span class="p">],</span>
+<a id="__codelineno-13-20" name="__codelineno-13-20" href="#__codelineno-13-20"></a>    <span class="n">constraints</span><span class="o">=</span><span class="p">{</span>
+<a id="__codelineno-13-21" name="__codelineno-13-21" href="#__codelineno-13-21"></a>        <span class="s2">&quot;/&quot;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span>
+<a id="__codelineno-13-22" name="__codelineno-13-22" href="#__codelineno-13-22"></a>        <span class="s2">&quot;square&quot;</span><span class="p">:</span> <span class="mi">9</span><span class="p">,</span>
+<a id="__codelineno-13-23" name="__codelineno-13-23" href="#__codelineno-13-23"></a>        <span class="s2">&quot;cube&quot;</span><span class="p">:</span> <span class="mi">9</span><span class="p">,</span>
+<a id="__codelineno-13-24" name="__codelineno-13-24" href="#__codelineno-13-24"></a>        <span class="s2">&quot;exp&quot;</span><span class="p">:</span> <span class="mi">9</span><span class="p">,</span>
+<a id="__codelineno-13-25" name="__codelineno-13-25" href="#__codelineno-13-25"></a>    <span class="p">},</span>
+<a id="__codelineno-13-26" name="__codelineno-13-26" href="#__codelineno-13-26"></a>    <span class="c1"># ^ Limit the complexity within each argument.</span>
+<a id="__codelineno-13-27" name="__codelineno-13-27" href="#__codelineno-13-27"></a>    <span class="c1"># &quot;inv&quot;: (-1, 9) states that the numerator has no constraint,</span>
+<a id="__codelineno-13-28" name="__codelineno-13-28" href="#__codelineno-13-28"></a>    <span class="c1"># but the denominator has a max complexity of 9.</span>
+<a id="__codelineno-13-29" name="__codelineno-13-29" href="#__codelineno-13-29"></a>    <span class="c1"># &quot;exp&quot;: 9 simply states that `exp` can only have</span>
+<a id="__codelineno-13-30" name="__codelineno-13-30" href="#__codelineno-13-30"></a>    <span class="c1"># an expression of complexity 9 as input.</span>
+<a id="__codelineno-13-31" name="__codelineno-13-31" href="#__codelineno-13-31"></a>    <span class="n">nested_constraints</span><span class="o">=</span><span class="p">{</span>
+<a id="__codelineno-13-32" name="__codelineno-13-32" href="#__codelineno-13-32"></a>        <span class="s2">&quot;square&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;square&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;cube&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;exp&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+<a id="__codelineno-13-33" name="__codelineno-13-33" href="#__codelineno-13-33"></a>        <span class="s2">&quot;cube&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;square&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;cube&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;exp&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+<a id="__codelineno-13-34" name="__codelineno-13-34" href="#__codelineno-13-34"></a>        <span class="s2">&quot;exp&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;square&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;cube&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;exp&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+<a id="__codelineno-13-35" name="__codelineno-13-35" href="#__codelineno-13-35"></a>    <span class="p">},</span>
+<a id="__codelineno-13-36" name="__codelineno-13-36" href="#__codelineno-13-36"></a>    <span class="c1"># ^ Nesting constraints on operators. For example,</span>
+<a id="__codelineno-13-37" name="__codelineno-13-37" href="#__codelineno-13-37"></a>    <span class="c1"># &quot;square(exp(x))&quot; is not allowed, since &quot;square&quot;: {&quot;exp&quot;: 0}.</span>
+<a id="__codelineno-13-38" name="__codelineno-13-38" href="#__codelineno-13-38"></a>    <span class="n">complexity_of_operators</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;/&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;exp&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">},</span>
+<a id="__codelineno-13-39" name="__codelineno-13-39" href="#__codelineno-13-39"></a>    <span class="c1"># ^ Custom complexity of particular operators.</span>
+<a id="__codelineno-13-40" name="__codelineno-13-40" href="#__codelineno-13-40"></a>    <span class="n">complexity_of_constants</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<a id="__codelineno-13-41" name="__codelineno-13-41" href="#__codelineno-13-41"></a>    <span class="c1"># ^ Punish constants more than variables</span>
+<a id="__codelineno-13-42" name="__codelineno-13-42" href="#__codelineno-13-42"></a>    <span class="n">select_k_features</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+<a id="__codelineno-13-43" name="__codelineno-13-43" href="#__codelineno-13-43"></a>    <span class="c1"># ^ Train on only the 4 most important features</span>
+<a id="__codelineno-13-44" name="__codelineno-13-44" href="#__codelineno-13-44"></a>    <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-13-45" name="__codelineno-13-45" href="#__codelineno-13-45"></a>    <span class="c1"># ^ Can set to false if printing to a file.</span>
+<a id="__codelineno-13-46" name="__codelineno-13-46" href="#__codelineno-13-46"></a>    <span class="n">weight_randomize</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+<a id="__codelineno-13-47" name="__codelineno-13-47" href="#__codelineno-13-47"></a>    <span class="c1"># ^ Randomize the tree much more frequently</span>
+<a id="__codelineno-13-48" name="__codelineno-13-48" href="#__codelineno-13-48"></a>    <span class="n">cluster_manager</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-13-49" name="__codelineno-13-49" href="#__codelineno-13-49"></a>    <span class="c1"># ^ Can be set to, e.g., &quot;slurm&quot;, to run a slurm</span>
+<a id="__codelineno-13-50" name="__codelineno-13-50" href="#__codelineno-13-50"></a>    <span class="c1"># cluster. Just launch one script from the head node.</span>
+<a id="__codelineno-13-51" name="__codelineno-13-51" href="#__codelineno-13-51"></a>    <span class="n">precision</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+<a id="__codelineno-13-52" name="__codelineno-13-52" href="#__codelineno-13-52"></a>    <span class="c1"># ^ Higher precision calculations.</span>
+<a id="__codelineno-13-53" name="__codelineno-13-53" href="#__codelineno-13-53"></a>    <span class="n">warm_start</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-13-54" name="__codelineno-13-54" href="#__codelineno-13-54"></a>    <span class="c1"># ^ Start from where left off.</span>
+<a id="__codelineno-13-55" name="__codelineno-13-55" href="#__codelineno-13-55"></a>    <span class="n">turbo</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-13-56" name="__codelineno-13-56" href="#__codelineno-13-56"></a>    <span class="c1"># ^ Faster evaluation (experimental)</span>
+<a id="__codelineno-13-57" name="__codelineno-13-57" href="#__codelineno-13-57"></a>    <span class="n">extra_sympy_mappings</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;cos2&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">sympy</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">},</span>
+<a id="__codelineno-13-58" name="__codelineno-13-58" href="#__codelineno-13-58"></a>    <span class="c1"># extra_torch_mappings={sympy.cos: torch.cos},</span>
+<a id="__codelineno-13-59" name="__codelineno-13-59" href="#__codelineno-13-59"></a>    <span class="c1"># ^ Not needed as cos already defined, but this</span>
+<a id="__codelineno-13-60" name="__codelineno-13-60" href="#__codelineno-13-60"></a>    <span class="c1"># is how you define custom torch operators.</span>
+<a id="__codelineno-13-61" name="__codelineno-13-61" href="#__codelineno-13-61"></a>    <span class="c1"># extra_jax_mappings={sympy.cos: &quot;jnp.cos&quot;},</span>
+<a id="__codelineno-13-62" name="__codelineno-13-62" href="#__codelineno-13-62"></a>    <span class="c1"># ^ For JAX, one passes a string.</span>
+<a id="__codelineno-13-63" name="__codelineno-13-63" href="#__codelineno-13-63"></a><span class="p">)</span>
+</code></pre></div>
+<h3 id="docker">Docker<a class="headerlink" href="#docker" title="Permanent link">&para;</a></h3>
+<p>You can also test out PySR in Docker, without
+installing it locally, by running the following command in
+the root directory of this repo:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>pysr<span class="w"> </span>.
+</code></pre></div>
+<p>This builds an image called <code>pysr</code> for your system's architecture,
+which also contains IPython. You can select a specific version
+of Python and Julia with:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>pysr<span class="w"> </span>--build-arg<span class="w"> </span><span class="nv">JLVERSION</span><span class="o">=</span><span class="m">1</span>.10.0<span class="w"> </span>--build-arg<span class="w"> </span><span class="nv">PYVERSION</span><span class="o">=</span><span class="m">3</span>.11.6<span class="w"> </span>.
+</code></pre></div>
+<p>You can then run with this dockerfile using:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span>-v<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$PWD</span><span class="s2">:/data&quot;</span><span class="w"> </span>pysr<span class="w"> </span>ipython
+</code></pre></div>
+<p>which will link the current directory to the container's <code>/data</code> directory
+and then launch ipython.</p>
+<p>If you have issues building for your system's architecture,
+you can emulate another architecture by including <code>--platform linux/amd64</code>,
+before the <code>build</code> and <code>run</code> commands.</p>
+<h3 id="contributors">Contributors ✨<a class="headerlink" href="#contributors" title="Permanent link">&para;</a></h3>
+<p>We are eager to welcome new contributors! Check out our contributors <a href="https://github.com/MilesCranmer/PySR/blob/master/CONTRIBUTORS.md">guide</a> for tips 🚀.
+If you have an idea for a new feature, don't hesitate to share it on the <a href="https://github.com/MilesCranmer/PySR/issues">issues</a> or <a href="https://github.com/MilesCranmer/PySR/discussions">discussions</a> page.</p>
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="12.5%"><a href="https://www.linkedin.com/in/markkittisopikul/"><img src="https://avatars.githubusercontent.com/u/8062771?v=4?s=50" width="50px;" alt="Mark Kittisopikul"/><br /><sub><b>Mark Kittisopikul</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/commits?author=mkitti" title="Code">💻</a> <a href="#ideas-mkitti" title="Ideas, planning, and feedback.">💡</a> <a href="#infra-mkitti" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#platform-mkitti" title="Packaging/porting to new platform">📦</a> <a href="#promotion-mkitti" title="Promotion">📣</a> <a href="https://github.com/MilesCranmer/PySR/pulls?q=is%3Apr+reviewed-by%3Amkitti" title="Reviewed Pull Requests">👀</a> <a href="#tool-mkitti" title="Tools">🔧</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=mkitti" title="Tests">⚠️</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/tttc3"><img src="https://avatars.githubusercontent.com/u/97948946?v=4?s=50" width="50px;" alt="T Coxon"/><br /><sub><b>T Coxon</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/issues?q=author%3Atttc3" title="Bug reports">🐛</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=tttc3" title="Code">💻</a> <a href="#plugin-tttc3" title="Plugin/utility libraries">🔌</a> <a href="#ideas-tttc3" title="Ideas, planning, and feedback.">💡</a> <a href="#infra-tttc3" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#maintenance-tttc3" title="Maintenance">🚧</a> <a href="https://github.com/MilesCranmer/PySR/pulls?q=is%3Apr+reviewed-by%3Atttc3" title="Reviewed Pull Requests">👀</a> <a href="#tool-tttc3" title="Tools">🔧</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=tttc3" title="Tests">⚠️</a> <a href="#userTesting-tttc3" title="User Testing">📓</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/DhananjayAshok"><img src="https://avatars.githubusercontent.com/u/46792537?v=4?s=50" width="50px;" alt="Dhananjay Ashok"/><br /><sub><b>Dhananjay Ashok</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/commits?author=DhananjayAshok" title="Code">💻</a> <a href="#example-DhananjayAshok" title="Examples.">🌍</a> <a href="#ideas-DhananjayAshok" title="Ideas, planning, and feedback.">💡</a> <a href="#maintenance-DhananjayAshok" title="Maintenance">🚧</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=DhananjayAshok" title="Tests">⚠️</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://gitlab.com/johanbluecreek"><img src="https://avatars.githubusercontent.com/u/852554?v=4?s=50" width="50px;" alt="Johan Blåbäck"/><br /><sub><b>Johan Blåbäck</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/issues?q=author%3Ajohanbluecreek" title="Bug reports">🐛</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=johanbluecreek" title="Code">💻</a> <a href="#ideas-johanbluecreek" title="Ideas, planning, and feedback.">💡</a> <a href="#maintenance-johanbluecreek" title="Maintenance">🚧</a> <a href="#promotion-johanbluecreek" title="Promotion">📣</a> <a href="https://github.com/MilesCranmer/PySR/pulls?q=is%3Apr+reviewed-by%3Ajohanbluecreek" title="Reviewed Pull Requests">👀</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=johanbluecreek" title="Tests">⚠️</a> <a href="#userTesting-johanbluecreek" title="User Testing">📓</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://mathopt.de/people/martensen/index.php"><img src="https://avatars.githubusercontent.com/u/20998300?v=4?s=50" width="50px;" alt="JuliusMartensen"/><br /><sub><b>JuliusMartensen</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/issues?q=author%3AAlCap23" title="Bug reports">🐛</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=AlCap23" title="Code">💻</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=AlCap23" title="Documentation">📖</a> <a href="#plugin-AlCap23" title="Plugin/utility libraries">🔌</a> <a href="#ideas-AlCap23" title="Ideas, planning, and feedback.">💡</a> <a href="#infra-AlCap23" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#maintenance-AlCap23" title="Maintenance">🚧</a> <a href="#platform-AlCap23" title="Packaging/porting to new platform">📦</a> <a href="#promotion-AlCap23" title="Promotion">📣</a> <a href="https://github.com/MilesCranmer/PySR/pulls?q=is%3Apr+reviewed-by%3AAlCap23" title="Reviewed Pull Requests">👀</a> <a href="#tool-AlCap23" title="Tools">🔧</a> <a href="#userTesting-AlCap23" title="User Testing">📓</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/ngam"><img src="https://avatars.githubusercontent.com/u/67342040?v=4?s=50" width="50px;" alt="ngam"/><br /><sub><b>ngam</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/commits?author=ngam" title="Code">💻</a> <a href="#infra-ngam" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#platform-ngam" title="Packaging/porting to new platform">📦</a> <a href="https://github.com/MilesCranmer/PySR/pulls?q=is%3Apr+reviewed-by%3Angam" title="Reviewed Pull Requests">👀</a> <a href="#tool-ngam" title="Tools">🔧</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=ngam" title="Tests">⚠️</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://cjdoris.github.io/"><img src="https://avatars.githubusercontent.com/u/1844215?v=4?s=50" width="50px;" alt="Christopher Rowley"/><br /><sub><b>Christopher Rowley</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/commits?author=cjdoris" title="Code">💻</a> <a href="#ideas-cjdoris" title="Ideas, planning, and feedback.">💡</a> <a href="#infra-cjdoris" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#platform-cjdoris" title="Packaging/porting to new platform">📦</a> <a href="https://github.com/MilesCranmer/PySR/pulls?q=is%3Apr+reviewed-by%3Acjdoris" title="Reviewed Pull Requests">👀</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/kazewong"><img src="https://avatars.githubusercontent.com/u/8803931?v=4?s=50" width="50px;" alt="Kaze Wong"/><br /><sub><b>Kaze Wong</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/issues?q=author%3Akazewong" title="Bug reports">🐛</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=kazewong" title="Code">💻</a> <a href="#ideas-kazewong" title="Ideas, planning, and feedback.">💡</a> <a href="#infra-kazewong" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#maintenance-kazewong" title="Maintenance">🚧</a> <a href="#promotion-kazewong" title="Promotion">📣</a> <a href="https://github.com/MilesCranmer/PySR/pulls?q=is%3Apr+reviewed-by%3Akazewong" title="Reviewed Pull Requests">👀</a> <a href="#research-kazewong" title="Research">🔬</a> <a href="#userTesting-kazewong" title="User Testing">📓</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/ChrisRackauckas"><img src="https://avatars.githubusercontent.com/u/1814174?v=4?s=50" width="50px;" alt="Christopher Rackauckas"/><br /><sub><b>Christopher Rackauckas</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/issues?q=author%3AChrisRackauckas" title="Bug reports">🐛</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=ChrisRackauckas" title="Code">💻</a> <a href="#plugin-ChrisRackauckas" title="Plugin/utility libraries">🔌</a> <a href="#ideas-ChrisRackauckas" title="Ideas, planning, and feedback.">💡</a> <a href="#infra-ChrisRackauckas" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#promotion-ChrisRackauckas" title="Promotion">📣</a> <a href="https://github.com/MilesCranmer/PySR/pulls?q=is%3Apr+reviewed-by%3AChrisRackauckas" title="Reviewed Pull Requests">👀</a> <a href="#research-ChrisRackauckas" title="Research">🔬</a> <a href="#tool-ChrisRackauckas" title="Tools">🔧</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=ChrisRackauckas" title="Tests">⚠️</a> <a href="#userTesting-ChrisRackauckas" title="User Testing">📓</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://kidger.site/"><img src="https://avatars.githubusercontent.com/u/33688385?v=4?s=50" width="50px;" alt="Patrick Kidger"/><br /><sub><b>Patrick Kidger</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/issues?q=author%3Apatrick-kidger" title="Bug reports">🐛</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=patrick-kidger" title="Code">💻</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=patrick-kidger" title="Documentation">📖</a> <a href="#plugin-patrick-kidger" title="Plugin/utility libraries">🔌</a> <a href="#ideas-patrick-kidger" title="Ideas, planning, and feedback.">💡</a> <a href="#maintenance-patrick-kidger" title="Maintenance">🚧</a> <a href="#promotion-patrick-kidger" title="Promotion">📣</a> <a href="https://github.com/MilesCranmer/PySR/pulls?q=is%3Apr+reviewed-by%3Apatrick-kidger" title="Reviewed Pull Requests">👀</a> <a href="#research-patrick-kidger" title="Research">🔬</a> <a href="#tool-patrick-kidger" title="Tools">🔧</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=patrick-kidger" title="Tests">⚠️</a> <a href="#userTesting-patrick-kidger" title="User Testing">📓</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/OkonSamuel"><img src="https://avatars.githubusercontent.com/u/39421418?v=4?s=50" width="50px;" alt="Okon Samuel"/><br /><sub><b>Okon Samuel</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/issues?q=author%3AOkonSamuel" title="Bug reports">🐛</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=OkonSamuel" title="Code">💻</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=OkonSamuel" title="Documentation">📖</a> <a href="#maintenance-OkonSamuel" title="Maintenance">🚧</a> <a href="#ideas-OkonSamuel" title="Ideas, planning, and feedback.">💡</a> <a href="#infra-OkonSamuel" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="https://github.com/MilesCranmer/PySR/pulls?q=is%3Apr+reviewed-by%3AOkonSamuel" title="Reviewed Pull Requests">👀</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=OkonSamuel" title="Tests">⚠️</a> <a href="#userTesting-OkonSamuel" title="User Testing">📓</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/w2ll2am"><img src="https://avatars.githubusercontent.com/u/16038228?v=4?s=50" width="50px;" alt="William Booth-Clibborn"/><br /><sub><b>William Booth-Clibborn</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/commits?author=w2ll2am" title="Code">💻</a> <a href="#example-w2ll2am" title="Examples.">🌍</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=w2ll2am" title="Documentation">📖</a> <a href="#userTesting-w2ll2am" title="User Testing">📓</a> <a href="#maintenance-w2ll2am" title="Maintenance">🚧</a> <a href="https://github.com/MilesCranmer/PySR/pulls?q=is%3Apr+reviewed-by%3Aw2ll2am" title="Reviewed Pull Requests">👀</a> <a href="#tool-w2ll2am" title="Tools">🔧</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=w2ll2am" title="Tests">⚠️</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://pablo-lemos.github.io/"><img src="https://avatars.githubusercontent.com/u/38078898?v=4?s=50" width="50px;" alt="Pablo Lemos"/><br /><sub><b>Pablo Lemos</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/issues?q=author%3APablo-Lemos" title="Bug reports">🐛</a> <a href="#ideas-Pablo-Lemos" title="Ideas, planning, and feedback.">💡</a> <a href="#promotion-Pablo-Lemos" title="Promotion">📣</a> <a href="https://github.com/MilesCranmer/PySR/pulls?q=is%3Apr+reviewed-by%3APablo-Lemos" title="Reviewed Pull Requests">👀</a> <a href="#research-Pablo-Lemos" title="Research">🔬</a> <a href="#userTesting-Pablo-Lemos" title="User Testing">📓</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/Moelf"><img src="https://avatars.githubusercontent.com/u/5306213?v=4?s=50" width="50px;" alt="Jerry Ling"/><br /><sub><b>Jerry Ling</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/issues?q=author%3AMoelf" title="Bug reports">🐛</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=Moelf" title="Code">💻</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=Moelf" title="Documentation">📖</a> <a href="#example-Moelf" title="Examples.">🌍</a> <a href="#ideas-Moelf" title="Ideas, planning, and feedback.">💡</a> <a href="#promotion-Moelf" title="Promotion">📣</a> <a href="https://github.com/MilesCranmer/PySR/pulls?q=is%3Apr+reviewed-by%3AMoelf" title="Reviewed Pull Requests">👀</a> <a href="#userTesting-Moelf" title="User Testing">📓</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/CharFox1"><img src="https://avatars.githubusercontent.com/u/35052672?v=4?s=50" width="50px;" alt="Charles Fox"/><br /><sub><b>Charles Fox</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/issues?q=author%3ACharFox1" title="Bug reports">🐛</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=CharFox1" title="Code">💻</a> <a href="#ideas-CharFox1" title="Ideas, planning, and feedback.">💡</a> <a href="#maintenance-CharFox1" title="Maintenance">🚧</a> <a href="#promotion-CharFox1" title="Promotion">📣</a> <a href="https://github.com/MilesCranmer/PySR/pulls?q=is%3Apr+reviewed-by%3ACharFox1" title="Reviewed Pull Requests">👀</a> <a href="#research-CharFox1" title="Research">🔬</a> <a href="#userTesting-CharFox1" title="User Testing">📓</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/johannbrehmer"><img src="https://avatars.githubusercontent.com/u/17068560?v=4?s=50" width="50px;" alt="Johann Brehmer"/><br /><sub><b>Johann Brehmer</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/commits?author=johannbrehmer" title="Code">💻</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=johannbrehmer" title="Documentation">📖</a> <a href="#ideas-johannbrehmer" title="Ideas, planning, and feedback.">💡</a> <a href="#promotion-johannbrehmer" title="Promotion">📣</a> <a href="https://github.com/MilesCranmer/PySR/pulls?q=is%3Apr+reviewed-by%3Ajohannbrehmer" title="Reviewed Pull Requests">👀</a> <a href="#research-johannbrehmer" title="Research">🔬</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=johannbrehmer" title="Tests">⚠️</a> <a href="#userTesting-johannbrehmer" title="User Testing">📓</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="12.5%"><a href="http://www.cosmicmar.com/"><img src="https://avatars.githubusercontent.com/u/1510968?v=4?s=50" width="50px;" alt="Marius Millea"/><br /><sub><b>Marius Millea</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/commits?author=marius311" title="Code">💻</a> <a href="#ideas-marius311" title="Ideas, planning, and feedback.">💡</a> <a href="#promotion-marius311" title="Promotion">📣</a> <a href="https://github.com/MilesCranmer/PySR/pulls?q=is%3Apr+reviewed-by%3Amarius311" title="Reviewed Pull Requests">👀</a> <a href="#userTesting-marius311" title="User Testing">📓</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://gitlab.com/cobac"><img src="https://avatars.githubusercontent.com/u/27872944?v=4?s=50" width="50px;" alt="Coba"/><br /><sub><b>Coba</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/issues?q=author%3Acobac" title="Bug reports">🐛</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=cobac" title="Code">💻</a> <a href="#ideas-cobac" title="Ideas, planning, and feedback.">💡</a> <a href="https://github.com/MilesCranmer/PySR/pulls?q=is%3Apr+reviewed-by%3Acobac" title="Reviewed Pull Requests">👀</a> <a href="#userTesting-cobac" title="User Testing">📓</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/foxtran"><img src="https://avatars.githubusercontent.com/u/39676482?v=4?s=50" width="50px;" alt="foxtran"/><br /><sub><b>foxtran</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/commits?author=foxtran" title="Code">💻</a> <a href="#ideas-foxtran" title="Ideas, planning, and feedback.">💡</a> <a href="#maintenance-foxtran" title="Maintenance">🚧</a> <a href="#tool-foxtran" title="Tools">🔧</a> <a href="#userTesting-foxtran" title="User Testing">📓</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://smhasan.com/"><img src="https://avatars.githubusercontent.com/u/36223598?v=4?s=50" width="50px;" alt="Shah Mahdi Hasan "/><br /><sub><b>Shah Mahdi Hasan </b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/issues?q=author%3Atanweer-mahdi" title="Bug reports">🐛</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=tanweer-mahdi" title="Code">💻</a> <a href="https://github.com/MilesCranmer/PySR/pulls?q=is%3Apr+reviewed-by%3Atanweer-mahdi" title="Reviewed Pull Requests">👀</a> <a href="#userTesting-tanweer-mahdi" title="User Testing">📓</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/pitmonticone"><img src="https://avatars.githubusercontent.com/u/38562595?v=4?s=50" width="50px;" alt="Pietro Monticone"/><br /><sub><b>Pietro Monticone</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/issues?q=author%3Apitmonticone" title="Bug reports">🐛</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=pitmonticone" title="Documentation">📖</a> <a href="#ideas-pitmonticone" title="Ideas, planning, and feedback.">💡</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/sheevy"><img src="https://avatars.githubusercontent.com/u/1525683?v=4?s=50" width="50px;" alt="Mateusz Kubica"/><br /><sub><b>Mateusz Kubica</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/commits?author=sheevy" title="Documentation">📖</a> <a href="#ideas-sheevy" title="Ideas, planning, and feedback.">💡</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://jaywadekar.github.io/"><img src="https://avatars.githubusercontent.com/u/5493388?v=4?s=50" width="50px;" alt="Jay Wadekar"/><br /><sub><b>Jay Wadekar</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/issues?q=author%3AJayWadekar" title="Bug reports">🐛</a> <a href="#ideas-JayWadekar" title="Ideas, planning, and feedback.">💡</a> <a href="#promotion-JayWadekar" title="Promotion">📣</a> <a href="#research-JayWadekar" title="Research">🔬</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/ablaom"><img src="https://avatars.githubusercontent.com/u/30517088?v=4?s=50" width="50px;" alt="Anthony Blaom, PhD"/><br /><sub><b>Anthony Blaom, PhD</b></sub></a><br /><a href="#infra-ablaom" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#ideas-ablaom" title="Ideas, planning, and feedback.">💡</a> <a href="https://github.com/MilesCranmer/PySR/pulls?q=is%3Apr+reviewed-by%3Aablaom" title="Reviewed Pull Requests">👀</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/Jgmedina95"><img src="https://avatars.githubusercontent.com/u/97254349?v=4?s=50" width="50px;" alt="Jgmedina95"/><br /><sub><b>Jgmedina95</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/issues?q=author%3AJgmedina95" title="Bug reports">🐛</a> <a href="#ideas-Jgmedina95" title="Ideas, planning, and feedback.">💡</a> <a href="https://github.com/MilesCranmer/PySR/pulls?q=is%3Apr+reviewed-by%3AJgmedina95" title="Reviewed Pull Requests">👀</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/mcabbott"><img src="https://avatars.githubusercontent.com/u/32575566?v=4?s=50" width="50px;" alt="Michael Abbott"/><br /><sub><b>Michael Abbott</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/commits?author=mcabbott" title="Code">💻</a> <a href="#ideas-mcabbott" title="Ideas, planning, and feedback.">💡</a> <a href="https://github.com/MilesCranmer/PySR/pulls?q=is%3Apr+reviewed-by%3Amcabbott" title="Reviewed Pull Requests">👀</a> <a href="#tool-mcabbott" title="Tools">🔧</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/oscardssmith"><img src="https://avatars.githubusercontent.com/u/11729272?v=4?s=50" width="50px;" alt="Oscar Smith"/><br /><sub><b>Oscar Smith</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/commits?author=oscardssmith" title="Code">💻</a> <a href="#ideas-oscardssmith" title="Ideas, planning, and feedback.">💡</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://ericphanson.com/"><img src="https://avatars.githubusercontent.com/u/5846501?v=4?s=50" width="50px;" alt="Eric Hanson"/><br /><sub><b>Eric Hanson</b></sub></a><br /><a href="#ideas-ericphanson" title="Ideas, planning, and feedback.">💡</a> <a href="#promotion-ericphanson" title="Promotion">📣</a> <a href="#userTesting-ericphanson" title="User Testing">📓</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/henriquebecker91"><img src="https://avatars.githubusercontent.com/u/14113435?v=4?s=50" width="50px;" alt="Henrique Becker"/><br /><sub><b>Henrique Becker</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/commits?author=henriquebecker91" title="Code">💻</a> <a href="#ideas-henriquebecker91" title="Ideas, planning, and feedback.">💡</a> <a href="https://github.com/MilesCranmer/PySR/pulls?q=is%3Apr+reviewed-by%3Ahenriquebecker91" title="Reviewed Pull Requests">👀</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/qwertyjl"><img src="https://avatars.githubusercontent.com/u/110912592?v=4?s=50" width="50px;" alt="qwertyjl"/><br /><sub><b>qwertyjl</b></sub></a><br /><a href="https://github.com/MilesCranmer/PySR/issues?q=author%3Aqwertyjl" title="Bug reports">🐛</a> <a href="https://github.com/MilesCranmer/PySR/commits?author=qwertyjl" title="Documentation">📖</a> <a href="#ideas-qwertyjl" title="Ideas, planning, and feedback.">💡</a> <a href="#userTesting-qwertyjl" title="User Testing">📓</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://huijzer.xyz/"><img src="https://avatars.githubusercontent.com/u/20724914?v=4?s=50" width="50px;" alt="Rik Huijzer"/><br /><sub><b>Rik Huijzer</b></sub></a><br /><a href="#ideas-rikhuijzer" title="Ideas, planning, and feedback.">💡</a> <a href="#infra-rikhuijzer" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/GCaptainNemo"><img src="https://avatars.githubusercontent.com/u/43086239?v=4?s=50" width="50px;" alt="Hongyu Wang"/><br /><sub><b>Hongyu Wang</b></sub></a><br /><a href="#ideas-GCaptainNemo" title="Ideas, planning, and feedback.">💡</a> <a href="#promotion-GCaptainNemo" title="Promotion">📣</a> <a href="#research-GCaptainNemo" title="Research">🔬</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/ZehaoJin"><img src="https://avatars.githubusercontent.com/u/50961376?v=4?s=50" width="50px;" alt="Zehao Jin"/><br /><sub><b>Zehao Jin</b></sub></a><br /><a href="#research-ZehaoJin" title="Research">🔬</a> <a href="#promotion-ZehaoJin" title="Promotion">📣</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/tmengel"><img src="https://avatars.githubusercontent.com/u/38924390?v=4?s=50" width="50px;" alt="Tanner Mengel"/><br /><sub><b>Tanner Mengel</b></sub></a><br /><a href="#research-tmengel" title="Research">🔬</a> <a href="#promotion-tmengel" title="Promotion">📣</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/agrundner24"><img src="https://avatars.githubusercontent.com/u/38557656?v=4?s=50" width="50px;" alt="Arthur Grundner"/><br /><sub><b>Arthur Grundner</b></sub></a><br /><a href="#research-agrundner24" title="Research">🔬</a> <a href="#promotion-agrundner24" title="Promotion">📣</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/sjwetzel"><img src="https://avatars.githubusercontent.com/u/24393721?v=4?s=50" width="50px;" alt="sjwetzel"/><br /><sub><b>sjwetzel</b></sub></a><br /><a href="#research-sjwetzel" title="Research">🔬</a> <a href="#promotion-sjwetzel" title="Promotion">📣</a> <a href="#userTesting-sjwetzel" title="User Testing">📓</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://sauravmaheshkar.github.io/"><img src="https://avatars.githubusercontent.com/u/61241031?v=4?s=50" width="50px;" alt="Saurav Maheshkar"/><br /><sub><b>Saurav Maheshkar</b></sub></a><br /><a href="#tool-SauravMaheshkar" title="Tools">🔧</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": ".", "features": ["navigation.expand"], "search": "assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="assets/javascripts/bundle.88dd0f4e.min.js"></script>
+      
+        <script src="js/mathjax.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
