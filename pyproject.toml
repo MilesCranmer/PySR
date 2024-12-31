@@ -35,6 +35,7 @@ dev = [
     "ipykernel>=6,<7",
     "ipython>=8,<9",
     "jax[cpu]>=0.4,<0.5",
+    "paddlepaddle>=2.6.1",
     "jupyter>=1,<2",
     "mypy>=1,<2",
     "nbval>=0.11,<0.12",
