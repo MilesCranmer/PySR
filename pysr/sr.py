@@ -12,7 +12,7 @@ from dataclasses import dataclass, fields
 from io import StringIO
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any, Dict, Literal, Optional, cast
 
 import numpy as np
 import pandas as pd
@@ -206,8 +206,10 @@ def _check_assertions(
             )
 
 
-def _validate_export_mappings(extra_jax_mappings, extra_torch_mappings):
-    # It is expected extra_jax/torch_mappings will be updated after fit.
+def _validate_export_mappings(
+    extra_jax_mappings, extra_torch_mappings, extra_paddle_mappings
+):
+    # It is expected extra_jax/torch/paddle_mappings will be updated after fit.
     # Thus, validation is performed here instead of in _validate_init_params
     if extra_jax_mappings is not None:
         for value in extra_jax_mappings.values():
@@ -222,6 +224,14 @@ def _validate_export_mappings(extra_jax_mappings, extra_torch_mappings):
                 raise ValueError(
                     "extra_torch_mappings must be callable functions! "
                     "e.g., {sympy.sqrt: torch.sqrt}."
+                )
+
+    if extra_paddle_mappings is not None:
+        for value in extra_paddle_mappings.values():
+            if not callable(value):
+                raise ValueError(
+                    "extra_paddle_mappings must be callable functions! "
+                    "e.g., {sympy.sqrt: paddle.sqrt}."
                 )
 
 
@@ -892,9 +902,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         update: bool = False,
         output_jax_format: bool = False,
         output_torch_format: bool = False,
+        output_paddle_format: bool = False,
         extra_sympy_mappings: Optional[Dict[str, Callable]] = None,
         extra_torch_mappings: Optional[Dict[Callable, Callable]] = None,
         extra_jax_mappings: Optional[Dict[Callable, str]] = None,
+        extra_paddle_mappings: Optional[Dict[Callable, Callable]] = None,
         denoise: bool = False,
         select_k_features: int | None = None,
         **kwargs,
@@ -2587,6 +2599,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         best_equation : paddle.nn.Layer
             PaddlePaddle module representing the expression.
         """
+        if not self.expression_spec_.supports_paddle:
+            raise ValueError(
+                f"`expression_spec={self.expression_spec_}` does not support paddle export."
+            )
         self.set_params(output_paddle_format=True)
         self.refresh()
         best_equation = self.get_best(index=index)
@@ -2670,7 +2686,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if should_read_from_file:
             self.equation_file_contents_ = self._read_equation_file()
 
-        _validate_export_mappings(self.extra_jax_mappings, self.extra_torch_mappings)
+        _validate_export_mappings(
+            self.extra_jax_mappings,
+            self.extra_torch_mappings,
+            self.extra_paddle_mappings,
+        )
 
         equation_file_contents = cast(list[pd.DataFrame], self.equation_file_contents_)
 

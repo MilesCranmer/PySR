@@ -1,6 +1,8 @@
 import unittest
+from pathlib import Path
 
 import numpy as np
+import paddle
 import pandas as pd
 import sympy  # type: ignore
 
@@ -11,19 +13,14 @@ from pysr import PySRRegressor, sympy2paddle
 class TestPaddle(unittest.TestCase):
     def setUp(self):
         np.random.seed(0)
-        import paddle
-
-        paddle.disable_signal_handler()
-
-        self.paddle = paddle
 
     def test_sympy2paddle(self):
 
         x, y, z = sympy.symbols("x y z")
         cosx = 1.0 * sympy.cos(x) + y
 
-        X = self.paddle.to_tensor(np.random.randn(1000, 3))
-        true = 1.0 * self.paddle.cos(X[:, 0]) + X[:, 1]
+        X = paddle.to_tensor(np.random.randn(1000, 3))
+        true = 1.0 * paddle.cos(X[:, 0]) + X[:, 1]
         paddle_module = sympy2paddle(cosx, [x, y, z])
 
         self.assertTrue(
@@ -39,7 +36,6 @@ class TestPaddle(unittest.TestCase):
             model_selection="accuracy",
             extra_sympy_mappings={},
             output_paddle_format=True,
-            multithreading=False,
         )
         model.fit(X, y)
 
@@ -51,16 +47,18 @@ class TestPaddle(unittest.TestCase):
             }
         )
 
-        equations["Complexity Loss Equation".split(" ")].to_csv(
-            "equation_file.csv.bkup"
-        )
+        for fname in ["hall_of_fame.csv.bak", "hall_of_fame.csv"]:
+            equations["Complexity Loss Equation".split(" ")].to_csv(
+                Path(model.output_directory_) / model.run_id_ / fname
+            )
 
-        model.refresh(checkpoint_file="equation_file.csv")
+        model.refresh(run_directory=str(Path(model.output_directory_) / model.run_id_))
+
         pdformat = model.paddle()
         self.assertEqual(str(pdformat), "_SingleSymPyModule(expression=cos(x1)**2)")
 
         np.testing.assert_almost_equal(
-            pdformat(self.paddle.to_tensor(X.values)).detach().numpy(),
+            pdformat(paddle.to_tensor(X.values)).detach().numpy(),
             np.square(np.cos(X.values[:, 1])),  # Selection 1st feature
             decimal=3,
         )
@@ -73,7 +71,6 @@ class TestPaddle(unittest.TestCase):
             max_evals=10000,
             model_selection="accuracy",
             output_paddle_format=True,
-            multithreading=False,
         )
         model.fit(X, y)
 
@@ -85,17 +82,18 @@ class TestPaddle(unittest.TestCase):
             }
         )
 
-        equations["Complexity Loss Equation".split(" ")].to_csv(
-            "equation_file.csv.bkup"
-        )
+        for fname in ["hall_of_fame.csv.bak", "hall_of_fame.csv"]:
+            equations["Complexity Loss Equation".split(" ")].to_csv(
+                Path(model.output_directory_) / model.run_id_ / fname
+            )
 
-        model.refresh(checkpoint_file="equation_file.csv")
+        model.refresh(run_directory=str(Path(model.output_directory_) / model.run_id_))
 
         pdformat = model.paddle()
         self.assertEqual(str(pdformat), "_SingleSymPyModule(expression=cos(x1)**2)")
 
         np.testing.assert_almost_equal(
-            pdformat(self.paddle.to_tensor(X)).detach().numpy(),
+            pdformat(paddle.to_tensor(X)).detach().numpy(),
             np.square(np.cos(X[:, 1])),  # 2nd feature
             decimal=3,
         )
@@ -107,13 +105,12 @@ class TestPaddle(unittest.TestCase):
 
         module = sympy2paddle(expression, [x, y, z])
 
-        X = self.paddle.rand((100, 3)).astype("float32") * 10
+        X = paddle.rand((100, 3)).astype("float32") * 10
 
         true_out = (
             X[:, 0] ** 2
-            + self.paddle.atanh(
-                self.paddle.mod(X[:, 1] + 1, self.paddle.to_tensor(2).astype("float32"))
-                - 1
+            + paddle.atanh(
+                paddle.mod(X[:, 1] + 1, paddle.to_tensor(2).astype("float32")) - 1
             )
             * 3.2
             * X[:, 2]
@@ -132,7 +129,6 @@ class TestPaddle(unittest.TestCase):
             max_evals=10000,
             model_selection="accuracy",
             output_paddle_format=True,
-            multithreading=False,
         )
         model.fit(X, y)
 
@@ -144,24 +140,29 @@ class TestPaddle(unittest.TestCase):
             }
         )
 
-        equations["Complexity Loss Equation".split(" ")].to_csv(
-            "equation_file_custom_operator.csv.bkup"
-        )
+        for fname in ["hall_of_fame.csv.bak", "hall_of_fame.csv"]:
+            equations["Complexity Loss Equation".split(" ")].to_csv(
+                Path(model.output_directory_) / model.run_id_ / fname
+            )
+
+        MyCustomOperator = sympy.Function("mycustomoperator")
 
         model.set_params(
-            equation_file="equation_file_custom_operator.csv",
-            extra_sympy_mappings={"mycustomoperator": sympy.sin},
-            extra_paddle_mappings={"mycustomoperator": self.paddle.sin},
+            extra_sympy_mappings={"mycustomoperator": MyCustomOperator},
+            extra_paddle_mappings={MyCustomOperator: paddle.sin},
         )
-        model.refresh(checkpoint_file="equation_file_custom_operator.csv")
-        self.assertEqual(str(model.sympy()), "sin(x1)")
+        # TODO: We shouldn't need to specify the run directory here.
+        model.refresh(run_directory=str(Path(model.output_directory_) / model.run_id_))
+        # self.assertEqual(str(model.sympy()), "sin(x1)")
         # Will automatically use the set global state from get_hof.
 
         pdformat = model.paddle()
-        self.assertEqual(str(pdformat), "_SingleSymPyModule(expression=sin(x1))")
+        self.assertEqual(
+            str(pdformat), "_SingleSymPyModule(expression=mycustomoperator(x1))"
+        )
 
         np.testing.assert_almost_equal(
-            pdformat(self.paddle.to_tensor(X)).detach().numpy(),
+            pdformat(paddle.to_tensor(X)).detach().numpy(),
             np.sin(X[:, 1]),
             decimal=3,
         )
@@ -180,7 +181,7 @@ class TestPaddle(unittest.TestCase):
         rng = np.random.RandomState(0)
         X = rng.randn(10, 1)
         np.testing.assert_almost_equal(
-            m(self.paddle.to_tensor(X)).detach().numpy(),
+            m(paddle.to_tensor(X)).detach().numpy(),
             np.square(np.exp(np.sign(0.44796443))) + 1.5 * X[:, 0],
             decimal=3,
         )
@@ -192,7 +193,7 @@ class TestPaddle(unittest.TestCase):
         m = pysr.export_paddle.sympy2paddle(E_plus_x1, ["x1"])
         X = np.random.randn(10, 1)
         np.testing.assert_almost_equal(
-            m(self.paddle.to_tensor(X)).detach().numpy(),
+            m(paddle.to_tensor(X)).detach().numpy(),
             np.exp(1) + X[:, 0],
             decimal=3,
         )
@@ -213,11 +214,9 @@ class TestPaddle(unittest.TestCase):
             maxsize=10,
             early_stop_condition=1e-5,
             extra_sympy_mappings={"cos_approx": cos_approx},
-            extra_paddle_mappings={"cos_approx": cos_approx},
             random_state=0,
             deterministic=True,
-            procs=0,
-            multithreading=False,
+            parallelism="serial",
         )
         np.random.seed(0)
         model.fit(X.values, y.values)
@@ -225,7 +224,7 @@ class TestPaddle(unittest.TestCase):
 
         np_output = model.predict(X.values)
 
-        paddle_output = paddle_module(self.paddle.to_tensor(X.values)).detach().numpy()
+        paddle_output = paddle_module(paddle.to_tensor(X.values)).detach().numpy()
 
         np.testing.assert_almost_equal(y.values, np_output, decimal=3)
         np.testing.assert_almost_equal(y.values, paddle_output, decimal=3)
