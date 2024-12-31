@@ -7,6 +7,7 @@ from numpy.typing import NDArray
 
 from .export_jax import sympy2jax
 from .export_numpy import sympy2numpy
+from .export_paddle import sympy2paddle
 from .export_sympy import create_sympy_symbols, pysr2sympy
 from .export_torch import sympy2torch
 from .utils import ArrayLike
@@ -22,6 +23,8 @@ def add_export_formats(
     output_torch_format: bool = False,
     extra_jax_mappings: dict[Callable, str] | None = None,
     output_jax_format: bool = False,
+    extra_paddle_mappings: dict[Callable, str] | None = None,
+    output_paddle_format: bool = False,
 ) -> pd.DataFrame:
     """Create export formats for an equations dataframe.
 
@@ -33,6 +36,7 @@ def add_export_formats(
     lambda_format = []
     jax_format = []
     torch_format = []
+    paddle_format = []
 
     for _, eqn_row in output.iterrows():
         eqn = pysr2sympy(
@@ -72,6 +76,16 @@ def add_export_formats(
             )
             torch_format.append(module)
 
+        # Paddle:
+        if output_paddle_format:
+            module = sympy2paddle(
+                eqn,
+                sympy_symbols,
+                selection=selection_mask,
+                extra_paddle_mappings=extra_paddle_mappings,
+            )
+            paddle_format.append(module)
+
     exports = pd.DataFrame(
         {
             "sympy_format": sympy_format,
@@ -84,5 +98,7 @@ def add_export_formats(
         exports["jax_format"] = jax_format
     if output_torch_format:
         exports["torch_format"] = torch_format
+    if output_paddle_format:
+        exports["paddle_format"] = paddle_format
 
     return exports

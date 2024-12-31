@@ -15,7 +15,7 @@ requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
-    "License :: OSI Approved :: Apache Software License"
+    "License :: OSI Approved :: Apache Software License",
 ]
 dependencies = [
     "sympy>=1.0.0,<2.0.0",
@@ -35,6 +35,7 @@ dev = [
     "ipykernel>=6,<7",
     "ipython>=8,<9",
     "jax[cpu]>=0.4,<0.5",
+    "paddlepaddle>=2.6.1",
     "jupyter>=1,<2",
     "mypy>=1,<2",
     "nbval>=0.11,<0.12",
@@ -51,10 +52,10 @@ dev = [
 [tool.setuptools]
 packages = ["pysr", "pysr._cli", "pysr.test"]
 include-package-data = false
-package-data = {pysr = ["juliapkg.json"]}
+package-data = { pysr = ["juliapkg.json"] }
 
 [tool.setuptools.dynamic]
-dependencies = {file = "requirements.txt"}
+dependencies = { file = "requirements.txt" }
 
 [tool.isort]
 profile = "black"

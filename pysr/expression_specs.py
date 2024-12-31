@@ -78,6 +78,10 @@ class AbstractExpressionSpec(ABC):
     def supports_latex(self) -> bool:
         return False
 
+    @property
+    def supports_paddle(self) -> bool:
+        return False
+
 
 class ExpressionSpec(AbstractExpressionSpec):
     """The default expression specification, with no special behavior."""
@@ -99,10 +103,12 @@ class ExpressionSpec(AbstractExpressionSpec):
             feature_names_in=model.feature_names_in_,
             selection_mask=model.selection_mask_,
             extra_sympy_mappings=model.extra_sympy_mappings,
-            extra_torch_mappings=model.extra_torch_mappings,
-            output_jax_format=model.output_jax_format,
             extra_jax_mappings=model.extra_jax_mappings,
+            output_jax_format=model.output_jax_format,
+            extra_torch_mappings=model.extra_torch_mappings,
             output_torch_format=model.output_torch_format,
+            extra_paddle_mappings=model.extra_paddle_mappings,
+            output_paddle_format=model.output_paddle_format,
         )
 
     @property
@@ -119,6 +125,10 @@ class ExpressionSpec(AbstractExpressionSpec):
 
     @property
     def supports_latex(self):
+        return True
+
+    @property
+    def supports_paddle(self):
         return True
 
 
