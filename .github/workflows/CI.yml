@@ -76,9 +76,6 @@ jobs:
       - name: "Run Torch tests"
         run: coverage run --append -m pysr test torch
         if: ${{ matrix.test-id == 'main' }}
-      - name: "Install Paddle"
-        run: pip install paddle # (optional import)
-        if: ${{ matrix.test-id == 'main' }}
       - name: "Run Paddle tests"
         run: coverage run --append -m pysr test paddle
         if: ${{ matrix.test-id == 'main' }}

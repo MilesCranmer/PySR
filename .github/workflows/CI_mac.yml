@@ -55,7 +55,5 @@ jobs:
         run: python -m pysr test jax
       - name: "Run Torch tests"
         run: python -m pysr test torch
-      - name: "Install Paddle"
-        run: pip install paddlepaddle # (optional import)
       - name: "Run Paddle tests"
         run: python -m pysr test paddle
