@@ -2,6 +2,7 @@
   - Creating the Search Space:
     - binary_operators
     - unary_operators
+    - expression_spec
     - maxsize
     - maxdepth
   - Setting the Search Size:
@@ -22,6 +23,7 @@
     - complexity_of_operators
     - complexity_of_constants
     - complexity_of_variables
+    - complexity_mapping
     - warmup_maxsize_by
     - use_frequency
     - use_frequency_in_tournament
@@ -35,6 +37,7 @@
     - weight_mutate_constant
     - weight_mutate_operator
     - weight_swap_operands
+    - weight_rotate_tree
     - weight_randomize
     - weight_simplify
     - weight_optimize
@@ -42,6 +45,7 @@
     - annealing
     - alpha
     - perturbation_factor
+    - probability_negate_constant
     - skip_mutation_failures
   - Tournament Selection:
     - tournament_selection_n
@@ -49,6 +53,7 @@
   - Constant Optimization:
     - optimizer_algorithm
     - optimizer_nrestarts
+    - optimizer_f_calls_limit
     - optimize_probability
     - optimizer_iterations
     - should_optimize_constants
@@ -66,8 +71,8 @@
   - timeout_in_seconds
   - early_stop_condition
 - Performance and Parallelization:
+  - parallelism
   - procs
-  - multithreading
   - cluster_manager
   - heap_size_hint_in_bytes
   - batching
@@ -76,7 +81,7 @@
   - fast_cycle
   - turbo
   - bumper
-  - enable_autodiff
+  - autodiff_backend
 - Determinism:
   - random_state
   - deterministic
@@ -86,13 +91,16 @@
   - update_verbosity
   - print_precision
   - progress
+  - logger_spec
+  - input_stream
 - Environment:
   - temp_equation_file
   - tempdir
   - delete_tempfiles
   - update
 - Exporting the Results:
-  - equation_file
+  - output_directory
+  - run_id
   - output_jax_format
   - output_torch_format
   - extra_sympy_mappings

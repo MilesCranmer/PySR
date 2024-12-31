@@ -20,20 +20,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.10', '3.11', '3.12']
         os: ['ubuntu-latest']
         use-mamba: [true, false]
         include:
-          - python-version: 3.9
+          - python-version: '3.10'
             os: 'windows-latest'
             use-mamba: true
-          - python-version: 3.12
+          - python-version: '3.12'
             os: 'windows-latest'
             use-mamba: true
-          - python-version: 3.9
+          - python-version: '3.10'
             os: 'macos-latest'
             use-mamba: true
-          - python-version: 3.12
+          - python-version: '3.12'
             os: 'macos-latest'
             use-mamba: true
 
@@ -41,7 +41,7 @@ jobs:
       - name: "Set up Conda"
         uses: conda-incubator/setup-miniconda@v3
         with:
-          miniforge-variant: Mambaforge
+          miniforge-variant: Miniforge3
           miniforge-version: latest
           auto-activate-base: true
           python-version: ${{ matrix.python-version }}

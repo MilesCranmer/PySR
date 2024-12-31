@@ -6,7 +6,7 @@ In this guide you will get an overview of the contribution workflow from opening
 
 ## New contributor guide
 
-To get an overview of the project, read PySR's [README](README.md). The [PySR docs](https://astroautomata.com/PySR/) give additional information.
+To get an overview of the project, read PySR's [README](README.md). The [PySR docs](https://ai.damtp.cam.ac.uk/pysr/) give additional information.
 Here are some resources to help you get started with open source contributions in general:
 
 - [Finding ways to contribute to open source on GitHub](https://docs.github.com/en/get-started/exploring-projects-on-github/finding-ways-to-contribute-to-open-source-on-github)
@@ -39,7 +39,7 @@ Scan through our [existing issues](https://github.com/MilesCranmer/PySR/issues) 
 2. Create a working branch and start with your changes!
 
 3. (Optional) If you would like to make changes to PySR itself, skip to step 4. However, if you are interested in making changes to the _symbolic regression code_ itself,
-check out the [guide](https://astroautomata.com/PySR/backend/) on modifying a custom SymbolicRegression.jl library.
+check out the [guide](https://ai.damtp.cam.ac.uk/pysr/backend/) on modifying a custom SymbolicRegression.jl library.
 In this case, you might instead be interested in making suggestions to the [SymbolicRegression.jl](http://github.com/MilesCranmer/SymbolicRegression.jl) library.
 
 4. You can install your local version of PySR with `python setup.py install`, and run tests with `python -m pysr test main`.

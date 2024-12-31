@@ -46,18 +46,13 @@ jobs:
       - name: "Install PySR"
         run: |
             python -m pip install --upgrade pip
-            pip install pytest nbval
-            pip install .
+            pip install '.[dev]'
             python -c 'import pysr'
       - name: "Run tests"
         run: |
             python -m pysr test main,cli,startup
-      - name: "Install JAX"
-        run: pip install jax jaxlib # (optional import)
       - name: "Run JAX tests"
         run: python -m pysr test jax
-      - name: "Install Torch"
-        run: pip install torch # (optional import)
       - name: "Run Torch tests"
         run: python -m pysr test torch
       - name: "Install Paddle"

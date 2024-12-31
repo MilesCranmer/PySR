@@ -1,9 +1,10 @@
 """Define utilities to export to sympy"""
 
-from typing import Callable, Dict, List, Optional
+from collections.abc import Callable
 
 import sympy  # type: ignore
 from sympy import sympify
+from sympy.codegen.cfunctions import log2, log10  # type: ignore
 
 from .utils import ArrayLike
 
@@ -39,8 +40,8 @@ sympy_mappings = {
     "erf": sympy.erf,
     "erfc": sympy.erfc,
     "log": lambda x: sympy.log(x),
-    "log10": lambda x: sympy.log(x, 10),
-    "log2": lambda x: sympy.log(x, 2),
+    "log10": lambda x: log10(x),
+    "log2": lambda x: log2(x),
     "log1p": lambda x: sympy.log(x + 1),
     "log_abs": lambda x: sympy.log(abs(x)),
     "log10_abs": lambda x: sympy.log(abs(x), 10),
@@ -63,21 +64,21 @@ sympy_mappings = {
 
 def create_sympy_symbols_map(
     feature_names_in: ArrayLike[str],
-) -> Dict[str, sympy.Symbol]:
+) -> dict[str, sympy.Symbol]:
     return {variable: sympy.Symbol(variable) for variable in feature_names_in}
 
 
 def create_sympy_symbols(
     feature_names_in: ArrayLike[str],
-) -> List[sympy.Symbol]:
+) -> list[sympy.Symbol]:
     return [sympy.Symbol(variable) for variable in feature_names_in]
 
 
 def pysr2sympy(
-    equation: str,
+    equation: str | float | int,
     *,
-    feature_names_in: Optional[ArrayLike[str]] = None,
-    extra_sympy_mappings: Optional[Dict[str, Callable]] = None,
+    feature_names_in: ArrayLike[str] | None = None,
+    extra_sympy_mappings: dict[str, Callable] | None = None,
 ):
     if feature_names_in is None:
         feature_names_in = []
