@@ -29,9 +29,21 @@ def _escape_filename(filename):
     return str_repr
 
 
-def _load_cluster_manager(cluster_manager: str):
-    jl.seval(f"using ClusterManagers: addprocs_{cluster_manager}")
-    return jl.seval(f"addprocs_{cluster_manager}")
+KNOWN_CLUSTERMANAGER_BACKENDS = ["slurm", "pbs", "lsf", "sge", "qrsh", "scyld", "htc"]
+
+
+def load_cluster_manager(cluster_manager: str) -> AnyValue:
+    if cluster_manager == "slurm_native":
+        jl.seval("using SlurmClusterManager: SlurmManager")
+        # TODO: Is this the right way to do this?
+        jl.seval("addprocs_slurm_native(; _...) = addprocs(SlurmManager())")
+        return jl.addprocs_slurm_native
+    elif cluster_manager in KNOWN_CLUSTERMANAGER_BACKENDS:
+        jl.seval(f"using ClusterManagers: addprocs_{cluster_manager}")
+        return jl.seval(f"addprocs_{cluster_manager}")
+    else:
+        # Assume it's a function
+        return jl.seval(cluster_manager)
 
 
 def jl_array(x, dtype=None):
