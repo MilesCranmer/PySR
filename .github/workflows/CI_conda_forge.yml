@@ -54,5 +54,6 @@ jobs:
         if: ${{ !matrix.use-mamba }}
       - name: "Run tests"
         run: |
+          conda activate pysr-test
           pip install pytest nbval
           python -m pysr test main,startup
