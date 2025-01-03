@@ -49,14 +49,14 @@ jobs:
       - name: "Install pysr with mamba"
         run: |
           echo "Installing pysr with mamba"
-          mamba install pysr
+          mamba install -y pysr
           python -c "import pysr"
           echo "Finished."
         if: ${{ matrix.use-mamba }}
       - name: "Install pysr with conda"
         run: |
           echo "Installing pysr with conda"
-          conda install pysr
+          conda install -y pysr
           python -c "import pysr"
           echo "Finished."
         if: ${{ !matrix.use-mamba }}
