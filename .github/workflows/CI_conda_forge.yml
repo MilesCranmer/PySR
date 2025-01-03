@@ -16,7 +16,7 @@ jobs:
     timeout-minutes: 60
     defaults:
       run:
-        shell: bash -l {0}
+        shell: bash -el {0}
     strategy:
       fail-fast: false
       matrix:
@@ -47,13 +47,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
           activate-environment: pysr-test
       - name: "Install pysr with mamba"
-        run: conda activate pysr-test && mamba install pysr
+        run: mamba install pysr
         if: ${{ matrix.use-mamba }}
       - name: "Install pysr with conda"
-        run: conda activate pysr-test && conda install pysr
+        run: conda install pysr
         if: ${{ !matrix.use-mamba }}
       - name: "Run tests"
-        run: |
-          conda activate pysr-test
-          pip install pytest nbval
-          python -m pysr test main,startup
+        run: pip install pytest nbval && python -m pysr test main,startup
