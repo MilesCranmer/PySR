@@ -47,10 +47,22 @@ jobs:
           python-version: ${{ matrix.python-version }}
           activate-environment: pysr-test
       - name: "Install pysr with mamba"
-        run: mamba install pysr
+        run: |
+          echo "Installing pysr with mamba"
+          mamba install pysr
+          python -c "import pysr"
+          echo "Finished."
         if: ${{ matrix.use-mamba }}
       - name: "Install pysr with conda"
-        run: conda install pysr
+        run: |
+          echo "Installing pysr with conda"
+          conda install pysr
+          python -c "import pysr"
+          echo "Finished."
         if: ${{ !matrix.use-mamba }}
       - name: "Run tests"
-        run: pip install pytest nbval && python -m pysr test main,startup
+        run: |
+          echo "Running tests"
+          pip install pytest nbval
+          python -m pysr test main,startup
+          echo "Finished."
