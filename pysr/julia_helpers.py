@@ -36,7 +36,8 @@ def load_cluster_manager(cluster_manager: str) -> AnyValue:
     if cluster_manager == "slurm_native":
         jl.seval("using SlurmClusterManager: SlurmManager")
         # TODO: Is this the right way to do this?
-        jl.seval("addprocs_slurm_native(; _...) = addprocs(SlurmManager())")
+        jl.seval(f"using Distributed: addprocs")
+        jl.seval("addprocs_slurm_native(args...; kws...) = addprocs(SlurmManager())")
         return jl.addprocs_slurm_native
     elif cluster_manager in KNOWN_CLUSTERMANAGER_BACKENDS:
         jl.seval(f"using ClusterManagers: addprocs_{cluster_manager}")
