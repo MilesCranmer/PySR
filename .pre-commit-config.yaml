@@ -16,13 +16,13 @@ repos:
         exclude: pysr/test/test_nb.ipynb
   # Stripping notebooks
   - repo: https://github.com/kynan/nbstripout
-    rev: 0.8.0
+    rev: 0.8.1
     hooks:
       - id: nbstripout
         exclude: pysr/test/test_nb.ipynb
   # Unused imports
   - repo: https://github.com/hadialqattan/pycln
-    rev: "v2.4.0"
+    rev: "v2.5.0"
     hooks:
       - id: pycln
   # Sorted imports
