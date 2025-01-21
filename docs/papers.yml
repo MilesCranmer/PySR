@@ -2,6 +2,20 @@
 # information to generate the "Research Showcase"
 
 papers:
+  - title: Individual chaotic behaviour of the S-stars in the Galactic centre
+    authors:
+      - Sam J. Beckers (1)
+      - Colin M. Poppelaars (1)
+      - Veronica S. Ulibarrena (1)
+      - Tjarda N. Boekholt (2)
+      - Simon F. Portegies Zwart (1)
+    affiliations:
+      1: Leiden Observatory, Leiden University
+      2: NASA Ames Research Center
+    link: https://www.aanda.org/articles/aa/full_html/2024/05/aa48361-23/aa48361-23.html
+    abstract: Located at the core of the Galactic centre, the S-star cluster serves as a remarkable illustration of chaos in dynamical systems. The long-term chaotic behaviour of this system can be studied with gravitational $N$-body simulations. By applying a small perturbation to the initial position of star S5, we can compare the evolution of this system to its unperturbed evolution. This results in two solutions that diverge exponentially, defined by the separation in position space $\delta_{r}$, with an average  Lyapunov timescale of $\sim$420 yr, corresponding to the largest positive Lyapunov exponent. Even though the general trend of the chaotic evolution is governed in part by the supermassive black hole Sagittarius $\rm A^{*}$ (Sgr $\rm A^{*}$), individual differences between the stars can be noted in the behaviour of their phase-space curves.We present an analysis of the individual behaviour of the stars in this Newtonian chaotic dynamical system. The individuality of their behaviour is evident from offsets in the position space separation curves of the S-stars and the black hole. We propose that the offsets originate from the initial orbital elements of the S-stars, where Sgr $\rm A^{*}$ is considered in one of the focal points of the Keplerian orbits. Methods were considered to find a relation between these elements and the separation in position space. Symbolic regression provides the clearest diagnostics for finding an interpretable expression for the problem. Our symbolic regression model indicates that $\left\langle\delta_r\right\rangle \propto e^{2.3}$, implying that the time-averaged individual separation in position space increases rapidly with the initial eccentricity of the S-stars.
+    image: before_after_pysr.pdf
+    date: 15-02-2024
   - title: Discovery of a Planar Black Hole Mass Scaling Relation for Spiral Galaxies
     authors:
       - Benjamin L. Davis (1)
