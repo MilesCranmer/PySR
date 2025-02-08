@@ -1116,6 +1116,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             if "equations_" not in model.__dict__ or model.equations_ is None:
                 model.refresh()
 
+            if model.expression_spec is not None:
+                warnings.warn(
+                    "Loading model from checkpoint file with a non-default expression spec "
+                    "is not fully supported as it relies on dynamic objects. This may result in unexpected behavior.",
+                )
+
             return model
         else:
             print(
@@ -1966,8 +1972,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             complexity_of_constants=self.complexity_of_constants,
             complexity_of_variables=complexity_of_variables,
             complexity_mapping=complexity_mapping,
-            expression_type=self.expression_spec_.julia_expression_type(),
-            expression_options=self.expression_spec_.julia_expression_options(),
+            expression_spec=self.expression_spec_.julia_expression_spec(),
             nested_constraints=nested_constraints,
             elementwise_loss=custom_loss,
             loss_function=custom_full_objective,
