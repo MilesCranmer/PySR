@@ -7,6 +7,7 @@ import traceback
 import unittest
 import warnings
 from pathlib import Path
+from textwrap import dedent
 
 import numpy as np
 import pandas as pd
@@ -1517,6 +1518,121 @@ class TestDimensionalConstraints(unittest.TestCase):
 
 
 # TODO: Determine desired behavior if second .fit() call does not have units
+
+
+class TestTemplateExpressionSpec(unittest.TestCase):
+    def _check_macro_str(self, spec, expected_str):
+        self.assertEqual(
+            spec._template_macro_str().strip(), dedent(expected_str).strip()
+        )
+
+    def test_single_expression_no_params_single_variable(self):
+        spec = TemplateExpressionSpec(
+            combine="f(x)", expressions=["f"], variable_names=["x"]
+        )
+        self._check_macro_str(
+            spec,
+            """\
+            @template_spec(expressions=(f,),) do x
+                f(x)
+            end
+            """,
+        )
+
+    def test_multiple_expressions_no_params_multiple_variables(self):
+        spec = TemplateExpressionSpec(
+            combine="f(x, y) + g(z)",
+            expressions=["f", "g"],
+            variable_names=["x", "y", "z"],
+        )
+        self._check_macro_str(
+            spec,
+            """
+            @template_spec(expressions=(f, g,),) do x, y, z
+                f(x, y) + g(z)
+            end
+            """,
+        )
+
+    def test_single_expression_single_param_single_variable(self):
+        spec = TemplateExpressionSpec(
+            combine="p[1] * f(x)",
+            expressions=["f"],
+            variable_names=["x"],
+            parameters={"p": 1},
+        )
+        self._check_macro_str(
+            spec,
+            """
+            @template_spec(expressions=(f,), parameters=(p=1,),) do x
+                p[1] * f(x)
+            end
+            """,
+        )
+
+    def test_multiple_expressions_multiple_params_multiple_variables(self):
+        spec = TemplateExpressionSpec(
+            combine="p1[1]*f(x,y) + p2[1]*g(z)",
+            expressions=["f", "g"],
+            variable_names=["x", "y", "z"],
+            parameters={"p1": 2, "p2": 3},
+        )
+        self._check_macro_str(
+            spec,
+            """
+            @template_spec(expressions=(f, g,), parameters=(p1=2, p2=3,),) do x, y, z
+                p1[1]*f(x,y) + p2[1]*g(z)
+            end
+            """,
+        )
+
+    def test_complex_variable_names(self):
+        spec = TemplateExpressionSpec(
+            combine="f(var1) * g(var2)",
+            expressions=["f", "g"],
+            variable_names=["var1", "var2"],
+        )
+        self._check_macro_str(
+            spec,
+            """
+            @template_spec(expressions=(f, g,),) do var1, var2
+                f(var1) * g(var2)
+            end
+            """,
+        )
+
+    def test_mixed_parameter_types(self):
+        spec = TemplateExpressionSpec(
+            combine="alpha*f(x) + beta*g(y)",
+            expressions=["f", "g"],
+            variable_names=["x", "y"],
+            parameters={"alpha": 1, "beta": 2},
+        )
+        self._check_macro_str(
+            spec,
+            """
+            @template_spec(expressions=(f, g,), parameters=(alpha=1, beta=2,),) do x, y
+                alpha*f(x) + beta*g(y)
+            end
+            """,
+        )
+
+    def test_empty_parameters_case(self):
+        spec = TemplateExpressionSpec(
+            combine="f(x)", expressions=["f"], variable_names=["x"], parameters={}
+        )
+        self.assertNotIn("parameters", spec._template_macro_str())
+
+    def test_maximum_parameters_expressions(self):
+        spec = TemplateExpressionSpec(
+            combine=" + ".join([f"f{i}(x)" for i in range(5)]),
+            expressions=[f"f{i}" for i in range(5)],
+            variable_names=["x"],
+            parameters={f"p{i}": i + 1 for i in range(5)},
+        )
+        macro_str = spec._template_macro_str()
+        self.assertIn("expressions=(f0, f1, f2, f3, f4,),", macro_str)
+        self.assertIn("parameters=(p0=1, p1=2, p2=3, p3=4, p4=5,),", macro_str)
 
 
 def runtests(just_tests=False):

@@ -1,5 +1,6 @@
 import copy
 from abc import ABC, abstractmethod
+from textwrap import dedent
 from typing import TYPE_CHECKING, Any, NewType, TypeAlias, overload
 
 import numpy as np
@@ -262,11 +263,13 @@ class TemplateExpressionSpec(AbstractExpressionSpec):
             template_inputs.append(
                 f"parameters=({', '.join([f'{p}={self.parameters[p]}' for p in self.parameters]) + ","})"
             )
-        return f"""
+        return dedent(
+            f"""
         @template_spec({", ".join(template_inputs) + ","}) do {", ".join(self.variable_names)}
             {self.combine}
         end
         """
+        )
 
     def julia_expression_options(self):
         f_combine = jl.seval(self.combine)
