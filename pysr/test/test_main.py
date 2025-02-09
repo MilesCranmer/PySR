@@ -95,9 +95,16 @@ class TestPipeline(unittest.TestCase):
         )
 
     def test_multiprocessing_turbo_custom_objective(self):
+        for loss_key in ["loss_function", "loss_function_expression"]:
+            with self.subTest(loss_key=loss_key):
+                self._multiprocessing_turbo_custom_objective(loss_key)
+
+    def _multiprocessing_turbo_custom_objective(self, loss_key):
         rstate = np.random.RandomState(0)
         y = self.X[:, 0]
         y += rstate.randn(*y.shape) * 1e-4
+
+        node_type = "Expression" if loss_key == "loss_function_expression" else "Node"
         model = PySRRegressor(
             **self.default_test_kwargs,
             # Turbo needs to work with unsafe operators:
@@ -106,14 +113,16 @@ class TestPipeline(unittest.TestCase):
             parallelism="multiprocessing",
             turbo=True,
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-10 && complexity == 1",
-            loss_function="""
-            function my_objective(tree::Node{T}, dataset::Dataset{T}, options::Options) where T
+            **{
+                loss_key: f"""
+            function my_objective(tree::{node_type}{{T}}, dataset::Dataset{{T}}, options::Options) where T
                 prediction, flag = eval_tree_array(tree, dataset.X, options)
                 !flag && return T(Inf)
                 abs3(x) = abs(x) ^ 3
                 return sum(abs3, prediction .- dataset.y) / length(prediction)
             end
-            """,
+            """
+            },
         )
         model.fit(self.X, y)
         print(model.equations_)
