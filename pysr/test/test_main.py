@@ -587,6 +587,50 @@ class TestPipeline(unittest.TestCase):
         with self.assertRaises(ValueError):
             model.latex_table()
 
+    def test_template_expression_with_parameters(self):
+        # Create random data
+        X_continuous = self.rstate.uniform(-1, 1, (100, 2))
+        category = self.rstate.randint(0, 3, 100)  # 3 classes
+        X = np.hstack([X_continuous, category[:, None] + 1])
+
+        # Ground truth: p[class] * x1^2 + x2 where p = [0.5, 1.0, 2.0]
+        true_p = [0.5, 1.0, 2.0]
+        y = np.array(
+            [true_p[c] * x1**2 + x2 for x1, x2, c in zip(X[:, 0], X[:, 1], category)]
+        )
+
+        # Create model with template that includes parameters
+        model = PySRRegressor(
+            **self.default_test_kwargs,
+            expression_spec=TemplateExpressionSpec(
+                "p[class] * x1^2 + f(x2)",
+                expressions=["f"],
+                parameters={"p": 3},
+                variable_names=["x1", "x2", "class"],
+            ),
+            binary_operators=["+", "-", "*", "/"],
+            unary_operators=[],
+            maxsize=10,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-10 && complexity <= 3",
+        )
+
+        model.fit(X, y)
+
+        # Test on new data
+        X_continuous_test = self.rstate.uniform(-1, 1, (25, 2))
+        category_test = self.rstate.randint(0, 3, 25)
+        X_test = np.hstack([X_continuous_test, category_test[:, None] + 1])
+        y_test = np.array(
+            [
+                true_p[c] * x1**2 + x2
+                for x1, x2, c in zip(X_test[:, 0], X_test[:, 1], category_test)
+            ]
+        )
+        y_pred = model.predict(X_test)
+
+        test_mse = np.mean((y_test - y_pred) ** 2)
+        self.assertLess(test_mse, 1e-5)
+
     def test_parametric_expression(self):
         # Create data with two classes
         n_points = 100
