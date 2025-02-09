@@ -254,18 +254,19 @@ class TemplateExpressionSpec(AbstractExpressionSpec):
         return result
 
     def _call_template_macro(self):
-        template_inputs = [f"expressions=({', '.join(self.expressions)})"]
+        return jl.seval(self._template_macro_str())
+
+    def _template_macro_str(self):
+        template_inputs = [f"expressions=({', '.join(self.expressions) + ","})"]
         if self.parameters:
             template_inputs.append(
-                f"parameters=({', '.join([f'{p}={self.parameters[p]}' for p in self.parameters])})"
+                f"parameters=({', '.join([f'{p}={self.parameters[p]}' for p in self.parameters]) + ","})"
             )
-        return jl.seval(
-            f"""
-            @template_spec({", ".join(template_inputs)}) do {", ".join(self.variable_names)}
-                {self.combine}
-            end
-            """
-        )
+        return f"""
+        @template_spec({", ".join(template_inputs) + ","}) do {", ".join(self.variable_names)}
+            {self.combine}
+        end
+        """
 
     def julia_expression_options(self):
         f_combine = jl.seval(self.combine)
