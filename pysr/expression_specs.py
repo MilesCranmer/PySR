@@ -117,31 +117,39 @@ class TemplateExpressionSpec(AbstractExpressionSpec):
 
     This class allows you to specify how multiple sub-expressions should be combined
     in a structured way, with constraints on which variables each sub-expression can use.
-    Pass this to PySRRegressor with the `expression_spec` argument when you are using
-    the `TemplateExpression` expression type.
+    Pass this to PySRRegressor with the `expression_spec` argument.
 
     Parameters
     ----------
-    function_symbols : list[str]
-        List of symbols representing the inner expressions (e.g., ["f", "g"]).
-        These will be used as keys in the template structure.
     combine : str
         Julia function string that defines how the sub-expressions are combined.
-        Takes a NamedTuple of expressions and a tuple of data vectors.
-        For example: "((; f, g), (x1, x2, x3)) -> f(x1, x2) + g(x3)^2"
-        would constrain f to use x1,x2 and g to use x3.
-    num_features : dict[str, int]
-        Dictionary mapping function symbols to the number of features each can use.
-        For example: {"f": 2, "g": 1} means f takes 2 inputs and g takes 1.
-        If not provided, will be inferred from the combine function.
+        For example: "sin(f(x1, x2)) + g(x3)^2" would constrain f to use x1,x2 and g to use x3.
+    expressions : list[str]
+        List of symbols representing the inner expressions (e.g., ["f", "g"]).
+        These will be used as keys in the template structure.
+    variable_names : list[str]
+        List of variable names that will be used in the combine function.
+    parameters : dict[str, int], optional
+        Dictionary mapping parameter names to their lengths. For example, {"p1": 2, "p2": 1}
+        means p1 is a vector of length 2 and p2 is a vector of length 1. These parameters
+        will be optimized during the search.
 
     Examples
     --------
     ```python
     # Create template that combines f(x1, x2) and g(x3):
     expression_spec = TemplateExpressionSpec(
-        function_symbols=["f", "g"],
-        combine="((; f, g), (x1, x2, x3)) -> sin(f(x1, x2)) + g(x3)^2",
+        expressions=["f", "g"],
+        variable_names=["x1", "x2", "x3"],
+        combine="sin(f(x1, x2)) + g(x3)^2",
+    )
+
+    # With parameters:
+    expression_spec = TemplateExpressionSpec(
+        expressions=["f", "g"],
+        variable_names=["x1", "x2", "x3"],
+        parameters={"p1": 2, "p2": 1},
+        combine="p1[1] * sin(f(x1, x2)) + p1[2] * g(x3) + p2[1]",
     )
 
     # Use in PySRRegressor:
@@ -149,6 +157,11 @@ class TemplateExpressionSpec(AbstractExpressionSpec):
         expression_spec=expression_spec
     )
     ```
+
+    Notes
+    -----
+    You can also use differential operators in the template with `D(f, 1)(x)` to take
+    the derivative of f with respect to its first argument, evaluated at x.
     """
 
     _spec_cache = {}
