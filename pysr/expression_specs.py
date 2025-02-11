@@ -165,7 +165,7 @@ class TemplateExpressionSpec(AbstractExpressionSpec):
     the derivative of f with respect to its first argument, evaluated at x.
     """
 
-    _spec_cache = {}
+    _spec_cache: dict[tuple[str, ...], AnyValue] = {}
 
     @overload
     def __init__(
