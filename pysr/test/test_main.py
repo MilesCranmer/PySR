@@ -46,6 +46,9 @@ os.environ["SYMBOLIC_REGRESSION_IS_TESTING"] = os.environ.get(
     "SYMBOLIC_REGRESSION_IS_TESTING", "true"
 )
 
+# Import from juliacall at end:
+from juliacall import JuliaError
+
 
 class TestPipeline(unittest.TestCase):
     def setUp(self):
@@ -1100,9 +1103,9 @@ class TestHelpMessages(unittest.TestCase):
         bad_kwargs = [
             dict(
                 kwargs=dict(
-                    elementwise_loss="g(x, y) = 0.0", loss_function="f(*args) = 0.0"
+                    elementwise_loss="g(x, y) = 0.0", loss_function="f(args...) = 0.0"
                 ),
-                error=ValueError,
+                error=JuliaError,
             ),
             dict(
                 kwargs=dict(maxsize=3),
