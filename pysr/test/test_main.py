@@ -1143,7 +1143,8 @@ class TestHelpMessages(unittest.TestCase):
     def test_suggest_keywords(self):
         # Easy
         self.assertEqual(
-            _suggest_keywords(PySRRegressor, "loss_function"), ["loss_function"]
+            _suggest_keywords(PySRRegressor, "loss_function"),
+            ["loss_function", "loss_function_expression"],
         )
 
         # More complex, and with error
