@@ -47,7 +47,7 @@ os.environ["SYMBOLIC_REGRESSION_IS_TESTING"] = os.environ.get(
 )
 
 # Import from juliacall at end:
-from juliacall import JuliaError
+from juliacall import JuliaError  # type: ignore
 
 
 class TestPipeline(unittest.TestCase):
