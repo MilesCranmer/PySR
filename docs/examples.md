@@ -546,8 +546,9 @@ y = np.sin(X[:, 0] + X[:, 1]) + X[:, 2]**2
 
 # Define template: we want sin(f(x1, x2)) + g(x3)
 template = TemplateExpressionSpec(
-    function_symbols=["f", "g"],
-    combine="((; f, g), (x1, x2, x3)) -> sin(f(x1, x2)) + g(x3)",
+    expressions=["f", "g"],
+    variable_names=["x1", "x2", "x3"],
+    combine="sin(f(x1, x2)) + g(x3)",
 )
 
 model = PySRRegressor(
@@ -559,14 +560,22 @@ model = PySRRegressor(
 model.fit(X, y)
 ```
 
-You can also use no argument-functions for learning constants, like:
+You can also use parameters in your template expressions, which will be optimized during the search:
 
 ```python
 template = TemplateExpressionSpec(
-    function_symbols=["a", "f"],
-    combine="((; a, f), (x, y)) -> a() * sin(f(x, y))",
+    expressions=["f", "g"],
+    variable_names=["x1", "x2", "x3"],
+    parameters={"p1": 2, "p2": 1},  # p1 has length 2, p2 has length 1
+    combine="p1[1] * sin(f(x1, x2)) + p1[2] * g(x3) + p2[1]",
 )
 ```
+
+This will learn an equation of the form:
+
+$$ y = \alpha_1 \sin(f(x_1, x_2)) + \alpha_2 g(x_3) + \beta $$
+
+where $\alpha_1, \alpha_2$ are stored in `p1` and $\beta$ is stored in `p2`. The parameters will be optimized during the search.
 
 ### Parametric Expressions
 
@@ -608,6 +617,20 @@ model.fit(X, y, category=category)
 ```
 
 See [Expression Specifications](/api/#expression-specifications) for more details.
+
+You can also use `TemplateExpressionSpec` in the same way, passing
+the category as a column of `X`:
+
+```python
+spec = TemplateExpressionSpec(
+    expressions=["f", "g"],
+    variable_names=["x1", "x2", "class"],
+    combine="p1[class] * sin(f(x1, x2)) + p2[class]",
+)
+```
+
+this column will automatically be converted to integers.
+
 
 ## 12. Using TensorBoard for Logging
 

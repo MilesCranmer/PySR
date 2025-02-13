@@ -13,6 +13,7 @@
   - The Objective:
     - elementwise_loss
     - loss_function
+    - loss_function_expression
     - model_selection
     - dimensional_constraint_penalty
     - dimensionless_constants_only

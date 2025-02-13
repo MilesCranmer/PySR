@@ -1,6 +1,7 @@
 import copy
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, NewType, TypeAlias
+from textwrap import dedent
+from typing import TYPE_CHECKING, Any, NewType, TypeAlias, overload
 
 import numpy as np
 import pandas as pd
@@ -26,11 +27,9 @@ class AbstractExpressionSpec(ABC):
 
     All expression types must implement:
 
-    1. julia_expression_type(): The actual expression type, returned as a Julia object.
-        This will get stored as `expression_type` in `SymbolicRegression.Options`.
-    2. julia_expression_options(): Method to create the expression options, returned as a Julia object.
-        These will get stored as `expression_options` in `SymbolicRegression.Options`.
-    3. create_exports(), which will be used to create the exports of the equations, such as
+    1. julia_expression_spec(): The actual expression specification, returned as a Julia object.
+        This will get passed as `expression_spec` in `SymbolicRegression.Options`.
+    2. create_exports(), which will be used to create the exports of the equations, such as
         the executable format, the SymPy format, etc.
 
     It may also optionally implement:
@@ -39,13 +38,8 @@ class AbstractExpressionSpec(ABC):
     """
 
     @abstractmethod
-    def julia_expression_type(self) -> AnyValue:
-        """The expression type"""
-        pass  # pragma: no cover
-
-    @abstractmethod
-    def julia_expression_options(self) -> AnyValue:
-        """The expression options"""
+    def julia_expression_spec(self) -> AnyValue:
+        """The expression specification"""
         pass  # pragma: no cover
 
     @abstractmethod
@@ -82,11 +76,8 @@ class AbstractExpressionSpec(ABC):
 class ExpressionSpec(AbstractExpressionSpec):
     """The default expression specification, with no special behavior."""
 
-    def julia_expression_type(self):
-        return SymbolicRegression.Expression
-
-    def julia_expression_options(self):
-        return jl.NamedTuple()
+    def julia_expression_spec(self):
+        return SymbolicRegression.ExpressionSpec()
 
     def create_exports(
         self,
@@ -127,31 +118,39 @@ class TemplateExpressionSpec(AbstractExpressionSpec):
 
     This class allows you to specify how multiple sub-expressions should be combined
     in a structured way, with constraints on which variables each sub-expression can use.
-    Pass this to PySRRegressor with the `expression_spec` argument when you are using
-    the `TemplateExpression` expression type.
+    Pass this to PySRRegressor with the `expression_spec` argument.
 
     Parameters
     ----------
-    function_symbols : list[str]
-        List of symbols representing the inner expressions (e.g., ["f", "g"]).
-        These will be used as keys in the template structure.
     combine : str
         Julia function string that defines how the sub-expressions are combined.
-        Takes a NamedTuple of expressions and a tuple of data vectors.
-        For example: "((; f, g), (x1, x2, x3)) -> f(x1, x2) + g(x3)^2"
-        would constrain f to use x1,x2 and g to use x3.
-    num_features : dict[str, int]
-        Dictionary mapping function symbols to the number of features each can use.
-        For example: {"f": 2, "g": 1} means f takes 2 inputs and g takes 1.
-        If not provided, will be inferred from the combine function.
+        For example: "sin(f(x1, x2)) + g(x3)^2" would constrain f to use x1,x2 and g to use x3.
+    expressions : list[str]
+        List of symbols representing the inner expressions (e.g., ["f", "g"]).
+        These will be used as keys in the template structure.
+    variable_names : list[str]
+        List of variable names that will be used in the combine function.
+    parameters : dict[str, int], optional
+        Dictionary mapping parameter names to their lengths. For example, {"p1": 2, "p2": 1}
+        means p1 is a vector of length 2 and p2 is a vector of length 1. These parameters
+        will be optimized during the search.
 
     Examples
     --------
     ```python
     # Create template that combines f(x1, x2) and g(x3):
     expression_spec = TemplateExpressionSpec(
-        function_symbols=["f", "g"],
-        combine="((; f, g), (x1, x2, x3)) -> sin(f(x1, x2)) + g(x3)^2",
+        expressions=["f", "g"],
+        variable_names=["x1", "x2", "x3"],
+        combine="sin(f(x1, x2)) + g(x3)^2",
+    )
+
+    # With parameters:
+    expression_spec = TemplateExpressionSpec(
+        expressions=["f", "g"],
+        variable_names=["x1", "x2", "x3"],
+        parameters={"p1": 2, "p2": 1},
+        combine="p1[1] * sin(f(x1, x2)) + p1[2] * g(x3) + p2[1]",
     )
 
     # Use in PySRRegressor:
@@ -159,9 +158,47 @@ class TemplateExpressionSpec(AbstractExpressionSpec):
         expression_spec=expression_spec
     )
     ```
+
+    Notes
+    -----
+    You can also use differential operators in the template with `D(f, 1)(x)` to take
+    the derivative of f with respect to its first argument, evaluated at x.
     """
 
+    _spec_cache: dict[tuple[str, ...], AnyValue] = {}
+
+    @overload
     def __init__(
+        self,
+        function_symbols: list[str],
+        combine: str,
+        num_features: dict[str, int] | None = None,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        combine: str,
+        *,
+        expressions: list[str],
+        variable_names: list[str],
+        parameters: dict[str, int] | None = None,
+    ) -> None: ...
+
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ):
+        """Handle both formats with combine as explicit parameter"""
+        self._old_format = len(args) >= 2 or "function_symbols" in kwargs
+
+        if self._old_format:
+            self._load_old_format(*args, **kwargs)
+        else:
+            self._load_new_format(*args, **kwargs)
+
+    def _load_old_format(
         self,
         function_symbols: list[str],
         combine: str,
@@ -170,9 +207,69 @@ class TemplateExpressionSpec(AbstractExpressionSpec):
         self.function_symbols = function_symbols
         self.combine = combine
         self.num_features = num_features
+        # TODO: warn about old format after some versions
 
-    def julia_expression_type(self):
-        return SymbolicRegression.TemplateExpression
+    def _load_new_format(
+        self,
+        combine: str,
+        *,
+        expressions: list[str],
+        variable_names: list[str],
+        parameters: dict[str, int] | None = None,
+    ):
+        self.combine = combine
+        self.expressions = expressions
+        self.variable_names = variable_names
+        self.parameters = parameters
+
+    def _get_cache_key(self):
+        if self._old_format:
+            return (
+                "old",
+                str(self.function_symbols),
+                self.combine,
+                str(self.num_features),
+            )
+        else:
+            return (
+                "new",
+                self.combine,
+                str(self.expressions),
+                str(self.variable_names),
+                str(self.parameters),
+            )
+
+    def julia_expression_spec(self):
+        key = self._get_cache_key()
+        if key in self._spec_cache:
+            return self._spec_cache[key]
+
+        if self._old_format:
+            result = SymbolicRegression.TemplateExpressionSpec(
+                structure=self.julia_expression_options().structure
+            )
+        else:
+            result = self._call_template_macro()
+
+        self._spec_cache[key] = result
+        return result
+
+    def _call_template_macro(self):
+        return jl.seval(self._template_macro_str())
+
+    def _template_macro_str(self):
+        template_inputs = [f"expressions=({', '.join(self.expressions) + ','})"]
+        if self.parameters:
+            template_inputs.append(
+                f"parameters=({', '.join([f'{p}={self.parameters[p]}' for p in self.parameters]) + ','})"
+            )
+        return dedent(
+            f"""
+        @template_spec({', '.join(template_inputs) + ','}) do {', '.join(self.variable_names)}
+            {self.combine}
+        end
+        """
+        )
 
     def julia_expression_options(self):
         f_combine = jl.seval(self.combine)
@@ -243,11 +340,10 @@ class ParametricExpressionSpec(AbstractExpressionSpec):
     def __init__(self, max_parameters: int):
         self.max_parameters = max_parameters
 
-    def julia_expression_type(self):
-        return SymbolicRegression.ParametricExpression
-
-    def julia_expression_options(self):
-        return jl.seval("NamedTuple{(:max_parameters,)}")((self.max_parameters,))
+    def julia_expression_spec(self):
+        return SymbolicRegression.ParametricExpressionSpec(
+            max_parameters=self.max_parameters
+        )
 
     @property
     def evaluates_in_julia(self):

@@ -379,6 +379,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         `idx` argument to the function, which is `nothing`
         for non-batched, and a 1D array of indices for batched.
         Default is `None`.
+    loss_function_expression : str
+        Similar to `loss_function`, but takes as input the full
+        expression object as the first argument, rather than
+        the innermost `AbstractExpressionNode`. This is useful
+        for specifying custom loss functions on `TemplateExpressionSpec`.
+        Default is `None`.
     complexity_of_operators : dict[str, int | float]
         If you would like to use a complexity other than 1 for an
         operator, specify the complexity here. For example,
@@ -806,6 +812,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         nested_constraints: dict[str, dict[str, int]] | None = None,
         elementwise_loss: str | None = None,
         loss_function: str | None = None,
+        loss_function_expression: str | None = None,
         complexity_of_operators: dict[str, int | float] | None = None,
         complexity_of_constants: int | float | None = None,
         complexity_of_variables: int | float | list[int | float] | None = None,
@@ -912,6 +919,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # - Loss parameters
         self.elementwise_loss = elementwise_loss
         self.loss_function = loss_function
+        self.loss_function_expression = loss_function_expression
         self.complexity_of_operators = complexity_of_operators
         self.complexity_of_constants = complexity_of_constants
         self.complexity_of_variables = complexity_of_variables
@@ -1115,6 +1123,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
             if "equations_" not in model.__dict__ or model.equations_ is None:
                 model.refresh()
+
+            if model.expression_spec is not None:
+                warnings.warn(
+                    "Loading model from checkpoint file with a non-default expression spec "
+                    "is not fully supported as it relies on dynamic objects. This may result in unexpected behavior.",
+                )
 
             return model
         else:
@@ -1429,11 +1443,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             )
         elif self.maxsize < 7:
             raise ValueError("PySR requires a maxsize of at least 7")
-
-        if self.elementwise_loss is not None and self.loss_function is not None:
-            raise ValueError(
-                "You cannot set both `elementwise_loss` and `loss_function`."
-            )
 
         # NotImplementedError - Values that could be supported at a later time
         if self.optimizer_algorithm not in VALID_OPTIMIZER_ALGORITHMS:
@@ -1894,6 +1903,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         custom_full_objective = jl.seval(
             str(self.loss_function) if self.loss_function is not None else "nothing"
         )
+        custom_loss_expression = jl.seval(
+            str(self.loss_function_expression)
+            if self.loss_function_expression is not None
+            else "nothing"
+        )
 
         early_stop_condition = jl.seval(
             str(self.early_stop_condition)
@@ -1966,11 +1980,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             complexity_of_constants=self.complexity_of_constants,
             complexity_of_variables=complexity_of_variables,
             complexity_mapping=complexity_mapping,
-            expression_type=self.expression_spec_.julia_expression_type(),
-            expression_options=self.expression_spec_.julia_expression_options(),
+            expression_spec=self.expression_spec_.julia_expression_spec(),
             nested_constraints=nested_constraints,
             elementwise_loss=custom_loss,
             loss_function=custom_full_objective,
+            loss_function_expression=custom_loss_expression,
             maxsize=int(self.maxsize),
             output_directory=_escape_filename(self.output_directory_),
             npopulations=int(self.populations),
