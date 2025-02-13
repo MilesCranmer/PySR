@@ -182,7 +182,7 @@ class TemplateExpressionSpec(AbstractExpressionSpec):
         *,
         expressions: list[str],
         variable_names: list[str],
-        parameters: list[str] | None = None,
+        parameters: dict[str, int] | None = None,
     ) -> None: ...
 
     def __init__(
