@@ -12,7 +12,7 @@ from dataclasses import dataclass, fields
 from io import StringIO
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any, Dict, Literal, Optional, cast
 
 import numpy as np
 import pandas as pd
@@ -31,6 +31,7 @@ from .export_latex import (
     sympy2multilatextable,
     with_preamble,
 )
+from .export_paddle import sympy2paddle
 from .export_sympy import assert_valid_sympy_symbol
 from .expression_specs import (
     AbstractExpressionSpec,
@@ -205,8 +206,10 @@ def _check_assertions(
             )
 
 
-def _validate_export_mappings(extra_jax_mappings, extra_torch_mappings):
-    # It is expected extra_jax/torch_mappings will be updated after fit.
+def _validate_export_mappings(
+    extra_jax_mappings, extra_torch_mappings, extra_paddle_mappings
+):
+    # It is expected extra_jax/torch/paddle_mappings will be updated after fit.
     # Thus, validation is performed here instead of in _validate_init_params
     if extra_jax_mappings is not None:
         for value in extra_jax_mappings.values():
@@ -221,6 +224,14 @@ def _validate_export_mappings(extra_jax_mappings, extra_torch_mappings):
                 raise ValueError(
                     "extra_torch_mappings must be callable functions! "
                     "e.g., {sympy.sqrt: torch.sqrt}."
+                )
+
+    if extra_paddle_mappings is not None:
+        for value in extra_paddle_mappings.values():
+            if not callable(value):
+                raise ValueError(
+                    "extra_paddle_mappings must be callable functions! "
+                    "e.g., {sympy.sqrt: paddle.sqrt}."
                 )
 
 
@@ -667,6 +678,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Whether to create a 'torch_format' column in the output,
         containing a torch module with trainable parameters.
         Default is `False`.
+    output_paddle_format : bool
+        Whether to create a 'paddle_format' column in the output,
+        containing a paddle module with trainable parameters.
+        Default is `False`.
     extra_sympy_mappings : dict[str, Callable]
         Provides mappings between custom `binary_operators` or
         `unary_operators` defined in julia strings, to those same
@@ -686,6 +701,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         to pytorch. Note that the dictionary keys should be callable
         pytorch expressions.
         For example: `extra_torch_mappings={sympy.sin: torch.sin}`.
+        Default is `None`.
+    extra_paddle_mappings : dict[Callable, Callable]
+        The same as `extra_jax_mappings` but for model export
+        to paddle. Note that the dictionary keys should be callable
+        paddle expressions.
+        For example: `extra_paddle_mappings={sympy.sin: paddle.sin}`.
         Default is `None`.
     denoise : bool
         Whether to use a Gaussian Process to denoise the data before
@@ -888,9 +909,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         update: bool = False,
         output_jax_format: bool = False,
         output_torch_format: bool = False,
-        extra_sympy_mappings: dict[str, Callable] | None = None,
-        extra_torch_mappings: dict[Callable, Callable] | None = None,
-        extra_jax_mappings: dict[Callable, str] | None = None,
+        output_paddle_format: bool = False,
+        extra_sympy_mappings: Optional[Dict[str, Callable]] = None,
+        extra_torch_mappings: Optional[Dict[Callable, Callable]] = None,
+        extra_jax_mappings: Optional[Dict[Callable, str]] = None,
+        extra_paddle_mappings: Optional[Dict[Callable, Callable]] = None,
         denoise: bool = False,
         select_k_features: int | None = None,
         **kwargs,
@@ -997,9 +1020,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.update = update
         self.output_jax_format = output_jax_format
         self.output_torch_format = output_torch_format
+        self.output_paddle_format = output_paddle_format
         self.extra_sympy_mappings = extra_sympy_mappings
         self.extra_jax_mappings = extra_jax_mappings
         self.extra_torch_mappings = extra_torch_mappings
+        self.extra_paddle_mappings = extra_paddle_mappings
         # Pre-modelling transformation
         self.denoise = denoise
         self.select_k_features = select_k_features
@@ -1233,7 +1258,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         show_pickle_warning = not (
             "show_pickle_warnings_" in state and not state["show_pickle_warnings_"]
         )
-        state_keys_containing_lambdas = ["extra_sympy_mappings", "extra_torch_mappings"]
+        state_keys_containing_lambdas = [
+            "extra_sympy_mappings",
+            "extra_torch_mappings",
+            "extra_paddle_mappings",
+        ]
         for state_key in state_keys_containing_lambdas:
             if state[state_key] is not None and show_pickle_warning:
                 warnings.warn(
@@ -1252,16 +1281,19 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         ):
             pickled_state["output_torch_format"] = False
             pickled_state["output_jax_format"] = False
+            pickled_state["output_paddle_format"] = False
             if self.nout_ == 1:
                 pickled_columns = ~pickled_state["equations_"].columns.isin(
-                    ["jax_format", "torch_format"]
+                    ["jax_format", "torch_format", "paddle_format"]
                 )
                 pickled_state["equations_"] = (
                     pickled_state["equations_"].loc[:, pickled_columns].copy()
                 )
             else:
                 pickled_columns = [
-                    ~dataframe.columns.isin(["jax_format", "torch_format"])
+                    ~dataframe.columns.isin(
+                        ["jax_format", "torch_format", "paddle_format"]
+                    )
                     for dataframe in pickled_state["equations_"]
                 ]
                 pickled_state["equations_"] = [
@@ -2558,6 +2590,41 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         else:
             return best_equation["torch_format"]
 
+    def paddle(self, index=None):
+        """
+        Return paddle representation of the equation(s) chosen by `model_selection`.
+
+        Each equation (multiple given if there are multiple outputs) is a PaddlePaddle module
+        containing the parameters as trainable attributes. You can use the module like
+        any other PaddlePaddle module: `module(X)`, where `X` is a tensor with the same
+        column ordering as trained with.
+
+        Parameters
+        ----------
+        index : int | list[int]
+            If you wish to select a particular equation from
+            `self.equations_`, give the index number here. This overrides
+            the `model_selection` parameter. If there are multiple output
+            features, then pass a list of indices with the order the same
+            as the output feature.
+
+        Returns
+        -------
+        best_equation : paddle.nn.Layer
+            PaddlePaddle module representing the expression.
+        """
+        if not self.expression_spec_.supports_paddle:
+            raise ValueError(
+                f"`expression_spec={self.expression_spec_}` does not support paddle export."
+            )
+        self.set_params(output_paddle_format=True)
+        self.refresh()
+        best_equation = self.get_best(index=index)
+        if isinstance(best_equation, list):
+            return [eq["paddle_format"] for eq in best_equation]
+        else:
+            return best_equation["paddle_format"]
+
     def get_equation_file(self, i: int | None = None) -> Path:
         if i is not None:
             return (
@@ -2633,7 +2700,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if should_read_from_file:
             self.equation_file_contents_ = self._read_equation_file()
 
-        _validate_export_mappings(self.extra_jax_mappings, self.extra_torch_mappings)
+        _validate_export_mappings(
+            self.extra_jax_mappings,
+            self.extra_torch_mappings,
+            self.extra_paddle_mappings,
+        )
 
         equation_file_contents = cast(list[pd.DataFrame], self.equation_file_contents_)
 

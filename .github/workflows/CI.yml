@@ -76,6 +76,9 @@ jobs:
       - name: "Run Torch tests"
         run: coverage run --append -m pysr test torch
         if: ${{ matrix.test-id == 'main' }}
+      - name: "Run Paddle tests"
+        run: coverage run --append -m pysr test paddle
+        if: ${{ matrix.test-id == 'main' }}
       - name: "Coveralls"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
