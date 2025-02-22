@@ -12,7 +12,7 @@ from textwrap import dedent
 import numpy as np
 import pandas as pd
 import sympy  # type: ignore
-from sklearn.utils.estimator_checks import check_estimator
+from sklearn.utils.estimator_checks import estimator_checks_generator
 
 from pysr import (
     ParametricExpressionSpec,
@@ -930,9 +930,8 @@ class TestMiscellaneous(unittest.TestCase):
             temp_equation_file=True,
         )  # Return early.
 
-        check_generator = check_estimator(model, generate_only=True)
         exception_messages = []
-        for _, check in check_generator:
+        for _, check in estimator_checks_generator(model):
             if check.func.__name__ in {
                 # We can use complex data, so avoid this check
                 "check_complex_data",
