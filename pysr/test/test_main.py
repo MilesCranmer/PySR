@@ -1,3 +1,4 @@
+import functools
 import importlib
 import os
 import pickle as pkl
@@ -12,7 +13,13 @@ from textwrap import dedent
 import numpy as np
 import pandas as pd
 import sympy  # type: ignore
-from sklearn.utils.estimator_checks import estimator_checks_generator
+
+try:
+    from sklearn.utils.estimator_checks import estimator_checks_generator
+except ImportError:
+    from sklearn.utils.estimator_checks import check_estimator
+
+    estimator_checks_generator = functools.partial(check_estimator, generate_only=True)
 
 from pysr import (
     ParametricExpressionSpec,
