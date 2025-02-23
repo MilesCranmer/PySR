@@ -1,6 +1,7 @@
 """Define the PySRRegressor scikit-learn interface."""
 
 import copy
+import logging
 import os
 import pickle as pkl
 import re
@@ -66,6 +67,8 @@ except ImportError:
     OLD_SKLEARN = True
 
 ALREADY_RAN = False
+
+pysr_logger = logging.getLogger(__name__)
 
 
 def _process_constraints(
@@ -375,9 +378,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         You may pass a function with the same arguments as this (note
         that the name of the function doesn't matter). Here,
         both `prediction` and `dataset.y` are 1D arrays of length `dataset.n`.
-        If using `batching`, then you should add an
-        `idx` argument to the function, which is `nothing`
-        for non-batched, and a 1D array of indices for batched.
+        Default is `None`.
+    loss_function_expression : str
+        Similar to `loss_function`, but takes as input the full
+        expression object as the first argument, rather than
+        the innermost `AbstractExpressionNode`. This is useful
+        for specifying custom loss functions on `TemplateExpressionSpec`.
         Default is `None`.
     complexity_of_operators : dict[str, int | float]
         If you would like to use a complexity other than 1 for an
@@ -806,6 +812,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         nested_constraints: dict[str, dict[str, int]] | None = None,
         elementwise_loss: str | None = None,
         loss_function: str | None = None,
+        loss_function_expression: str | None = None,
         complexity_of_operators: dict[str, int | float] | None = None,
         complexity_of_constants: int | float | None = None,
         complexity_of_variables: int | float | list[int | float] | None = None,
@@ -910,6 +917,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         # - Loss parameters
         self.elementwise_loss = elementwise_loss
         self.loss_function = loss_function
+        self.loss_function_expression = loss_function_expression
         self.complexity_of_operators = complexity_of_operators
         self.complexity_of_constants = complexity_of_constants
         self.complexity_of_variables = complexity_of_variables
@@ -1100,7 +1108,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         pkl_filename = Path(run_directory) / "checkpoint.pkl"
         if pkl_filename.exists():
-            print(f"Attempting to load model from {pkl_filename}...")
+            pysr_logger.info(f"Attempting to load model from {pkl_filename}...")
             assert binary_operators is None
             assert unary_operators is None
             assert n_features_in is None
@@ -1114,9 +1122,15 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             if "equations_" not in model.__dict__ or model.equations_ is None:
                 model.refresh()
 
+            if model.expression_spec is not None:
+                warnings.warn(
+                    "Loading model from checkpoint file with a non-default expression spec "
+                    "is not fully supported as it relies on dynamic objects. This may result in unexpected behavior.",
+                )
+
             return model
         else:
-            print(
+            pysr_logger.info(
                 f"Checkpoint file {pkl_filename} does not exist. "
                 "Attempting to recreate model from scratch..."
             )
@@ -1219,12 +1233,16 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         )
         state_keys_containing_lambdas = ["extra_sympy_mappings", "extra_torch_mappings"]
         for state_key in state_keys_containing_lambdas:
-            if state[state_key] is not None and show_pickle_warning:
-                warnings.warn(
-                    f"`{state_key}` cannot be pickled and will be removed from the "
-                    "serialized instance. When loading the model, please redefine "
-                    f"`{state_key}` at runtime."
-                )
+            warn_msg = (
+                f"`{state_key}` cannot be pickled and will be removed from the "
+                "serialized instance. When loading the model, please redefine "
+                f"`{state_key}` at runtime."
+            )
+            if state[state_key] is not None:
+                if show_pickle_warning:
+                    warnings.warn(warn_msg)
+                else:
+                    pysr_logger.debug(warn_msg)
         state_keys_to_clear = state_keys_containing_lambdas
         state_keys_to_clear.append("logger_")
         pickled_state = {
@@ -1267,7 +1285,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             try:
                 pkl.dump(self, f)
             except Exception as e:
-                print(f"Error checkpointing model: {e}")
+                pysr_logger.debug(f"Error checkpointing model: {e}")
         self.show_pickle_warnings_ = True
 
     def get_pkl_filename(self) -> Path:
@@ -1427,11 +1445,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             )
         elif self.maxsize < 7:
             raise ValueError("PySR requires a maxsize of at least 7")
-
-        if self.elementwise_loss is not None and self.loss_function is not None:
-            raise ValueError(
-                "You cannot set both `elementwise_loss` and `loss_function`."
-            )
 
         # NotImplementedError - Values that could be supported at a later time
         if self.optimizer_algorithm not in VALID_OPTIMIZER_ALGORITHMS:
@@ -1744,7 +1757,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self.selection_mask_ = selection_mask
             self.feature_names_in_ = _check_feature_names_in(self, variable_names)
             self.display_feature_names_in_ = self.feature_names_in_
-            print(f"Using features {self.feature_names_in_}")
+            pysr_logger.info(f"Using features {self.feature_names_in_}")
 
         # Denoising transformation
         if self.denoise:
@@ -1816,7 +1829,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # Start julia backend processes
         if not ALREADY_RAN and runtime_params.update_verbosity != 0:
-            print("Compiling Julia backend...")
+            pysr_logger.info("Compiling Julia backend...")
 
         parallelism, numprocs = _map_parallelism_params(
             self.parallelism, self.procs, getattr(self, "multithreading", None)
@@ -1892,6 +1905,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         custom_full_objective = jl.seval(
             str(self.loss_function) if self.loss_function is not None else "nothing"
         )
+        custom_loss_expression = jl.seval(
+            str(self.loss_function_expression)
+            if self.loss_function_expression is not None
+            else "nothing"
+        )
 
         early_stop_condition = jl.seval(
             str(self.early_stop_condition)
@@ -1964,11 +1982,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             complexity_of_constants=self.complexity_of_constants,
             complexity_of_variables=complexity_of_variables,
             complexity_mapping=complexity_mapping,
-            expression_type=self.expression_spec_.julia_expression_type(),
-            expression_options=self.expression_spec_.julia_expression_options(),
+            expression_spec=self.expression_spec_.julia_expression_spec(),
             nested_constraints=nested_constraints,
             elementwise_loss=custom_loss,
             loss_function=custom_full_objective,
+            loss_function_expression=custom_loss_expression,
             maxsize=int(self.maxsize),
             output_directory=_escape_filename(self.output_directory_),
             npopulations=int(self.populations),

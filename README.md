@@ -27,7 +27,7 @@ If you've finished a project with PySR, please submit a PR to showcase your work
 - [Why PySR?](#why-pysr)
 - [Installation](#installation)
 - [Quickstart](#quickstart)
-- [→ Documentation](https://ai.damtp.cam.ac.uk/PySR)
+- [→ Documentation](https://ai.damtp.cam.ac.uk/pysr)
 - [Contributors](#contributors-)
 
 <div align="center">

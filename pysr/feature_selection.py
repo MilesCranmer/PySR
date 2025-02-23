@@ -1,5 +1,6 @@
 """Functions for doing feature selection during preprocessing."""
 
+import logging
 from typing import cast
 
 import numpy as np
@@ -7,6 +8,8 @@ from numpy import ndarray
 from numpy.typing import NDArray
 
 from .utils import ArrayLike
+
+pysr_logger = logging.getLogger(__name__)
 
 
 def run_feature_selection(
@@ -44,7 +47,7 @@ def _handle_feature_selection(
 ):
     if select_k_features is not None:
         selection = run_feature_selection(X, y, select_k_features)
-        print(f"Using features {[variable_names[i] for i in selection]}")
+        pysr_logger.info(f"Using features {[variable_names[i] for i in selection]}")
         X = X[:, selection]
     else:
         selection = None
