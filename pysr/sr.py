@@ -2263,16 +2263,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             )
         )
 
-        # Warn about large feature counts (still warn if feature count is large
-        # after running feature selection)
-        if self.n_features_in_ >= 10:
-            warnings.warn(
-                "Note: you are running with 10 features or more. "
-                "Genetic algorithms like used in PySR scale poorly with large numbers of features. "
-                "You should run PySR for more `niterations` to ensure it can find "
-                "the correct variables, and consider using a larger `maxsize`."
-            )
-
         # Assertion checks
         use_custom_variable_names = variable_names is not None
         # TODO: this is always true.
