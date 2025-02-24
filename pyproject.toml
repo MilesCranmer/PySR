@@ -29,7 +29,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "beartype>=0.19,<0.20",
+    "beartype>=0.19,<0.21",
     "coverage>=7,<8",
     "coveralls>=4,<5",
     "ipykernel>=6,<7",
