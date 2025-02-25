@@ -625,6 +625,7 @@ the category as a column of `X`:
 spec = TemplateExpressionSpec(
     expressions=["f", "g"],
     variable_names=["x1", "x2", "class"],
+    parameters={"p1": 3, "p2": 1},
     combine="p1[class] * sin(f(x1, x2)) + p2[class]",
 )
 ```
@@ -689,13 +690,9 @@ x = np.random.uniform(1, 10, (1000,))  # Integrand sampling points
 y = 1 / (x**2 * np.sqrt(x**2 - 1))     # Evaluation of the integrand
 
 expression_spec = TemplateExpressionSpec(
-    ["f"],
-    """
-    function diff_f_x((; f), (x,))
-        df = D(f, 1)  # Symbolic derivative of f with respect to its first arg
-        return df(x)
-    end
-    """
+    expressions=["f"],
+    variable_names=["x"],
+    combine="df = D(f, 1); df(x)",
 )
 
 model = PySRRegressor(
