@@ -707,22 +707,6 @@ model.fit(x[:, np.newaxis], y)
 If everything works, you should find something that simplifies to $\frac{\sqrt{x^2 - 1}}{x}$.
 
 Here, we write out a full function in Julia.
-But we can also do an anonymous function, like `((; f), (x,)) -> D(f, 1)(x)`. We can also avoid the fancy unpacking syntax and write:
-`(nt, xs) -> D(nt.f, 1)(xs[1])` which is completely equivalent. Note that in Julia,
-the following two syntaxes are equivalent:
-
-```julia
-nt = (; f=1, g=2)  # Create a "named tuple"
-(; f, g) = nt
-```
-
-and
-
-```julia
-f = nt.f
-g = nt.g
-```
-
 
 ## 14. Additional features
 
