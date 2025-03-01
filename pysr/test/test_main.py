@@ -758,6 +758,25 @@ class TestPipeline(unittest.TestCase):
                 # Verify model still works as expected
                 self.assertLessEqual(model.get_best()["loss"], 1e-4)
 
+    def test_comparison_operator(self):
+        X = self.rstate.randn(100, 2)
+        y = ((X[:, 0] + X[:, 1]) < (X[:, 0] * X[:, 1])).astype(float)
+
+        model = PySRRegressor(
+            binary_operators=["<", "+", "*"],
+            **self.default_test_kwargs,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity <= 7",
+        )
+
+        model.fit(X, y)
+
+        best_equation = model.get_best()["equation"]
+        self.assertIn("less", best_equation)
+        self.assertLessEqual(model.get_best()["loss"], 1e-4)
+
+        y_pred = model.predict(X)
+        np.testing.assert_array_almost_equal(y, y_pred, decimal=3)
+
 
 def manually_create_model(equations, feature_names=None):
     if feature_names is None:

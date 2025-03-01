@@ -67,5 +67,8 @@ SymbolicRegression = jl.SymbolicRegression
 # Expose `D` operator:
 jl.seval("using SymbolicRegression: D")
 
+# Expose other operators:
+jl.seval("using SymbolicRegression: less, greater_equal, less_equal")
+
 jl.seval("using Pkg: Pkg")
 Pkg = jl.Pkg
