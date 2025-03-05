@@ -13,6 +13,7 @@ sympy_mappings = {
     "mult": lambda x, y: x * y,
     "sqrt": lambda x: sympy.sqrt(x),
     "sqrt_abs": lambda x: sympy.sqrt(abs(x)),
+    "cbrt": lambda x: sympy.sign(x) * sympy.cbrt(abs(x)),
     "square": lambda x: x**2,
     "cube": lambda x: x**3,
     "plus": lambda x, y: x + y,
