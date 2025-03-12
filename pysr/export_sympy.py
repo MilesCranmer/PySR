@@ -88,8 +88,8 @@ def pysr2sympy(
         feature_names_in = []
     local_sympy_mappings = {
         **create_sympy_symbols_map(feature_names_in),
-        **(extra_sympy_mappings if extra_sympy_mappings is not None else {}),
         **sympy_mappings,
+        **(extra_sympy_mappings if extra_sympy_mappings is not None else {}),
     }
 
     try:
