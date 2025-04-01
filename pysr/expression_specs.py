@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import copy
 from abc import ABC, abstractmethod
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any, NewType, TypeAlias, overload
+from typing import TYPE_CHECKING, Any, NewType, overload
 
 import numpy as np
 import pandas as pd
@@ -9,6 +11,11 @@ import pandas as pd
 from .export import add_export_formats
 from .julia_helpers import jl_array
 from .julia_import import AnyValue, SymbolicRegression, jl
+
+try:
+    from typing import TypeAlias
+except ImportError:
+    from typing_extensions import TypeAlias
 
 # For type checking purposes
 if TYPE_CHECKING:

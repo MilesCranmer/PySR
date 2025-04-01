@@ -1,5 +1,7 @@
 """Define the PySRRegressor scikit-learn interface."""
 
+from __future__ import annotations
+
 import copy
 import logging
 import os
@@ -13,7 +15,7 @@ from dataclasses import dataclass, fields
 from io import StringIO
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any, List, Literal, Tuple, Union, cast
 
 import numpy as np
 import pandas as pd
@@ -94,7 +96,7 @@ def _process_constraints(
                 )
             constraints[op] = (-1, -1)
 
-        constraint_tuple = cast(tuple[int, int], constraints[op])
+        constraint_tuple = cast(Tuple[int, int], constraints[op])
         if op in ["plus", "sub", "+", "-"]:
             if constraint_tuple[0] != constraint_tuple[1]:
                 raise NotImplementedError(
@@ -1313,7 +1315,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     def julia_state_(self):
         """The deserialized state."""
         return cast(
-            tuple[VectorValue, AnyValue] | None,
+            Union[Tuple[VectorValue, AnyValue], None],
             jl_deserialize(self.julia_state_stream_),
         )
 
@@ -1640,7 +1642,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             raw_out = self._validate_data(X=X, y=y, reset=True, multi_output=True)  # type: ignore
         else:
             raw_out = validate_data(self, X=X, y=y, reset=True, multi_output=True)  # type: ignore
-        return cast(tuple[ndarray, ndarray], raw_out)
+        return cast(Tuple[ndarray, ndarray], raw_out)
 
     def _validate_data_X(self, X: Any) -> ndarray:
         if OLD_SKLEARN:
@@ -2629,7 +2631,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         _validate_export_mappings(self.extra_jax_mappings, self.extra_torch_mappings)
 
-        equation_file_contents = cast(list[pd.DataFrame], self.equation_file_contents_)
+        equation_file_contents = cast(List[pd.DataFrame], self.equation_file_contents_)
 
         ret_outputs = [
             pd.concat(
