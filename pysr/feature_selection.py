@@ -1,5 +1,7 @@
 """Functions for doing feature selection during preprocessing."""
 
+from __future__ import annotations
+
 import logging
 from typing import cast
 

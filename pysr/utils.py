@@ -4,15 +4,15 @@ import difflib
 import inspect
 import re
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Union, List
 
 from numpy import ndarray
 from sklearn.utils.validation import _check_feature_names_in  # type: ignore
 
 T = TypeVar("T", bound=Any)
 
-ArrayLike = ndarray | list[T]
-PathLike = str | Path
+ArrayLike = Union[ndarray, List[T]]
+PathLike = Union[str, Path]
 
 
 _regexp_im = re.compile(r"\b(\d+\.\d+)im\b")
