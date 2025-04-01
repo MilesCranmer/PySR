@@ -15,7 +15,7 @@ from dataclasses import dataclass, fields
 from io import StringIO
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Any, Literal, cast, Tuple, Union, List
+from typing import Any, List, Literal, Tuple, Union, cast
 
 import numpy as np
 import pandas as pd

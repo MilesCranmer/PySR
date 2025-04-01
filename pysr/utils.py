@@ -4,7 +4,7 @@ import difflib
 import inspect
 import re
 from pathlib import Path
-from typing import Any, TypeVar, Union, List
+from typing import Any, List, TypeVar, Union
 
 from numpy import ndarray
 from sklearn.utils.validation import _check_feature_names_in  # type: ignore
