@@ -18,7 +18,8 @@ WORKDIR /pysr
 # Install PySR:
 # We do a minimal copy so it doesn't need to rerun at every file change:
 ADD ./pyproject.toml /pysr/pyproject.toml
-ADD ./setup.py /pysr/setup.py
+ADD ./LICENSE /pysr/LICENSE
+ADD ./README.md /pysr/README.md
 
 RUN mkdir /pysr/pysr
 ADD ./pysr/*.py /pysr/pysr/
