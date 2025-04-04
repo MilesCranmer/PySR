@@ -20,7 +20,7 @@ Stage: runtime
 
 %files
 	./pyproject.toml /pysr/pyproject.toml
-	./setup.py /pysr/setup.py
+	./LICENSE /pysr/LICENSE
 	./pysr /pysr/pysr
 
 %post

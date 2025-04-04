@@ -20,7 +20,7 @@ WORKDIR /pysr
 # Install PySR:
 # We do a minimal copy so it doesn't need to rerun at every file change:
 ADD ./pyproject.toml /pysr/pyproject.toml
-ADD ./setup.py /pysr/setup.py
+ADD ./LICENSE /pysr/LICENSE
 ADD ./pysr /pysr/pysr
 RUN pip3 install --no-cache-dir .
 
