@@ -4,9 +4,19 @@ from __future__ import annotations
 
 from typing import Literal
 
+from .julia_helpers import KNOWN_CLUSTERMANAGER_BACKENDS
 from .julia_import import Pkg, jl
 from .julia_registry_helpers import try_with_registry_fallback
 from .logger_specs import AbstractLoggerSpec, TensorBoardLoggerSpec
+
+PACKAGE_UUIDS = {
+    "LoopVectorization": "bdcacae8-1622-11e9-2a5c-532679323890",
+    "Bumper": "8ce10254-0962-460f-a3d8-1f77fea1446e",
+    "Zygote": "e88e6eb3-aa80-5325-afca-941959d7151f",
+    "SlurmClusterManager": "c82cd089-7bf7-41d7-976b-6b5d413cbe0a",
+    "ClusterManagers": "34f1f09b-3a8b-5176-ab39-66d58a4d544e",
+    "TensorBoardLogger": "899adc3e-224a-11e9-021f-63837185c80f",
+}
 
 
 def load_required_packages(
@@ -18,26 +28,24 @@ def load_required_packages(
     logger_spec: AbstractLoggerSpec | None = None,
 ):
     if turbo:
-        load_package("LoopVectorization", "bdcacae8-1622-11e9-2a5c-532679323890")
+        load_package("LoopVectorization")
     if bumper:
-        load_package("Bumper", "8ce10254-0962-460f-a3d8-1f77fea1446e")
+        load_package("Bumper")
     if autodiff_backend is not None:
-        load_package("Zygote", "e88e6eb3-aa80-5325-afca-941959d7151f")
+        load_package("Zygote")
     if cluster_manager is not None:
-        load_package("ClusterManagers", "34f1f09b-3a8b-5176-ab39-66d58a4d544e")
+        if cluster_manager == "slurm_native":
+            load_package("SlurmClusterManager")
+        elif cluster_manager in KNOWN_CLUSTERMANAGER_BACKENDS:
+            load_package("ClusterManagers")
     if isinstance(logger_spec, TensorBoardLoggerSpec):
-        load_package("TensorBoardLogger", "899adc3e-224a-11e9-021f-63837185c80f")
+        load_package("TensorBoardLogger")
 
 
 def load_all_packages():
     """Install and load all Julia extensions available to PySR."""
-    load_required_packages(
-        turbo=True,
-        bumper=True,
-        autodiff_backend="Zygote",
-        cluster_manager="slurm",
-        logger_spec=TensorBoardLoggerSpec(log_dir="logs"),
-    )
+    for package_name, uuid_s in PACKAGE_UUIDS.items():
+        load_package(package_name, uuid_s)
 
 
 # TODO: Refactor this file so we can install all packages at once using `juliapkg`,
@@ -48,7 +56,8 @@ def isinstalled(uuid_s: str):
     return jl.haskey(Pkg.dependencies(), jl.Base.UUID(uuid_s))
 
 
-def load_package(package_name: str, uuid_s: str) -> None:
+def load_package(package_name: str, uuid_s: str | None = None) -> None:
+    uuid_s = uuid_s or PACKAGE_UUIDS[package_name]
     if not isinstalled(uuid_s):
 
         def _add_package():
