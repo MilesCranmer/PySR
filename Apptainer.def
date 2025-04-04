@@ -21,6 +21,7 @@ Stage: runtime
 %files
 	./pyproject.toml /pysr/pyproject.toml
 	./LICENSE /pysr/LICENSE
+	./README.md /pysr/README.md
 	./pysr /pysr/pysr
 
 %post

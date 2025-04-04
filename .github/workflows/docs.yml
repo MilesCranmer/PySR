@@ -8,7 +8,6 @@ on:
       - 'pysr/**'
       - '.github/workflows/docs.yml'
       - 'docs/**'
-      - 'setup.py'
       - 'README.md'
       - 'mkdocs.yml'
   workflow_dispatch:
