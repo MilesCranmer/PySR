@@ -1,5 +1,7 @@
 """Define utilities to export to sympy"""
 
+from __future__ import annotations
+
 from collections.abc import Callable
 
 import sympy  # type: ignore
@@ -13,6 +15,7 @@ sympy_mappings = {
     "mult": lambda x, y: x * y,
     "sqrt": lambda x: sympy.sqrt(x),
     "sqrt_abs": lambda x: sympy.sqrt(abs(x)),
+    "cbrt": lambda x: sympy.sign(x) * sympy.cbrt(abs(x)),
     "square": lambda x: x**2,
     "cube": lambda x: x**3,
     "plus": lambda x, y: x + y,
@@ -55,6 +58,9 @@ sympy_mappings = {
     "max": lambda x, y: sympy.Piecewise((y, x < y), (x, True)),
     "min": lambda x, y: sympy.Piecewise((x, x < y), (y, True)),
     "greater": lambda x, y: sympy.Piecewise((1.0, x > y), (0.0, True)),
+    "less": lambda x, y: sympy.Piecewise((1.0, x < y), (0.0, True)),
+    "greater_equal": lambda x, y: sympy.Piecewise((1.0, x >= y), (0.0, True)),
+    "less_equal": lambda x, y: sympy.Piecewise((1.0, x <= y), (0.0, True)),
     "cond": lambda x, y: sympy.Piecewise((y, x > 0), (0.0, True)),
     "logical_or": lambda x, y: sympy.Piecewise((1.0, (x > 0) | (y > 0)), (0.0, True)),
     "logical_and": lambda x, y: sympy.Piecewise((1.0, (x > 0) & (y > 0)), (0.0, True)),
@@ -84,8 +90,8 @@ def pysr2sympy(
         feature_names_in = []
     local_sympy_mappings = {
         **create_sympy_symbols_map(feature_names_in),
-        **(extra_sympy_mappings if extra_sympy_mappings is not None else {}),
         **sympy_mappings,
+        **(extra_sympy_mappings if extra_sympy_mappings is not None else {}),
     }
 
     try:

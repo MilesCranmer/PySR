@@ -1,5 +1,7 @@
 """Utilities for managing Julia registry preferences during package operations."""
 
+from __future__ import annotations
+
 import os
 import warnings
 from collections.abc import Callable

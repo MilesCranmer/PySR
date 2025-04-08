@@ -1,5 +1,7 @@
 """This file installs and loads extensions for SymbolicRegression."""
 
+from __future__ import annotations
+
 from typing import Literal
 
 from .julia_import import Pkg, jl

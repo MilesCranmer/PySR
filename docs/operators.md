@@ -16,9 +16,12 @@ it can exponentially increase the search space.
 |--------------|------------|----------|
 | `+`          | `max`      | `logical_or`[^2] |
 | `-`          | `min`      | `logical_and`[^3]|
-| `*`          | `greater`[^4] |                 |
-| `/`          | `cond`[^5]   |                 |
-| `^`          | `mod`      |                 |
+| `*`          | `>`[^4]    |                 |
+| `/`          | `>=`       |                 |
+| `^`          | `<`        |                 |
+|              | `<=`       |                 |
+|              | `cond`[^5] |                 |
+|              | `mod`      |                 |
 
 **Unary Operators**
 
@@ -74,5 +77,5 @@ any invalid values over the training dataset.
 [^1]: However, you will need to define a sympy equivalent in `extra_sympy_mapping` if you want to use a function not in the above list.
 [^2]: `logical_or` is equivalent to `(x, y) -> (x > 0 || y > 0) ? 1 : 0`
 [^3]: `logical_and` is equivalent to `(x, y) -> (x > 0 && y > 0) ? 1 : 0`
-[^4]: `greater` is equivalent to `(x, y) -> x > y ? 1 : 0`
+[^4]: `>` is equivalent to `(x, y) -> x > y ? 1 : 0`
 [^5]: `cond` is equivalent to `(x, y) -> x > 0 ? y : 0`

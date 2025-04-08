@@ -1,3 +1,4 @@
+import functools
 import importlib
 import os
 import pickle as pkl
@@ -7,11 +8,18 @@ import traceback
 import unittest
 import warnings
 from pathlib import Path
+from textwrap import dedent
 
 import numpy as np
 import pandas as pd
 import sympy  # type: ignore
-from sklearn.utils.estimator_checks import check_estimator
+
+try:
+    from sklearn.utils.estimator_checks import estimator_checks_generator
+except ImportError:
+    from sklearn.utils.estimator_checks import check_estimator
+
+    estimator_checks_generator = functools.partial(check_estimator, generate_only=True)
 
 from pysr import (
     ParametricExpressionSpec,
@@ -44,6 +52,9 @@ from .params import (
 os.environ["SYMBOLIC_REGRESSION_IS_TESTING"] = os.environ.get(
     "SYMBOLIC_REGRESSION_IS_TESTING", "true"
 )
+
+# Import from juliacall at end:
+from juliacall import JuliaError  # type: ignore
 
 
 class TestPipeline(unittest.TestCase):
@@ -95,9 +106,16 @@ class TestPipeline(unittest.TestCase):
         )
 
     def test_multiprocessing_turbo_custom_objective(self):
+        for loss_key in ["loss_function", "loss_function_expression"]:
+            with self.subTest(loss_key=loss_key):
+                self._multiprocessing_turbo_custom_objective(loss_key)
+
+    def _multiprocessing_turbo_custom_objective(self, loss_key):
         rstate = np.random.RandomState(0)
         y = self.X[:, 0]
         y += rstate.randn(*y.shape) * 1e-4
+
+        node_type = "Expression" if loss_key == "loss_function_expression" else "Node"
         model = PySRRegressor(
             **self.default_test_kwargs,
             # Turbo needs to work with unsafe operators:
@@ -106,14 +124,16 @@ class TestPipeline(unittest.TestCase):
             parallelism="multiprocessing",
             turbo=True,
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-10 && complexity == 1",
-            loss_function="""
-            function my_objective(tree::Node{T}, dataset::Dataset{T}, options::Options) where T
+            **{
+                loss_key: f"""
+            function my_objective(tree::{node_type}{{T}}, dataset::Dataset{{T}}, options::Options) where T
                 prediction, flag = eval_tree_array(tree, dataset.X, options)
                 !flag && return T(Inf)
                 abs3(x) = abs(x) ^ 3
                 return sum(abs3, prediction .- dataset.y) / length(prediction)
             end
-            """,
+            """
+            },
         )
         model.fit(self.X, y)
         print(model.equations_)
@@ -578,6 +598,50 @@ class TestPipeline(unittest.TestCase):
         with self.assertRaises(ValueError):
             model.latex_table()
 
+    def test_template_expression_with_parameters(self):
+        # Create random data
+        X_continuous = self.rstate.uniform(-1, 1, (100, 2))
+        category = self.rstate.randint(0, 3, 100)  # 3 classes
+        X = np.hstack([X_continuous, category[:, None] + 1])
+
+        # Ground truth: p[class] * x1^2 + x2 where p = [0.5, 1.0, 2.0]
+        true_p = [0.5, 1.0, 2.0]
+        y = np.array(
+            [true_p[c] * x1**2 + x2 for x1, x2, c in zip(X[:, 0], X[:, 1], category)]
+        )
+
+        # Create model with template that includes parameters
+        model = PySRRegressor(
+            **self.default_test_kwargs,
+            expression_spec=TemplateExpressionSpec(
+                "p[class] * x1^2 + f(x2)",
+                expressions=["f"],
+                parameters={"p": 3},
+                variable_names=["x1", "x2", "class"],
+            ),
+            binary_operators=["+", "-", "*", "/"],
+            unary_operators=[],
+            maxsize=10,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-10 && complexity <= 3",
+        )
+
+        model.fit(X, y)
+
+        # Test on new data
+        X_continuous_test = self.rstate.uniform(-1, 1, (25, 2))
+        category_test = self.rstate.randint(0, 3, 25)
+        X_test = np.hstack([X_continuous_test, category_test[:, None] + 1])
+        y_test = np.array(
+            [
+                true_p[c] * x1**2 + x2
+                for x1, x2, c in zip(X_test[:, 0], X_test[:, 1], category_test)
+            ]
+        )
+        y_pred = model.predict(X_test)
+
+        test_mse = np.mean((y_test - y_pred) ** 2)
+        self.assertLess(test_mse, 1e-5)
+
     def test_parametric_expression(self):
         # Create data with two classes
         n_points = 100
@@ -693,6 +757,25 @@ class TestPipeline(unittest.TestCase):
 
                 # Verify model still works as expected
                 self.assertLessEqual(model.get_best()["loss"], 1e-4)
+
+    def test_comparison_operator(self):
+        X = self.rstate.randn(100, 2)
+        y = ((X[:, 0] + X[:, 1]) < (X[:, 0] * X[:, 1])).astype(float)
+
+        model = PySRRegressor(
+            binary_operators=["<", "+", "*"],
+            **self.default_test_kwargs,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity <= 7",
+        )
+
+        model.fit(X, y)
+
+        best_equation = model.get_best()["equation"]
+        self.assertIn("less", best_equation)
+        self.assertLessEqual(model.get_best()["loss"], 1e-4)
+
+        y_pred = model.predict(X)
+        np.testing.assert_array_almost_equal(y, y_pred, decimal=3)
 
 
 def manually_create_model(equations, feature_names=None):
@@ -873,9 +956,8 @@ class TestMiscellaneous(unittest.TestCase):
             temp_equation_file=True,
         )  # Return early.
 
-        check_generator = check_estimator(model, generate_only=True)
         exception_messages = []
-        for _, check in check_generator:
+        for _, check in estimator_checks_generator(model):
             if check.func.__name__ in {
                 # We can use complex data, so avoid this check
                 "check_complex_data",
@@ -982,17 +1064,6 @@ class TestHelpMessages(unittest.TestCase):
                 model.fit(X, y)
             self.assertIn("more than 10,000", str(context.exception))
 
-    def test_feature_warning(self):
-        """Ensure that a warning is given for large number of features."""
-        model = PySRRegressor()
-        X = np.random.randn(100, 10)
-        y = np.random.randn(100)
-        with warnings.catch_warnings():
-            warnings.simplefilter("error")
-            with self.assertRaises(Exception) as context:
-                model.fit(X, y)
-            self.assertIn("with 10 features or more", str(context.exception))
-
     def test_deterministic_warnings(self):
         """Ensure that warnings are given for determinism"""
         model = PySRRegressor(random_state=0)
@@ -1046,9 +1117,9 @@ class TestHelpMessages(unittest.TestCase):
         bad_kwargs = [
             dict(
                 kwargs=dict(
-                    elementwise_loss="g(x, y) = 0.0", loss_function="f(*args) = 0.0"
+                    elementwise_loss="g(x, y) = 0.0", loss_function="f(args...) = 0.0"
                 ),
-                error=ValueError,
+                error=JuliaError,
             ),
             dict(
                 kwargs=dict(maxsize=3),
@@ -1089,7 +1160,8 @@ class TestHelpMessages(unittest.TestCase):
     def test_suggest_keywords(self):
         # Easy
         self.assertEqual(
-            _suggest_keywords(PySRRegressor, "loss_function"), ["loss_function"]
+            _suggest_keywords(PySRRegressor, "loss_function"),
+            ["loss_function", "loss_function_expression"],
         )
 
         # More complex, and with error
@@ -1464,6 +1536,121 @@ class TestDimensionalConstraints(unittest.TestCase):
 
 
 # TODO: Determine desired behavior if second .fit() call does not have units
+
+
+class TestTemplateExpressionSpec(unittest.TestCase):
+    def _check_macro_str(self, spec, expected_str):
+        self.assertEqual(
+            spec._template_macro_str().strip(), dedent(expected_str).strip()
+        )
+
+    def test_single_expression_no_params_single_variable(self):
+        spec = TemplateExpressionSpec(
+            combine="f(x)", expressions=["f"], variable_names=["x"]
+        )
+        self._check_macro_str(
+            spec,
+            """\
+            @template_spec(expressions=(f,),) do x
+                f(x)
+            end
+            """,
+        )
+
+    def test_multiple_expressions_no_params_multiple_variables(self):
+        spec = TemplateExpressionSpec(
+            combine="f(x, y) + g(z)",
+            expressions=["f", "g"],
+            variable_names=["x", "y", "z"],
+        )
+        self._check_macro_str(
+            spec,
+            """
+            @template_spec(expressions=(f, g,),) do x, y, z
+                f(x, y) + g(z)
+            end
+            """,
+        )
+
+    def test_single_expression_single_param_single_variable(self):
+        spec = TemplateExpressionSpec(
+            combine="p[1] * f(x)",
+            expressions=["f"],
+            variable_names=["x"],
+            parameters={"p": 1},
+        )
+        self._check_macro_str(
+            spec,
+            """
+            @template_spec(expressions=(f,), parameters=(p=1,),) do x
+                p[1] * f(x)
+            end
+            """,
+        )
+
+    def test_multiple_expressions_multiple_params_multiple_variables(self):
+        spec = TemplateExpressionSpec(
+            combine="p1[1]*f(x,y) + p2[1]*g(z)",
+            expressions=["f", "g"],
+            variable_names=["x", "y", "z"],
+            parameters={"p1": 2, "p2": 3},
+        )
+        self._check_macro_str(
+            spec,
+            """
+            @template_spec(expressions=(f, g,), parameters=(p1=2, p2=3,),) do x, y, z
+                p1[1]*f(x,y) + p2[1]*g(z)
+            end
+            """,
+        )
+
+    def test_complex_variable_names(self):
+        spec = TemplateExpressionSpec(
+            combine="f(var1) * g(var2)",
+            expressions=["f", "g"],
+            variable_names=["var1", "var2"],
+        )
+        self._check_macro_str(
+            spec,
+            """
+            @template_spec(expressions=(f, g,),) do var1, var2
+                f(var1) * g(var2)
+            end
+            """,
+        )
+
+    def test_mixed_parameter_types(self):
+        spec = TemplateExpressionSpec(
+            combine="alpha*f(x) + beta*g(y)",
+            expressions=["f", "g"],
+            variable_names=["x", "y"],
+            parameters={"alpha": 1, "beta": 2},
+        )
+        self._check_macro_str(
+            spec,
+            """
+            @template_spec(expressions=(f, g,), parameters=(alpha=1, beta=2,),) do x, y
+                alpha*f(x) + beta*g(y)
+            end
+            """,
+        )
+
+    def test_empty_parameters_case(self):
+        spec = TemplateExpressionSpec(
+            combine="f(x)", expressions=["f"], variable_names=["x"], parameters={}
+        )
+        self.assertNotIn("parameters", spec._template_macro_str())
+
+    def test_maximum_parameters_expressions(self):
+        spec = TemplateExpressionSpec(
+            combine=" + ".join([f"f{i}(x)" for i in range(5)]),
+            expressions=[f"f{i}" for i in range(5)],
+            variable_names=["x"],
+            parameters={f"p{i}": i + 1 for i in range(5)},
+        )
+        macro_str = spec._template_macro_str()
+        self.assertIn("expressions=(f0, f1, f2, f3, f4,),", macro_str)
+        self.assertIn("parameters=(p0=1, p1=2, p2=3, p3=4, p4=5,),", macro_str)
 
 
 def runtests(just_tests=False):

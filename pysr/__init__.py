@@ -1,4 +1,13 @@
+from __future__ import annotations
+
+import logging
 import os
+
+pysr_logger = logging.getLogger("pysr")
+pysr_logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+handler.setLevel(logging.INFO)
+pysr_logger.addHandler(handler)
 
 if os.environ.get("PYSR_USE_BEARTYPE", "0") == "1":
     from beartype.claw import beartype_this_package
