@@ -295,3 +295,19 @@ papers:
     abstract: "The industrialization of catalytic processes requires reliable kinetic models for their design, optimization and control. Mechanistic models require significant domain knowledge, while data-driven and hybrid models lack interpretability. Automated knowledge discovery methods, such as ALAMO (Automated Learning of Algebraic Models for Optimization), SINDy (Sparse Identification of Nonlinear Dynamics), and genetic programming, have gained popularity but suffer from limitations such as needing model structure assumptions, exhibiting poor scalability, and displaying sensitivity to noise. To overcome these challenges, we propose two methodological frameworks, ADoK-S and ADoK-W (Automated Discovery of Kinetic rate models using a Strong/Weak formulation of symbolic regression), for the automated generation of catalytic kinetic models using a robust criterion for model selection. We leverage genetic programming for model generation and a sequential optimization routine for model refinement. The frameworks are tested against three case studies of increasing complexity, demonstrating their ability to retrieve the underlying kinetic rate model with limited noisy data from the catalytic systems, showcasing their potential for chemical reaction engineering applications."
     image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/refs/heads/master/images/adok_s_results.jpg
     date: 2024-03-22
+  - title: Symbolic regression for precision LHC physics
+    authors:
+      - Manuel Morales-Alvarado (1)
+      - Daniel Conde (2)
+      - Josh Bendavid (3)
+      - Veronica Sanz (2)
+      - Maria Ubiali (4)
+    affiliations:
+       1: Istituto Nazionale di Fisica Nucleare
+       2: Universidad de Valencia
+       3: Massachusetts Institute of Technology
+       4: University of Cambridge
+    link: https://inspirehep.net/literature/2858279
+    abstract: We study the potential of symbolic regression (SR) to derive compact and precise analytic expressions that can improve the accuracy and simplicity of phenomenological analyses at the Large Hadron Collider (LHC). As a benchmark, we apply SR to equation recovery in quantum electrodynamics (QED), where established analytical results from quantum field theory provide a reliable framework for evaluation. This benchmark serves to validate the performance and reliability of SR before extending its application to structure functions in the Drell-Yan process mediated by virtual photons, which lack analytic representations from first principles. By combining the simplicity of analytic expressions with the predictive power of machine learning techniques, SR offers a useful tool for facilitating phenomenological analyses in high energy physics.
+    image: https://github.com/MilesCranmer/PySR_Docs/blob/master/images/hep_sr_img.png
+    date: 2024-12-10
