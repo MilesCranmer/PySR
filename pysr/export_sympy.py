@@ -12,6 +12,7 @@ from .utils import ArrayLike
 
 sympy_mappings = {
     "div": lambda x, y: x / y,
+    "inv": lambda x: 1 / x,
     "mult": lambda x, y: x * y,
     "sqrt": lambda x: sympy.sqrt(x),
     "sqrt_abs": lambda x: sympy.sqrt(abs(x)),
