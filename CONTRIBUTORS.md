@@ -42,7 +42,7 @@ Scan through our [existing issues](https://github.com/MilesCranmer/PySR/issues) 
 check out the [guide](https://ai.damtp.cam.ac.uk/pysr/backend/) on modifying a custom SymbolicRegression.jl library.
 In this case, you might instead be interested in making suggestions to the [SymbolicRegression.jl](http://github.com/MilesCranmer/SymbolicRegression.jl) library.
 
-4. You can install your local version of PySR with `python setup.py install`, and run tests with `python -m pysr test main`.
+4. You can install your local version of PySR with `pip install -e '.[dev]'`, and run tests with `python -m pysr test main`.
 
 ### Commit your update
 

@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "pysr"
@@ -24,7 +24,6 @@ dependencies = [
     "scikit_learn>=1.0.0,<2.0.0",
     "juliacall==0.9.24",
     "click>=7.0.0,<9.0.0",
-    "setuptools>=50.0.0",
     "typing-extensions>=4.0.0,<5.0.0",
 ]
 
@@ -48,14 +47,6 @@ dev = [
     "types-openpyxl",
     "types-pytz",
 ]
-
-[tool.setuptools]
-packages = ["pysr", "pysr._cli", "pysr.test"]
-include-package-data = false
-package-data = {pysr = ["juliapkg.json"]}
-
-[tool.setuptools.dynamic]
-dependencies = {file = "requirements.txt"}
 
 [tool.isort]
 profile = "black"
