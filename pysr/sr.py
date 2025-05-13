@@ -15,10 +15,11 @@ from dataclasses import dataclass, fields
 from io import StringIO
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Any, List, Literal, Tuple, Union, cast
+from typing import Any, Literal, Tuple, Union, cast
 
 import numpy as np
 import pandas as pd
+from beartype.typing import List
 from numpy import ndarray
 from numpy.typing import NDArray
 from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
