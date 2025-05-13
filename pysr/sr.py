@@ -2638,11 +2638,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 [
                     output,
                     calculate_scores(output),
-                    self.expression_spec_.create_exports(self, output, search_output),
+                    self.expression_spec_.create_exports(
+                        self, output, search_output, i if self.nout_ > 1 else None
+                    ),
                 ],
                 axis=1,
             )
-            for output in equation_file_contents
+            for i, output in enumerate(equation_file_contents)
         ]
 
         if self.nout_ > 1:
