@@ -328,7 +328,7 @@ def parametric_expression_deprecation_warning(
     combine_example = f"{function_name}({', '.join(variable_names + param_uses)})"
 
     message = (
-        "ParametricExpressionSpec is deprecated and will be removed in a future version. "
+        "ParametricExpressionSpec is deprecated. "
         "Please use TemplateExpressionSpec with parameters indexed by category instead.\n\n"
         "You could consider updating your code to use: \n"
         "```\n"
