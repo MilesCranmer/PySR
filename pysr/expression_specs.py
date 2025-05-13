@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import warnings
 from abc import ABC, abstractmethod
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, NewType, overload
@@ -11,6 +12,7 @@ import pandas as pd
 from .export import add_export_formats
 from .julia_helpers import jl_array
 from .julia_import import AnyValue, SymbolicRegression, jl
+from .utils import ArrayLike
 
 try:
     from typing import TypeAlias
@@ -316,8 +318,39 @@ class TemplateExpressionSpec(AbstractExpressionSpec):
         return _search_output_to_callable_expressions(equations, search_output)
 
 
+def parametric_expression_deprecation_warning(
+    max_parameters: int, variable_names: ArrayLike[str]
+):
+    param_defs = [f'"p{i+1}": n_categories' for i in range(max_parameters)]
+    param_uses = [f"p{i+1}[category]" for i in range(max_parameters)]
+    function_name = "f"
+    variable_names = list(variable_names)
+    combine_example = f"{function_name}({', '.join(variable_names + param_uses)})"
+
+    message = (
+        "ParametricExpressionSpec is deprecated and will be removed in a future version. "
+        "Please use TemplateExpressionSpec with parameters indexed by category instead.\n\n"
+        "You could consider updating your code to use: \n"
+        "```\n"
+        "expression_spec = TemplateExpressionSpec(\n"
+        f'    expressions=["{function_name}"],\n'
+        f"    variable_names=[{', '.join(f'"{v}"' for v in variable_names + ['category'])}],\n"
+        f"    parameters={{{', '.join(param_defs)}}},\n"
+        f'    combine="{combine_example}",\n'
+        ")\n"
+        "```\n"
+        "where `n_categories` should be calculated as: `n_categories = len(np.unique(category))`.\n"
+        "Then, add the category as a column in X: `X = np.column_stack([X, category])`, and avoid passing `category` to `fit`.\n"
+    )
+
+    warnings.warn(message, DeprecationWarning, stacklevel=2)
+
+
 class ParametricExpressionSpec(AbstractExpressionSpec):
     """Spec for parametric expressions that vary by category.
+
+    **This is deprecated in favor of the `TemplateExpressionSpec` class,
+    which now supports parameters indexed by category.**
 
     This class allows you to specify expressions with parameters that vary across different
     categories in your dataset. The expression structure remains the same, but parameters

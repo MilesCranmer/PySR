@@ -39,6 +39,7 @@ from .expression_specs import (
     AbstractExpressionSpec,
     ExpressionSpec,
     ParametricExpressionSpec,
+    parametric_expression_deprecation_warning,
 )
 from .feature_selection import run_feature_selection
 from .julia_extensions import load_required_packages
@@ -2250,6 +2251,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         random_state = check_random_state(self.random_state)  # For np random
         seed = cast(int, random_state.randint(0, 2**31 - 1))  # For julia random
+
+        if isinstance(self.expression_spec, ParametricExpressionSpec):
+            parametric_expression_deprecation_warning(
+                self.expression_spec.max_parameters, variable_names
+            )
 
         # Pre transformations (feature selection and denoising)
         X, y, variable_names, complexity_of_variables, X_units, y_units = (
