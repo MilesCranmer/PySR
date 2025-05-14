@@ -334,7 +334,7 @@ def parametric_expression_deprecation_warning(
         "```\n"
         "expression_spec = TemplateExpressionSpec(\n"
         f'    expressions=["{function_name}"],\n'
-        f"    variable_names=[{', '.join(f'"{v}"' for v in variable_names + ['category'])}],\n"
+        f"    variable_names=[{', '.join(f'\"{v}\"' for v in variable_names + ['category'])}],\n"
         f"    parameters={{{', '.join(param_defs)}}},\n"
         f'    combine="{combine_example}",\n'
         ")\n"
