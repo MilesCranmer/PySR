@@ -55,6 +55,7 @@ class AbstractExpressionSpec(ABC):
         model: PySRRegressor,
         equations: pd.DataFrame,
         search_output,
+        i: int | None = None,
     ) -> pd.DataFrame:
         """Create additional columns in the equations dataframe."""
         pass  # pragma: no cover
@@ -91,6 +92,7 @@ class ExpressionSpec(AbstractExpressionSpec):
         model: PySRRegressor,
         equations: pd.DataFrame,
         search_output,
+        i: int | None = None,
     ):
         return add_export_formats(
             equations,
@@ -309,11 +311,12 @@ class TemplateExpressionSpec(AbstractExpressionSpec):
         model: PySRRegressor,
         equations: pd.DataFrame,
         search_output,
+        i: int | None = None,
     ) -> pd.DataFrame:
         # We try to load the raw julia state from a saved binary stream
         # if not provided.
         search_output = search_output or model.julia_state_
-        return _search_output_to_callable_expressions(equations, search_output)
+        return _search_output_to_callable_expressions(equations, search_output, i)
 
 
 class ParametricExpressionSpec(AbstractExpressionSpec):
@@ -361,9 +364,10 @@ class ParametricExpressionSpec(AbstractExpressionSpec):
         model: PySRRegressor,
         equations: pd.DataFrame,
         search_output,
+        i: int | None = None,
     ):
         search_output = search_output or model.julia_state_
-        return _search_output_to_callable_expressions(equations, search_output)
+        return _search_output_to_callable_expressions(equations, search_output, i)
 
 
 class CallableJuliaExpression:
@@ -376,10 +380,11 @@ class CallableJuliaExpression:
 
 
 def _search_output_to_callable_expressions(
-    equations: pd.DataFrame, search_output
+    equations: pd.DataFrame, search_output, i: int | None
 ) -> pd.DataFrame:
     equations = copy.deepcopy(equations)
-    (_, out_hof) = search_output
+    (_, all_out_hof) = search_output
+    out_hof = all_out_hof[i] if i is not None else all_out_hof
     expressions = []
     callables = []
 

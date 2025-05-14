@@ -31,6 +31,7 @@ from pysr import (
     load_all_packages,
 )
 from pysr.export_latex import sympy2latex
+from pysr.export_sympy import pysr2sympy
 from pysr.feature_selection import _handle_feature_selection, run_feature_selection
 from pysr.julia_helpers import init_julia
 from pysr.sr import (
@@ -598,7 +599,7 @@ class TestPipeline(unittest.TestCase):
         with self.assertRaises(ValueError):
             model.latex_table()
 
-    def test_template_expression_with_parameters(self):
+    def test_template_expression_with_parameters_multiout(self):
         # Create random data
         X_continuous = self.rstate.uniform(-1, 1, (100, 2))
         category = self.rstate.randint(0, 3, 100)  # 3 classes
@@ -606,9 +607,11 @@ class TestPipeline(unittest.TestCase):
 
         # Ground truth: p[class] * x1^2 + x2 where p = [0.5, 1.0, 2.0]
         true_p = [0.5, 1.0, 2.0]
-        y = np.array(
+        y_1 = np.array(
             [true_p[c] * x1**2 + x2 for x1, x2, c in zip(X[:, 0], X[:, 1], category)]
         )
+        y_2 = y_1 * 2
+        y = np.column_stack([y_1, y_2])
 
         # Create model with template that includes parameters
         model = PySRRegressor(
@@ -631,12 +634,14 @@ class TestPipeline(unittest.TestCase):
         X_continuous_test = self.rstate.uniform(-1, 1, (25, 2))
         category_test = self.rstate.randint(0, 3, 25)
         X_test = np.hstack([X_continuous_test, category_test[:, None] + 1])
-        y_test = np.array(
+        y_test_1 = np.array(
             [
                 true_p[c] * x1**2 + x2
                 for x1, x2, c in zip(X_test[:, 0], X_test[:, 1], category_test)
             ]
         )
+        y_test_2 = y_test_1 * 2
+        y_test = np.column_stack([y_test_1, y_test_2])
         y_pred = model.predict(X_test)
 
         test_mse = np.mean((y_test - y_pred) ** 2)
@@ -902,6 +907,28 @@ class TestFeatureSelection(unittest.TestCase):
 
 class TestMiscellaneous(unittest.TestCase):
     """Test miscellaneous functions."""
+
+    def test_pickle_inv_sympy_expression(self):
+        """Test that sympy expressions with the inv operator can be pickled and unpickled correctly."""
+        expr_str = "inv(x0) + x1"
+        sympy_expr = pysr2sympy(expr_str, feature_names_in=["x0", "x1"])
+
+        # Evaluate the original expression at a test point
+        test_vals = {sympy.Symbol("x0"): 2.0, sympy.Symbol("x1"): 3.0}
+        original_result = float(sympy_expr.subs(test_vals))
+
+        # Pickle and unpickle the sympy expression
+        serialized = pkl.dumps(sympy_expr)
+        deserialized_expr = pkl.loads(serialized)
+
+        # Evaluate the unpickled expression at the same test point
+        unpickled_result = float(deserialized_expr.subs(test_vals))
+
+        # Verify the results match
+        self.assertEqual(original_result, unpickled_result)
+
+        # Check that the same operator mapping was used (1/x for inv)
+        self.assertEqual(original_result, 0.5 + 3.0)  # 1/2 + 3 = 3.5
 
     def test_pickle_with_temp_equation_file(self):
         """If we have a temporary equation file, unpickle the estimator."""

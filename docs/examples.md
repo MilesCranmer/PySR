@@ -625,7 +625,7 @@ the category as a column of `X`:
 spec = TemplateExpressionSpec(
     expressions=["f", "g"],
     variable_names=["x1", "x2", "class"],
-    parameters={"p1": 3, "p2": 1},
+    parameters={"p1": 3, "p2": 3},
     combine="p1[class] * sin(f(x1, x2)) + p2[class]",
 )
 ```
