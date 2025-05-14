@@ -327,15 +327,19 @@ def parametric_expression_deprecation_warning(
     variable_names = list(variable_names)
     combine_example = f"{function_name}({', '.join(variable_names + param_uses)})"
 
+    function_name_str = '"' + function_name + '"'
+    variable_name_str = ", ".join('"' + v + '"' for v in variable_names + ["category"])
+    param_defs_str = "{" + ", ".join(param_defs) + "}"
+
     message = (
         "ParametricExpressionSpec is deprecated. "
         "Please use TemplateExpressionSpec with parameters indexed by category instead.\n\n"
         "You could consider updating your code to use: \n"
         "```\n"
         "expression_spec = TemplateExpressionSpec(\n"
-        f'    expressions=["{function_name}"],\n'
-        f"    variable_names=[{', '.join(f'\"{v}\"' for v in variable_names + ['category'])}],\n"
-        f"    parameters={{{', '.join(param_defs)}}},\n"
+        f"    expressions=[{function_name_str}],\n"
+        f"    variable_names=[{variable_name_str}],\n"
+        f"    parameters={param_defs_str},\n"
         f'    combine="{combine_example}",\n'
         ")\n"
         "```\n"

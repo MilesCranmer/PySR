@@ -1037,7 +1037,9 @@ class TestMiscellaneous(unittest.TestCase):
         pattern = re.compile(
             r"ParametricExpressionSpec is deprecated"
             r".*TemplateExpressionSpec"
+            r".*expressions=\[\"f\"\]"
             r".*variable_names=\[\"alpha\", \"beta\", \"category\"\]"
+            r".*parameters=\{\"p1\": n_categories, \"p2\": n_categories\}"
             r".*combine=\"f\(alpha, beta, p1\[category\], p2\[category\]\)\"",
             flags=re.S,
         )
