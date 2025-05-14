@@ -1044,7 +1044,7 @@ class TestMiscellaneous(unittest.TestCase):
             flags=re.S,
         )
 
-        with self.assertWarnsRegex(DeprecationWarning, pattern):
+        with self.assertWarnsRegex(FutureWarning, pattern):
             parametric_expression_deprecation_warning(
                 max_parameters=2,
                 variable_names=["alpha", "beta"],
