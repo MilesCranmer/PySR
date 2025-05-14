@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import textwrap
 import warnings
 from abc import ABC, abstractmethod
 from textwrap import dedent
@@ -321,33 +322,30 @@ class TemplateExpressionSpec(AbstractExpressionSpec):
 def parametric_expression_deprecation_warning(
     max_parameters: int, variable_names: ArrayLike[str]
 ):
-    param_defs = [f'"p{i+1}": n_categories' for i in range(max_parameters)]
-    param_uses = [f"p{i+1}[category]" for i in range(max_parameters)]
     function_name = "f"
-    variable_names = list(variable_names)
-    combine_example = f"{function_name}({', '.join(variable_names + param_uses)})"
+    var_names = list(variable_names)
+    message = dedent(
+        f"""
+        ParametricExpressionSpec is deprecated – you should switch to TemplateExpressionSpec
+        with explicit parameters indexed by category.
 
-    function_name_str = '"' + function_name + '"'
-    variable_name_str = ", ".join('"' + v + '"' for v in variable_names + ["category"])
-    param_defs_str = "{" + ", ".join(param_defs) + "}"
+        Since you have `max_parameters={max_parameters}` and
+        `variable_names=[{", ".join(f'"{v}"' for v in var_names)}]`, you could migrate like this:
 
-    message = (
-        "ParametricExpressionSpec is deprecated. "
-        "Please use TemplateExpressionSpec with parameters indexed by category instead.\n\n"
-        "You could consider updating your code to use: \n"
-        "```\n"
-        "expression_spec = TemplateExpressionSpec(\n"
-        f"    expressions=[{function_name_str}],\n"
-        f"    variable_names=[{variable_name_str}],\n"
-        f"    parameters={param_defs_str},\n"
-        f'    combine="{combine_example}",\n'
-        ")\n"
-        "```\n"
-        "where `n_categories` should be calculated as: `n_categories = len(np.unique(category))`.\n"
-        "Then, add the category as a column in X: `X = np.column_stack([X, category])`, and avoid passing `category` to `fit`.\n"
-    )
+            n_categories = len(np.unique(category))  # count the number of parameters required
+            expression_spec = TemplateExpressionSpec(
+                expressions=["{function_name}"],
+                variable_names=[{", ".join(f'"{v}"' for v in var_names + ["category"])}],
+                parameters={{{", ".join(f'"p{i+1}": n_categories' for i in range(max_parameters))}}},
+                combine="{function_name}({', '.join(var_names + [f'p{i+1}[category]' for i in range(max_parameters)])})",
+            )
+            X = np.column_stack([X, category])       # add the category column
 
-    warnings.warn(message, FutureWarning, stacklevel=3)
+        Finally, do not pass `category` when calling .fit().
+    """
+    ).strip()
+    wrapped = "\n".join(textwrap.fill(line, 88) for line in message.splitlines())
+    warnings.warn(wrapped, FutureWarning, stacklevel=3)
 
 
 class ParametricExpressionSpec(AbstractExpressionSpec):

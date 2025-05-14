@@ -1035,12 +1035,13 @@ class TestMiscellaneous(unittest.TestCase):
     def test_parametric_deprecation_warning(self):
         """Test that the helpful warning message is displayed."""
         pattern = re.compile(
-            r"ParametricExpressionSpec is deprecated"
-            r".*TemplateExpressionSpec"
-            r".*expressions=\[\"f\"\]"
-            r".*variable_names=\[\"alpha\", \"beta\", \"category\"\]"
-            r".*parameters=\{\"p1\": n_categories, \"p2\": n_categories\}"
-            r".*combine=\"f\(alpha, beta, p1\[category\], p2\[category\]\)\"",
+            r"ParametricExpressionSpec is deprecated.*TemplateExpressionSpec.*"
+            r"max_parameters=2.*"
+            r"variable_names=\[\"alpha\", \"beta\"\].*"
+            r"expressions=\[\"f\"\].*"
+            r"variable_names=\[\"alpha\", \"beta\", \"category\"\].*"
+            r"parameters=\{\s*\"p1\": n_categories,\s*\"p2\": n_categories\s*\}.*"
+            r"combine=\"f\(alpha, beta, p1\[category\], p2\[category\]\)\"",
             flags=re.S,
         )
 
