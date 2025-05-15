@@ -3,6 +3,7 @@ import importlib
 import os
 import pickle as pkl
 import platform
+import re
 import tempfile
 import traceback
 import unittest
@@ -32,6 +33,7 @@ from pysr import (
 )
 from pysr.export_latex import sympy2latex
 from pysr.export_sympy import pysr2sympy
+from pysr.expression_specs import parametric_expression_deprecation_warning
 from pysr.feature_selection import _handle_feature_selection, run_feature_selection
 from pysr.julia_helpers import init_julia
 from pysr.sr import (
@@ -1033,6 +1035,25 @@ class TestMiscellaneous(unittest.TestCase):
 
         # Check the sets are equal:
         self.assertSetEqual(set(params), set(regressor_params))
+
+    def test_parametric_deprecation_warning(self):
+        """Test that the helpful warning message is displayed."""
+        pattern = re.compile(
+            r"ParametricExpressionSpec is deprecated.*TemplateExpressionSpec.*"
+            r"max_parameters=2.*"
+            r"variable_names=\[\"alpha\", \"beta\"\].*"
+            r"expressions=\[\"f\"\].*"
+            r"variable_names=\[\"alpha\", \"beta\", \"category\"\].*"
+            r"parameters=\{\s*\"p1\": n_categories,\s*\"p2\": n_categories\s*\}.*"
+            r"combine=\"f\(alpha, beta, p1\[category\], p2\[category\]\)\"",
+            flags=re.S,
+        )
+
+        with self.assertWarnsRegex(FutureWarning, pattern):
+            parametric_expression_deprecation_warning(
+                max_parameters=2,
+                variable_names=["alpha", "beta"],
+            )
 
     def test_load_all_packages(self):
         """Test we can load all packages at once."""

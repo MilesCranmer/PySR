@@ -560,37 +560,25 @@ model = PySRRegressor(
 model.fit(X, y)
 ```
 
-You can also use parameters in your template expressions, which will be optimized during the search:
-
-```python
-template = TemplateExpressionSpec(
-    expressions=["f", "g"],
-    variable_names=["x1", "x2", "x3"],
-    parameters={"p1": 2, "p2": 1},  # p1 has length 2, p2 has length 1
-    combine="p1[1] * sin(f(x1, x2)) + p1[2] * g(x3) + p2[1]",
-)
-```
-
-This will learn an equation of the form:
-
-$$ y = \alpha_1 \sin(f(x_1, x_2)) + \alpha_2 g(x_3) + \beta $$
-
-where $\alpha_1, \alpha_2$ are stored in `p1` and $\beta$ is stored in `p2`. The parameters will be optimized during the search.
-
 ### Parametric Expressions
 
 When your data has categories with shared equation structure but different parameters,
-you can use a `ParametricExpressionSpec`. Let's say we would like to learn the expression:
+you can use the `parameters` argument of `TemplateExpressionSpec` to specify learned category-specific parameters.
+
+For example, let's say we want to learn an equation of the form:
 
 $$ y = \alpha \sin(x_1) + \beta $$
 
-for three different values of $\alpha$ and $\beta$.
+where $\alpha$ and $\beta$ are different for each category.
+
+Further, let's say we have 3 categories,
+with $\alpha \in \{0.1, 1.5, -0.5\}$ and $\beta \in \{1.0, 2.0, 0.5\}$.
 
 ```python
 import numpy as np
-from pysr import PySRRegressor, ParametricExpressionSpec
+from pysr import PySRRegressor, TemplateExpressionSpec
 
-# Create data with 3 categories
+# Create data with 2 features and 3 categories
 X = np.random.uniform(-3, 3, (1000, 2))
 category = np.random.randint(0, 3, 1000)
 
@@ -603,34 +591,48 @@ y = np.array([
     scales[c] * np.sin(x1) + offsets[c]
     for x1, c in zip(X[:, 0], category)
 ])
+```
 
+Now, let's define our parametric expression:
+
+```python
+template = TemplateExpressionSpec(
+    expressions=["f"],
+    variable_names=["x1", "x2", "category"],
+    parameters={"p1": 3, "p2": 3},  # One parameter per category
+    combine="f(x1, x2, p1[category], p2[category])"
+)
+```
+
+Next, we pass the category as a _column_ in `X`
+corresponding to the index we defined in `variable_names`.
+
+**Note that because Julia is 1-indexed, we need to add 1 to the category index.**
+
+```python
+category_p_one = category + 1
+X_with_category = np.column_stack([X, category])
+```
+
+Now, we can fit our model:
+
+```python
 model = PySRRegressor(
-    expression_spec=ParametricExpressionSpec(max_parameters=2),
+    expression_spec=template,
     binary_operators=["+", "*", "-", "/"],
     unary_operators=["sin"],
     maxsize=10,
 )
-model.fit(X, y, category=category)
+model.fit(X_with_category, y)
 
-# Predicting on new data:
-# model.predict(X_test, category=category_test)
+# Predicting on new data
+# model.predict(X_test_with_category)
 ```
 
 See [Expression Specifications](/api/#expression-specifications) for more details.
 
-You can also use `TemplateExpressionSpec` in the same way, passing
-the category as a column of `X`:
-
-```python
-spec = TemplateExpressionSpec(
-    expressions=["f", "g"],
-    variable_names=["x1", "x2", "class"],
-    parameters={"p1": 3, "p2": 3},
-    combine="p1[class] * sin(f(x1, x2)) + p2[class]",
-)
-```
-
-this column will automatically be converted to integers.
+You can use this approach for more complex cases,
+where you have multiple expressions in the template and parameters that vary by category.
 
 
 ## 12. Using TensorBoard for Logging

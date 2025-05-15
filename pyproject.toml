@@ -25,12 +25,12 @@ dependencies = [
     "juliacall>=0.9.24,<0.9.26",
     "click>=7.0.0,<9.0.0",
     "setuptools>=50.0.0",
+    "beartype>=0.19,<0.22",
     "typing-extensions>=4.0.0,<5.0.0",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "beartype>=0.19,<0.21",
     "coverage>=7,<8",
     "coveralls>=4,<5",
     "ipykernel>=6,<7",
