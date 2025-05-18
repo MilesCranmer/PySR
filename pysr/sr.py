@@ -15,10 +15,11 @@ from dataclasses import dataclass, fields
 from io import StringIO
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Any, List, Literal, Tuple, Union, cast
+from typing import Any, Literal, Tuple, Union, cast
 
 import numpy as np
 import pandas as pd
+from beartype.typing import List
 from numpy import ndarray
 from numpy.typing import NDArray
 from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
@@ -39,6 +40,7 @@ from .expression_specs import (
     AbstractExpressionSpec,
     ExpressionSpec,
     ParametricExpressionSpec,
+    parametric_expression_deprecation_warning,
 )
 from .feature_selection import run_feature_selection
 from .julia_extensions import load_required_packages
@@ -387,6 +389,16 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         the innermost `AbstractExpressionNode`. This is useful
         for specifying custom loss functions on `TemplateExpressionSpec`.
         Default is `None`.
+    loss_scale : Literal["log", "linear"]
+        Determines how loss values are scaled when computing scores.
+        "log" (default) uses logarithmic scaling of loss ratios; this mode
+        requires non-negative loss values and is ideal for traditional
+        loss functions that are always non-negative.
+        "linear" uses direct
+        differences between losses; this mode handles any loss values
+        (including negative) and is useful for custom loss functions,
+        especially those based on likelihoods.
+        Default is "log".
     complexity_of_operators : dict[str, int | float]
         If you would like to use a complexity other than 1 for an
         operator, specify the complexity here. For example,
@@ -815,6 +827,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         elementwise_loss: str | None = None,
         loss_function: str | None = None,
         loss_function_expression: str | None = None,
+        loss_scale: Literal["log", "linear"] = "log",
         complexity_of_operators: dict[str, int | float] | None = None,
         complexity_of_constants: int | float | None = None,
         complexity_of_variables: int | float | list[int | float] | None = None,
@@ -922,6 +935,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.elementwise_loss = elementwise_loss
         self.loss_function = loss_function
         self.loss_function_expression = loss_function_expression
+        self.loss_scale = loss_scale
         self.complexity_of_operators = complexity_of_operators
         self.complexity_of_constants = complexity_of_constants
         self.complexity_of_variables = complexity_of_variables
@@ -1201,7 +1215,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             repr_equations = pd.DataFrame(
                 dict(
                     pick=selected,
-                    score=equations["score"],
+                    **(
+                        {"score": equations["score"]}
+                        if "score" in equations.columns
+                        else {}
+                    ),
                     equation=equations["equation"],
                     loss=equations["loss"],
                     complexity=equations["complexity"],
@@ -1991,6 +2009,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             elementwise_loss=custom_loss,
             loss_function=custom_full_objective,
             loss_function_expression=custom_loss_expression,
+            loss_scale=jl.Symbol(self.loss_scale),
             maxsize=int(self.maxsize),
             output_directory=_escape_filename(self.output_directory_),
             npopulations=int(self.populations),
@@ -2250,6 +2269,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         random_state = check_random_state(self.random_state)  # For np random
         seed = cast(int, random_state.randint(0, 2**31 - 1))  # For julia random
+
+        if isinstance(self.expression_spec, ParametricExpressionSpec):
+            parametric_expression_deprecation_warning(
+                self.expression_spec.max_parameters, variable_names
+            )
 
         # Pre transformations (feature selection and denoising)
         X, y, variable_names, complexity_of_variables, X_units, y_units = (
@@ -2637,7 +2661,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             pd.concat(
                 [
                     output,
-                    calculate_scores(output),
+                    *([calculate_scores(output)] if self.loss_scale == "log" else []),
                     self.expression_spec_.create_exports(
                         self, output, search_output, i if self.nout_ > 1 else None
                     ),
@@ -2713,6 +2737,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
 def idx_model_selection(equations: pd.DataFrame, model_selection: str):
     """Select an expression and return its index."""
+
+    # We must default to "accuracy" if no score column is present (like in the case of linear loss_scale)
+    model_selection = model_selection if "score" in equations.columns else "accuracy"
+
     if model_selection == "accuracy":
         chosen_idx = equations["loss"].idxmin()
     elif model_selection == "best":

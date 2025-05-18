@@ -3,6 +3,7 @@ import importlib
 import os
 import pickle as pkl
 import platform
+import re
 import tempfile
 import traceback
 import unittest
@@ -32,6 +33,7 @@ from pysr import (
 )
 from pysr.export_latex import sympy2latex
 from pysr.export_sympy import pysr2sympy
+from pysr.expression_specs import parametric_expression_deprecation_warning
 from pysr.feature_selection import _handle_feature_selection, run_feature_selection
 from pysr.julia_helpers import init_julia
 from pysr.sr import (
@@ -763,6 +765,27 @@ class TestPipeline(unittest.TestCase):
                 # Verify model still works as expected
                 self.assertLessEqual(model.get_best()["loss"], 1e-4)
 
+    def test_negative_losses(self):
+        X = self.rstate.rand(100, 3) * 20.0
+        eps = self.rstate.randn(100)
+        y = np.cos(X[:, 0] * 2.1 - 0.5) + X[:, 1] ** 2 + 0.1 * eps
+        spec = TemplateExpressionSpec(
+            expressions=["f_mu", "f_logvar"],
+            variable_names=["x1", "x2", "x3", "y"],
+            combine="mu = f_mu(x1, x2, x3); logvar = f_logvar(x1, x2, x3); 0.5f0 * (logvar + (mu - y)^2 / exp(logvar))",
+        )
+        model = PySRRegressor(
+            **self.default_test_kwargs,
+            expression_spec=spec,
+            binary_operators=["+", "*", "-"],
+            unary_operators=["cos", "log", "exp"],
+            elementwise_loss="(pred, targ) -> pred",
+            loss_scale="linear",
+            early_stop_condition="stop_if_under_n1(loss, complexity) = loss < -1.0",
+        )
+        model.fit(np.column_stack([X, y]), 0 * y)
+        self.assertLessEqual(model.get_best()["loss"], -1.0)
+
     def test_comparison_operator(self):
         X = self.rstate.randn(100, 2)
         y = ((X[:, 0] + X[:, 1]) < (X[:, 0] * X[:, 1])).astype(float)
@@ -1033,6 +1056,25 @@ class TestMiscellaneous(unittest.TestCase):
 
         # Check the sets are equal:
         self.assertSetEqual(set(params), set(regressor_params))
+
+    def test_parametric_deprecation_warning(self):
+        """Test that the helpful warning message is displayed."""
+        pattern = re.compile(
+            r"ParametricExpressionSpec is deprecated.*TemplateExpressionSpec.*"
+            r"max_parameters=2.*"
+            r"variable_names=\[\"alpha\", \"beta\"\].*"
+            r"expressions=\[\"f\"\].*"
+            r"variable_names=\[\"alpha\", \"beta\", \"category\"\].*"
+            r"parameters=\{\s*\"p1\": n_categories,\s*\"p2\": n_categories\s*\}.*"
+            r"combine=\"f\(alpha, beta, p1\[category\], p2\[category\]\)\"",
+            flags=re.S,
+        )
+
+        with self.assertWarnsRegex(FutureWarning, pattern):
+            parametric_expression_deprecation_warning(
+                max_parameters=2,
+                variable_names=["alpha", "beta"],
+            )
 
     def test_load_all_packages(self):
         """Test we can load all packages at once."""
