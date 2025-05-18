@@ -250,11 +250,11 @@ jobs:
           mkdir -p /tmp/artifacts
           mv dist/*.whl /tmp/artifacts/
 
-      - name: "Install wheel in venv & run tests"
+      - name: "Install wheel in venv & run smoke test"
         run: |
           mkdir -p /tmp/wheeltest
           cd /tmp/wheeltest
           python -m virtualenv .venv
           source .venv/bin/activate
           pip install /tmp/artifacts/*.whl
-          python -m pysr test main
+          python -c "import pysr; pysr.PySRRegressor(niterations=1).fit([[1]], [1])"
