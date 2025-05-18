@@ -765,6 +765,27 @@ class TestPipeline(unittest.TestCase):
                 # Verify model still works as expected
                 self.assertLessEqual(model.get_best()["loss"], 1e-4)
 
+    def test_negative_losses(self):
+        X = self.rstate.rand(100, 3) * 20.0
+        eps = self.rstate.randn(100)
+        y = np.cos(X[:, 0] * 2.1 - 0.5) + X[:, 1] ** 2 + 0.1 * eps
+        spec = TemplateExpressionSpec(
+            expressions=["f_mu", "f_logvar"],
+            variable_names=["x1", "x2", "x3", "y"],
+            combine="mu = f_mu(x1, x2, x3); logvar = f_logvar(x1, x2, x3); 0.5f0 * (logvar + (mu - y)^2 / exp(logvar))",
+        )
+        model = PySRRegressor(
+            **self.default_test_kwargs,
+            expression_spec=spec,
+            binary_operators=["+", "*", "-"],
+            unary_operators=["cos", "log", "exp"],
+            elementwise_loss="(pred, targ) -> pred",
+            loss_scale="linear",
+            early_stop_condition="stop_if_under_n1(loss, complexity) = loss < -1.0",
+        )
+        model.fit(np.column_stack([X, y]), 0 * y)
+        self.assertLessEqual(model.get_best()["loss"], -1.0)
+
     def test_comparison_operator(self):
         X = self.rstate.randn(100, 2)
         y = ((X[:, 0] + X[:, 1]) < (X[:, 0] * X[:, 1])).astype(float)
