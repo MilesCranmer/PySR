@@ -387,6 +387,16 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         the innermost `AbstractExpressionNode`. This is useful
         for specifying custom loss functions on `TemplateExpressionSpec`.
         Default is `None`.
+    loss_scale : Literal["log", "linear"]
+        Determines how loss values are scaled when computing scores.
+        "log" (default) uses logarithmic scaling of loss ratios; this mode
+        requires non-negative loss values and is ideal for traditional
+        loss functions that are always non-negative.
+        "linear" uses direct
+        differences between losses; this mode handles any loss values
+        (including negative) and is useful for custom loss functions,
+        especially those based on likelihoods.
+        Default is "log".
     complexity_of_operators : dict[str, int | float]
         If you would like to use a complexity other than 1 for an
         operator, specify the complexity here. For example,
@@ -815,6 +825,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         elementwise_loss: str | None = None,
         loss_function: str | None = None,
         loss_function_expression: str | None = None,
+        loss_scale: Literal["log", "linear"] = "log",
         complexity_of_operators: dict[str, int | float] | None = None,
         complexity_of_constants: int | float | None = None,
         complexity_of_variables: int | float | list[int | float] | None = None,
@@ -922,6 +933,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.elementwise_loss = elementwise_loss
         self.loss_function = loss_function
         self.loss_function_expression = loss_function_expression
+        self.loss_scale = loss_scale
         self.complexity_of_operators = complexity_of_operators
         self.complexity_of_constants = complexity_of_constants
         self.complexity_of_variables = complexity_of_variables
@@ -1991,6 +2003,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             elementwise_loss=custom_loss,
             loss_function=custom_full_objective,
             loss_function_expression=custom_loss_expression,
+            loss_scale=jl.Symbol(self.loss_scale),
             maxsize=int(self.maxsize),
             output_directory=_escape_filename(self.output_directory_),
             npopulations=int(self.populations),
