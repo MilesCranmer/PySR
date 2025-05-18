@@ -15,10 +15,11 @@ from dataclasses import dataclass, fields
 from io import StringIO
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Any, List, Literal, Tuple, Union, cast
+from typing import Any, Literal, Tuple, Union, cast
 
 import numpy as np
 import pandas as pd
+from beartype.typing import List
 from numpy import ndarray
 from numpy.typing import NDArray
 from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
@@ -39,6 +40,7 @@ from .expression_specs import (
     AbstractExpressionSpec,
     ExpressionSpec,
     ParametricExpressionSpec,
+    parametric_expression_deprecation_warning,
 )
 from .feature_selection import run_feature_selection
 from .julia_extensions import load_required_packages
@@ -2268,6 +2270,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         random_state = check_random_state(self.random_state)  # For np random
         seed = cast(int, random_state.randint(0, 2**31 - 1))  # For julia random
 
+        if isinstance(self.expression_spec, ParametricExpressionSpec):
+            parametric_expression_deprecation_warning(
+                self.expression_spec.max_parameters, variable_names
+            )
+
         # Pre transformations (feature selection and denoising)
         X, y, variable_names, complexity_of_variables, X_units, y_units = (
             self._pre_transform_training_data(
@@ -2655,11 +2662,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 [
                     output,
                     *([calculate_scores(output)] if self.loss_scale == "log" else []),
-                    self.expression_spec_.create_exports(self, output, search_output),
+                    self.expression_spec_.create_exports(
+                        self, output, search_output, i if self.nout_ > 1 else None
+                    ),
                 ],
                 axis=1,
             )
-            for output in equation_file_contents
+            for i, output in enumerate(equation_file_contents)
         ]
 
         if self.nout_ > 1:

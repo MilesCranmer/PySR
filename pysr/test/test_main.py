@@ -3,6 +3,7 @@ import importlib
 import os
 import pickle as pkl
 import platform
+import re
 import tempfile
 import traceback
 import unittest
@@ -32,6 +33,7 @@ from pysr import (
 )
 from pysr.export_latex import sympy2latex
 from pysr.export_sympy import pysr2sympy
+from pysr.expression_specs import parametric_expression_deprecation_warning
 from pysr.feature_selection import _handle_feature_selection, run_feature_selection
 from pysr.julia_helpers import init_julia
 from pysr.sr import (
@@ -599,7 +601,7 @@ class TestPipeline(unittest.TestCase):
         with self.assertRaises(ValueError):
             model.latex_table()
 
-    def test_template_expression_with_parameters(self):
+    def test_template_expression_with_parameters_multiout(self):
         # Create random data
         X_continuous = self.rstate.uniform(-1, 1, (100, 2))
         category = self.rstate.randint(0, 3, 100)  # 3 classes
@@ -607,9 +609,11 @@ class TestPipeline(unittest.TestCase):
 
         # Ground truth: p[class] * x1^2 + x2 where p = [0.5, 1.0, 2.0]
         true_p = [0.5, 1.0, 2.0]
-        y = np.array(
+        y_1 = np.array(
             [true_p[c] * x1**2 + x2 for x1, x2, c in zip(X[:, 0], X[:, 1], category)]
         )
+        y_2 = y_1 * 2
+        y = np.column_stack([y_1, y_2])
 
         # Create model with template that includes parameters
         model = PySRRegressor(
@@ -632,12 +636,14 @@ class TestPipeline(unittest.TestCase):
         X_continuous_test = self.rstate.uniform(-1, 1, (25, 2))
         category_test = self.rstate.randint(0, 3, 25)
         X_test = np.hstack([X_continuous_test, category_test[:, None] + 1])
-        y_test = np.array(
+        y_test_1 = np.array(
             [
                 true_p[c] * x1**2 + x2
                 for x1, x2, c in zip(X_test[:, 0], X_test[:, 1], category_test)
             ]
         )
+        y_test_2 = y_test_1 * 2
+        y_test = np.column_stack([y_test_1, y_test_2])
         y_pred = model.predict(X_test)
 
         test_mse = np.mean((y_test - y_pred) ** 2)
@@ -1050,6 +1056,25 @@ class TestMiscellaneous(unittest.TestCase):
 
         # Check the sets are equal:
         self.assertSetEqual(set(params), set(regressor_params))
+
+    def test_parametric_deprecation_warning(self):
+        """Test that the helpful warning message is displayed."""
+        pattern = re.compile(
+            r"ParametricExpressionSpec is deprecated.*TemplateExpressionSpec.*"
+            r"max_parameters=2.*"
+            r"variable_names=\[\"alpha\", \"beta\"\].*"
+            r"expressions=\[\"f\"\].*"
+            r"variable_names=\[\"alpha\", \"beta\", \"category\"\].*"
+            r"parameters=\{\s*\"p1\": n_categories,\s*\"p2\": n_categories\s*\}.*"
+            r"combine=\"f\(alpha, beta, p1\[category\], p2\[category\]\)\"",
+            flags=re.S,
+        )
+
+        with self.assertWarnsRegex(FutureWarning, pattern):
+            parametric_expression_deprecation_warning(
+                max_parameters=2,
+                variable_names=["alpha", "beta"],
+            )
 
     def test_load_all_packages(self):
         """Test we can load all packages at once."""
