@@ -207,7 +207,6 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.12']
-        os: ['ubuntu-latest']
 
     steps:
       - uses: actions/checkout@v4
@@ -222,3 +221,40 @@ jobs:
             pip install '.[dev]'
       - name: "Run tests"
         run: python -m pysr test main,jax,torch
+
+  wheel_test:
+    name: Test from wheel
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.12']
+        julia-version: ['1']
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.julia-version }}
+
+      - name: "Build wheel"
+        run: |
+          python -m pip install --upgrade pip build virtualenv
+          python -m build --wheel
+          mkdir -p /tmp/artifacts
+          mv dist/*.whl /tmp/artifacts/
+
+      - name: "Install wheel in venv & run tests"
+        run: |
+          mkdir -p /tmp/wheeltest
+          cd /tmp/wheeltest
+          python -m virtualenv .venv
+          source .venv/bin/activate
+          pip install /tmp/artifacts/*.whl
+          python -m pysr test main
