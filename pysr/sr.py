@@ -1213,7 +1213,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             repr_equations = pd.DataFrame(
                 dict(
                     pick=selected,
-                    score=equations["score"],
+                    **(
+                        {"score": equations["score"]}
+                        if "score" in equations.columns
+                        else {}
+                    ),
                     equation=equations["equation"],
                     loss=equations["loss"],
                     complexity=equations["complexity"],
@@ -2650,7 +2654,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             pd.concat(
                 [
                     output,
-                    calculate_scores(output),
+                    *([calculate_scores(output)] if self.loss_scale == "log" else []),
                     self.expression_spec_.create_exports(self, output, search_output),
                 ],
                 axis=1,
@@ -2724,6 +2728,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
 def idx_model_selection(equations: pd.DataFrame, model_selection: str):
     """Select an expression and return its index."""
+
+    # We must default to "accuracy" if no score column is present (like in the case of linear loss_scale)
+    model_selection = model_selection if "score" in equations.columns else "accuracy"
+
     if model_selection == "accuracy":
         chosen_idx = equations["loss"].idxmin()
     elif model_selection == "best":
