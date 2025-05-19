@@ -38,7 +38,7 @@ If you've finished a project with PySR, please submit a PR to showcase your work
 |---|---|---|
 |[![Linux](https://github.com/MilesCranmer/PySR/actions/workflows/CI.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI.yml)|[![Windows](https://github.com/MilesCranmer/PySR/actions/workflows/CI_Windows.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_Windows.yml)|[![macOS](https://github.com/MilesCranmer/PySR/actions/workflows/CI_mac.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_mac.yml)|
 | **Docker** | **Conda** | **Coverage** |
-|[![Docker](https://github.com/MilesCranmer/PySR/actions/workflows/CI_docker.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_docker.yml)|[![conda-forge](https://github.com/MilesCranmer/PySR/actions/workflows/CI_conda_forge.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_conda_forge.yml)|[![Coverage Status](https://coveralls.io/repos/github/MilesCranmer/PySR/badge.svg?branch=master&service=github)](https://coveralls.io/github/MilesCranmer/PySR)|
+|[![Docker](https://github.com/MilesCranmer/PySR/actions/workflows/CI_docker.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_docker.yml)|[![conda-forge](https://github.com/MilesCranmer/PySR/actions/workflows/CI_conda_forge.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_conda_forge.yml)|[![codecov](https://codecov.io/gh/MilesCranmer/PySR/branch/master/graph/badge.svg)](https://codecov.io/gh/MilesCranmer/PySR)|
 
 </div>
 

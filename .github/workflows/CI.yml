@@ -80,12 +80,13 @@ jobs:
       - name: "Run Torch tests"
         run: coverage run --append -m pysr test torch
         if: ${{ matrix.test-id == 'main' }}
-      - name: "Coveralls"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COVERALLS_FLAG_NAME: test-${{ matrix.julia-version }}-${{ matrix.python-version }}-${{ matrix.test-id }}
-          COVERALLS_PARALLEL: true
-        run: coveralls --service=github
+      - name: "Build coverage report"
+        run: coverage xml
+      - name: "Upload results to Codecov"
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: MilesCranmer/PySR
 
   dev_install:
     runs-on: ${{ matrix.os }}
@@ -147,23 +148,6 @@ jobs:
             python3 -c 'import pysr'
       - name: "Run tests"
         run: cd /tmp && python -m pysr test main
-
-  coveralls:
-    name: Indicate completion to coveralls.io
-    needs:
-      - test
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
-    container: python:3-slim
-    steps:
-      - name: Finished
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-            pip install coveralls
-            coveralls --finish
 
   types:
     name: Check types
