@@ -387,7 +387,7 @@ class ParametricExpressionSpec(AbstractExpressionSpec):
 
     def julia_expression_spec(self):
         return SymbolicRegression.ParametricExpressionSpec(
-            max_parameters=self.max_parameters
+            max_parameters=self.max_parameters, warn=False
         )
 
     @property
