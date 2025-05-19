@@ -329,11 +329,9 @@ def parametric_expression_deprecation_warning(
     var_names = list(variable_names)
     message = dedent(
         f"""
-        ParametricExpressionSpec is deprecated – you should switch to TemplateExpressionSpec
-        with explicit parameters indexed by category.
+        ParametricExpressionSpec is deprecated. you should switch to TemplateExpressionSpec with explicit parameters indexed by category.
 
-        Since you have `max_parameters={max_parameters}` and
-        `variable_names=[{", ".join(f'"{v}"' for v in var_names)}]`, you could migrate like this:
+        Since you have `max_parameters={max_parameters}` and `variable_names=[{", ".join(f'"{v}"' for v in var_names)}]`, you could migrate like this:
 
             n_categories = len(np.unique(category))  # count the number of parameters required
             expression_spec = TemplateExpressionSpec(
