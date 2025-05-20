@@ -6,9 +6,13 @@ import re
 from pathlib import Path
 from typing import Any, TypeVar, Union
 
-from beartype.typing import List
 from numpy import ndarray
 from sklearn.utils.validation import _check_feature_names_in  # type: ignore
+
+try:
+    from typing import List
+except ImportError:
+    from typing_extensions import List
 
 T = TypeVar("T", bound=Any)
 
