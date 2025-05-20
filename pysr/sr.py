@@ -19,7 +19,6 @@ from typing import Any, Literal, Tuple, Union, cast
 
 import numpy as np
 import pandas as pd
-from beartype.typing import List
 from numpy import ndarray
 from numpy.typing import NDArray
 from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
@@ -69,6 +68,12 @@ try:
     OLD_SKLEARN = False
 except ImportError:
     OLD_SKLEARN = True
+
+try:
+    from typing import List
+except ImportError:
+    from typing_extensions import List
+
 
 ALREADY_RAN = False
 
