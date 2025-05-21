@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pysr"
-version = "1.5.8"
+version = "1.5.9"
 authors = [
     {name = "Miles Cranmer", email = "miles.cranmer@gmail.com"},
 ]
