@@ -49,7 +49,10 @@ def _handle_feature_selection(
 ):
     if select_k_features is not None:
         selection = run_feature_selection(X, y, select_k_features)
-        pysr_logger.info(f"Using features {[variable_names[i] for i in selection]}")
+        selected_indices = np.where(selection)[0]
+        pysr_logger.info(
+            f"Using features {[variable_names[i] for i in selected_indices]}"
+        )
         X = X[:, selection]
     else:
         selection = None
