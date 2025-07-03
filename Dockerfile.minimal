@@ -1,0 +1,73 @@
+FROM nixos/nix:latest
+RUN echo 'experimental-features = nix-command flakes' >> /etc/nix/nix.conf
+WORKDIR /build
+
+################################
+# Cache build steps (optional) #
+################################
+
+# Install python
+RUN nix-env -iA nixpkgs.python313 \
+    nixpkgs.python313Packages.pip \
+    nixpkgs.python313Packages.setuptools \
+    nixpkgs.python313Packages.wheel \
+    nixpkgs.python313Packages.hatchling
+
+# Install julia
+RUN nix-env -iA nixpkgs.julia-bin
+
+# Build rr.soft
+RUN nix build github:sidkshatriya/rr.soft#rr -o /tmp/rr && \
+    cp -R /tmp/rr/* $HOME/.nix-profile/
+
+# Refresh nixpkgs
+RUN cat > flake.nix <<'FLAKE'
+{
+inputs = { nixpkgs.url = "github:NixOS/nixpkgs"; }; outputs = { self, nixpkgs, ... }:
+  let pkgs = import nixpkgs { system = "aarch64-linux"; }; in
+  { packages.aarch64-linux.hello = pkgs.hello; };
+}
+FLAKE
+RUN nix build .#hello -o /result
+
+################
+# Actual build #
+################
+
+RUN cat > flake.nix <<'FLAKE'
+{
+  inputs = {
+    nixpkgs.url  = "github:NixOS/nixpkgs";
+    rrsoft.url   = "github:sidkshatriya/rr.soft";
+  };
+  outputs = { self, nixpkgs, rrsoft, ... }:
+    let
+      system = "aarch64-linux";
+      pkgs   = import nixpkgs { inherit system; };
+      python = pkgs.python313;
+      pythonEnv = python.pkgs.buildPythonPackage {
+        pname = "python-with-juliacall"; version = "0"; src = pkgs.emptyDirectory;
+        format = "other";
+        nativeBuildInputs = [ python.pkgs.pip python.pkgs.setuptools python.pkgs.wheel python.pkgs.hatchling ];
+        installPhase = ''
+          ${pkgs.python313Packages.pip}/bin/pip install --no-build-isolation --no-cache-dir --prefix=$out juliacall juliapkg
+        '';
+      };
+    in {
+      packages.${system}.default = pkgs.symlinkJoin {
+        name  = "env";
+        paths = [ python pythonEnv pkgs.julia-bin rrsoft.packages.${system}.rr ];
+      };
+    };
+}
+FLAKE
+
+# Build the env & discard build-time deps
+RUN nix build .#default --out-link /output
+ENV PYTHONPATH=/output/lib/python3.13/site-packages
+ENV PATH=/output/bin:$PATH
+
+# Set up Julia dependencies
+RUN python3 -c "import juliacall"
+
+CMD ["bash"]
