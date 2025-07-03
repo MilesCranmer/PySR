@@ -73,7 +73,7 @@ RUN cat > flake.nix <<'FLAKE'
 FLAKE
 
 # Build the env & discard build-time deps
-RUN nix build .#default --out-link /output
+RUN export NIX_BUILD_CORES=4 && nix build .#default --out-link /output
 ENV PYTHONPATH=/output/lib/python3.13/site-packages
 ENV PATH=/output/bin:$PATH
 
