@@ -45,7 +45,7 @@ RUN cat > flake.nix <<'FLAKE'
     system  = "aarch64-linux";
     pkgs    = import nixpkgs { inherit system; };
     julia_debug = pkgs.julia_111.overrideAttrs (old: {
-      makeFlags = old.makeFlags ++ [ "DEBUG=1" "USE_LLVM_ASSERTIONS=1" ];
+      makeFlags = old.makeFlags ++ [ "JULIA_BUILD_MODE=debug" ];
     });
     python  = pkgs.python313;
     pythonEnv = python.pkgs.buildPythonPackage {
