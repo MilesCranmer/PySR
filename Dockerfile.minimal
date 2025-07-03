@@ -37,28 +37,38 @@ RUN nix build .#hello -o /result
 RUN cat > flake.nix <<'FLAKE'
 {
   inputs = {
-    nixpkgs.url  = "github:NixOS/nixpkgs";
-    rrsoft.url   = "github:sidkshatriya/rr.soft";
+    nixpkgs.url = "github:NixOS/nixpkgs";
+    rrsoft.url  = "github:sidkshatriya/rr.soft";
   };
   outputs = { self, nixpkgs, rrsoft, ... }:
-    let
-      system = "aarch64-linux";
-      pkgs   = import nixpkgs { inherit system; };
-      python = pkgs.python313;
-      pythonEnv = python.pkgs.buildPythonPackage {
-        pname = "python-with-juliacall"; version = "0"; src = pkgs.emptyDirectory;
-        format = "other";
-        nativeBuildInputs = [ python.pkgs.pip python.pkgs.setuptools python.pkgs.wheel python.pkgs.hatchling ];
-        installPhase = ''
-          ${pkgs.python313Packages.pip}/bin/pip install --no-build-isolation --no-cache-dir --prefix=$out juliacall juliapkg
-        '';
-      };
-    in {
-      packages.${system}.default = pkgs.symlinkJoin {
-        name  = "env";
-        paths = [ python pythonEnv pkgs.julia-bin rrsoft.packages.${system}.rr ];
-      };
+  let
+    system  = "aarch64-linux";
+    pkgs    = import nixpkgs { inherit system; };
+    julia_debug = pkgs.julia_111.overrideAttrs (old: {
+      makeFlags = old.makeFlags ++ [ "DEBUG=1" "USE_LLVM_ASSERTIONS=1" ];
+    });
+    python  = pkgs.python313;
+    pythonEnv = python.pkgs.buildPythonPackage {
+      pname   = "python-with-juliacall";
+      version = "0";
+      src     = pkgs.emptyDirectory;
+      format  = "other";
+      nativeBuildInputs = [ python.pkgs.pip python.pkgs.setuptools python.pkgs.wheel python.pkgs.hatchling ];
+      installPhase = ''
+        ${python.pkgs.pip}/bin/pip install --no-build-isolation --no-cache-dir --prefix=$out juliacall juliapkg
+      '';
     };
+  in {
+    packages.${system}.default = pkgs.symlinkJoin {
+      name  = "env";
+      paths = [
+        python
+        pythonEnv
+        julia_debug
+        rrsoft.packages.${system}.rr
+      ];
+    };
+  };
 }
 FLAKE
 
