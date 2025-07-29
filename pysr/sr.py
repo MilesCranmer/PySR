@@ -611,9 +611,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         If you pass complex data, the corresponding complex precision
         will be used (i.e., `64` for complex128, `32` for complex64).
         Default is `32`.
-    autodiff_backend : Literal["Zygote", "Mooncake"] | None
+    autodiff_backend : Literal["Zygote", "Mooncake", "Enzyme"] | None
         Which backend to use for automatic differentiation during constant
-        optimization. Currently `"Zygote"` and `"Mooncake"` are supported.
+        optimization. Currently `"Zygote"`, `"Mooncake"`, and `"Enzyme"` are supported.
         The default, `None`, uses forward-mode or finite difference.
         Default is `None`.
     random_state : int, Numpy RandomState instance or None
@@ -890,7 +890,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         turbo: bool = False,
         bumper: bool = False,
         precision: Literal[16, 32, 64] = 32,
-        autodiff_backend: Literal["Zygote", "Mooncake"] | None = None,
+        autodiff_backend: Literal["Zygote", "Mooncake", "Enzyme"] | None = None,
         random_state: int | np.random.RandomState | None = None,
         deterministic: bool = False,
         warm_start: bool = False,

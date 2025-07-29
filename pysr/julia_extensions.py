@@ -13,7 +13,7 @@ def load_required_packages(
     *,
     turbo: bool = False,
     bumper: bool = False,
-    autodiff_backend: Literal["Zygote", "Mooncake"] | None = None,
+    autodiff_backend: Literal["Zygote", "Mooncake", "Enzyme"] | None = None,
     cluster_manager: str | None = None,
     logger_spec: AbstractLoggerSpec | None = None,
 ):
@@ -25,6 +25,8 @@ def load_required_packages(
         load_package("Zygote", "e88e6eb3-aa80-5325-afca-941959d7151f")
     elif autodiff_backend == "Mooncake":
         load_package("Mooncake", "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6")
+    elif autodiff_backend == "Enzyme":
+        load_package("Enzyme", "7da242da-08ed-463a-9acd-ee780be4f1d9")
     if cluster_manager is not None:
         load_package("ClusterManagers", "34f1f09b-3a8b-5176-ab39-66d58a4d544e")
     if isinstance(logger_spec, TensorBoardLoggerSpec):
