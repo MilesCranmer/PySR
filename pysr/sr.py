@@ -49,6 +49,7 @@ from .julia_helpers import (
     jl_array,
     jl_deserialize,
     jl_is_function,
+    jl_named_tuple,
     jl_serialize,
 )
 from .julia_import import AnyValue, SymbolicRegression, VectorValue, jl
@@ -630,6 +631,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Tells fit to continue from where the last call to fit finished.
         If false, each call to fit will be fresh, overwriting previous results.
         Default is `False`.
+    guesses : list[str] | list[list[str]] | list[dict[str, str]] | list[list[dict[str, str]]] | None
+        Initial guesses for expressions to seed the search. Examples:
+        `["x0 + x1", "x0^2"]`, `[["x0"], ["x1"]]` (multi-output),
+        `[{"f": "#1 + #2"}]` (TemplateExpressionSpec where `#1`, `#2` are
+        placeholders for the 1st, 2nd arguments of expression `f`).
+        Default is `None`.
     verbosity : int
         What verbosity level to use. 0 means minimal print statements.
         Default is `1`.
@@ -894,6 +901,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         random_state: int | np.random.RandomState | None = None,
         deterministic: bool = False,
         warm_start: bool = False,
+        guesses: (
+            list[str]
+            | list[list[str]]
+            | list[dict[str, str]]
+            | list[list[dict[str, str]]]
+            | None
+        ) = None,
         verbosity: int = 1,
         update_verbosity: int | None = None,
         print_precision: int = 5,
@@ -1001,6 +1015,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.random_state = random_state
         self.deterministic = deterministic
         self.warm_start = warm_start
+        self.guesses = guesses
         # Additional runtime parameters
         # - Runtime user interface
         self.verbosity = verbosity
@@ -2106,6 +2121,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         else:
             jl_y_variable_names = None
 
+        jl_guesses = _prepare_guesses_for_julia(self.guesses, self.nout_)
+
         out = SymbolicRegression.equation_search(
             jl_X,
             jl_y,
@@ -2124,6 +2141,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 else self.y_units_
             ),
             options=options,
+            guesses=jl_guesses,
             numprocs=numprocs,
             parallelism=parallelism,
             saved_state=self.julia_state_,
@@ -2793,6 +2811,63 @@ def calculate_scores(df: pd.DataFrame) -> pd.DataFrame:
         },
         index=df.index,
     )
+
+
+def _prepare_guesses_for_julia(guesses, nout) -> VectorValue | None:
+    """Convert Python guesses to Julia format.
+
+    Parameters
+    ----------
+    guesses : list[str] | list[list[str]] | list[dict[str, str]] | list[list[dict[str, str]]] | None
+        Initial guesses for equations
+    nout : int
+        Number of output dimensions
+
+    Returns
+    -------
+    jl_guesses: VectorValue | None
+        Julia-compatible guesses array or None if no guesses provided
+    """
+    if guesses is None:
+        return None
+
+    g = guesses
+
+    if nout == 1:
+        if not isinstance(g, list):
+            raise ValueError("guesses must be a list for single-output regression")
+        elif len(g) == 0:
+            return jl_array([])
+        elif not isinstance(g[0], list):
+            g = [g]
+        elif len(g) != 1:
+            raise ValueError(
+                "For single output, provide a list of strings/dicts or "
+                "a single-element list of lists"
+            )
+    else:
+        if not (isinstance(g, list) and all(isinstance(x, list) for x in g)):
+            raise ValueError(
+                "For multi-output (nout > 1) guesses must be a list of lists"
+            )
+        if len(g) != nout:
+            raise ValueError(
+                f"Number of guess lists ({len(g)}) must match number of outputs ({nout})"
+            )
+
+    julia_guesses = []
+    for output_guesses in g:
+        julia_output_guesses = []
+        for item in output_guesses:
+            if isinstance(item, dict):
+                # Convert dict to NamedTuple for template expressions
+                julia_output_guesses.append(jl_named_tuple(item))
+            else:
+                # Keep strings as-is
+                julia_output_guesses.append(item)
+        julia_guesses.append(jl_array(julia_output_guesses))
+
+    return jl_array(julia_guesses)
 
 
 def _mutate_parameter(param_name: str, param_value):
