@@ -475,6 +475,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     fraction_replaced_hof : float
         How much of population to replace with migrating equations from
         hall of fame. Default is `0.0614`.
+    fraction_replaced_guesses : float
+        How much of the population to replace with migrating equations from
+        guesses. Default is `0.001`.
     weight_add_node : float
         Relative likelihood for mutation to add a node.
         Default is `2.47`.
@@ -856,6 +859,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         ncycles_per_iteration: int = 380,
         fraction_replaced: float = 0.00036,
         fraction_replaced_hof: float = 0.0614,
+        fraction_replaced_guesses: float = 0.001,
         weight_add_node: float = 2.47,
         weight_insert_node: float = 0.0112,
         weight_delete_node: float = 0.870,
@@ -987,6 +991,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.hof_migration = hof_migration
         self.fraction_replaced = fraction_replaced
         self.fraction_replaced_hof = fraction_replaced_hof
+        self.fraction_replaced_guesses = fraction_replaced_guesses
         self.topn = topn
         # -- Constants parameters
         self.should_optimize_constants = should_optimize_constants
@@ -2062,6 +2067,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             npop=self.population_size,
             ncycles_per_iteration=self.ncycles_per_iteration,
             fraction_replaced=self.fraction_replaced,
+            fraction_replaced_guesses=self.fraction_replaced_guesses,
             topn=self.topn,
             print_precision=self.print_precision,
             optimizer_algorithm=self.optimizer_algorithm,
