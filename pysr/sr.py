@@ -520,6 +520,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     weight_mutate_operator : float
         Relative likelihood for mutation to swap an operator.
         Default is `0.293`.
+    weight_mutate_feature : float
+        Relative likelihood for mutation to change which feature a variable node references.
+        Default is `0.1`.
     weight_swap_operands : float
         Relative likehood for swapping operands in binary operators.
         Default is `0.198`.
@@ -890,6 +893,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         weight_do_nothing: float = 0.273,
         weight_mutate_constant: float = 0.0346,
         weight_mutate_operator: float = 0.293,
+        weight_mutate_feature: float = 0.1,
         weight_swap_operands: float = 0.198,
         weight_rotate_tree: float = 4.26,
         weight_randomize: float = 0.000502,
@@ -1004,6 +1008,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.weight_do_nothing = weight_do_nothing
         self.weight_mutate_constant = weight_mutate_constant
         self.weight_mutate_operator = weight_mutate_operator
+        self.weight_mutate_feature = weight_mutate_feature
         self.weight_swap_operands = weight_swap_operands
         self.weight_rotate_tree = weight_rotate_tree
         self.weight_randomize = weight_randomize
@@ -2036,6 +2041,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         mutation_weights = SymbolicRegression.MutationWeights(
             mutate_constant=self.weight_mutate_constant,
             mutate_operator=self.weight_mutate_operator,
+            mutate_feature=self.weight_mutate_feature,
             swap_operands=self.weight_swap_operands,
             rotate_tree=self.weight_rotate_tree,
             add_node=self.weight_add_node,
