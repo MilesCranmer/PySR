@@ -82,53 +82,70 @@ pysr_logger = logging.getLogger(__name__)
 
 
 def _process_constraints(
-    binary_operators: list[str],
-    unary_operators: list,
-    constraints: dict[str, int | tuple[int, int]],
-) -> dict[str, int | tuple[int, int]]:
+    operators: dict[int, list[str]],
+    constraints: dict[str, int | tuple[int, ...]],
+) -> dict[str, int | tuple[int, ...]]:
     constraints = constraints.copy()
-    for op in unary_operators:
-        if op not in constraints:
-            constraints[op] = -1
-    for op in binary_operators:
-        if op not in constraints:
-            if op in ["^", "pow"]:
-                # Warn user that they should set up constraints
-                warnings.warn(
-                    "You are using the `^` operator, but have not set up `constraints` for it. "
-                    "This may lead to overly complex expressions. "
-                    "One typical constraint is to use `constraints={..., '^': (-1, 1)}`, which "
-                    "will allow arbitrary-complexity base (-1) but only powers such as "
-                    "a constant or variable (1). "
-                    "For more tips, please see https://ai.damtp.cam.ac.uk/pysr/tuning/"
-                )
-            constraints[op] = (-1, -1)
 
-        constraint_tuple = cast(Tuple[int, int], constraints[op])
-        if op in ["plus", "sub", "+", "-"]:
-            if constraint_tuple[0] != constraint_tuple[1]:
-                raise NotImplementedError(
-                    "You need equal constraints on both sides for - and +, "
-                    "due to simplification strategies."
-                )
-        elif op in ["mult", "*"]:
-            # Make sure the complex expression is in the left side.
-            if constraint_tuple[0] == -1:
-                continue
-            if constraint_tuple[1] == -1 or constraint_tuple[0] < constraint_tuple[1]:
-                constraints[op] = (constraint_tuple[1], constraint_tuple[0])
+    for arity, op_list in operators.items():
+        for op in op_list:
+            if op not in constraints:
+                if arity == 1:
+                    # Unary operators get complexity -1
+                    constraints[op] = -1
+                else:
+                    # Multi-arity operators (arity >= 2)
+                    if op in ["^", "pow"]:
+                        # Warn user that they should set up constraints
+                        warnings.warn(
+                            "You are using the `^` operator, but have not set up `constraints` for it. "
+                            "This may lead to overly complex expressions. "
+                            "One typical constraint is to use `constraints={..., '^': (-1, 1)}`, which "
+                            "will allow arbitrary-complexity base (-1) but only powers such as "
+                            "a constant or variable (1). "
+                            "For more tips, please see https://ai.damtp.cam.ac.uk/pysr/tuning/"
+                        )
+                    # Create default constraint tuple with -1 for each argument
+                    constraints[op] = tuple([-1] * arity)
+
+            # Apply arity-specific validation for existing constraints
+            if isinstance(constraints[op], tuple):
+                constraint_tuple = constraints[op]
+                # Validate that constraint tuple length matches operator arity
+                if len(constraint_tuple) != arity:
+                    raise ValueError(
+                        f"Operator '{op}' has arity {arity} but constraint tuple has "
+                        f"length {len(constraint_tuple)}. Expected tuple of length {arity}."
+                    )
+
+                # Apply operator-specific rules (only for binary operators for now)
+                if arity == 2:
+                    if op in ["plus", "sub", "+", "-"]:
+                        if constraint_tuple[0] != constraint_tuple[1]:
+                            raise NotImplementedError(
+                                "You need equal constraints on both sides for - and +, "
+                                "due to simplification strategies."
+                            )
+                    elif op in ["mult", "*"]:
+                        # Make sure the complex expression is in the left side.
+                        if constraint_tuple[0] == -1:
+                            continue
+                        if (
+                            constraint_tuple[1] == -1
+                            or constraint_tuple[0] < constraint_tuple[1]
+                        ):
+                            constraints[op] = (constraint_tuple[1], constraint_tuple[0])
     return constraints
 
 
 def _maybe_create_inline_operators(
-    binary_operators: list[str],
-    unary_operators: list[str],
+    operators: dict[int, list[str]],
     extra_sympy_mappings: dict[str, Callable] | None,
     expression_spec: AbstractExpressionSpec,
-) -> tuple[list[str], list[str]]:
-    binary_operators = binary_operators.copy()
-    unary_operators = unary_operators.copy()
-    for op_list in [binary_operators, unary_operators]:
+) -> dict[int, list[str]]:
+    operators = {arity: op_list.copy() for arity, op_list in operators.items()}
+
+    for arity, op_list in operators.items():
         for i, op in enumerate(op_list):
             is_user_defined_operator = "(" in op
 
@@ -159,7 +176,7 @@ def _maybe_create_inline_operators(
                         "You can also define these at initialization time."
                     )
                 op_list[i] = function_name
-    return binary_operators, unary_operators
+    return operators
 
 
 def _check_assertions(
@@ -245,10 +262,9 @@ VALID_OPTIMIZER_ALGORITHMS = ["BFGS", "NelderMead"]
 class _DynamicallySetParams:
     """Defines some parameters that are set at runtime."""
 
-    binary_operators: list[str]
-    unary_operators: list[str]
+    operators: dict[int, list[str]]
     maxdepth: int
-    constraints: dict[str, int | tuple[int, int]]
+    constraints: dict[str, int | tuple[int, ...]]
     batch_size: int
     update_verbosity: int
     progress: bool
@@ -294,6 +310,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Operators which only take a single scalar as input.
         For example, `"cos"` or `"exp"`.
         Default is `None`.
+    operators : dict[int, list[str]]
+        Generic operators by arity (number of arguments). Keys are integers
+        representing arity, values are lists of operator strings.
+        Example: `{1: ["sin", "cos"], 2: ["+", "-", "*"], 3: ["muladd"]}`.
+        Cannot be used with `binary_operators` or `unary_operators`.
+        Default is `None`.
     expression_spec : AbstractExpressionSpec
         The type of expression to search for. By default,
         this is just `ExpressionSpec()`. You can also use
@@ -329,12 +351,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     timeout_in_seconds : float
         Make the search return early once this many seconds have passed.
         Default is `None`.
-    constraints : dict[str, int | tuple[int,int]]
-        Dictionary of int (unary) or 2-tuples (binary), this enforces
+    constraints : dict[str, int | tuple[int,...]]
+        Dictionary of int (unary) or tuples (multi-arity), this enforces
         maxsize constraints on the individual arguments of operators.
         E.g., `'pow': (-1, 1)` says that power laws can have any
         complexity left argument, but only 1 complexity in the right
-        argument. Use this to force more interpretable solutions.
+        argument. For arity-3 operators like muladd, use tuples like
+        `'muladd': (-1, -1, 1)`. Use this to force more interpretable solutions.
         Default is `None`.
     nested_constraints : dict[str, dict]
         Specifies how many times a combination of operators can be
@@ -828,6 +851,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         *,
         binary_operators: list[str] | None = None,
         unary_operators: list[str] | None = None,
+        operators: dict[int, list[str]] | None = None,
         expression_spec: AbstractExpressionSpec | None = None,
         niterations: int = 100,
         populations: int = 31,
@@ -837,7 +861,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         maxdepth: int | None = None,
         warmup_maxsize_by: float | None = None,
         timeout_in_seconds: float | None = None,
-        constraints: dict[str, int | tuple[int, int]] | None = None,
+        constraints: dict[str, int | tuple[int, ...]] | None = None,
         nested_constraints: dict[str, dict[str, int]] | None = None,
         elementwise_loss: str | None = None,
         loss_function: str | None = None,
@@ -938,6 +962,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.model_selection = model_selection
         self.binary_operators = binary_operators
         self.unary_operators = unary_operators
+        self.operators = operators
         self.expression_spec = expression_spec
         self.niterations = niterations
         self.populations = populations
@@ -1480,6 +1505,19 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         """
         # Immutable parameter validation
         # Ensure instance parameters are allowable values:
+
+        # Validate operators vs binary_operators/unary_operators mutual exclusion
+        if self.operators is not None:
+            if self.binary_operators is not None or self.unary_operators is not None:
+                raise ValueError(
+                    "Cannot use `operators` with `binary_operators` or `unary_operators`. "
+                    "Use either the generic `operators` parameter or the specific operator parameters."
+                )
+        else:
+            if self.binary_operators is None and self.unary_operators is None:
+                # Neither operators nor binary/unary specified, use defaults
+                pass
+            # If binary_operators or unary_operators is specified, that's fine
         if self.tournament_selection_n > self.population_size:
             raise ValueError(
                 "`tournament_selection_n` parameter must be smaller than `population_size`."
@@ -1500,8 +1538,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             )
 
         param_container = _DynamicallySetParams(
-            binary_operators=["+", "*", "-", "/"],
-            unary_operators=[],
+            operators={2: ["+", "*", "-", "/"]},
             maxdepth=self.maxsize,
             constraints={},
             batch_size=1,
@@ -1509,6 +1546,19 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             progress=self.progress,
             warmup_maxsize_by=0.0,
         )
+
+        # Convert binary_operators/unary_operators to operators format if needed
+        if self.operators is None:
+            # Build operators dict from binary_operators and unary_operators
+            operators_dict = {}
+            if self.binary_operators is not None:
+                operators_dict[2] = self.binary_operators.copy()
+            else:
+                # Keep default binary operators
+                operators_dict[2] = ["+", "*", "-", "/"]
+            if self.unary_operators is not None:
+                operators_dict[1] = self.unary_operators.copy()
+            param_container.operators = operators_dict
 
         for param_name in map(lambda x: x.name, fields(_DynamicallySetParams)):
             user_param_value = getattr(self, param_name)
@@ -1522,9 +1572,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 setattr(param_container, param_name, new_param_value)
         # TODO: This should just be part of the __init__ of _DynamicallySetParams
 
-        assert (
-            len(param_container.binary_operators) > 0
-            or len(param_container.unary_operators) > 0
+        assert param_container.operators and any(
+            len(ops) > 0 for ops in param_container.operators.values()
         ), "At least one operator must be provided."
 
         return param_container
@@ -1865,8 +1914,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # These are the parameters which may be modified from the ones
         # specified in init, so we define them here locally:
-        binary_operators = runtime_params.binary_operators
-        unary_operators = runtime_params.unary_operators
+        operators = runtime_params.operators
         constraints = runtime_params.constraints
 
         nested_constraints = self.nested_constraints
@@ -1903,23 +1951,29 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             cluster_manager = _load_cluster_manager(cluster_manager)
 
         # TODO(mcranmer): These functions should be part of this class.
-        binary_operators, unary_operators = _maybe_create_inline_operators(
-            binary_operators=binary_operators,
-            unary_operators=unary_operators,
+        operators = _maybe_create_inline_operators(
+            operators=operators,
             extra_sympy_mappings=self.extra_sympy_mappings,
             expression_spec=self.expression_spec_,
         )
         if constraints is not None:
             _constraints = _process_constraints(
-                binary_operators=binary_operators,
-                unary_operators=unary_operators,
+                operators=operators,
                 constraints=constraints,
             )
-            una_constraints = [_constraints[op] for op in unary_operators]
-            bin_constraints = [_constraints[op] for op in binary_operators]
+            # Build constraints for each arity (including empty arities)
+            max_arity = max(operators.keys()) if operators else 2
+            constraints_by_arity = {}
+            for arity in range(1, max_arity + 1):
+                if arity in operators and operators[arity]:
+                    constraints_by_arity[arity] = [
+                        _constraints[op] for op in operators[arity]
+                    ]
+                else:
+                    constraints_by_arity[arity] = []
         else:
-            una_constraints = None
-            bin_constraints = None
+            max_arity = max(operators.keys()) if operators else 2
+            constraints_by_arity = {arity: None for arity in range(1, max_arity + 1)}
 
         # Parse dict into Julia Dict for nested constraints::
         if nested_constraints is not None:
@@ -1993,19 +2047,25 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             optimize=self.weight_optimize,
         )
 
-        jl_binary_operators: list[Any] = []
-        jl_unary_operators: list[Any] = []
-        for input_list, output_list, name in [
-            (binary_operators, jl_binary_operators, "binary"),
-            (unary_operators, jl_unary_operators, "unary"),
-        ]:
-            for op in input_list:
-                jl_op = jl.seval(op)
-                if not jl_is_function(jl_op):
-                    raise ValueError(
-                        f"When building `{name}_operators`, `'{op}'` did not return a Julia function"
-                    )
-                output_list.append(jl_op)
+        # Convert operators dict to Julia format and create OperatorEnum
+        # Fill in empty tuples for missing arities up to max arity
+        max_arity = max(operators.keys()) if operators else 2
+        jl_operators_dict = {}
+
+        for arity in range(1, max_arity + 1):
+            if arity in operators:
+                jl_op_list = []
+                for op in operators[arity]:
+                    jl_op = jl.seval(op)
+                    if not jl_is_function(jl_op):
+                        raise ValueError(
+                            f"When building operators for arity {arity}, `'{op}'` did not return a Julia function"
+                        )
+                    jl_op_list.append(jl_op)
+                jl_operators_dict[arity] = tuple(jl_op_list)
+            else:
+                # Empty tuple for missing arities
+                jl_operators_dict[arity] = ()
 
         complexity_mapping = (
             jl.seval(self.complexity_mapping) if self.complexity_mapping else None
@@ -2018,13 +2078,29 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         self.logger_ = logger
 
+        # Use Julia function to create OperatorEnum from Dict{Int,Tuple}
+        create_operator_enum = jl.seval(
+            "__sr_make_op_enum(ops_dict) = OperatorEnum([k => v for (k, v) in ops_dict]...)"
+        )
+        jl_operator_enum = create_operator_enum(jl_operators_dict)
+
+        # Build constraints dict with same structure
+        jl_constraints_dict = None
+        if any(c for c in constraints_by_arity.values() if c is not None):
+            constraints_pairs = []
+            for arity in range(1, max_arity + 1):
+                if constraints_by_arity[arity] is not None:
+                    constraints_pairs.append(
+                        jl.Pair(arity, jl_array(constraints_by_arity[arity]))
+                    )
+            if constraints_pairs:
+                jl_constraints_dict = jl.Dict(constraints_pairs)
+
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/OptionsStruct.jl
         options = SymbolicRegression.Options(
-            binary_operators=jl_array(jl_binary_operators, dtype=jl.Function),
-            unary_operators=jl_array(jl_unary_operators, dtype=jl.Function),
-            bin_constraints=jl_array(bin_constraints),
-            una_constraints=jl_array(una_constraints),
+            operators=jl_operator_enum,
+            constraints=jl_constraints_dict,
             complexity_of_operators=complexity_of_operators,
             complexity_of_constants=self.complexity_of_constants,
             complexity_of_variables=complexity_of_variables,

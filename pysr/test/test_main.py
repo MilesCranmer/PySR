@@ -540,7 +540,7 @@ class TestPipeline(unittest.TestCase):
             PySRRegressor(unary_operators=["1"]).fit([[1]], [1])
 
         self.assertIn(
-            "When building `unary_operators`, `'1'` did not return a Julia function",
+            "When building operators for arity 1, `'1'` did not return a Julia function",
             str(cm.exception),
         )
 
@@ -804,6 +804,54 @@ class TestPipeline(unittest.TestCase):
 
         y_pred = model.predict(X)
         np.testing.assert_array_almost_equal(y, y_pred, decimal=3)
+
+    def test_operators_parameter(self):
+        X = self.rstate.randn(100, 3)
+        # Create a function that would be perfect for muladd: muladd(x, y, z) = x*y + z
+        y = X[:, 0] * X[:, 1] + X[:, 2] + np.sin(X[:, 0])
+        # Test that operators parameter works with arity > 2
+        model = PySRRegressor(
+            operators={1: ["sin"], 3: ["muladd"]},
+            **self.default_test_kwargs,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity <= 10",
+        )
+        model.fit(X, y)
+        # Should work with both sin and muladd operators
+        self.assertLessEqual(model.get_best()["loss"], 1e-4)
+
+    def test_constraints_n_arity_validation(self):
+        X = self.rstate.randn(10, 2)
+        y = X[:, 0] + X[:, 1]
+
+        model = PySRRegressor(
+            operators={1: ["sin"], 2: ["+", "*"], 3: ["muladd"]},
+            constraints={
+                "sin": -1,
+                "+": (-1, -1),
+                "*": (-1, 1),
+                "muladd": (-1, -1, 1),
+            },
+            niterations=1,
+            progress=False,
+            temp_equation_file=False,
+        )
+        try:
+            model.fit(X, y)
+        except Exception as e:
+            if "constraint tuple has length" in str(e):
+                self.fail(f"Valid constraints should not raise validation error: {e}")
+
+        with self.assertRaises(ValueError) as cm:
+            invalid_model = PySRRegressor(
+                operators={3: ["muladd"]},
+                constraints={"muladd": (-1, -1)},
+                niterations=1,
+                progress=False,
+                temp_equation_file=False,
+            )
+            invalid_model.fit(X, y)
+
+        self.assertIn("arity 3 but constraint tuple has length 2", str(cm.exception))
 
 
 class TestGuesses(unittest.TestCase):
