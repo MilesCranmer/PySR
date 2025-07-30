@@ -1294,7 +1294,7 @@ class TestHelpMessages(unittest.TestCase):
     def test_power_law_warning(self):
         """Ensure that a warning is given for a power law operator."""
         with self.assertWarns(UserWarning):
-            _process_constraints(["^"], [], {})
+            _process_constraints({2: ["^"]}, {})
 
     def test_size_warning(self):
         """Ensure that a warning is given for a large input size."""
@@ -1420,7 +1420,7 @@ class TestHelpMessages(unittest.TestCase):
 
         # Farther matches (this might need to be changed)
         with self.assertRaises(TypeError) as cm:
-            PySRRegressor(operators=["+", "-"])
+            PySRRegressor(nary_operators=["+", "-"])
 
         self.assertIn("`unary_operators`, `binary_operators`", str(cm.exception))
 

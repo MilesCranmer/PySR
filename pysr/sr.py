@@ -110,7 +110,7 @@ def _process_constraints(
 
             # Apply arity-specific validation for existing constraints
             if isinstance(constraints[op], tuple):
-                constraint_tuple: tuple[int, ...] = constraints[op]
+                constraint_tuple = cast(Tuple[int, ...], constraints[op])
                 # Validate that constraint tuple length matches operator arity
                 if len(constraint_tuple) != arity:
                     raise ValueError(
