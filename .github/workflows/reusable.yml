@@ -1,0 +1,93 @@
+name: Reusable PySR Test Workflow
+
+on:
+  workflow_call:
+    inputs:
+      os:
+        required: true
+        type: string
+      python-version:
+        required: false
+        type: string
+        default: '3.13'
+      julia-version:
+        required: false
+        type: string
+        default: '1'
+      run-coverage:
+        required: false
+        type: boolean
+        default: false
+      extra-tests:
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  test:
+    runs-on: ${{ inputs.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "Set up Python"
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+          cache: pip
+
+
+      - name: "Set up Julia"
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ inputs.julia-version }}
+
+      - name: "Cache Julia"
+        uses: julia-actions/cache@v2
+
+      - name: "Install PySR"
+        run: |
+          python -m pip install --upgrade pip
+          pip install '.[dev]'
+          python -c 'import pysr'
+
+      - name: "Assert Julia version"
+        if: ${{ inputs.julia-version != '1' }}
+        run: python -c "from pysr import _get_julia_project; print(_get_julia_project().julia_version); assert _get_julia_project().julia_version.startswith('${{ inputs.julia-version }}')"
+
+      - name: "Set environment variables"
+        run: |
+          echo "PYSR_TEST_JULIA_VERSION=${{ inputs.julia-version }}" >> $GITHUB_ENV
+          echo "PYSR_TEST_PYTHON_VERSION=${{ inputs.python-version }}" >> $GITHUB_ENV
+          if [[ "${{ inputs.run-coverage }}" == "true" ]]; then
+            echo "COVERAGE_PROCESS_START=${{ github.workspace }}/.coveragerc" >> $GITHUB_ENV
+          fi
+
+      - name: "Run tests"
+        run: |
+          if [[ "${{ inputs.run-coverage }}" == "true" ]]; then
+            coverage run -m pysr test main,cli,startup
+          else
+            python -m pysr test main,cli,startup
+          fi
+
+      - name: "Run extra tests"
+        if: ${{ inputs.extra-tests != '' }}
+        run: ${{ inputs.extra-tests }}
+
+      - name: "Generate coverage report"
+        if: ${{ inputs.run-coverage }}
+        run: |
+          coverage combine
+          coverage report -m
+
+      - name: "Upload results to Codecov"
+        if: ${{ inputs.run-coverage }}
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: MilesCranmer/PySR
