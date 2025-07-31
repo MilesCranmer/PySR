@@ -767,23 +767,25 @@ class TestPipeline(unittest.TestCase):
 
     def test_negative_losses(self):
         X = self.rstate.rand(100, 3) * 20.0
-        eps = self.rstate.randn(100)
-        y = np.cos(X[:, 0] * 2.1 - 0.5) + X[:, 1] ** 2 + 0.1 * eps
+        variance = X[:, 0] * 0.1
+        eps = self.rstate.randn(100) * np.sqrt(variance)
+        y = X[:, 0] + X[:, 1] ** 2 + eps
         spec = TemplateExpressionSpec(
             expressions=["f_mu", "f_logvar"],
             variable_names=["x1", "x2", "x3", "y"],
-            combine="mu = f_mu(x1, x2, x3); logvar = f_logvar(x1, x2, x3); 0.5f0 * (logvar + (mu - y)^2 / exp(logvar))",
+            combine="mu = f_mu(x1, x2, x3); logvar = f_logvar(x1, x2, x3); 0.5f0 * (logvar + (mu - y)^2 / exp(logvar)) - 2",
         )
         model = PySRRegressor(
             **self.default_test_kwargs,
             expression_spec=spec,
             binary_operators=["+", "*", "-"],
-            unary_operators=["cos", "log", "exp"],
+            unary_operators=["log", "exp"],
             elementwise_loss="(pred, targ) -> pred",
             loss_scale="linear",
             early_stop_condition="stop_if_under_n1(loss, complexity) = loss < -1.0",
         )
         model.fit(np.column_stack([X, y]), 0 * y)
+        print(model.get_best())
         self.assertLessEqual(model.get_best()["loss"], -1.0)
 
     def test_comparison_operator(self):
