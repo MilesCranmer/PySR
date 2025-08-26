@@ -80,6 +80,8 @@
   - procs
   - cluster_manager
   - heap_size_hint_in_bytes
+  - worker_timeout
+  - worker_imports
   - batching
   - batch_size
   - precision

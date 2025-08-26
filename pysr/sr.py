@@ -614,6 +614,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         multi-node distributed compute, to give a hint to each process
         about how much memory they can use before aggressive garbage
         collection.
+    worker_timeout : float | None
+        Timeout in seconds for worker processes during multiprocessing to respond.
+        If a worker does not respond within this time, it will be restarted.
+        Default is `None`.
+    worker_imports : list[str] | None
+        List of module names as strings to import in worker processes.
+        For example, `["MyPackage", "OtherPackage"]` will run `using MyPackage, OtherPackage`
+        in each worker process. Default is `None`.
     batching : bool
         Whether to compare population members on small batches during
         evolution. Still uses full dataset for comparing against hall
@@ -923,6 +931,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Literal["slurm", "pbs", "lsf", "sge", "qrsh", "scyld", "htc"] | None
         ) = None,
         heap_size_hint_in_bytes: int | None = None,
+        worker_timeout: float | None = None,
+        worker_imports: list[str] | None = None,
         batching: bool = False,
         batch_size: int = 50,
         fast_cycle: bool = False,
@@ -1040,6 +1050,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.procs = procs
         self.cluster_manager = cluster_manager
         self.heap_size_hint_in_bytes = heap_size_hint_in_bytes
+        self.worker_timeout = worker_timeout
+        self.worker_imports = worker_imports
         self.batching = batching
         self.batch_size = batch_size
         self.fast_cycle = fast_cycle
@@ -2211,6 +2223,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         jl_guesses = _prepare_guesses_for_julia(self.guesses, self.nout_)
 
+        # Convert worker_imports to Julia symbols
+        jl_worker_imports = (
+            jl_array([jl.Symbol(s) for s in self.worker_imports])
+            if self.worker_imports is not None
+            else None
+        )
+
         out = SymbolicRegression.equation_search(
             jl_X,
             jl_y,
@@ -2237,6 +2256,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             run_id=self.run_id_,
             addprocs_function=cluster_manager,
             heap_size_hint_in_bytes=self.heap_size_hint_in_bytes,
+            worker_timeout=self.worker_timeout,
+            worker_imports=jl_worker_imports,
             progress=runtime_params.progress
             and self.verbosity > 0
             and len(y.shape) == 1,
