@@ -356,8 +356,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         maxsize constraints on the individual arguments of operators.
         E.g., `'pow': (-1, 1)` says that power laws can have any
         complexity left argument, but only 1 complexity in the right
-        argument. For arity-3 operators like muladd, use tuples like
-        `'muladd': (-1, -1, 1)`. Use this to force more interpretable solutions.
+        argument. For arity-3 operators like muladd, use 3-tuples like
+        `'muladd': (-1, -1, 1)` to constrain each argument's complexity.
+        Use this to force more interpretable solutions.
         Default is `None`.
     nested_constraints : dict[str, dict]
         Specifies how many times a combination of operators can be
