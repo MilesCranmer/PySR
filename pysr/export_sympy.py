@@ -66,7 +66,6 @@ sympy_mappings = {
     "logical_or": lambda x, y: sympy.Piecewise((1.0, (x > 0) | (y > 0)), (0.0, True)),
     "logical_and": lambda x, y: sympy.Piecewise((1.0, (x > 0) & (y > 0)), (0.0, True)),
     "relu": lambda x: sympy.Piecewise((0.0, x < 0), (x, True)),
-    # 3-arity operators:
     "muladd": lambda x, y, z: x * y + z,
     "clamp": lambda x, min_val, max_val: sympy.Piecewise(
         (min_val, x < min_val), (max_val, x > max_val), (x, True)
