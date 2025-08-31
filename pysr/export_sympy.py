@@ -56,8 +56,8 @@ sympy_mappings = {
     "sign": sympy.sign,
     "gamma": sympy.gamma,
     "round": lambda x: sympy.ceiling(x - 0.5),
-    "max": lambda x, y: sympy.Piecewise((y, x < y), (x, True)),
-    "min": lambda x, y: sympy.Piecewise((x, x < y), (y, True)),
+    "max": lambda *args: sympy.Max(*args),
+    "min": lambda *args: sympy.Min(*args),
     "greater": lambda x, y: sympy.Piecewise((1.0, x > y), (0.0, True)),
     "less": lambda x, y: sympy.Piecewise((1.0, x < y), (0.0, True)),
     "greater_equal": lambda x, y: sympy.Piecewise((1.0, x >= y), (0.0, True)),
@@ -66,6 +66,11 @@ sympy_mappings = {
     "logical_or": lambda x, y: sympy.Piecewise((1.0, (x > 0) | (y > 0)), (0.0, True)),
     "logical_and": lambda x, y: sympy.Piecewise((1.0, (x > 0) & (y > 0)), (0.0, True)),
     "relu": lambda x: sympy.Piecewise((0.0, x < 0), (x, True)),
+    # 3-arity operators:
+    "muladd": lambda x, y, z: x * y + z,
+    "clamp": lambda x, min_val, max_val: sympy.Piecewise(
+        (min_val, x < min_val), (max_val, x > max_val), (x, True)
+    ),
 }
 
 
