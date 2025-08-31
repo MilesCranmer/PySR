@@ -41,7 +41,7 @@ it can exponentially increase the search space.
 | Ternary      |
 |--------------|
 | `clamp`      |
-| `muladd`     |
+| `fma` / `muladd` |
 | `max`        |
 | `min`        |
 
