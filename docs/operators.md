@@ -10,20 +10,7 @@ A selection of these and other valid operators are stated below.
 Also, note that it's a good idea to not use too many operators, since
 it can exponentially increase the search space.
 
-**Binary Operators**
-
-| Arithmetic    | Comparison | Logic    |
-|--------------|------------|----------|
-| `+`          | `max`      | `logical_or`[^2] |
-| `-`          | `min`      | `logical_and`[^3]|
-| `*`          | `>`[^4]    |                 |
-| `/`          | `>=`       |                 |
-| `^`          | `<`        |                 |
-|              | `<=`       |                 |
-|              | `cond`[^5] |                 |
-|              | `mod`      |                 |
-
-**Unary Operators**
+### Unary Operators
 
 | Basic      | Exp/Log    | Trig      | Hyperbolic | Special   | Rounding   |
 |------------|------------|-----------|------------|-----------|------------|
@@ -36,6 +23,37 @@ it can exponentially increase the search space.
 | `sign`     |            |           |            |           |            |
 | `inv`      |            |           |            |           |            |
 
+### Binary Operators
+
+| Arithmetic    | Comparison | Logic    |
+|--------------|------------|----------|
+| `+`          | `max`      | `logical_or`[^2] |
+| `-`          | `min`      | `logical_and`[^3]|
+| `*`          | `>`[^4]    |                 |
+| `/`          | `>=`       |                 |
+| `^`          | `<`        |                 |
+|              | `<=`       |                 |
+|              | `cond`[^5] |                 |
+|              | `mod`      |                 |
+
+### Higher Arity Operators
+
+| Ternary      |
+|--------------|
+| `clamp`      |
+| `muladd`     |
+| `max`        |
+| `min`        |
+
+<!--TODO: | `ifelse`[^6] | -->
+
+Note that to use operators with arity 3 or more, you must use the `operators` parameter instead of the `*ary_operators` parameters, and pass operators as a dictionary with the arity as key:
+
+```python
+operators={
+    1: ["sin"], 2: ["+", "-", "*"], 3: ["clamp"]
+},
+```
 
 ## Custom
 
@@ -70,12 +88,10 @@ would be a valid operator. The genetic algorithm
 will preferentially selection expressions which avoid
 any invalid values over the training dataset.
 
-
-<!-- Footnote for 1: -->
-<!-- (Will say "However, you may need to define a `extra_sympy_mapping`":) -->
-
 [^1]: However, you will need to define a sympy equivalent in `extra_sympy_mapping` if you want to use a function not in the above list.
 [^2]: `logical_or` is equivalent to `(x, y) -> (x > 0 || y > 0) ? 1 : 0`
 [^3]: `logical_and` is equivalent to `(x, y) -> (x > 0 && y > 0) ? 1 : 0`
 [^4]: `>` is equivalent to `(x, y) -> x > y ? 1 : 0`
 [^5]: `cond` is equivalent to `(x, y) -> x > 0 ? y : 0`
+
+<!-- [^6]: `ifelse` is equivalent to `(x, y, z) -> x > 0 ? y : z` -->
