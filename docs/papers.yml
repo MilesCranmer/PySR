@@ -311,3 +311,19 @@ papers:
     abstract: We study the potential of symbolic regression (SR) to derive compact and precise analytic expressions that can improve the accuracy and simplicity of phenomenological analyses at the Large Hadron Collider (LHC). As a benchmark, we apply SR to equation recovery in quantum electrodynamics (QED), where established analytical results from quantum field theory provide a reliable framework for evaluation. This benchmark serves to validate the performance and reliability of SR before extending its application to structure functions in the Drell-Yan process mediated by virtual photons, which lack analytic representations from first principles. By combining the simplicity of analytic expressions with the predictive power of machine learning techniques, SR offers a useful tool for facilitating phenomenological analyses in high energy physics.
     image: https://github.com/MilesCranmer/PySR_Docs/blob/master/images/hep_sr_img.png
     date: 2024-12-10
+  - title: Angular Coefficients from Interpretable Machine Learning with Symbolic Regression
+    authors:
+      - Josh Bendavid (1)
+      - Daniel Conde (2)
+      - Manuel Morales-Alvarado (3)
+      - Veronica Sanz (2)
+      - Maria Ubiali (4)
+    affiliations:
+       1: CERN
+       2: Universidad de Valencia
+       3: Istituto Nazionale di Fisica Nucleare, Trieste
+       4: University of Cambridge
+    link: https://inspirehep.net/literature/2957199
+    abstract: "We explore the use of symbolic regression to derive compact analytical expressions for angular observables relevant to electroweak boson production at the Large Hadron Collider (LHC). Focusing on the angular coefficients that govern the decay distributions of $W$ and $Z$ bosons, we investigate whether symbolic models can well approximate these quantities, typically computed via computationally costly numerical procedures, with high fidelity and interpretability. Using the PySR package, we first validate the approach in controlled settings, namely in angular distributions in lepton-lepton collisions in QED and in leading-order Drell–Yan production at the LHC. We then apply symbolic regression to extract closed-form expressions for the angular coefficients $A_i$ as functions of transverse momentum, rapidity, and invariant mass, using next-to-leading order simulations of $pp \to l^+ l^-$ events. Our results demonstrate that symbolic regression can produce accurate and generalisable expressions that match Monte Carlo predictions within uncertainties, while preserving interpretability and providing insight into the kinematic dependence of angular observables."
+    image: https://github.com/MilesCranmer/PySR_Docs/blob/master/images/hep_sr_img.png
+    date: 2025-08-01
