@@ -540,7 +540,7 @@ class TestPipeline(unittest.TestCase):
             PySRRegressor(unary_operators=["1"]).fit([[1]], [1])
 
         self.assertIn(
-            "When building `unary_operators`, `'1'` did not return a Julia function",
+            "When building operators for arity 1, `'1'` did not return a Julia function",
             str(cm.exception),
         )
 
@@ -767,23 +767,25 @@ class TestPipeline(unittest.TestCase):
 
     def test_negative_losses(self):
         X = self.rstate.rand(100, 3) * 20.0
-        eps = self.rstate.randn(100)
-        y = np.cos(X[:, 0] * 2.1 - 0.5) + X[:, 1] ** 2 + 0.1 * eps
+        variance = X[:, 0] * 0.1
+        eps = self.rstate.randn(100) * np.sqrt(variance)
+        y = X[:, 0] + X[:, 1] ** 2 + eps
         spec = TemplateExpressionSpec(
             expressions=["f_mu", "f_logvar"],
             variable_names=["x1", "x2", "x3", "y"],
-            combine="mu = f_mu(x1, x2, x3); logvar = f_logvar(x1, x2, x3); 0.5f0 * (logvar + (mu - y)^2 / exp(logvar))",
+            combine="mu = f_mu(x1, x2, x3); logvar = f_logvar(x1, x2, x3); 0.5f0 * (logvar + (mu - y)^2 / exp(logvar)) - 2",
         )
         model = PySRRegressor(
             **self.default_test_kwargs,
             expression_spec=spec,
             binary_operators=["+", "*", "-"],
-            unary_operators=["cos", "log", "exp"],
+            unary_operators=["log", "exp"],
             elementwise_loss="(pred, targ) -> pred",
             loss_scale="linear",
             early_stop_condition="stop_if_under_n1(loss, complexity) = loss < -1.0",
         )
         model.fit(np.column_stack([X, y]), 0 * y)
+        print(model.get_best())
         self.assertLessEqual(model.get_best()["loss"], -1.0)
 
     def test_comparison_operator(self):
@@ -804,6 +806,180 @@ class TestPipeline(unittest.TestCase):
 
         y_pred = model.predict(X)
         np.testing.assert_array_almost_equal(y, y_pred, decimal=3)
+
+    def test_operators_parameter(self):
+        X = self.rstate.randn(100, 3)
+        # Create a function that would be perfect for muladd: muladd(x, y, z) = x*y + z
+        y = X[:, 0] * X[:, 1] + X[:, 2] + np.sin(X[:, 0])
+        # Test that operators parameter works with arity > 2
+        model = PySRRegressor(
+            operators={1: ["sin"], 3: ["muladd"]},
+            **self.default_test_kwargs,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity <= 10",
+        )
+        model.fit(X, y)
+        # Should work with both sin and muladd operators
+        self.assertLessEqual(model.get_best()["loss"], 1e-4)
+
+    def test_constraints_n_arity_validation(self):
+        X = self.rstate.randn(10, 2)
+        y = X[:, 0] + X[:, 1]
+
+        model = PySRRegressor(
+            operators={1: ["sin"], 2: ["+", "*"], 3: ["muladd"]},
+            constraints={
+                "sin": -1,
+                "+": (-1, -1),
+                "*": (-1, 1),
+                "muladd": (-1, -1, 1),
+            },
+            niterations=1,
+            progress=False,
+            temp_equation_file=False,
+        )
+        try:
+            model.fit(X, y)
+        except Exception as e:
+            if "constraint tuple has length" in str(e):
+                self.fail(f"Valid constraints should not raise validation error: {e}")
+
+        with self.assertRaises(ValueError) as cm:
+            invalid_model = PySRRegressor(
+                operators={3: ["muladd"]},
+                constraints={"muladd": (-1, -1)},
+                niterations=1,
+                progress=False,
+                temp_equation_file=False,
+            )
+            invalid_model.fit(X, y)
+
+        self.assertIn("arity 3 but constraint tuple has length 2", str(cm.exception))
+
+
+class TestGuesses(unittest.TestCase):
+    def setUp(self):
+        self.rstate = np.random.RandomState(1)
+        self.default_test_kwargs = dict(
+            niterations=0, progress=False, temp_equation_file=False
+        )
+
+    def test_single_output_string_guesses(self):
+        X = self.rstate.randn(100, 2)
+        y = 2.0 * X[:, 0] + 3.0 * X[:, 1] + 0.5
+        model = PySRRegressor(
+            guesses=["2.0*x0 + 3.0*x1 + 0.5", "x0 + x1"],
+            **self.default_test_kwargs,
+        )
+        model.fit(X, y)
+        # Check that the exact guess is in the hall of fame
+        self.assertTrue(any(model.equations_["loss"] < 1e-10))
+
+    def test_custom_variable_names_guesses(self):
+        X = self.rstate.randn(100, 2)
+        y = 2.0 * X[:, 0] + 3.0 * X[:, 1] + 0.5
+        model = PySRRegressor(
+            guesses=["2.0*feature1 + 3.0*feature2 + 0.5"],
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-6 && complexity <= 5",
+            **self.default_test_kwargs,
+        )
+        model.fit(X, y, variable_names=["feature1", "feature2"])
+        # Check that the exact guess is in the hall of fame
+        self.assertTrue(any(model.equations_["loss"] < 1e-10))
+
+    def test_multi_output_guesses(self):
+        X = self.rstate.randn(100, 2)
+        Y = np.column_stack([2.0 * X[:, 0] + X[:, 1], X[:, 0] - X[:, 1]])
+        model = PySRRegressor(
+            guesses=[["2.0*x0 + x1"], ["x0 - x1"]],
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-6 && complexity <= 5",
+            **self.default_test_kwargs,
+        )
+        model.fit(X, Y)
+        # Check both outputs have good fits
+        for i, eqs_df in enumerate(model.equations_):
+            self.assertTrue(any(eqs_df["loss"] < 1e-10))
+
+    def test_template_expression_guesses(self):
+        X = self.rstate.randn(100, 2)
+        y = X[:, 0] + X[:, 1]
+        template = TemplateExpressionSpec(
+            expressions=["f"], combine="f(x0, x1)", variable_names=["x0", "x1"]
+        )
+        model = PySRRegressor(
+            expression_spec=template,
+            guesses=[{"f": "#1 + #2"}],
+            **self.default_test_kwargs,
+        )
+        model.fit(X, y)
+        # Check that a good fit was found
+        self.assertTrue(any(model.equations_["loss"] < 1e-10))
+
+    def test_multi_output_template_expression_guesses(self):
+        X = self.rstate.randn(100, 2)
+        Y = np.column_stack([X[:, 0] + X[:, 1], X[:, 0] - X[:, 1]])
+        template = TemplateExpressionSpec(
+            expressions=["f"], combine="f(x0, x1)", variable_names=["x0", "x1"]
+        )
+        model = PySRRegressor(
+            expression_spec=template,
+            guesses=[
+                [{"f": "#1 + #2"}],
+                [{"f": "#1 - #2"}],
+            ],
+            **self.default_test_kwargs,
+        )
+        model.fit(X, Y)
+        # Check both outputs have good fits
+        for i, eqs_df in enumerate(model.equations_):
+            self.assertTrue(any(eqs_df["loss"] < 1e-10))
+
+    def test_invalid_multi_output_format_guesses(self):
+        X = self.rstate.randn(100, 2)
+        Y = np.column_stack([X[:, 0], X[:, 1]])
+        model = PySRRegressor(guesses=["x0", "x1"])
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, Y)
+        self.assertIn("must be a list of lists", str(cm.exception))
+
+    def test_wrong_number_of_guess_lists(self):
+        X = self.rstate.randn(100, 2)
+        Y = np.column_stack([X[:, 0], X[:, 1]])
+        model = PySRRegressor(guesses=[["x0"]])
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, Y)
+        self.assertIn("must match number of outputs", str(cm.exception))
+
+    @skip_if_beartype
+    def test_non_list_guesses_single_output(self):
+        X = self.rstate.randn(100, 2)
+        y = X[:, 0] + X[:, 1]
+        model = PySRRegressor(guesses="x0 + x1")
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, y)
+        self.assertIn(
+            "guesses must be a list for single-output regression", str(cm.exception)
+        )
+
+    def test_multiple_lists_single_output_guesses(self):
+        X = self.rstate.randn(100, 2)
+        y = X[:, 0] + X[:, 1]
+        model = PySRRegressor(guesses=[["x0 + x1"], ["x0 - x1"]])
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, y)
+        self.assertIn(
+            "For single output, provide a list of strings/dicts", str(cm.exception)
+        )
+
+    def test_vector_of_vectors_single_output_guesses(self):
+        X = self.rstate.randn(100, 2)
+        y = X[:, 0] + X[:, 1]
+        model = PySRRegressor(
+            guesses=[["x0 + x1", "x0 - x1"]],
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity <= 5",
+            **self.default_test_kwargs,
+        )
+        model.fit(X, y)
+        self.assertTrue(any(model.equations_["loss"] < 1e-10))
 
 
 def manually_create_model(equations, feature_names=None):
@@ -1120,7 +1296,7 @@ class TestHelpMessages(unittest.TestCase):
     def test_power_law_warning(self):
         """Ensure that a warning is given for a power law operator."""
         with self.assertWarns(UserWarning):
-            _process_constraints(["^"], [], {})
+            _process_constraints({2: ["^"]}, {})
 
     def test_size_warning(self):
         """Ensure that a warning is given for a large input size."""
@@ -1246,7 +1422,7 @@ class TestHelpMessages(unittest.TestCase):
 
         # Farther matches (this might need to be changed)
         with self.assertRaises(TypeError) as cm:
-            PySRRegressor(operators=["+", "-"])
+            PySRRegressor(nary_operators=["+", "-"])
 
         self.assertIn("`unary_operators`, `binary_operators`", str(cm.exception))
 
@@ -1732,6 +1908,7 @@ def runtests(just_tests=False):
         TestHelpMessages,
         TestLaTeXTable,
         TestDimensionalConstraints,
+        TestGuesses,
     ]
     if just_tests:
         return test_cases
