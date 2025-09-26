@@ -693,7 +693,7 @@ import numpy as np
 from pysr import PySRRegressor, TemplateExpressionSpec
 
 n = 200
-rstate = np.random.RandomState(42)
+rstate = np.random.RandomState(0)
 x1 = rstate.uniform(-2, 2, n)
 x2 = rstate.uniform(-2, 2, n)
 x3 = rstate.uniform(-2, 2, n)
