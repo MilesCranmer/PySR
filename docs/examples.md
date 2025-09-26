@@ -763,11 +763,11 @@ After running, PySR should find both the shared component (`exp(x1)`) as well as
 You can access the individual expressions through the Julia objects:
 
 ```python
-# Simply get the most accurate expression:
-idx = model.equations_.loss.idxmin()
+# Simply get the expression with the highest score:
+idx = model.equations_.score.idxmax()
 
 # Extract the Julia object:
-julia_expr = model.equations_.loc[best_idx, 'julia_expression']
+julia_expr = model.equations_.loc[idx, 'julia_expression']
 
 # Access individual subexpressions:
 for name in ['f1', 'f2', 'f3', 'shared']:
@@ -779,8 +779,9 @@ We can also evaluate individual expressions:
 
 ```python
 from pysr import jl
-from pysr.julia_import import SymbolicRegression as SR
 from pysr.julia_helpers import jl_array
+
+SR = jl.SymbolicRegression
 
 # Get individual trees
 f1_tree = julia_expr.trees.f1
@@ -788,11 +789,11 @@ shared_tree = julia_expr.trees.shared
 
 # Evaluate at specific points (x1=1, x2=2, x3=3)
 test_inputs = jl_array(np.array([[1.0], [2.0], [3.0]]))
-f1_result = SR.eval_tree_array(f1_tree, test_inputs, model.julia_options_)
-shared_result = SR.eval_tree_array(shared_tree, test_inputs, model.julia_options_)
+f1_result, _ = SR.eval_tree_array(f1_tree, test_inputs, model.julia_options_)
+shared_result, _ = SR.eval_tree_array(shared_tree, test_inputs, model.julia_options_)
 
-print(f"f1 at (1,2,3): {f1_result[0][0]}")  # Should be ~4.0 for x2^2
-print(f"shared at (1,2,3): {shared_result[0][0]}")  # Should be ~2.718 for exp(1)
+print(f"f1 at (1,2,3): {f1_result[0]}")  # Should be ~4.0 for x2^2
+print(f"shared at (1,2,3): {shared_result[0]}")  # Should be ~2.718 for exp(1)
 ```
 
 ## 14. Using differential operators
