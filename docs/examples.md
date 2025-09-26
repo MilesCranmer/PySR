@@ -670,7 +670,76 @@ You can then view the logs with:
 tensorboard --logdir logs/
 ```
 
-## 13. Using differential operators
+## 13. Vector-valued expressions
+
+You can use `TemplateExpressionSpec` to find expressions for vector-valued data,
+where each component might share a common structure.
+The trick is to put each vector element into your feature matrix `X`,
+and then use a template expression to define the relationships.
+
+For example, let's say we have 3-dimensional vectors where each component
+follows a pattern with a shared term:
+
+```python
+import numpy as np
+from pysr import PySRRegressor, TemplateExpressionSpec
+
+np.random.seed(42)
+n = 200
+x1 = np.random.uniform(-2, 2, n)
+x2 = np.random.uniform(-2, 2, n)
+x3 = np.random.uniform(-2, 2, n)
+
+# True model with shared component exp(x1):
+y1 = np.exp(x1) + x2**2
+y2 = np.exp(x1) + np.sin(x3)
+y3 = np.exp(x1) + x1 * x2
+
+# Add some noise
+y1 += 0.05 * np.random.randn(n)
+y2 += 0.05 * np.random.randn(n)
+y3 += 0.05 * np.random.randn(n)
+
+# Put everything in X - features and vector components
+X = np.column_stack([x1, x2, x3, y1, y2, y3])
+
+spec = TemplateExpressionSpec(
+    expressions=["f1", "f2", "f3", "shared"],
+    variable_names=["x1", "x2", "x3", "y1", "y2", "y3"],
+    combine="""
+        v = shared(x1, x2, x3)
+        y1_predicted = v + f1(x1, x2, x3)
+        y2_predicted = v + f2(x1, x2, x3)
+        y3_predicted = v + f3(x1, x2, x3)
+
+        residuals = (
+            abs2(y1 - y1_predicted) +
+            abs2(y2 - y2_predicted) +
+            abs2(y3 - y3_predicted)
+        )
+
+        residuals
+    """
+)
+
+model = PySRRegressor(
+    expression_spec=spec,
+    binary_operators=["+", "-", "*", "/"],
+    unary_operators=["exp", "sin", "cos", "square"],
+    maxsize=15,
+    niterations=50,
+    elementwise_loss="(pred, target) -> pred",
+)
+
+# Since loss is computed in the template, we pass dummy y
+model.fit(X, np.zeros(n))
+```
+
+After running, PySR will find:
+- The shared component: `exp(x1)`
+- Individual patterns: `square(x2)`, `sin(x3)`, and `x1 * x2`
+
+## 14. Using differential operators
 
 As part of the `TemplateExpressionSpec` described above,
 you can also use differential operators within the template.
@@ -710,7 +779,7 @@ If everything works, you should find something that simplifies to $\frac{\sqrt{x
 
 Here, we write out a full function in Julia.
 
-## 14. Additional features
+## 15. Additional features
 
 For the many other features available in PySR, please
 read the [Options section](options.md).
