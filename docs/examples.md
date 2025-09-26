@@ -680,11 +680,11 @@ and then use a template expression to define the relationships.
 For example, say we have 3-dimensional vectors where each component
 follows a pattern with a shared term. Say the true model is:
 
-$$\begin{align}
+$$\begin{align*}
 y_1 &= \exp(x_1) + x_2^2 \\
 y_2 &= \exp(x_1) + \sin(x_3) \\
 y_3 &= \exp(x_1) + x_1 \cdot x_2
-\end{align}$$
+\end{align*}$$
 
 Let's set this up:
 
