@@ -670,7 +670,133 @@ You can then view the logs with:
 tensorboard --logdir logs/
 ```
 
-## 13. Using differential operators
+## 13. Vector-valued expressions
+
+You can use `TemplateExpressionSpec` to find expressions for vector-valued data,
+where each component might share a common structure.
+The trick is to put each vector element into your feature matrix `X`,
+and then use a template expression to define the relationships.
+
+For example, say we have 3-dimensional vectors where each component
+follows a pattern with a shared term. Say the true model is:
+
+$$\begin{align*}
+y_1 &= \exp(x_1) + x_2^2 \\
+y_2 &= \exp(x_1) + \sin(x_3) \\
+y_3 &= \exp(x_1) + x_1 \cdot x_2
+\end{align*}$$
+
+Let's set this up:
+
+```python
+import numpy as np
+from pysr import PySRRegressor, TemplateExpressionSpec
+
+n = 200
+rstate = np.random.RandomState(0)
+x1 = rstate.uniform(-2, 2, n)
+x2 = rstate.uniform(-2, 2, n)
+x3 = rstate.uniform(-2, 2, n)
+
+# True model with shared component exp(x1):
+y1 = np.exp(x1) + x2**2
+y2 = np.exp(x1) + np.sin(x3)
+y3 = np.exp(x1) + x1 * x2
+
+# Add some noise
+y1 += 0.05 * rstate.randn(n)
+y2 += 0.05 * rstate.randn(n)
+y3 += 0.05 * rstate.randn(n)
+```
+
+Now, we put everything in `X`; BOTH features and targets:
+
+```python
+X = np.column_stack([x1, x2, x3, y1, y2, y3])
+```
+
+Now, we can define our template expression:
+
+```python
+spec = TemplateExpressionSpec(
+    expressions=["f1", "f2", "f3", "shared"],
+    variable_names=["x1", "x2", "x3", "y1", "y2", "y3"],
+    combine="""
+        v = shared(x1, x2, x3)
+        y1_predicted = v + f1(x1, x2, x3)
+        y2_predicted = v + f2(x1, x2, x3)
+        y3_predicted = v + f3(x1, x2, x3)
+
+        residuals = (
+            abs2(y1 - y1_predicted) +
+            abs2(y2 - y2_predicted) +
+            abs2(y3 - y3_predicted)
+        )
+
+        residuals
+    """
+)
+```
+
+Now, we can fit our model using this template. Since
+we already computed the per-row squared error inside the template,
+we can pass a dummy `y` to the `fit` method, and also define
+an `elementwise_loss` that simply returns the residuals (which get
+summed over the data):
+
+```python
+model = PySRRegressor(
+    expression_spec=spec,
+    binary_operators=["+", "-", "*", "/"],
+    unary_operators=["exp", "sin"],
+    maxsize=20,
+    niterations=50,
+    elementwise_loss="(pred, target) -> pred",
+)
+
+dummy_y = np.zeros(n)
+model.fit(X, dummy_y)
+```
+
+After running, PySR should find both the shared component (`exp(x1)`) as well as individual components (`square(x2)`, `sin(x3)`, and `x1 * x2`).
+
+You can access the individual expressions through the Julia objects:
+
+```python
+# Simply get the expression with the highest score:
+idx = model.equations_.score.idxmax()
+
+# Extract the Julia object:
+julia_expr = model.equations_.loc[idx, 'julia_expression']
+
+# Access individual subexpressions:
+for name in ['f1', 'f2', 'f3', 'shared']:
+    tree = getattr(julia_expr.trees, name)
+    print(f"{name}: {tree}")
+```
+
+We can also evaluate individual expressions:
+
+```python
+from pysr import jl
+from pysr.julia_helpers import jl_array
+
+SR = jl.SymbolicRegression
+
+# Get individual trees
+f1_tree = julia_expr.trees.f1
+shared_tree = julia_expr.trees.shared
+
+# Evaluate at specific points (x1=1, x2=2, x3=3)
+test_inputs = jl_array(np.array([[1.0], [2.0], [3.0]]))
+f1_result, _ = SR.eval_tree_array(f1_tree, test_inputs, model.julia_options_)
+shared_result, _ = SR.eval_tree_array(shared_tree, test_inputs, model.julia_options_)
+
+print(f"f1 at (1,2,3): {f1_result[0]}")  # Should be ~4.0 for x2^2
+print(f"shared at (1,2,3): {shared_result[0]}")  # Should be ~2.718 for exp(1)
+```
+
+## 14. Using differential operators
 
 As part of the `TemplateExpressionSpec` described above,
 you can also use differential operators within the template.
@@ -710,7 +836,7 @@ If everything works, you should find something that simplifies to $\frac{\sqrt{x
 
 Here, we write out a full function in Julia.
 
-## 14. Additional features
+## 15. Additional features
 
 For the many other features available in PySR, please
 read the [Options section](options.md).
