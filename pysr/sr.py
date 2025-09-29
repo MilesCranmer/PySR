@@ -628,8 +628,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         evolution. Still uses full dataset for comparing against hall
         of fame. Default is "auto", which enables batching for N≥1000.
     batch_size : int | None
-        The batch size to use if batching. If None (default), uses
+        The batch size to use if batching. If None, uses
         128 for N<5000, 256 for N<50000, or 512 for N≥50000.
+        Default is `None`.
     fast_cycle : bool
         Batch over population subsamples. This is a slightly different
         algorithm than regularized evolution, but does cycles 15%
@@ -1560,7 +1561,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             operators={2: ["+", "*", "-", "/"]},
             maxdepth=self.maxsize,
             constraints={},
-            batch_size=1,
+            batch_size=None,
             update_verbosity=int(self.verbosity),
             progress=self.progress,
             warmup_maxsize_by=0.0,
@@ -1581,8 +1582,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         for param_name in map(lambda x: x.name, fields(_DynamicallySetParams)):
             user_param_value = getattr(self, param_name)
-            if user_param_value is None:
+            if user_param_value is None and param_name != "batch_size":
                 # Leave as the default in DynamicallySetParams
+                # (except for batch_size, which we want to keep as None)
                 ...
             else:
                 # If user has specified it, we will override the default.
