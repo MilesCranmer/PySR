@@ -626,7 +626,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     batching : bool | "auto"
         Whether to compare population members on small batches during
         evolution. Still uses full dataset for comparing against hall
-        of fame. Default is "auto", which enables batching for N≥1000.
+        of fame. "auto" enables batching for N≥1000. Default is `"auto"`.
     batch_size : int | None
         The batch size to use if batching. If None, uses
         128 for N<5000, 256 for N<50000, or 512 for N≥50000.
