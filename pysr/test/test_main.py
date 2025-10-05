@@ -981,6 +981,30 @@ class TestGuesses(unittest.TestCase):
         model.fit(X, y)
         self.assertTrue(any(model.equations_["loss"] < 1e-10))
 
+    def test_guesses_use_zero_based_indexing(self):
+        # Test that guesses use 0-based indexing (x0, x1, x2)
+        # not 1-based (x1, x2, x3)
+        X = self.rstate.randn(100, 3)
+        y = X[:, 0] * X[:, 1] + X[:, 2]  # True function
+
+        # Test with correct guess (should have near-zero loss)
+        model_correct = PySRRegressor(
+            binary_operators=["+", "*"],
+            guesses=["x0 * x1 + x2"],  # Correct 0-based indexing
+            **self.default_test_kwargs,
+        )
+        model_correct.fit(X, y)
+        self.assertLess(model_correct.equations_.iloc[-1]["loss"], 1e-10)
+
+        # Test with wrong guess (off-by-one indexing, should have high loss)
+        model_wrong = PySRRegressor(
+            binary_operators=["+", "*"],
+            guesses=["x1 * x2 + x0"],  # Wrong columns if 0-indexed
+            **self.default_test_kwargs,
+        )
+        model_wrong.fit(X, y)
+        self.assertGreater(model_wrong.equations_.iloc[-1]["loss"], 1.0)
+
 
 def manually_create_model(equations, feature_names=None):
     if feature_names is None:
