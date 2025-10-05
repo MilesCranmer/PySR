@@ -1005,6 +1005,26 @@ class TestGuesses(unittest.TestCase):
         model_wrong.fit(X, y)
         self.assertGreater(model_wrong.equations_.iloc[-1]["loss"], 1.0)
 
+    def test_unary_operators_in_guesses(self):
+        # Test that unary operators (like log) can be used in guesses
+        X = np.abs(self.rstate.randn(100, 2)) + 1  # Ensure positive for log
+        y = np.log(X[:, 0]) + 2.5 * X[:, 1]
+
+        # Test that log operator is parsed and used correctly
+        model = PySRRegressor(
+            binary_operators=["+", "*"],
+            unary_operators=["log"],
+            guesses=["log(x0) + 1.0 * x1"],  # Uses log operator (wrong constant)
+            niterations=0,  # MUST use 0 to test the guess itself
+            progress=False,
+            temp_equation_file=False,
+        )
+        model.fit(X, y)
+        # With niterations=0, constants still get optimized, so loss should be near-zero
+        self.assertLess(model.equations_.iloc[-1]["loss"], 1e-10)
+        # Verify log is in the equation
+        self.assertIn("log", str(model.equations_.iloc[-1]["sympy_format"]))
+
 
 def manually_create_model(equations, feature_names=None):
     if feature_names is None:
