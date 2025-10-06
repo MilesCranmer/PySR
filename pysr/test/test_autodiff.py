@@ -48,10 +48,11 @@ class TestAutodiff(unittest.TestCase):
             self._run_autodiff_backend("Zygote").startswith("ADTypes.AutoZygote")
         )
 
-    def test_mooncake_autodiff_backend_full_run(self):
-        self.assertTrue(
-            self._run_autodiff_backend("Mooncake").startswith("ADTypes.AutoMooncake")
-        )
+    # Broken until https://github.com/chalk-lab/Mooncake.jl/issues/800 is fixed
+    # def test_mooncake_autodiff_backend_full_run(self):
+    #     self.assertTrue(
+    #         self._run_autodiff_backend("Mooncake").startswith("ADTypes.AutoMooncake")
+    #     )
 
 
 def runtests(just_tests=False):
