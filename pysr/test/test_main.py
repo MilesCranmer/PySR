@@ -785,7 +785,6 @@ class TestPipeline(unittest.TestCase):
             early_stop_condition="stop_if_under_n1(loss, complexity) = loss < -1.0",
         )
         model.fit(np.column_stack([X, y]), 0 * y)
-        print(model.get_best())
         self.assertLessEqual(model.get_best()["loss"], -1.0)
 
     def test_comparison_operator(self):
@@ -1024,6 +1023,15 @@ class TestGuesses(unittest.TestCase):
         self.assertLess(model.equations_.iloc[-1]["loss"], 1e-10)
         # Verify log is in the equation
         self.assertIn("log", str(model.equations_.iloc[-1]["sympy_format"]))
+
+    def test_empty_guesses_single_output(self):
+        X = self.rstate.randn(50, 2)
+        y = X[:, 0] + 0.1 * X[:, 1]
+        model = PySRRegressor(
+            guesses=[], **{**self.default_test_kwargs, "niterations": 0}
+        )
+        model.fit(X, y)
+        self.assertIsNotNone(model.equations_)
 
 
 def manually_create_model(equations, feature_names=None):
@@ -1341,6 +1349,18 @@ class TestHelpMessages(unittest.TestCase):
         """Ensure that a warning is given for a power law operator."""
         with self.assertWarns(UserWarning):
             _process_constraints({2: ["^"]}, {})
+
+    def test_from_file_requires_operator_configuration(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            run_dir = Path(tmpdir) / "run"
+            run_dir.mkdir()
+            # Minimal hall_of_fame.csv to satisfy the existence check
+            (run_dir / "hall_of_fame.csv").write_text("complexity,loss,equation\n")
+
+            with self.assertRaises(ValueError) as cm:
+                PySRRegressor.from_file(run_directory=run_dir, n_features_in=1)
+
+            self.assertIn("must provide either `operators`", str(cm.exception))
 
     def test_size_warning(self):
         """Ensure that a warning is given for a large input size."""

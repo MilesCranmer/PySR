@@ -1141,6 +1141,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         run_directory: PathLike,
         binary_operators: list[str] | None = None,
         unary_operators: list[str] | None = None,
+        operators: dict[int, list[str]] | None = None,
         n_features_in: int | None = None,
         feature_names_in: ArrayLike[str] | None = None,
         selection_mask: NDArray[np.bool_] | None = None,
@@ -1162,6 +1163,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         unary_operators : list[str]
             The same unary operators used when creating the model.
             Not needed if loading from a pickle file.
+        operators : dict[int, list[str]]
+            Operator mapping by arity used when creating the model. Provide this if the
+            original run relied on the generic `operators` parameter. Not needed if
+            loading from a pickle file.
         n_features_in : int
             Number of features passed to the model.
             Not needed if loading from a pickle file.
@@ -1197,6 +1202,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             pysr_logger.info(f"Attempting to load model from {pkl_filename}...")
             assert binary_operators is None
             assert unary_operators is None
+            assert operators is None
             assert n_features_in is None
             with open(pkl_filename, "rb") as f:
                 model = cast("PySRRegressor", pkl.load(f))
@@ -1227,11 +1233,20 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     f"Hall of fame file `{csv_filename}` or `{csv_filename_bak}` does not exist. "
                     "Please pass a `run_directory` containing a valid checkpoint file."
                 )
-            assert binary_operators is not None or unary_operators is not None
+            if (
+                operators is None
+                and binary_operators is None
+                and unary_operators is None
+            ):
+                raise ValueError(
+                    "When recreating a model from CSV backups you must provide either "
+                    "`operators` or legacy `binary_operators`/`unary_operators`."
+                )
             assert n_features_in is not None
             model = cls(
                 binary_operators=binary_operators,
                 unary_operators=unary_operators,
+                operators=operators,
                 **pysr_kwargs,
             )
             model.nout_ = nout
@@ -2947,7 +2962,7 @@ def _prepare_guesses_for_julia(guesses, nout) -> VectorValue | None:
         if not isinstance(g, list):
             raise ValueError("guesses must be a list for single-output regression")
         elif len(g) == 0:
-            return jl_array([])
+            g = [[]]
         elif not isinstance(g[0], list):
             g = [g]
         elif len(g) != 1:
