@@ -10,6 +10,7 @@ import unittest
 import warnings
 from pathlib import Path
 from textwrap import dedent
+from unittest import mock
 
 import numpy as np
 import pandas as pd
@@ -181,6 +182,20 @@ class TestPipeline(unittest.TestCase):
         self.assertEqual(
             jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.turbo), False
         )
+
+    def test_operator_conflict_error(self):
+        regressor = PySRRegressor(
+            operators={1: ["sin"]},
+            unary_operators=["sin"],
+            progress=False,
+            niterations=0,
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "Cannot use `operators` with `binary_operators` or `unary_operators`",
+        ):
+            regressor._validate_and_modify_params()
 
     def test_multioutput_custom_operator_quiet_custom_complexity(self):
         y = self.X[:, [0, 1]] ** 2
@@ -1295,6 +1310,41 @@ class TestMiscellaneous(unittest.TestCase):
                 print("\n".join([(" " * 4) + row for row in error_message.split("\n")]))
         # If any checks failed don't let the test pass.
         self.assertEqual(len(exception_messages), 0)
+
+    def test_invalid_batch_size_corrects_and_warns(self):
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            model = PySRRegressor(
+                batch_size=0,
+                niterations=1,
+                progress=False,
+                populations=3,
+            )
+            X = np.random.randn(10, 2)
+            y = X[:, 0]
+            model.fit(X, y)
+
+        self.assertTrue(any("batch_size" in str(w.message) for w in caught))
+
+    def test_progress_disabled_when_stdout_lacks_buffer(self):
+        fake_stdout = type(
+            "FakeStdout", (), {"write": lambda self, *_args, **_kwargs: None}
+        )()
+        fake_stdout.__dir__ = lambda: ["write"]  # Ensure "buffer" is absent
+
+        with mock.patch("pysr.sr.sys.stdout", fake_stdout):
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                model = PySRRegressor(
+                    progress=True,
+                    niterations=1,
+                    populations=3,
+                )
+                X = np.random.randn(10, 2)
+                y = X[:, 0]
+                model.fit(X, y)
+
+        self.assertTrue(any("progress bar" in str(w.message) for w in caught))
 
     def test_param_groupings(self):
         """Test that param_groupings are complete"""
