@@ -28,8 +28,6 @@ if len(parts) < 3:
 
 major, minor = parts[0], parts[1]
 
-# Extract numeric patch from third component and preserve any suffix
-# Handles: "2.0.0", "2.0.0a1", "2.0.0rc3", etc.
 patch_match = re.match(r"^(\d+)(.*)$", parts[2])
 if not patch_match:
     raise ValueError(
@@ -37,10 +35,21 @@ if not patch_match:
         f"Expected patch to start with a number (e.g., '0', '1a1', '2rc3')"
     )
 
-patch_num, patch_suffix = patch_match.groups()
+patch_num_str, patch_suffix = patch_match.groups()
+patch_num = int(patch_num_str)
+
+pre_release_match = re.fullmatch(r"(a|b|rc)(\d+)", patch_suffix)
+if pre_release_match:
+    pre_tag, pre_num = pre_release_match.groups()
+    new_patch = patch_num
+    new_suffix = f"{pre_tag}{int(pre_num) + 1}"
+else:
+    new_patch = patch_num + 1
+    new_suffix = patch_suffix
+
 # Add back any additional version components (e.g., "2.0.0.dev1" -> ".dev1")
 extra_parts = "." + ".".join(parts[3:]) if len(parts) > 3 else ""
-new_version = f"{major}.{minor}.{int(patch_num) + 1}{patch_suffix}{extra_parts}"
+new_version = f"{major}.{minor}.{new_patch}{new_suffix}{extra_parts}"
 
 pyproject_data["project"]["version"] = new_version
 
