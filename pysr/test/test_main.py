@@ -496,6 +496,40 @@ class TestPipeline(unittest.TestCase):
 
             np.testing.assert_allclose(y_truth, y_test)
 
+    def test_load_model_with_operators_dict(self):
+        csv_file_data = """Complexity,Loss,Equation
+        1,0.19951081,"1.9762075"
+        3,0.12717344,"(f0 + 1.4724599)"
+        4,0.104823045,"pow_abs(2.2683423, cos(f3))\""""
+        csv_file_data = "\n".join([line.strip() for line in csv_file_data.split("\n")])
+
+        operators = {
+            1: ["cos"],
+            2: ["+", "*", "/", "-", "^", "pow_abs"],
+        }
+
+        for from_backup in [False, True]:
+            output_directory = Path(tempfile.mkdtemp())
+            equation_filename = output_directory / "hall_of_fame.csv"
+            with open(
+                equation_filename.with_suffix(".csv.bak" if from_backup else ".csv"),
+                "w",
+            ) as f:
+                f.write(csv_file_data)
+
+            model = PySRRegressor.from_file(
+                run_directory=output_directory,
+                n_features_in=5,
+                feature_names_in=["f0", "f1", "f2", "f3", "f4"],
+                operators=operators,
+                precision=64,
+            )
+
+            X = self.rstate.rand(100, 5)
+            y_truth = 2.2683423 ** np.cos(X[:, 3])
+            y_test = model.predict(X, 2)
+            np.testing.assert_allclose(y_truth, y_test)
+
     def test_load_model_simple(self):
         # Test that we can simply load a model from its equation file.
         y = self.X[:, [0, 1]] ** 2
