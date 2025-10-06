@@ -1,8 +1,10 @@
 """Tests for autodiff backend functionality."""
 
 import unittest
+from typing import Literal, cast
 
 import numpy as np
+import pandas as pd
 
 from pysr import PySRRegressor, jl
 
@@ -21,7 +23,9 @@ class TestAutodiff(unittest.TestCase):
         self.rstate = np.random.RandomState(0)
         self.X = self.rstate.randn(100, 5)
 
-    def _run_autodiff_backend(self, backend: str) -> str:
+    def _run_autodiff_backend(
+        self, backend: Literal["Zygote", "Mooncake", "Enzyme"]
+    ) -> str:
         y = 2.5 * self.X[:, 0] + 1.3
         model = PySRRegressor(
             **self.default_test_kwargs,
@@ -31,9 +35,11 @@ class TestAutodiff(unittest.TestCase):
 
         model.fit(self.X, y)
 
-        self.assertLessEqual(model.get_best()["loss"], 1e-4)
-        backend_type = jl.seval("x -> string(typeof(x))")(
-            model.julia_options_.autodiff_backend
+        best = cast(pd.Series, model.get_best())
+        self.assertLessEqual(best["loss"], 1e-4)
+        backend_type = cast(
+            str,
+            jl.seval("x -> string(typeof(x))")(model.julia_options_.autodiff_backend),
         )
         return backend_type
 
