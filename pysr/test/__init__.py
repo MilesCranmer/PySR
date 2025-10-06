@@ -1,3 +1,4 @@
+from .test_autodiff import runtests as runtests_autodiff
 from .test_cli import get_runtests as get_runtests_cli
 from .test_dev import runtests as runtests_dev
 from .test_jax import runtests as runtests_jax
@@ -9,6 +10,7 @@ __all__ = [
     "runtests",
     "runtests_jax",
     "runtests_torch",
+    "runtests_autodiff",
     "get_runtests_cli",
     "runtests_startup",
     "runtests_dev",
