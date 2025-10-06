@@ -1877,6 +1877,14 @@ class TestDimensionalConstraints(unittest.TestCase):
         self.assertEqual(model.equations_.iloc[0].complexity, 1)
         self.assertLess(model.equations_.iloc[0].loss, 1e-6)
 
+    def test_process_constraints_swaps_multiplication_constraints(self):
+        operators = {2: ["mult"]}
+        constraints = {"mult": (1, -1)}
+
+        processed = _process_constraints(operators, constraints)
+
+        self.assertEqual(processed["mult"], (-1, 1))
+
 
 # TODO: Determine desired behavior if second .fit() call does not have units
 
