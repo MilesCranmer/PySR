@@ -47,6 +47,10 @@ def jl_dict(x):
     return jl_convert(jl.Dict, x)
 
 
+def jl_named_tuple(d):
+    return jl.NamedTuple({jl.Symbol(k): v for k, v in d.items()})
+
+
 def jl_is_function(f) -> bool:
     return cast(bool, jl.seval("op -> op isa Function")(f))
 

@@ -49,6 +49,7 @@ from .julia_helpers import (
     jl_array,
     jl_deserialize,
     jl_is_function,
+    jl_named_tuple,
     jl_serialize,
 )
 from .julia_import import AnyValue, SymbolicRegression, VectorValue, jl
@@ -81,53 +82,70 @@ pysr_logger = logging.getLogger(__name__)
 
 
 def _process_constraints(
-    binary_operators: list[str],
-    unary_operators: list,
-    constraints: dict[str, int | tuple[int, int]],
-) -> dict[str, int | tuple[int, int]]:
+    operators: dict[int, list[str]],
+    constraints: dict[str, int | tuple[int, ...]],
+) -> dict[str, int | tuple[int, ...]]:
     constraints = constraints.copy()
-    for op in unary_operators:
-        if op not in constraints:
-            constraints[op] = -1
-    for op in binary_operators:
-        if op not in constraints:
-            if op in ["^", "pow"]:
-                # Warn user that they should set up constraints
-                warnings.warn(
-                    "You are using the `^` operator, but have not set up `constraints` for it. "
-                    "This may lead to overly complex expressions. "
-                    "One typical constraint is to use `constraints={..., '^': (-1, 1)}`, which "
-                    "will allow arbitrary-complexity base (-1) but only powers such as "
-                    "a constant or variable (1). "
-                    "For more tips, please see https://ai.damtp.cam.ac.uk/pysr/tuning/"
-                )
-            constraints[op] = (-1, -1)
 
-        constraint_tuple = cast(Tuple[int, int], constraints[op])
-        if op in ["plus", "sub", "+", "-"]:
-            if constraint_tuple[0] != constraint_tuple[1]:
-                raise NotImplementedError(
-                    "You need equal constraints on both sides for - and +, "
-                    "due to simplification strategies."
-                )
-        elif op in ["mult", "*"]:
-            # Make sure the complex expression is in the left side.
-            if constraint_tuple[0] == -1:
-                continue
-            if constraint_tuple[1] == -1 or constraint_tuple[0] < constraint_tuple[1]:
-                constraints[op] = (constraint_tuple[1], constraint_tuple[0])
+    for arity, op_list in operators.items():
+        for op in op_list:
+            if op not in constraints:
+                if arity == 1:
+                    # Unary operators get complexity -1
+                    constraints[op] = -1
+                else:
+                    # Multi-arity operators (arity >= 2)
+                    if op in ["^", "pow"]:
+                        # Warn user that they should set up constraints
+                        warnings.warn(
+                            "You are using the `^` operator, but have not set up `constraints` for it. "
+                            "This may lead to overly complex expressions. "
+                            "One typical constraint is to use `constraints={..., '^': (-1, 1)}`, which "
+                            "will allow arbitrary-complexity base (-1) but only powers such as "
+                            "a constant or variable (1). "
+                            "For more tips, please see https://ai.damtp.cam.ac.uk/pysr/tuning/"
+                        )
+                    # Create default constraint tuple with -1 for each argument
+                    constraints[op] = tuple([-1] * arity)
+
+            # Apply arity-specific validation for existing constraints
+            if isinstance(constraints[op], tuple):
+                constraint_tuple = cast(Tuple[int, ...], constraints[op])
+                # Validate that constraint tuple length matches operator arity
+                if len(constraint_tuple) != arity:
+                    raise ValueError(
+                        f"Operator '{op}' has arity {arity} but constraint tuple has "
+                        f"length {len(constraint_tuple)}. Expected tuple of length {arity}."
+                    )
+
+                # Apply operator-specific rules (only for binary operators for now)
+                if arity == 2:
+                    if op in ["plus", "sub", "+", "-"]:
+                        if constraint_tuple[0] != constraint_tuple[1]:
+                            raise NotImplementedError(
+                                "You need equal constraints on both sides for - and +, "
+                                "due to simplification strategies."
+                            )
+                    elif op in ["mult", "*"]:
+                        # Make sure the complex expression is in the left side.
+                        if constraint_tuple[0] == -1:
+                            continue
+                        if (
+                            constraint_tuple[1] == -1
+                            or constraint_tuple[0] < constraint_tuple[1]
+                        ):
+                            constraints[op] = (constraint_tuple[1], constraint_tuple[0])
     return constraints
 
 
 def _maybe_create_inline_operators(
-    binary_operators: list[str],
-    unary_operators: list[str],
+    operators: dict[int, list[str]],
     extra_sympy_mappings: dict[str, Callable] | None,
     expression_spec: AbstractExpressionSpec,
-) -> tuple[list[str], list[str]]:
-    binary_operators = binary_operators.copy()
-    unary_operators = unary_operators.copy()
-    for op_list in [binary_operators, unary_operators]:
+) -> dict[int, list[str]]:
+    operators = {arity: op_list.copy() for arity, op_list in operators.items()}
+
+    for arity, op_list in operators.items():
         for i, op in enumerate(op_list):
             is_user_defined_operator = "(" in op
 
@@ -158,7 +176,7 @@ def _maybe_create_inline_operators(
                         "You can also define these at initialization time."
                     )
                 op_list[i] = function_name
-    return binary_operators, unary_operators
+    return operators
 
 
 def _check_assertions(
@@ -244,10 +262,9 @@ VALID_OPTIMIZER_ALGORITHMS = ["BFGS", "NelderMead"]
 class _DynamicallySetParams:
     """Defines some parameters that are set at runtime."""
 
-    binary_operators: list[str]
-    unary_operators: list[str]
+    operators: dict[int, list[str]]
     maxdepth: int
-    constraints: dict[str, int | tuple[int, int]]
+    constraints: dict[str, int | tuple[int, ...]]
     batch_size: int
     update_verbosity: int
     progress: bool
@@ -293,6 +310,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Operators which only take a single scalar as input.
         For example, `"cos"` or `"exp"`.
         Default is `None`.
+    operators : dict[int, list[str]]
+        Generic operators by arity (number of arguments). Keys are integers
+        representing arity, values are lists of operator strings.
+        Example: `{1: ["sin", "cos"], 2: ["+", "-", "*"], 3: ["muladd"]}`.
+        Cannot be used with `binary_operators` or `unary_operators`.
+        Default is `None`.
     expression_spec : AbstractExpressionSpec
         The type of expression to search for. By default,
         this is just `ExpressionSpec()`. You can also use
@@ -328,12 +351,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     timeout_in_seconds : float
         Make the search return early once this many seconds have passed.
         Default is `None`.
-    constraints : dict[str, int | tuple[int,int]]
-        Dictionary of int (unary) or 2-tuples (binary), this enforces
+    constraints : dict[str, int | tuple[int,...]]
+        Dictionary of int (unary) or tuples (multi-arity), this enforces
         maxsize constraints on the individual arguments of operators.
         E.g., `'pow': (-1, 1)` says that power laws can have any
         complexity left argument, but only 1 complexity in the right
-        argument. Use this to force more interpretable solutions.
+        argument. For arity-3 operators like muladd, use 3-tuples like
+        `'muladd': (-1, -1, 1)` to constrain each argument's complexity.
+        Use this to force more interpretable solutions.
         Default is `None`.
     nested_constraints : dict[str, dict]
         Specifies how many times a combination of operators can be
@@ -474,6 +499,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     fraction_replaced_hof : float
         How much of population to replace with migrating equations from
         hall of fame. Default is `0.0614`.
+    fraction_replaced_guesses : float
+        How much of the population to replace with migrating equations from
+        guesses. Default is `0.001`.
     weight_add_node : float
         Relative likelihood for mutation to add a node.
         Default is `2.47`.
@@ -493,6 +521,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     weight_mutate_operator : float
         Relative likelihood for mutation to swap an operator.
         Default is `0.293`.
+    weight_mutate_feature : float
+        Relative likelihood for mutation to change which feature a variable node references.
+        Default is `0.1`.
     weight_swap_operands : float
         Relative likehood for swapping operands in binary operators.
         Default is `0.198`.
@@ -584,6 +615,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         multi-node distributed compute, to give a hint to each process
         about how much memory they can use before aggressive garbage
         collection.
+    worker_timeout : float | None
+        Timeout in seconds for worker processes during multiprocessing to respond.
+        If a worker does not respond within this time, it will be restarted.
+        Default is `None`.
+    worker_imports : list[str] | None
+        List of module names as strings to import in worker processes.
+        For example, `["MyPackage", "OtherPackage"]` will run `using MyPackage, OtherPackage`
+        in each worker process. Default is `None`.
     batching : bool
         Whether to compare population members on small batches during
         evolution. Still uses full dataset for comparing against hall
@@ -611,10 +650,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         If you pass complex data, the corresponding complex precision
         will be used (i.e., `64` for complex128, `32` for complex64).
         Default is `32`.
-    autodiff_backend : Literal["Zygote"] | None
+    autodiff_backend : Literal["Zygote", "Mooncake", "Enzyme"] | None
         Which backend to use for automatic differentiation during constant
-        optimization. Currently only `"Zygote"` is supported. The default,
-        `None`, uses forward-mode or finite difference.
+        optimization. Currently `"Zygote"`, `"Mooncake"`, and `"Enzyme"` are supported.
+        The default, `None`, uses forward-mode or finite difference.
         Default is `None`.
     random_state : int, Numpy RandomState instance or None
         Pass an int for reproducible results across multiple function calls.
@@ -630,6 +669,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Tells fit to continue from where the last call to fit finished.
         If false, each call to fit will be fresh, overwriting previous results.
         Default is `False`.
+    guesses : list[str] | list[list[str]] | list[dict[str, str]] | list[list[dict[str, str]]] | None
+        Initial guesses for expressions to seed the search. Examples:
+        `["x0 + x1", "x0^2"]`, `[["x0"], ["x1"]]` (multi-output),
+        `[{"f": "#1 + #2"}]` (TemplateExpressionSpec where `#1`, `#2` are
+        placeholders for the 1st, 2nd arguments of expression `f`).
+        Default is `None`.
     verbosity : int
         What verbosity level to use. 0 means minimal print statements.
         Default is `1`.
@@ -818,6 +863,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         *,
         binary_operators: list[str] | None = None,
         unary_operators: list[str] | None = None,
+        operators: dict[int, list[str]] | None = None,
         expression_spec: AbstractExpressionSpec | None = None,
         niterations: int = 100,
         populations: int = 31,
@@ -827,7 +873,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         maxdepth: int | None = None,
         warmup_maxsize_by: float | None = None,
         timeout_in_seconds: float | None = None,
-        constraints: dict[str, int | tuple[int, int]] | None = None,
+        constraints: dict[str, int | tuple[int, ...]] | None = None,
         nested_constraints: dict[str, dict[str, int]] | None = None,
         elementwise_loss: str | None = None,
         loss_function: str | None = None,
@@ -849,12 +895,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         ncycles_per_iteration: int = 380,
         fraction_replaced: float = 0.00036,
         fraction_replaced_hof: float = 0.0614,
+        fraction_replaced_guesses: float = 0.001,
         weight_add_node: float = 2.47,
         weight_insert_node: float = 0.0112,
         weight_delete_node: float = 0.870,
         weight_do_nothing: float = 0.273,
         weight_mutate_constant: float = 0.0346,
         weight_mutate_operator: float = 0.293,
+        weight_mutate_feature: float = 0.1,
         weight_swap_operands: float = 0.198,
         weight_rotate_tree: float = 4.26,
         weight_randomize: float = 0.000502,
@@ -884,16 +932,25 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             Literal["slurm", "pbs", "lsf", "sge", "qrsh", "scyld", "htc"] | None
         ) = None,
         heap_size_hint_in_bytes: int | None = None,
+        worker_timeout: float | None = None,
+        worker_imports: list[str] | None = None,
         batching: bool = False,
         batch_size: int = 50,
         fast_cycle: bool = False,
         turbo: bool = False,
         bumper: bool = False,
         precision: Literal[16, 32, 64] = 32,
-        autodiff_backend: Literal["Zygote"] | None = None,
+        autodiff_backend: Literal["Zygote", "Mooncake", "Enzyme"] | None = None,
         random_state: int | np.random.RandomState | None = None,
         deterministic: bool = False,
         warm_start: bool = False,
+        guesses: (
+            list[str]
+            | list[list[str]]
+            | list[dict[str, str]]
+            | list[list[dict[str, str]]]
+            | None
+        ) = None,
         verbosity: int = 1,
         update_verbosity: int | None = None,
         print_precision: int = 5,
@@ -920,6 +977,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.model_selection = model_selection
         self.binary_operators = binary_operators
         self.unary_operators = unary_operators
+        self.operators = operators
         self.expression_spec = expression_spec
         self.niterations = niterations
         self.populations = populations
@@ -961,6 +1019,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.weight_do_nothing = weight_do_nothing
         self.weight_mutate_constant = weight_mutate_constant
         self.weight_mutate_operator = weight_mutate_operator
+        self.weight_mutate_feature = weight_mutate_feature
         self.weight_swap_operands = weight_swap_operands
         self.weight_rotate_tree = weight_rotate_tree
         self.weight_randomize = weight_randomize
@@ -973,6 +1032,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.hof_migration = hof_migration
         self.fraction_replaced = fraction_replaced
         self.fraction_replaced_hof = fraction_replaced_hof
+        self.fraction_replaced_guesses = fraction_replaced_guesses
         self.topn = topn
         # -- Constants parameters
         self.should_optimize_constants = should_optimize_constants
@@ -991,6 +1051,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.procs = procs
         self.cluster_manager = cluster_manager
         self.heap_size_hint_in_bytes = heap_size_hint_in_bytes
+        self.worker_timeout = worker_timeout
+        self.worker_imports = worker_imports
         self.batching = batching
         self.batch_size = batch_size
         self.fast_cycle = fast_cycle
@@ -1001,6 +1063,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.random_state = random_state
         self.deterministic = deterministic
         self.warm_start = warm_start
+        self.guesses = guesses
         # Additional runtime parameters
         # - Runtime user interface
         self.verbosity = verbosity
@@ -1078,6 +1141,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         run_directory: PathLike,
         binary_operators: list[str] | None = None,
         unary_operators: list[str] | None = None,
+        operators: dict[int, list[str]] | None = None,
         n_features_in: int | None = None,
         feature_names_in: ArrayLike[str] | None = None,
         selection_mask: NDArray[np.bool_] | None = None,
@@ -1099,6 +1163,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         unary_operators : list[str]
             The same unary operators used when creating the model.
             Not needed if loading from a pickle file.
+        operators : dict[int, list[str]]
+            Operator mapping by arity used when creating the model. Provide this if the
+            original run relied on the generic `operators` parameter. Not needed if
+            loading from a pickle file.
         n_features_in : int
             Number of features passed to the model.
             Not needed if loading from a pickle file.
@@ -1134,6 +1202,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             pysr_logger.info(f"Attempting to load model from {pkl_filename}...")
             assert binary_operators is None
             assert unary_operators is None
+            assert operators is None
             assert n_features_in is None
             with open(pkl_filename, "rb") as f:
                 model = cast("PySRRegressor", pkl.load(f))
@@ -1164,11 +1233,20 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     f"Hall of fame file `{csv_filename}` or `{csv_filename_bak}` does not exist. "
                     "Please pass a `run_directory` containing a valid checkpoint file."
                 )
-            assert binary_operators is not None or unary_operators is not None
+            if (
+                operators is None
+                and binary_operators is None
+                and unary_operators is None
+            ):
+                raise ValueError(
+                    "When recreating a model from CSV backups you must provide either "
+                    "`operators` or legacy `binary_operators`/`unary_operators`."
+                )
             assert n_features_in is not None
             model = cls(
                 binary_operators=binary_operators,
                 unary_operators=unary_operators,
+                operators=operators,
                 **pysr_kwargs,
             )
             model.nout_ = nout
@@ -1460,6 +1538,19 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         """
         # Immutable parameter validation
         # Ensure instance parameters are allowable values:
+
+        # Validate operators vs binary_operators/unary_operators mutual exclusion
+        if self.operators is not None:
+            if self.binary_operators is not None or self.unary_operators is not None:
+                raise ValueError(
+                    "Cannot use `operators` with `binary_operators` or `unary_operators`. "
+                    "Use either the generic `operators` parameter or the specific operator parameters."
+                )
+        else:
+            if self.binary_operators is None and self.unary_operators is None:
+                # Neither operators nor binary/unary specified, use defaults
+                pass
+            # If binary_operators or unary_operators is specified, that's fine
         if self.tournament_selection_n > self.population_size:
             raise ValueError(
                 "`tournament_selection_n` parameter must be smaller than `population_size`."
@@ -1480,8 +1571,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             )
 
         param_container = _DynamicallySetParams(
-            binary_operators=["+", "*", "-", "/"],
-            unary_operators=[],
+            operators={2: ["+", "*", "-", "/"]},
             maxdepth=self.maxsize,
             constraints={},
             batch_size=1,
@@ -1489,6 +1579,19 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             progress=self.progress,
             warmup_maxsize_by=0.0,
         )
+
+        # Convert binary_operators/unary_operators to operators format if needed
+        if self.operators is None:
+            # Build operators dict from binary_operators and unary_operators
+            operators_dict = {}
+            if self.binary_operators is not None:
+                operators_dict[2] = self.binary_operators.copy()
+            else:
+                # Keep default binary operators
+                operators_dict[2] = ["+", "*", "-", "/"]
+            if self.unary_operators is not None:
+                operators_dict[1] = self.unary_operators.copy()
+            param_container.operators = operators_dict
 
         for param_name in map(lambda x: x.name, fields(_DynamicallySetParams)):
             user_param_value = getattr(self, param_name)
@@ -1502,9 +1605,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 setattr(param_container, param_name, new_param_value)
         # TODO: This should just be part of the __init__ of _DynamicallySetParams
 
-        assert (
-            len(param_container.binary_operators) > 0
-            or len(param_container.unary_operators) > 0
+        assert param_container.operators and any(
+            len(ops) > 0 for ops in param_container.operators.values()
         ), "At least one operator must be provided."
 
         return param_container
@@ -1845,8 +1947,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # These are the parameters which may be modified from the ones
         # specified in init, so we define them here locally:
-        binary_operators = runtime_params.binary_operators
-        unary_operators = runtime_params.unary_operators
+        operators = runtime_params.operators
         constraints = runtime_params.constraints
 
         nested_constraints = self.nested_constraints
@@ -1883,23 +1984,29 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             cluster_manager = _load_cluster_manager(cluster_manager)
 
         # TODO(mcranmer): These functions should be part of this class.
-        binary_operators, unary_operators = _maybe_create_inline_operators(
-            binary_operators=binary_operators,
-            unary_operators=unary_operators,
+        operators = _maybe_create_inline_operators(
+            operators=operators,
             extra_sympy_mappings=self.extra_sympy_mappings,
             expression_spec=self.expression_spec_,
         )
         if constraints is not None:
             _constraints = _process_constraints(
-                binary_operators=binary_operators,
-                unary_operators=unary_operators,
+                operators=operators,
                 constraints=constraints,
             )
-            una_constraints = [_constraints[op] for op in unary_operators]
-            bin_constraints = [_constraints[op] for op in binary_operators]
+            # Build constraints for each arity (including empty arities)
+            max_arity = max(operators.keys()) if operators else 2
+            constraints_by_arity = {}
+            for arity in range(1, max_arity + 1):
+                if arity in operators and operators[arity]:
+                    constraints_by_arity[arity] = [
+                        _constraints[op] for op in operators[arity]
+                    ]
+                else:
+                    constraints_by_arity[arity] = []
         else:
-            una_constraints = None
-            bin_constraints = None
+            max_arity = max(operators.keys()) if operators else 2
+            constraints_by_arity = {arity: None for arity in range(1, max_arity + 1)}
 
         # Parse dict into Julia Dict for nested constraints::
         if nested_constraints is not None:
@@ -1962,6 +2069,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         mutation_weights = SymbolicRegression.MutationWeights(
             mutate_constant=self.weight_mutate_constant,
             mutate_operator=self.weight_mutate_operator,
+            mutate_feature=self.weight_mutate_feature,
             swap_operands=self.weight_swap_operands,
             rotate_tree=self.weight_rotate_tree,
             add_node=self.weight_add_node,
@@ -1973,19 +2081,25 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             optimize=self.weight_optimize,
         )
 
-        jl_binary_operators: list[Any] = []
-        jl_unary_operators: list[Any] = []
-        for input_list, output_list, name in [
-            (binary_operators, jl_binary_operators, "binary"),
-            (unary_operators, jl_unary_operators, "unary"),
-        ]:
-            for op in input_list:
-                jl_op = jl.seval(op)
-                if not jl_is_function(jl_op):
-                    raise ValueError(
-                        f"When building `{name}_operators`, `'{op}'` did not return a Julia function"
-                    )
-                output_list.append(jl_op)
+        # Convert operators dict to Julia format and create OperatorEnum
+        # Fill in empty tuples for missing arities up to max arity
+        max_arity = max(operators.keys()) if operators else 2
+        jl_operators_dict = {}
+
+        for arity in range(1, max_arity + 1):
+            if arity in operators:
+                jl_op_list = []
+                for op in operators[arity]:
+                    jl_op = jl.seval(op)
+                    if not jl_is_function(jl_op):
+                        raise ValueError(
+                            f"When building operators for arity {arity}, `'{op}'` did not return a Julia function"
+                        )
+                    jl_op_list.append(jl_op)
+                jl_operators_dict[arity] = tuple(jl_op_list)
+            else:
+                # Empty tuple for missing arities
+                jl_operators_dict[arity] = ()
 
         complexity_mapping = (
             jl.seval(self.complexity_mapping) if self.complexity_mapping else None
@@ -1998,13 +2112,29 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         self.logger_ = logger
 
+        # Use Julia function to create OperatorEnum from Dict{Int,Tuple}
+        create_operator_enum = jl.seval(
+            "__sr_make_op_enum(ops_dict) = OperatorEnum([k => v for (k, v) in ops_dict]...)"
+        )
+        jl_operator_enum = create_operator_enum(jl_operators_dict)
+
+        # Build constraints dict with same structure
+        jl_constraints_dict = None
+        if any(c for c in constraints_by_arity.values() if c is not None):
+            constraints_pairs = []
+            for arity in range(1, max_arity + 1):
+                if constraints_by_arity[arity] is not None:
+                    constraints_pairs.append(
+                        jl.Pair(arity, jl_array(constraints_by_arity[arity]))
+                    )
+            if constraints_pairs:
+                jl_constraints_dict = jl.Dict(constraints_pairs)
+
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/OptionsStruct.jl
         options = SymbolicRegression.Options(
-            binary_operators=jl_array(jl_binary_operators, dtype=jl.Function),
-            unary_operators=jl_array(jl_unary_operators, dtype=jl.Function),
-            bin_constraints=jl_array(bin_constraints),
-            una_constraints=jl_array(una_constraints),
+            operators=jl_operator_enum,
+            constraints=jl_constraints_dict,
             complexity_of_operators=complexity_of_operators,
             complexity_of_constants=self.complexity_of_constants,
             complexity_of_variables=complexity_of_variables,
@@ -2047,6 +2177,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             npop=self.population_size,
             ncycles_per_iteration=self.ncycles_per_iteration,
             fraction_replaced=self.fraction_replaced,
+            fraction_replaced_guesses=self.fraction_replaced_guesses,
             topn=self.topn,
             print_precision=self.print_precision,
             optimizer_algorithm=self.optimizer_algorithm,
@@ -2106,6 +2237,15 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         else:
             jl_y_variable_names = None
 
+        jl_guesses = _prepare_guesses_for_julia(self.guesses, self.nout_)
+
+        # Convert worker_imports to Julia symbols
+        jl_worker_imports = (
+            jl_array([jl.Symbol(s) for s in self.worker_imports])
+            if self.worker_imports is not None
+            else None
+        )
+
         out = SymbolicRegression.equation_search(
             jl_X,
             jl_y,
@@ -2124,6 +2264,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 else self.y_units_
             ),
             options=options,
+            guesses=jl_guesses,
             numprocs=numprocs,
             parallelism=parallelism,
             saved_state=self.julia_state_,
@@ -2131,6 +2272,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             run_id=self.run_id_,
             addprocs_function=cluster_manager,
             heap_size_hint_in_bytes=self.heap_size_hint_in_bytes,
+            worker_timeout=self.worker_timeout,
+            worker_imports=jl_worker_imports,
             progress=runtime_params.progress
             and self.verbosity > 0
             and len(y.shape) == 1,
@@ -2793,6 +2936,63 @@ def calculate_scores(df: pd.DataFrame) -> pd.DataFrame:
         },
         index=df.index,
     )
+
+
+def _prepare_guesses_for_julia(guesses, nout) -> VectorValue | None:
+    """Convert Python guesses to Julia format.
+
+    Parameters
+    ----------
+    guesses : list[str] | list[list[str]] | list[dict[str, str]] | list[list[dict[str, str]]] | None
+        Initial guesses for equations
+    nout : int
+        Number of output dimensions
+
+    Returns
+    -------
+    jl_guesses: VectorValue | None
+        Julia-compatible guesses array or None if no guesses provided
+    """
+    if guesses is None:
+        return None
+
+    g = guesses
+
+    if nout == 1:
+        if not isinstance(g, list):
+            raise ValueError("guesses must be a list for single-output regression")
+        elif len(g) == 0:
+            g = [[]]
+        elif not isinstance(g[0], list):
+            g = [g]
+        elif len(g) != 1:
+            raise ValueError(
+                "For single output, provide a list of strings/dicts or "
+                "a single-element list of lists"
+            )
+    else:
+        if not (isinstance(g, list) and all(isinstance(x, list) for x in g)):
+            raise ValueError(
+                "For multi-output (nout > 1) guesses must be a list of lists"
+            )
+        if len(g) != nout:
+            raise ValueError(
+                f"Number of guess lists ({len(g)}) must match number of outputs ({nout})"
+            )
+
+    julia_guesses = []
+    for output_guesses in g:
+        julia_output_guesses = []
+        for item in output_guesses:
+            if isinstance(item, dict):
+                # Convert dict to NamedTuple for template expressions
+                julia_output_guesses.append(jl_named_tuple(item))
+            else:
+                # Keep strings as-is
+                julia_output_guesses.append(item)
+        julia_guesses.append(jl_array(julia_output_guesses))
+
+    return jl_array(julia_guesses)
 
 
 def _mutate_parameter(param_name: str, param_value):
