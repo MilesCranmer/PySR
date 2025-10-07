@@ -2,8 +2,8 @@
 # tries to manually edit SymbolicRegression.jl and
 # use it from PySR.
 
-ARG JLVERSION=1.11.1
-ARG PYVERSION=3.12.6
+ARG JLVERSION=1.11.6
+ARG PYVERSION=3.12.11
 ARG BASE_IMAGE=bullseye
 
 FROM julia:${JLVERSION}-${BASE_IMAGE} AS jl

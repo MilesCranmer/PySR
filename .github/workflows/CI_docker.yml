@@ -27,7 +27,7 @@ jobs:
         arch: ['linux/amd64']
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Build docker
         run: docker build --platform=${{ matrix.arch }} -t pysr .
       - name: Test docker

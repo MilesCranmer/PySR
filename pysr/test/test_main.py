@@ -10,6 +10,7 @@ import unittest
 import warnings
 from pathlib import Path
 from textwrap import dedent
+from unittest import mock
 
 import numpy as np
 import pandas as pd
@@ -181,6 +182,20 @@ class TestPipeline(unittest.TestCase):
         self.assertEqual(
             jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.turbo), False
         )
+
+    def test_operator_conflict_error(self):
+        regressor = PySRRegressor(
+            operators={1: ["sin"]},
+            unary_operators=["sin"],
+            progress=False,
+            niterations=0,
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "Cannot use `operators` with `binary_operators` or `unary_operators`",
+        ):
+            regressor._validate_and_modify_params()
 
     def test_multioutput_custom_operator_quiet_custom_complexity(self):
         y = self.X[:, [0, 1]] ** 2
@@ -496,6 +511,40 @@ class TestPipeline(unittest.TestCase):
 
             np.testing.assert_allclose(y_truth, y_test)
 
+    def test_load_model_with_operators_dict(self):
+        csv_file_data = """Complexity,Loss,Equation
+        1,0.19951081,"1.9762075"
+        3,0.12717344,"(f0 + 1.4724599)"
+        4,0.104823045,"pow_abs(2.2683423, cos(f3))\""""
+        csv_file_data = "\n".join([line.strip() for line in csv_file_data.split("\n")])
+
+        operators = {
+            1: ["cos"],
+            2: ["+", "*", "/", "-", "^", "pow_abs"],
+        }
+
+        for from_backup in [False, True]:
+            output_directory = Path(tempfile.mkdtemp())
+            equation_filename = output_directory / "hall_of_fame.csv"
+            with open(
+                equation_filename.with_suffix(".csv.bak" if from_backup else ".csv"),
+                "w",
+            ) as f:
+                f.write(csv_file_data)
+
+            model = PySRRegressor.from_file(
+                run_directory=output_directory,
+                n_features_in=5,
+                feature_names_in=["f0", "f1", "f2", "f3", "f4"],
+                operators=operators,
+                precision=64,
+            )
+
+            X = self.rstate.rand(100, 5)
+            y_truth = 2.2683423 ** np.cos(X[:, 3])
+            y_test = model.predict(X, 2)
+            np.testing.assert_allclose(y_truth, y_test)
+
     def test_load_model_simple(self):
         # Test that we can simply load a model from its equation file.
         y = self.X[:, [0, 1]] ** 2
@@ -785,7 +834,6 @@ class TestPipeline(unittest.TestCase):
             early_stop_condition="stop_if_under_n1(loss, complexity) = loss < -1.0",
         )
         model.fit(np.column_stack([X, y]), 0 * y)
-        print(model.get_best())
         self.assertLessEqual(model.get_best()["loss"], -1.0)
 
     def test_comparison_operator(self):
@@ -980,6 +1028,59 @@ class TestGuesses(unittest.TestCase):
         )
         model.fit(X, y)
         self.assertTrue(any(model.equations_["loss"] < 1e-10))
+
+    def test_guesses_use_zero_based_indexing(self):
+        # Test that guesses use 0-based indexing (x0, x1, x2)
+        # not 1-based (x1, x2, x3)
+        X = self.rstate.randn(100, 3)
+        y = X[:, 0] * X[:, 1] + X[:, 2]  # True function
+
+        # Test with correct guess (should have near-zero loss)
+        model_correct = PySRRegressor(
+            binary_operators=["+", "*"],
+            guesses=["x0 * x1 + x2"],  # Correct 0-based indexing
+            **self.default_test_kwargs,
+        )
+        model_correct.fit(X, y)
+        self.assertLess(model_correct.equations_.iloc[-1]["loss"], 1e-10)
+
+        # Test with wrong guess (off-by-one indexing, should have high loss)
+        model_wrong = PySRRegressor(
+            binary_operators=["+", "*"],
+            guesses=["x1 * x2 + x0"],  # Wrong columns if 0-indexed
+            **self.default_test_kwargs,
+        )
+        model_wrong.fit(X, y)
+        self.assertGreater(model_wrong.equations_.iloc[-1]["loss"], 1.0)
+
+    def test_unary_operators_in_guesses(self):
+        # Test that unary operators (like log) can be used in guesses
+        X = np.abs(self.rstate.randn(100, 2)) + 1  # Ensure positive for log
+        y = np.log(X[:, 0]) + 2.5 * X[:, 1]
+
+        # Test that log operator is parsed and used correctly
+        model = PySRRegressor(
+            binary_operators=["+", "*"],
+            unary_operators=["log"],
+            guesses=["log(x0) + 1.0 * x1"],  # Uses log operator (wrong constant)
+            niterations=0,  # MUST use 0 to test the guess itself
+            progress=False,
+            temp_equation_file=False,
+        )
+        model.fit(X, y)
+        # With niterations=0, constants still get optimized, so loss should be near-zero
+        self.assertLess(model.equations_.iloc[-1]["loss"], 1e-10)
+        # Verify log is in the equation
+        self.assertIn("log", str(model.equations_.iloc[-1]["sympy_format"]))
+
+    def test_empty_guesses_single_output(self):
+        X = self.rstate.randn(50, 2)
+        y = X[:, 0] + 0.1 * X[:, 1]
+        model = PySRRegressor(
+            guesses=[], **{**self.default_test_kwargs, "niterations": 0}
+        )
+        model.fit(X, y)
+        self.assertIsNotNone(model.equations_)
 
 
 def manually_create_model(equations, feature_names=None):
@@ -1210,6 +1311,41 @@ class TestMiscellaneous(unittest.TestCase):
         # If any checks failed don't let the test pass.
         self.assertEqual(len(exception_messages), 0)
 
+    def test_invalid_batch_size_corrects_and_warns(self):
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            model = PySRRegressor(
+                batch_size=0,
+                niterations=1,
+                progress=False,
+                populations=3,
+            )
+            X = np.random.randn(10, 2)
+            y = X[:, 0]
+            model.fit(X, y)
+
+        self.assertTrue(any("batch_size" in str(w.message) for w in caught))
+
+    def test_progress_disabled_when_stdout_lacks_buffer(self):
+        fake_stdout = type(
+            "FakeStdout", (), {"write": lambda self, *_args, **_kwargs: None}
+        )()
+        fake_stdout.__dir__ = lambda: ["write"]  # Ensure "buffer" is absent
+
+        with mock.patch("pysr.sr.sys.stdout", fake_stdout):
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                model = PySRRegressor(
+                    progress=True,
+                    niterations=1,
+                    populations=3,
+                )
+                X = np.random.randn(10, 2)
+                y = X[:, 0]
+                model.fit(X, y)
+
+        self.assertTrue(any("progress bar" in str(w.message) for w in caught))
+
     def test_param_groupings(self):
         """Test that param_groupings are complete"""
         param_groupings_file = Path(__file__).parent.parent / "param_groupings.yml"
@@ -1350,6 +1486,18 @@ class TestHelpMessages(unittest.TestCase):
         """Ensure that a warning is given for a power law operator."""
         with self.assertWarns(UserWarning):
             _process_constraints({2: ["^"]}, {})
+
+    def test_from_file_requires_operator_configuration(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            run_dir = Path(tmpdir) / "run"
+            run_dir.mkdir()
+            # Minimal hall_of_fame.csv to satisfy the existence check
+            (run_dir / "hall_of_fame.csv").write_text("complexity,loss,equation\n")
+
+            with self.assertRaises(ValueError) as cm:
+                PySRRegressor.from_file(run_directory=run_dir, n_features_in=1)
+
+            self.assertIn("must provide either `operators`", str(cm.exception))
 
     def test_size_warning(self):
         """Ensure that a warning is given for a large input size."""
@@ -1831,6 +1979,14 @@ class TestDimensionalConstraints(unittest.TestCase):
         model.fit(X, y)
         self.assertEqual(model.equations_.iloc[0].complexity, 1)
         self.assertLess(model.equations_.iloc[0].loss, 1e-6)
+
+    def test_process_constraints_swaps_multiplication_constraints(self):
+        operators = {2: ["mult"]}
+        constraints = {"mult": (1, -1)}
+
+        processed = _process_constraints(operators, constraints)
+
+        self.assertEqual(processed["mult"], (-1, 1))
 
 
 # TODO: Determine desired behavior if second .fit() call does not have units
