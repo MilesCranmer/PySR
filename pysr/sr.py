@@ -626,11 +626,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     batching : bool | "auto"
         Whether to compare population members on small batches during
         evolution. Still uses full dataset for comparing against hall
-        of fame. "auto" enables batching for N≥1000. Default is `"auto"`.
+        of fame. "auto" enables batching for N>1000. Default is `"auto"`.
     batch_size : int | None
-        The batch size to use if batching. If None, uses
-        128 for N<5000, 256 for N<50000, or 512 for N≥50000.
-        Default is `None`.
+        The batch size to use if batching. If None, uses the
+        full dataset when N<=1000, 128 for N<5000, 256 for N<50000,
+        or 512 for N≥50000. Default is `None`.
     fast_cycle : bool
         Batch over population subsamples. This is a slightly different
         algorithm than regularized evolution, but does cycles 15%
@@ -2152,12 +2152,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             output_directory=_escape_filename(self.output_directory_),
             npopulations=int(self.populations),
             # Determine actual batching based on "auto" mode
-            batching=(self.batching if self.batching != "auto" else len(X) >= 1000),
+            batching=(self.batching if self.batching != "auto" else len(X) > 1000),
             batch_size=int(
                 _get_batch_size(len(X), runtime_params.batch_size)
                 if (
-                    self.batching == True
-                    or (self.batching == "auto" and len(X) >= 1000)
+                    self.batching == True or (self.batching == "auto" and len(X) > 1000)
                 )
                 else len(X)
             ),
@@ -3005,7 +3004,7 @@ def _get_batch_size(dataset_size: int, batch_size_param: int | None) -> int:
     """Calculate the actual batch size to use."""
     if batch_size_param is not None:
         return min(dataset_size, batch_size_param)
-    elif dataset_size < 1000:
+    elif dataset_size <= 1000:
         return dataset_size
     elif dataset_size < 5000:
         return 128

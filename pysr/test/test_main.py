@@ -1400,7 +1400,8 @@ class TestMiscellaneous(unittest.TestCase):
         # Test None (auto) mode with different dataset sizes
         self.assertEqual(_get_batch_size(500, None), 500)
         self.assertEqual(_get_batch_size(999, None), 999)
-        self.assertEqual(_get_batch_size(1000, None), 128)
+        self.assertEqual(_get_batch_size(1000, None), 1000)
+        self.assertEqual(_get_batch_size(1001, None), 128)
         self.assertEqual(_get_batch_size(1500, None), 128)
         self.assertEqual(_get_batch_size(4999, None), 128)
         self.assertEqual(_get_batch_size(5000, None), 256)
@@ -1424,8 +1425,8 @@ class TestMiscellaneous(unittest.TestCase):
         model = PySRRegressor(batching="auto", niterations=0)
         model.fit(X_small, y_small)
 
-        X_large = np.random.randn(1000, 2)
-        y_large = np.random.randn(1000)
+        X_large = np.random.randn(1001, 2)
+        y_large = np.random.randn(1001)
         model2 = PySRRegressor(batching="auto", niterations=0)
         model2.fit(X_large, y_large)
 
