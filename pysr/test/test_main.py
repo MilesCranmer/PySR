@@ -1393,6 +1393,60 @@ class TestMiscellaneous(unittest.TestCase):
         load_all_packages()
         self.assertTrue(jl.seval("ClusterManagers isa Module"))
 
+    def test_get_batch_size(self):
+        """Test the _get_batch_size function."""
+        from pysr.sr import _get_batch_size
+
+        # Test None (auto) mode with different dataset sizes
+        self.assertEqual(_get_batch_size(500, None), 500)
+        self.assertEqual(_get_batch_size(999, None), 999)
+        self.assertEqual(_get_batch_size(1000, None), 1000)
+        self.assertEqual(_get_batch_size(1001, None), 128)
+        self.assertEqual(_get_batch_size(1500, None), 128)
+        self.assertEqual(_get_batch_size(4999, None), 128)
+        self.assertEqual(_get_batch_size(5000, None), 256)
+        self.assertEqual(_get_batch_size(10000, None), 256)
+        self.assertEqual(_get_batch_size(49999, None), 256)
+        self.assertEqual(_get_batch_size(50000, None), 512)
+        self.assertEqual(_get_batch_size(100000, None), 512)
+
+        # Test explicit batch_size
+        self.assertEqual(_get_batch_size(1000, 64), 64)
+        self.assertEqual(_get_batch_size(1000, 2000), 1000)  # Capped at dataset size
+        self.assertEqual(_get_batch_size(50, 100), 50)  # Capped at dataset size
+
+    def test_batching_auto(self):
+        """Test that batching='auto' works correctly."""
+        model = PySRRegressor()
+        self.assertEqual(model.batching, "auto")
+
+        X_small = np.random.randn(100, 2)
+        y_small = np.random.randn(100)
+        model = PySRRegressor(batching="auto", niterations=0)
+        model.fit(X_small, y_small)
+
+        X_large = np.random.randn(1001, 2)
+        y_large = np.random.randn(1001)
+        model2 = PySRRegressor(batching="auto", niterations=0)
+        model2.fit(X_large, y_large)
+
+    def test_batch_size_negative_warning(self):
+        """Test that batch_size < 1 gives a warning for integers only."""
+        X = np.random.randn(10, 2)
+        y = np.random.randn(10)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            with self.assertRaises(UserWarning) as context:
+                model = PySRRegressor(batch_size=0, niterations=0)
+                model.fit(X, y)
+            self.assertIn("batch_size", str(context.exception))
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            model = PySRRegressor(batch_size=None, niterations=0)
+            model.fit(X, y)
+
 
 class TestHelpMessages(unittest.TestCase):
     """Test user help messages."""
@@ -1449,13 +1503,13 @@ class TestHelpMessages(unittest.TestCase):
     def test_size_warning(self):
         """Ensure that a warning is given for a large input size."""
         model = PySRRegressor()
-        X = np.random.randn(10001, 2)
-        y = np.random.randn(10001)
+        X = np.random.randn(50001, 2)
+        y = np.random.randn(50001)
         with warnings.catch_warnings():
             warnings.simplefilter("error")
             with self.assertRaises(Exception) as context:
                 model.fit(X, y)
-            self.assertIn("more than 10,000", str(context.exception))
+            self.assertIn("more than 50,000", str(context.exception))
 
     def test_deterministic_warnings(self):
         """Ensure that warnings are given for determinism"""

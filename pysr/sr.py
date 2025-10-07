@@ -265,7 +265,7 @@ class _DynamicallySetParams:
     operators: dict[int, list[str]]
     maxdepth: int
     constraints: dict[str, int | tuple[int, ...]]
-    batch_size: int
+    batch_size: int | None
     update_verbosity: int
     progress: bool
     warmup_maxsize_by: float
@@ -623,12 +623,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         List of module names as strings to import in worker processes.
         For example, `["MyPackage", "OtherPackage"]` will run `using MyPackage, OtherPackage`
         in each worker process. Default is `None`.
-    batching : bool
+    batching : bool | "auto"
         Whether to compare population members on small batches during
         evolution. Still uses full dataset for comparing against hall
-        of fame. Default is `False`.
-    batch_size : int
-        The amount of data to use if doing batching. Default is `50`.
+        of fame. "auto" enables batching for N>1000. Default is `"auto"`.
+    batch_size : int | None
+        The batch size to use if batching. If None, uses the
+        full dataset when N<=1000, 128 for N<5000, 256 for N<50000,
+        or 512 for N≥50000. Default is `None`.
     fast_cycle : bool
         Batch over population subsamples. This is a slightly different
         algorithm than regularized evolution, but does cycles 15%
@@ -934,8 +936,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         heap_size_hint_in_bytes: int | None = None,
         worker_timeout: float | None = None,
         worker_imports: list[str] | None = None,
-        batching: bool = False,
-        batch_size: int = 50,
+        batching: bool | Literal["auto"] = "auto",
+        batch_size: int | None = None,
         fast_cycle: bool = False,
         turbo: bool = False,
         bumper: bool = False,
@@ -1574,7 +1576,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             operators={2: ["+", "*", "-", "/"]},
             maxdepth=self.maxsize,
             constraints={},
-            batch_size=1,
+            batch_size=None,
             update_verbosity=int(self.verbosity),
             progress=self.progress,
             warmup_maxsize_by=0.0,
@@ -1595,8 +1597,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         for param_name in map(lambda x: x.name, fields(_DynamicallySetParams)):
             user_param_value = getattr(self, param_name)
-            if user_param_value is None:
+            if user_param_value is None and param_name != "batch_size":
                 # Leave as the default in DynamicallySetParams
+                # (except for batch_size, which we want to keep as None)
                 ...
             else:
                 # If user has specified it, we will override the default.
@@ -2148,9 +2151,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             maxsize=int(self.maxsize),
             output_directory=_escape_filename(self.output_directory_),
             npopulations=int(self.populations),
-            batching=self.batching,
+            # Determine actual batching based on "auto" mode
+            batching=(self.batching if self.batching != "auto" else len(X) > 1000),
             batch_size=int(
-                min([runtime_params.batch_size, len(X)]) if self.batching else len(X)
+                _get_batch_size(len(X), runtime_params.batch_size)
+                if (
+                    self.batching == True or (self.batching == "auto" and len(X) > 1000)
+                )
+                else len(X)
             ),
             mutation_weights=mutation_weights,
             tournament_selection_p=self.tournament_selection_p,
@@ -2404,15 +2412,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             y_units,
         )
 
-        if X.shape[0] > 10000 and not self.batching:
+        if X.shape[0] > 50000:
             warnings.warn(
-                "Note: you are running with more than 10,000 datapoints. "
-                "You should consider turning on batching (https://ai.damtp.cam.ac.uk/pysr/options/#batching). "
-                "You should also reconsider if you need that many datapoints. "
-                "Unless you have a large amount of noise (in which case you "
-                "should smooth your dataset first), generally < 10,000 datapoints "
-                "is enough to find a functional form with symbolic regression. "
-                "More datapoints will lower the search speed."
+                "You are using a dataset with more than 50,000 datapoints. "
+                "Symbolic regression rarely benefits from this many points - consider "
+                "subsampling to 10,000 points or fewer. If you have high noise, "
+                "denoise the data first rather than using more points."
             )
 
         random_state = check_random_state(self.random_state)  # For np random
@@ -2995,8 +3000,22 @@ def _prepare_guesses_for_julia(guesses, nout) -> VectorValue | None:
     return jl_array(julia_guesses)
 
 
+def _get_batch_size(dataset_size: int, batch_size_param: int | None) -> int:
+    """Calculate the actual batch size to use."""
+    if batch_size_param is not None:
+        return min(dataset_size, batch_size_param)
+    elif dataset_size <= 1000:
+        return dataset_size
+    elif dataset_size < 5000:
+        return 128
+    elif dataset_size < 50000:
+        return 256
+    else:
+        return 512
+
+
 def _mutate_parameter(param_name: str, param_value):
-    if param_name == "batch_size" and param_value < 1:
+    if param_name == "batch_size" and param_value is not None and param_value < 1:
         warnings.warn(
             "Given `batch_size` must be greater than or equal to one. "
             "`batch_size` has been increased to equal one."
