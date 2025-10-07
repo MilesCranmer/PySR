@@ -24,7 +24,7 @@ jobs:
     strategy:
       matrix:
         julia-version: ['1']
-        python-version: ['3.13']
+        python-version: ['3']
         os: [windows-latest]
 
     steps:
