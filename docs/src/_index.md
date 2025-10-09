@@ -16,7 +16,7 @@ hero:
       text: View on GitHub
       link: https://github.com/MilesCranmer/PySR
   image:
-    src: /pysr_logo.svg
+    src: https://ai.damtp.cam.ac.uk/symbolicregression/dev/logo.png
     alt: PySR
 
 features:
