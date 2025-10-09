@@ -45,12 +45,9 @@ dev = [
     "torch>=2,<3",
     "types-openpyxl",
     "types-pytz",
+    "docstring-parser>=0.17.0",
+    "pyyaml>=6.0.0",
 ]
 
 [tool.isort]
 profile = "black"
-
-[tool.rye]
-dev-dependencies = [
-    "docstring-parser>=0.17.0",
-]

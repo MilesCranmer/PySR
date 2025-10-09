@@ -6,7 +6,7 @@ import yaml
 
 data_file = "papers.yml"
 papers_header = Path("stylesheets") / "papers_header.txt"
-output_file = "papers.md"
+output_file = Path("src") / "papers.md"
 
 # Load YAML file:
 with open(data_file, "r") as stream:
