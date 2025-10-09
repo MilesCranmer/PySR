@@ -155,7 +155,7 @@ def main():
     # Get paths
     script_dir = Path(__file__).parent
     template_path = script_dir / "src" / "_index.md"
-    readme_path = script_dir.parent.parent.parent / "README.md"
+    readme_path = script_dir.parent / "README.md"
     output_path = script_dir / "src" / "index.md"
 
     # Read template
