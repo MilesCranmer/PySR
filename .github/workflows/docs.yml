@@ -1,9 +1,17 @@
-name: docs
+name: Documentation
 
 on:
   push:
     branches:
-      - 'master'
+      - master
+    paths:
+      - 'pysr/**'
+      - '.github/workflows/docs.yml'
+      - 'docs/**'
+      - 'README.md'
+  pull_request:
+    branches:
+      - master
     paths:
       - 'pysr/**'
       - '.github/workflows/docs.yml'
@@ -12,17 +20,16 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: false
+  contents: write
+  pull-requests: read
+  statuses: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [primary, secondary]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,8 +48,13 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
+      - name: Setup Julia
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: '1'
+
+      - name: Install Julia dependencies
+        run: julia --project=docs -e 'using Pkg; Pkg.instantiate()'
 
       - name: Install PySR with dev dependencies
         run: pip install -e .[dev]
@@ -55,77 +67,9 @@ jobs:
         run: npm run docs:build
         working-directory: docs
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: docs/dist
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-
-  deploy-secondary:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: docs/package-lock.json
-
-      - name: Setup Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.11'
-
-      - name: Install PySR with dev dependencies
-        run: pip install -e .[dev]
-
-      - name: Install VitePress dependencies
-        run: npm ci
-        working-directory: docs
-
-      - name: Build with VitePress
-        run: npm run docs:build
-        working-directory: docs
-
-      - name: Deploy to secondary repository
+      - name: Deploy with DocumenterVitepress
         env:
-          DEPLOY_KEY: ${{ secrets.DAMTP_DEPLOY_KEY }}
-        run: |
-          # Set up SSH key for authentication
-          mkdir -p ~/.ssh
-          echo "$DEPLOY_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-
-          # Configure git
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global user.name "github-actions[bot]"
-
-          # Clone secondary repo and update it
-          git clone --depth 1 --branch gh-pages git@github.com:ai-damtp-cam-ac-uk/pysr.git secondary-repo || git clone git@github.com:ai-damtp-cam-ac-uk/pysr.git secondary-repo
-          cd secondary-repo
-          git checkout gh-pages || git checkout -b gh-pages
-
-          # Copy built docs
-          rm -rf *
-          cp -r ../docs/dist/* .
-          echo "ai.damtp.cam.ac.uk" > CNAME
-
-          # Commit and push
-          git add -A
-          git commit -m "Deploy docs from ${{ github.sha }}" || echo "No changes to commit"
-          git push origin gh-pages --force
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DAMTP_DEPLOY_KEY: ${{ secrets.DAMTP_DEPLOY_KEY }}
+          DEPLOYMENT_TARGET: ${{ matrix.target }}
+        run: julia --project=docs docs/deploy.jl

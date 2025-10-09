@@ -121,9 +121,10 @@ def format_docstring(docstring: Optional[str], obj: Any = None) -> str:
 
         for param in parsed.params:
             name = f"`{param.arg_name}`" if param.arg_name else ""
-            type_str = (
-                f"`{param.type_name.replace('|', '\\|')}`" if param.type_name else ""
+            escaped_type = (
+                param.type_name.replace("|", r"\|") if param.type_name else None
             )
+            type_str = f"`{escaped_type}`" if escaped_type else ""
             desc = (
                 param.description.replace("\n", " ").replace("|", "\\|")
                 if param.description
@@ -144,9 +145,11 @@ def format_docstring(docstring: Optional[str], obj: Any = None) -> str:
                 if default_val is None:
                     default = "`None`"
                 elif isinstance(default_val, str):
-                    default = f"`{repr(default_val).replace('|', '\\|')}`"
+                    escaped_default = repr(default_val).replace("|", r"\|")
+                    default = f"`{escaped_default}`"
                 else:
-                    default = f"`{str(default_val).replace('|', '\\|')}`"
+                    escaped_default = str(default_val).replace("|", r"\|")
+                    default = f"`{escaped_default}`"
             else:
                 default = "*required*"
 
@@ -159,11 +162,11 @@ def format_docstring(docstring: Optional[str], obj: Any = None) -> str:
         parts.append("**Returns**")
         parts.append("")
         if parsed.returns.type_name:
-            parts.append(
-                f"- **Type:** `{parsed.returns.type_name.replace('|', '\\|')}`"
-            )
+            escaped_return_type = parsed.returns.type_name.replace("|", r"\|")
+            parts.append(f"- **Type:** `{escaped_return_type}`")
         if parsed.returns.description:
-            parts.append(f"- {parsed.returns.description.replace('|', '\\|')}")
+            escaped_return_desc = parsed.returns.description.replace("|", r"\|")
+            parts.append(f"- {escaped_return_desc}")
         parts.append("")
 
     # Add raises section
@@ -171,12 +174,11 @@ def format_docstring(docstring: Optional[str], obj: Any = None) -> str:
         parts.append("**Raises**")
         parts.append("")
         for exc in parsed.raises:
-            exc_type = (
-                f"`{exc.type_name.replace('|', '\\|')}`"
-                if exc.type_name
-                else "Exception"
+            escaped_exc_type = (
+                exc.type_name.replace("|", r"\|") if exc.type_name else None
             )
-            exc_desc = exc.description.replace("|", "\\|") if exc.description else ""
+            exc_type = f"`{escaped_exc_type}`" if escaped_exc_type else "Exception"
+            exc_desc = exc.description.replace("|", r"\|") if exc.description else ""
             parts.append(f"- **{exc_type}**: {exc_desc}")
         parts.append("")
 
