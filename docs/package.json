@@ -1,8 +1,8 @@
 {
   "scripts": {
-    "gen:api": "rye run python gen_api.py",
-    "gen:index": "rye run python gen_vitepress_index.py",
-    "gen:papers": "rye run python generate_papers.py",
+    "gen:api": "python gen_api.py",
+    "gen:index": "python gen_vitepress_index.py",
+    "gen:papers": "python generate_papers.py",
     "docs:dev": "vitepress dev src",
     "docs:build": "npm run gen:api && npm run gen:index && npm run gen:papers && vitepress build src",
     "docs:preview": "vitepress preview src"

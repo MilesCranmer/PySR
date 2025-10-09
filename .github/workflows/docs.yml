@@ -9,32 +9,99 @@ on:
       - '.github/workflows/docs.yml'
       - 'docs/**'
       - 'README.md'
-      - 'mkdocs.yml'
   workflow_dispatch:
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - name: "Set up Python"
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: docs/package-lock.json
+
+      - name: Setup Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3'
-          cache: pip
-      - name: "Install packages for docs building"
-        run: pip install -r docs/requirements.txt
-      - name: "Install PySR"
-        run: pip install . && python -c 'import pysr'
-      - name: "Build API docs"
-        run: cd docs && ./gen_docs.sh
-      - name: "Deploy documentation to primary repository"
-        run: mkdocs gh-deploy --force
-      - name: "Deploy documentation to secondary repository"
+          python-version: '3.11'
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Install PySR with dev dependencies
+        run: pip install -e .[dev]
+
+      - name: Install VitePress dependencies
+        run: npm ci
+        working-directory: docs
+
+      - name: Build with VitePress
+        run: npm run docs:build
+        working-directory: docs
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  deploy-secondary:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: docs/package-lock.json
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install PySR with dev dependencies
+        run: pip install -e .[dev]
+
+      - name: Install VitePress dependencies
+        run: npm ci
+        working-directory: docs
+
+      - name: Build with VitePress
+        run: npm run docs:build
+        working-directory: docs
+
+      - name: Deploy to secondary repository
         env:
           DEPLOY_KEY: ${{ secrets.DAMTP_DEPLOY_KEY }}
         run: |
@@ -44,6 +111,21 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-          git checkout gh-pages
-          git remote add secondary git@github.com:ai-damtp-cam-ac-uk/pysr.git
-          git push secondary gh-pages --force
+          # Configure git
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+          # Clone secondary repo and update it
+          git clone --depth 1 --branch gh-pages git@github.com:ai-damtp-cam-ac-uk/pysr.git secondary-repo || git clone git@github.com:ai-damtp-cam-ac-uk/pysr.git secondary-repo
+          cd secondary-repo
+          git checkout gh-pages || git checkout -b gh-pages
+
+          # Copy built docs
+          rm -rf *
+          cp -r ../docs/dist/* .
+          echo "ai.damtp.cam.ac.uk" > CNAME
+
+          # Commit and push
+          git add -A
+          git commit -m "Deploy docs from ${{ github.sha }}" || echo "No changes to commit"
+          git push origin gh-pages --force
