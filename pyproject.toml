@@ -49,3 +49,8 @@ dev = [
 
 [tool.isort]
 profile = "black"
+
+[tool.rye]
+dev-dependencies = [
+    "docstring-parser>=0.17.0",
+]
