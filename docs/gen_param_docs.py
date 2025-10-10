@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """
 Generate API parameter documentation from param_groupings.yml.
-This script generates the complete _api.md file including:
-- Header
-- Auto-generated parameter docs (from param_groupings.yml + docstrings)
-- Function directives (for gen_api.py to expand)
+This script reads _api_template.md and substitutes the {params_output}
+placeholder with auto-generated parameter docs from param_groupings.yml
+and PySRRegressor docstrings.
 """
 import re
 import sys
@@ -58,65 +57,6 @@ def str_param_groups(param_groupings, params, cur_heading=2):
         raise TypeError(f"Unexpected type {type(param_groupings)}")
 
 
-# Function directives that gen_api.py will process
-FUNCTION_DIRECTIVES = """## PySRRegressor Functions
-
-::: pysr.PySRRegressor.fit
-    options:
-        show_root_heading: true
-        heading_level: 3
-        show_root_full_path: false
-
-::: pysr.PySRRegressor.predict
-    options:
-        show_root_heading: true
-        heading_level: 3
-        show_root_full_path: false
-
-::: pysr.PySRRegressor.from_file
-    options:
-        show_root_heading: true
-        heading_level: 3
-        show_root_full_path: false
-
-::: pysr.PySRRegressor.sympy
-    options:
-        show_root_heading: true
-        heading_level: 3
-        show_root_full_path: false
-
-::: pysr.PySRRegressor.latex
-    options:
-        show_root_heading: true
-        heading_level: 3
-        show_root_full_path: false
-
-::: pysr.PySRRegressor.pytorch
-    options:
-        show_root_heading: true
-        heading_level: 3
-        show_root_full_path: false
-
-::: pysr.PySRRegressor.jax
-    options:
-        show_root_heading: true
-        heading_level: 3
-        show_root_full_path: false
-
-::: pysr.PySRRegressor.latex_table
-    options:
-        show_root_heading: true
-        heading_level: 3
-        show_root_full_path: false
-
-::: pysr.PySRRegressor.refresh
-    options:
-        show_root_heading: true
-        heading_level: 3
-        show_root_full_path: false
-"""
-
-
 if __name__ == "__main__":
     # This is the path to the param_groupings.yml file
     # relative to the current file.
@@ -138,17 +78,10 @@ if __name__ == "__main__":
         len(set(found_params) ^ set(params.keys())) == 0
     ), f"Mismatch between param_groupings.yml and PySRRegressor parameters"
 
-    # Build complete _api.md content
-    api_md_content = f"""# PySRRegressor Reference
-
-`PySRRegressor` has many options for controlling a symbolic regression search.
-Let's look at them below.
-
-## PySRRegressor Parameters
-{params_output}
-
-{FUNCTION_DIRECTIVES}
-"""
+    # Read template and substitute params
+    template_path = Path(__file__).parent / "src" / "_api_template.md"
+    template = template_path.read_text()
+    api_md_content = template.replace("{params_output}", params_output)
 
     # Write to src/_api.md
     output_path = Path(__file__).parent / "src" / "_api.md"
