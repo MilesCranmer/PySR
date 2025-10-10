@@ -41,6 +41,13 @@ function Documenter.deploy_folder(
 
     # Check for pull request
     if github_event == "pull_request" && push_preview
+        # Security: Verify PR is from trusted repository
+        pr_repo = get(ENV, "GITHUB_REPOSITORY", "")
+        if pr_repo != "MilesCranmer/PySR"
+            println("BypassPRCheckConfig: Rejecting PR from untrusted repo: $pr_repo")
+            return Documenter.DeployDecision(; all_ok = false)
+        end
+
         m = match(r"refs/pull/(\d+)/merge", github_ref)
         if m !== nothing
             pr_number = m.captures[1]
