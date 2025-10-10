@@ -63,8 +63,8 @@ jobs:
         run: npm ci
         working-directory: docs
 
-      - name: Build with VitePress
-        run: npm run docs:build
+      - name: Generate documentation markdown
+        run: npm run gen:api && npm run gen:index && npm run gen:papers
         working-directory: docs
 
       - name: Deploy with DocumenterVitepress
