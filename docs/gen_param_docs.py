@@ -81,7 +81,7 @@ if __name__ == "__main__":
     # Read template and substitute params
     template_path = Path(__file__).parent / "src" / "_api_template.md"
     template = template_path.read_text()
-    api_md_content = template.replace("{params_output}", params_output)
+    api_md_content = template.replace("PARAMSKEY", params_output)
 
     # Write to src/_api.md
     output_path = Path(__file__).parent / "src" / "_api.md"
