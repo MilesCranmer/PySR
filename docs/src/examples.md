@@ -75,7 +75,7 @@ plt.show()
 
 Which gives us:
 
-![Truth vs Prediction](./images/example_plot.png)
+![Truth vs Prediction](/images/example_plot.png)
 
 We may also plot the output of a particular expression
 by passing the index of the expression to `predict` (or

@@ -37,15 +37,15 @@ with open(output_file, "w") as f:
         image_file = paper["image"]
 
         if image_file.startswith("http"):
-            image_url = image_file
+            absolute_image_file = image_file
         else:
-            image_url = f"./images/{image_file}"
+            absolute_image_file = f"/images/{image_file}"
 
         # Begin:
         paper_snippet = f"""
 
 <div style="text-align: center; margin: 2rem 0;">
-  <img src="{image_url}" alt="{title}" style="max-width: 500px; width: 100%; height: auto; margin: 0 auto; display: block;">
+  <img src="{absolute_image_file}" alt="{title}" style="max-width: 500px; width: 100%; height: auto; margin: 0 auto; display: block;">
   <h2 style="margin-top: 1rem;">
     <a href="{link}">{title}</a>
   </h2>
