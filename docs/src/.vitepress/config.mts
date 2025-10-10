@@ -32,6 +32,7 @@ export default defineConfig({
   lastUpdated: true,
   cleanUrls: true,
   outDir: '../dist',
+  srcExclude: ['**/_*.md'],
   head: [
     ['link', { rel: 'icon', href: `${baseTemp.base}favicon.png` }],
   ],

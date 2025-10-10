@@ -64,7 +64,7 @@ jobs:
         working-directory: docs
 
       - name: Generate documentation markdown
-        run: npm run gen:api && npm run gen:index && npm run gen:papers
+        run: npm run gen:params && npm run gen:api && npm run gen:index && npm run gen:papers
         working-directory: docs
 
       - name: Deploy with DocumenterVitepress

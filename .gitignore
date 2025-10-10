@@ -19,6 +19,7 @@ Manifest.toml
 workflow
 docs/index.md
 docs/src/index.md
+docs/src/_api.md
 docs/src/api.md
 docs/src/api-advanced.md
 docs/src/.vitepress/cache/
