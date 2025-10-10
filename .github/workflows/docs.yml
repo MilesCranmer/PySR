@@ -31,43 +31,29 @@ jobs:
       matrix:
         target: [primary, secondary]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: docs/package-lock.json
-
-      - name: Setup Python
-        uses: actions/setup-python@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
-
-      - name: Setup Julia
-        uses: julia-actions/setup-julia@v2
+      - uses: julia-actions/setup-julia@v2
         with:
           version: '1'
-
-      - name: Install Julia dependencies
+      - name: Install julia deps
         run: julia --project=docs -e 'using Pkg; Pkg.instantiate()'
-
-      - name: Install PySR with dev dependencies
-        run: pip install -e .[dev]
-
-      - name: Install VitePress dependencies
+      - name: Install python deps
+        run: pip install -e .[docs]
+      - name: Install npm deps
         run: npm ci
         working-directory: docs
-
       - name: Generate documentation markdown
         run: npm run gen:params && npm run gen:api && npm run gen:index && npm run gen:papers
         working-directory: docs
-
-      - name: Deploy with DocumenterVitepress
+      - name: Deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DAMTP_DEPLOY_KEY: ${{ secrets.DAMTP_DEPLOY_KEY }}
