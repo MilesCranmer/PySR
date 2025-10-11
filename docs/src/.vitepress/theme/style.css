@@ -100,3 +100,11 @@ figure img {
   margin: 0 auto;
   display: block;
 }
+
+/* Make language picker match version picker styling (black text, not red) */
+.VPNavBarMenuGroup button .text {
+  color: var(--vp-c-text-1) !important;
+}
+.VPNavBarMenuGroup:hover button .text {
+  color: var(--vp-c-text-2) !important;
+}

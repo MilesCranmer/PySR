@@ -22,6 +22,13 @@ const nav = [
     link: 'https://github.com/MilesCranmer/PySR/discussions'
   },
   {
+    text: 'Python',
+    items: [
+      { text: 'Python', link: '/' },
+      { text: 'Julia', link: 'https://ai.damtp.cam.ac.uk/symbolicregression/dev/' }
+    ]
+  },
+  {
     component: 'VersionPicker'
   }
 ]
