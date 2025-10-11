@@ -21,6 +21,9 @@ const nav = [
   {
     text: 'GitHub',
     link: 'https://github.com/MilesCranmer/PySR'
+  },
+  {
+    component: 'VersionPicker'
   }
 ]
 
@@ -35,9 +38,14 @@ export default defineConfig({
   srcExclude: ['**/_*.md'],
   head: [
     ['link', { rel: 'icon', href: `${baseTemp.base}favicon.png` }],
+    ['script', {src: `${getBaseRepository(baseTemp.base)}versions.js`}],
+    ['script', {src: `${baseTemp.base}siteinfo.js`}]
   ],
   ignoreDeadLinks: true,
   vite: {
+    define: {
+      __DEPLOY_ABSPATH__: JSON.stringify(getBaseRepository(baseTemp.base)),
+    },
     optimizeDeps: {
       exclude: [
         '@nolebase/vitepress-plugin-enhanced-readabilities/client',
