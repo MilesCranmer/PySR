@@ -11,7 +11,7 @@ https://github.com/MilesCranmer/PySR/assets/7593028/c8511a49-b408-488f-8f18-b174
 
 | **Docs** | **Forums** | **Paper** | **colab demo** |
 |:---:|:---:|:---:|:---:|
-|[![Documentation](https://github.com/MilesCranmer/PySR/actions/workflows/docs.yml/badge.svg)](https://astroautomata.com/PySR/)|[![Discussions](https://img.shields.io/badge/discussions-github-informational)](https://github.com/MilesCranmer/PySR/discussions)|[![Paper](https://img.shields.io/badge/arXiv-2305.01582-b31b1b)](https://arxiv.org/abs/2305.01582)|[![Colab](https://img.shields.io/badge/colab-notebook-yellow)](https://colab.research.google.com/github/MilesCranmer/PySR/blob/master/examples/pysr_demo.ipynb)|
+|[![Documentation](https://github.com/MilesCranmer/PySR/actions/workflows/docs.yml/badge.svg)](https://ai.damtp.cam.ac.uk/pysr/)|[![Discussions](https://img.shields.io/badge/discussions-github-informational)](https://github.com/MilesCranmer/PySR/discussions)|[![Paper](https://img.shields.io/badge/arXiv-2305.01582-b31b1b)](https://arxiv.org/abs/2305.01582)|[![Colab](https://img.shields.io/badge/colab-notebook-yellow)](https://colab.research.google.com/github/MilesCranmer/PySR/blob/master/examples/pysr_demo.ipynb)|
 
 | **pip** | **conda** | **Stats** |
 | :---: | :---: | :---: |
@@ -20,14 +20,14 @@ https://github.com/MilesCranmer/PySR/assets/7593028/c8511a49-b408-488f-8f18-b174
 </div>
 
 If you find PySR useful, please cite the paper [arXiv:2305.01582](https://arxiv.org/abs/2305.01582).
-If you've finished a project with PySR, please submit a PR to showcase your work on the [research showcase page](https://astroautomata.com/PySR/papers)!
+If you've finished a project with PySR, please submit a PR to showcase your work on the [research showcase page](https://ai.damtp.cam.ac.uk/pysr/papers)!
 
 **Contents**:
 
 - [Why PySR?](#why-pysr)
 - [Installation](#installation)
 - [Quickstart](#quickstart)
-- [→ Documentation](https://astroautomata.com/PySR)
+- [→ Documentation](https://ai.damtp.cam.ac.uk/pysr)
 - [Contributors](#contributors-)
 
 <div align="center">
@@ -38,7 +38,7 @@ If you've finished a project with PySR, please submit a PR to showcase your work
 |---|---|---|
 |[![Linux](https://github.com/MilesCranmer/PySR/actions/workflows/CI.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI.yml)|[![Windows](https://github.com/MilesCranmer/PySR/actions/workflows/CI_Windows.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_Windows.yml)|[![macOS](https://github.com/MilesCranmer/PySR/actions/workflows/CI_mac.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_mac.yml)|
 | **Docker** | **Conda** | **Coverage** |
-|[![Docker](https://github.com/MilesCranmer/PySR/actions/workflows/CI_docker.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_docker.yml)|[![conda-forge](https://github.com/MilesCranmer/PySR/actions/workflows/CI_conda_forge.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_conda_forge.yml)|[![Coverage Status](https://coveralls.io/repos/github/MilesCranmer/PySR/badge.svg?branch=master&service=github)](https://coveralls.io/github/MilesCranmer/PySR)|
+|[![Docker](https://github.com/MilesCranmer/PySR/actions/workflows/CI_docker.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_docker.yml)|[![conda-forge](https://github.com/MilesCranmer/PySR/actions/workflows/CI_conda_forge.yml/badge.svg)](https://github.com/MilesCranmer/PySR/actions/workflows/CI_conda_forge.yml)|[![codecov](https://codecov.io/gh/MilesCranmer/PySR/branch/master/graph/badge.svg)](https://codecov.io/gh/MilesCranmer/PySR)|
 
 </div>
 
@@ -178,6 +178,7 @@ PySR's main interface is in the style of scikit-learn:
 from pysr import PySRRegressor
 
 model = PySRRegressor(
+    maxsize=20,
     niterations=40,  # < Increase me for better results
     binary_operators=["+", "*"],
     unary_operators=[
@@ -254,22 +255,21 @@ model = PySRRegressor.from_file("hall_of_fame.2022-08-10_100832.281.pkl")
 
 There are several other useful features such as denoising (e.g., `denoise=True`),
 feature selection (e.g., `select_k_features=3`).
-For examples of these and other features, see the [examples page](https://astroautomata.com/PySR/examples).
-For a detailed look at more options, see the [options page](https://astroautomata.com/PySR/options).
-You can also see the full API at [this page](https://astroautomata.com/PySR/api).
-There are also tips for tuning PySR on [this page](https://astroautomata.com/PySR/tuning).
+For examples of these and other features, see the [examples page](https://ai.damtp.cam.ac.uk/pysr/examples).
+For a detailed look at more options, see the [options page](https://ai.damtp.cam.ac.uk/pysr/options).
+You can also see the full API at [this page](https://ai.damtp.cam.ac.uk/pysr/api).
+There are also tips for tuning PySR on [this page](https://ai.damtp.cam.ac.uk/pysr/tuning).
 
 ### Detailed Example
 
 The following code makes use of as many PySR features as possible.
 Note that is just a demonstration of features and you should not use this example as-is.
-For details on what each parameter does, check out the [API page](https://astroautomata.com/PySR/api/).
+For details on what each parameter does, check out the [API page](https://ai.damtp.cam.ac.uk/pysr/api/).
 
 ```python
 model = PySRRegressor(
-    procs=4,
     populations=8,
-    # ^ 2 populations per core, so one is always running.
+    # ^ Assuming we have 4 cores, this means 2 populations per core, so one is always running.
     population_size=50,
     # ^ Slightly larger populations, for greater diversity.
     ncycles_per_iteration=500,

@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -58,11 +59,12 @@ class TestTorch(unittest.TestCase):
             }
         )
 
-        equations["Complexity Loss Equation".split(" ")].to_csv(
-            "equation_file.csv.bkup"
-        )
+        for fname in ["hall_of_fame.csv.bak", "hall_of_fame.csv"]:
+            equations["Complexity Loss Equation".split(" ")].to_csv(
+                Path(model.output_directory_) / model.run_id_ / fname
+            )
 
-        model.refresh(checkpoint_file="equation_file.csv")
+        model.refresh(run_directory=str(Path(model.output_directory_) / model.run_id_))
         tformat = model.pytorch()
         self.assertEqual(str(tformat), "_SingleSymPyModule(expression=cos(x1)**2)")
 
@@ -91,11 +93,12 @@ class TestTorch(unittest.TestCase):
             }
         )
 
-        equations["Complexity Loss Equation".split(" ")].to_csv(
-            "equation_file.csv.bkup"
-        )
+        for fname in ["hall_of_fame.csv.bak", "hall_of_fame.csv"]:
+            equations["Complexity Loss Equation".split(" ")].to_csv(
+                Path(model.output_directory_) / model.run_id_ / fname
+            )
 
-        model.refresh(checkpoint_file="equation_file.csv")
+        model.refresh(run_directory=str(Path(model.output_directory_) / model.run_id_))
 
         tformat = model.pytorch()
         self.assertEqual(str(tformat), "_SingleSymPyModule(expression=cos(x1)**2)")
@@ -143,21 +146,26 @@ class TestTorch(unittest.TestCase):
             }
         )
 
-        equations["Complexity Loss Equation".split(" ")].to_csv(
-            "equation_file_custom_operator.csv.bkup"
-        )
+        for fname in ["hall_of_fame.csv.bak", "hall_of_fame.csv"]:
+            equations["Complexity Loss Equation".split(" ")].to_csv(
+                Path(model.output_directory_) / model.run_id_ / fname
+            )
+
+        MyCustomOperator = sympy.Function("mycustomoperator")
 
         model.set_params(
-            equation_file="equation_file_custom_operator.csv",
-            extra_sympy_mappings={"mycustomoperator": sympy.sin},
-            extra_torch_mappings={"mycustomoperator": self.torch.sin},
+            extra_sympy_mappings={"mycustomoperator": MyCustomOperator},
+            extra_torch_mappings={MyCustomOperator: self.torch.sin},
         )
-        model.refresh(checkpoint_file="equation_file_custom_operator.csv")
-        self.assertEqual(str(model.sympy()), "sin(x1)")
+        # TODO: We shouldn't need to specify the run directory here.
+        model.refresh(run_directory=str(Path(model.output_directory_) / model.run_id_))
+        # self.assertEqual(str(model.sympy()), "sin(x1)")
         # Will automatically use the set global state from get_hof.
 
         tformat = model.pytorch()
-        self.assertEqual(str(tformat), "_SingleSymPyModule(expression=sin(x1))")
+        self.assertEqual(
+            str(tformat), "_SingleSymPyModule(expression=mycustomoperator(x1))"
+        )
         np.testing.assert_almost_equal(
             tformat(self.torch.tensor(X)).detach().numpy(),
             np.sin(X[:, 1]),
@@ -210,11 +218,9 @@ class TestTorch(unittest.TestCase):
             maxsize=10,
             early_stop_condition=1e-5,
             extra_sympy_mappings={"cos_approx": cos_approx},
-            extra_torch_mappings={"cos_approx": cos_approx},
             random_state=0,
             deterministic=True,
-            procs=0,
-            multithreading=False,
+            parallelism="serial",
         )
         np.random.seed(0)
         model.fit(X.values, y.values)

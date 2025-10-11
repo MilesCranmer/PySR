@@ -1,19 +1,40 @@
+import functools
 import importlib
 import os
 import pickle as pkl
+import platform
+import re
 import tempfile
 import traceback
 import unittest
 import warnings
 from pathlib import Path
+from textwrap import dedent
+from unittest import mock
 
 import numpy as np
 import pandas as pd
 import sympy  # type: ignore
-from sklearn.utils.estimator_checks import check_estimator
 
-from pysr import PySRRegressor, install, jl, load_all_packages
+try:
+    from sklearn.utils.estimator_checks import estimator_checks_generator
+except ImportError:
+    from sklearn.utils.estimator_checks import check_estimator
+
+    estimator_checks_generator = functools.partial(check_estimator, generate_only=True)
+
+from pysr import (
+    ParametricExpressionSpec,
+    PySRRegressor,
+    TemplateExpressionSpec,
+    TensorBoardLoggerSpec,
+    install,
+    jl,
+    load_all_packages,
+)
 from pysr.export_latex import sympy2latex
+from pysr.export_sympy import pysr2sympy
+from pysr.expression_specs import parametric_expression_deprecation_warning
 from pysr.feature_selection import _handle_feature_selection, run_feature_selection
 from pysr.julia_helpers import init_julia
 from pysr.sr import (
@@ -22,19 +43,22 @@ from pysr.sr import (
     _suggest_keywords,
     idx_model_selection,
 )
-from pysr.utils import _csv_filename_to_pkl_filename
 
 from .params import (
     DEFAULT_NCYCLES,
     DEFAULT_NITERATIONS,
     DEFAULT_PARAMS,
     DEFAULT_POPULATIONS,
+    skip_if_beartype,
 )
 
 # Disables local saving:
 os.environ["SYMBOLIC_REGRESSION_IS_TESTING"] = os.environ.get(
     "SYMBOLIC_REGRESSION_IS_TESTING", "true"
 )
+
+# Import from juliacall at end:
+from juliacall import JuliaError  # type: ignore
 
 
 class TestPipeline(unittest.TestCase):
@@ -86,25 +110,34 @@ class TestPipeline(unittest.TestCase):
         )
 
     def test_multiprocessing_turbo_custom_objective(self):
+        for loss_key in ["loss_function", "loss_function_expression"]:
+            with self.subTest(loss_key=loss_key):
+                self._multiprocessing_turbo_custom_objective(loss_key)
+
+    def _multiprocessing_turbo_custom_objective(self, loss_key):
         rstate = np.random.RandomState(0)
         y = self.X[:, 0]
         y += rstate.randn(*y.shape) * 1e-4
+
+        node_type = "Expression" if loss_key == "loss_function_expression" else "Node"
         model = PySRRegressor(
             **self.default_test_kwargs,
             # Turbo needs to work with unsafe operators:
             unary_operators=["sqrt"],
             procs=2,
-            multithreading=False,
+            parallelism="multiprocessing",
             turbo=True,
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-10 && complexity == 1",
-            loss_function="""
-            function my_objective(tree::Node{T}, dataset::Dataset{T}, options::Options) where T
+            **{
+                loss_key: f"""
+            function my_objective(tree::{node_type}{{T}}, dataset::Dataset{{T}}, options::Options) where T
                 prediction, flag = eval_tree_array(tree, dataset.X, options)
                 !flag && return T(Inf)
                 abs3(x) = abs(x) ^ 3
                 return sum(abs3, prediction .- dataset.y) / length(prediction)
             end
-            """,
+            """
+            },
         )
         model.fit(self.X, y)
         print(model.equations_)
@@ -149,6 +182,20 @@ class TestPipeline(unittest.TestCase):
         self.assertEqual(
             jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.turbo), False
         )
+
+    def test_operator_conflict_error(self):
+        regressor = PySRRegressor(
+            operators={1: ["sin"]},
+            unary_operators=["sin"],
+            progress=False,
+            niterations=0,
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "Cannot use `operators` with `binary_operators` or `unary_operators`",
+        ):
+            regressor._validate_and_modify_params()
 
     def test_multioutput_custom_operator_quiet_custom_complexity(self):
         y = self.X[:, [0, 1]] ** 2
@@ -348,9 +395,8 @@ class TestPipeline(unittest.TestCase):
     def test_noisy_builtin_variable_names(self):
         y = self.X[:, [0, 1]] ** 2 + self.rstate.randn(self.X.shape[0], 1) * 0.05
         model = PySRRegressor(
-            # Test that passing a single operator works:
-            unary_operators="sq(x) = x^2",
-            binary_operators="plus",
+            unary_operators=["sq(x) = x^2"],
+            binary_operators=["plus"],
             extra_sympy_mappings={"sq": lambda x: x**2},
             **self.default_test_kwargs,
             procs=0,
@@ -447,16 +493,17 @@ class TestPipeline(unittest.TestCase):
         csv_file_data = "\n".join([line.strip() for line in csv_file_data.split("\n")])
 
         for from_backup in [False, True]:
-            rand_dir = Path(tempfile.mkdtemp())
-            equation_filename = str(rand_dir / "equation.csv")
-            with open(equation_filename + (".bkup" if from_backup else ""), "w") as f:
+            output_directory = Path(tempfile.mkdtemp())
+            equation_filename = str(output_directory / "hall_of_fame.csv")
+            with open(equation_filename + (".bak" if from_backup else ""), "w") as f:
                 f.write(csv_file_data)
             model = PySRRegressor.from_file(
-                equation_filename,
+                run_directory=output_directory,
                 n_features_in=5,
                 feature_names_in=["f0", "f1", "f2", "f3", "f4"],
                 binary_operators=["+", "*", "/", "-", "^"],
                 unary_operators=["cos"],
+                precision=64,
             )
             X = self.rstate.rand(100, 5)
             y_truth = 2.2683423 ** np.cos(X[:, 3])
@@ -464,13 +511,46 @@ class TestPipeline(unittest.TestCase):
 
             np.testing.assert_allclose(y_truth, y_test)
 
+    def test_load_model_with_operators_dict(self):
+        csv_file_data = """Complexity,Loss,Equation
+        1,0.19951081,"1.9762075"
+        3,0.12717344,"(f0 + 1.4724599)"
+        4,0.104823045,"pow_abs(2.2683423, cos(f3))\""""
+        csv_file_data = "\n".join([line.strip() for line in csv_file_data.split("\n")])
+
+        operators = {
+            1: ["cos"],
+            2: ["+", "*", "/", "-", "^", "pow_abs"],
+        }
+
+        for from_backup in [False, True]:
+            output_directory = Path(tempfile.mkdtemp())
+            equation_filename = output_directory / "hall_of_fame.csv"
+            with open(
+                equation_filename.with_suffix(".csv.bak" if from_backup else ".csv"),
+                "w",
+            ) as f:
+                f.write(csv_file_data)
+
+            model = PySRRegressor.from_file(
+                run_directory=output_directory,
+                n_features_in=5,
+                feature_names_in=["f0", "f1", "f2", "f3", "f4"],
+                operators=operators,
+                precision=64,
+            )
+
+            X = self.rstate.rand(100, 5)
+            y_truth = 2.2683423 ** np.cos(X[:, 3])
+            y_test = model.predict(X, 2)
+            np.testing.assert_allclose(y_truth, y_test)
+
     def test_load_model_simple(self):
         # Test that we can simply load a model from its equation file.
         y = self.X[:, [0, 1]] ** 2
         model = PySRRegressor(
-            # Test that passing a single operator works:
-            unary_operators="sq(x) = x^2",
-            binary_operators="plus",
+            unary_operators=["sq(x) = x^2"],
+            binary_operators=["plus"],
             extra_sympy_mappings={"sq": lambda x: x**2},
             **self.default_test_kwargs,
             procs=0,
@@ -478,27 +558,28 @@ class TestPipeline(unittest.TestCase):
             early_stop_condition="stop_if(loss, complexity) = loss < 0.05 && complexity == 2",
         )
         rand_dir = Path(tempfile.mkdtemp())
-        equation_file = rand_dir / "equations.csv"
+        equation_file = rand_dir / "1" / "hall_of_fame.csv"
         model.set_params(temp_equation_file=False)
-        model.set_params(equation_file=equation_file)
+        model.set_params(output_directory=rand_dir)
+        model.set_params(run_id="1")
         model.fit(self.X, y)
 
         # lambda functions are removed from the pickling, so we need
         # to pass it during the loading:
         model2 = PySRRegressor.from_file(
-            model.equation_file_, extra_sympy_mappings={"sq": lambda x: x**2}
+            run_directory=rand_dir / "1", extra_sympy_mappings={"sq": lambda x: x**2}
         )
 
         np.testing.assert_allclose(model.predict(self.X), model2.predict(self.X))
 
         # Try again, but using only the pickle file:
-        for file_to_delete in [str(equation_file), str(equation_file) + ".bkup"]:
+        for file_to_delete in [str(equation_file), str(equation_file) + ".bak"]:
             if os.path.exists(file_to_delete):
                 os.remove(file_to_delete)
 
         # pickle_file = rand_dir / "equations.pkl"
         model3 = PySRRegressor.from_file(
-            model.equation_file_, extra_sympy_mappings={"sq": lambda x: x**2}
+            run_directory=rand_dir / "1", extra_sympy_mappings={"sq": lambda x: x**2}
         )
         np.testing.assert_allclose(model.predict(self.X), model3.predict(self.X))
 
@@ -508,42 +589,539 @@ class TestPipeline(unittest.TestCase):
             PySRRegressor(unary_operators=["1"]).fit([[1]], [1])
 
         self.assertIn(
-            "When building `unary_operators`, `'1'` did not return a Julia function",
+            "When building operators for arity 1, `'1'` did not return a Julia function",
             str(cm.exception),
         )
+
+    def test_template_expressions_and_custom_complexity(self):
+        # Create random data between -1 and 1
+        X = self.rstate.uniform(-1, 1, (100, 2))
+
+        # Ground truth: sin(x + y)
+        y = np.sin(X[:, 0] + X[:, 1])
+
+        # Create model with template that includes the missing sin operator
+        model = PySRRegressor(
+            expression_spec=TemplateExpressionSpec(
+                ["f"], "sin_of_f((; f), (x, y)) = sin(f(x, y))"
+            ),
+            binary_operators=["+", "-", "*", "/"],
+            unary_operators=[],  # No sin operator!
+            maxsize=10,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-10 && complexity == 6",
+            # Custom complexity *function*:
+            complexity_mapping="my_complexity(ex) = sum(t -> 2, get_tree(ex))",
+            **self.default_test_kwargs,
+        )
+
+        model.fit(X, y)
+
+        # Test on out of domain data - this should still work due to sin template!
+        X_test = self.rstate.uniform(2, 10, (25, 2))
+        y_test = np.sin(X_test[:, 0] + X_test[:, 1])
+        y_pred = model.predict(X_test)
+
+        test_mse = np.mean((y_test - y_pred) ** 2)
+        self.assertLess(test_mse, 1e-5)
+
+        # Check there is a row with complexity 6 and MSE < 1e-10
+        df = model.equations_
+        good_rows = df[(df.complexity == 6) & (df.loss < 1e-10)]
+        self.assertGreater(len(good_rows), 0)
+
+        # Check there are NO rows with lower complexity and MSE < 1e-10
+        simpler_good_rows = df[(df.complexity < 6) & (df.loss < 1e-10)]
+        self.assertEqual(len(simpler_good_rows), 0)
+
+        # Make sure that a nice error is raised if we try to get the sympy expression:
+        # f"`expression_spec={self.expression_spec_}` does not support sympy export."
+        with self.assertRaises(ValueError) as cm:
+            model.sympy()
+        self.assertRegex(
+            str(cm.exception),
+            r"`expression_spec=.*TemplateExpressionSpec.*` does not support sympy export.",
+        )
+        with self.assertRaises(ValueError):
+            model.latex()
+        with self.assertRaises(ValueError):
+            model.jax()
+        with self.assertRaises(ValueError):
+            model.pytorch()
+        with self.assertRaises(ValueError):
+            model.latex_table()
+
+    def test_template_expression_with_parameters_multiout(self):
+        # Create random data
+        X_continuous = self.rstate.uniform(-1, 1, (100, 2))
+        category = self.rstate.randint(0, 3, 100)  # 3 classes
+        X = np.hstack([X_continuous, category[:, None] + 1])
+
+        # Ground truth: p[class] * x1^2 + x2 where p = [0.5, 1.0, 2.0]
+        true_p = [0.5, 1.0, 2.0]
+        y_1 = np.array(
+            [true_p[c] * x1**2 + x2 for x1, x2, c in zip(X[:, 0], X[:, 1], category)]
+        )
+        y_2 = y_1 * 2
+        y = np.column_stack([y_1, y_2])
+
+        # Create model with template that includes parameters
+        model = PySRRegressor(
+            **self.default_test_kwargs,
+            expression_spec=TemplateExpressionSpec(
+                "p[class] * x1^2 + f(x2)",
+                expressions=["f"],
+                parameters={"p": 3},
+                variable_names=["x1", "x2", "class"],
+            ),
+            binary_operators=["+", "-", "*", "/"],
+            unary_operators=[],
+            maxsize=10,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-10 && complexity <= 3",
+        )
+
+        model.fit(X, y)
+
+        # Test on new data
+        X_continuous_test = self.rstate.uniform(-1, 1, (25, 2))
+        category_test = self.rstate.randint(0, 3, 25)
+        X_test = np.hstack([X_continuous_test, category_test[:, None] + 1])
+        y_test_1 = np.array(
+            [
+                true_p[c] * x1**2 + x2
+                for x1, x2, c in zip(X_test[:, 0], X_test[:, 1], category_test)
+            ]
+        )
+        y_test_2 = y_test_1 * 2
+        y_test = np.column_stack([y_test_1, y_test_2])
+        y_pred = model.predict(X_test)
+
+        test_mse = np.mean((y_test - y_pred) ** 2)
+        self.assertLess(test_mse, 1e-5)
+
+    def test_parametric_expression(self):
+        # Create data with two classes
+        n_points = 100
+        X = self.rstate.uniform(-3, 3, (n_points, 2))  # x1, x2
+        category = self.rstate.randint(0, 3, n_points)  # class (0 or 1)
+
+        # True parameters for each class
+        P1 = [0.1, 1.5, -5.2]  # phase shift for each class
+        P2 = [3.2, 0.5, 1.2]  # offset for each class
+
+        # Ground truth: 2*cos(x2 + P1[class]) + x1^2 - P2[class]
+        y = np.array(
+            [
+                2 * np.cos(x2 + P1[c]) + x1**2 - P2[c]
+                for x1, x2, c in zip(X[:, 0], X[:, 1], category)
+            ]
+        )
+
+        model = PySRRegressor(
+            expression_spec=ParametricExpressionSpec(max_parameters=2),
+            binary_operators=["+", "*", "/", "-"],
+            unary_operators=["cos", "exp"],
+            maxsize=20,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity <= 14",
+            **self.default_test_kwargs,
+        )
+
+        model.fit(X, y, category=category)
+
+        # Test on new data points
+        X_test = self.rstate.uniform(-6, 6, (10, 2))
+        category_test = self.rstate.randint(0, 3, 10)
+
+        y_test = np.array(
+            [
+                2 * np.cos(x2 + P1[c]) + x1**2 - P2[c]
+                for x1, x2, c in zip(X_test[:, 0], X_test[:, 1], category_test)
+            ]
+        )
+
+        y_test_pred = model.predict(X_test, category=category_test)
+        test_mse = np.mean((y_test - y_test_pred) ** 2)
+        self.assertLess(test_mse, 1e-3)
+
+        with self.assertRaises(ValueError):
+            model.sympy()
+        with self.assertRaises(ValueError):
+            model.latex()
+        with self.assertRaises(ValueError):
+            model.jax()
+        with self.assertRaises(ValueError):
+            model.pytorch()
+        with self.assertRaises(ValueError):
+            model.latex_table()
+
+    def test_tensorboard_logger(self):
+
+        if platform.system() == "Windows":
+            self.skipTest("Skipping test on Windows")
+
+        """Test TensorBoard logger functionality."""
+        try:
+            from tensorboard.backend.event_processing.event_accumulator import (  # type: ignore
+                EventAccumulator,
+            )
+        except ImportError:
+            self.skipTest("TensorBoard not installed. Skipping test.")
+
+        y = self.X[:, 0]
+        for warm_start in [False, True]:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                logger_spec = TensorBoardLoggerSpec(
+                    log_dir=tmpdir, log_interval=2, overwrite=True
+                )
+                model = PySRRegressor(
+                    **self.default_test_kwargs,
+                    logger_spec=logger_spec,
+                    early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity == 1",
+                    warm_start=warm_start,
+                )
+                model.fit(self.X, y)
+                logger = model.logger_
+                # Should restart from same logger if warm_start is True
+                model.fit(self.X, y)
+                logger2 = model.logger_
+
+                if warm_start:
+                    self.assertEqual(logger, logger2)
+                else:
+                    self.assertNotEqual(logger, logger2)
+
+                # Verify log directory exists and contains TensorBoard files
+                log_dir = Path(tmpdir)
+                assert log_dir.exists()
+                files = list(log_dir.glob("events.out.tfevents.*"))
+                assert len(files) == 1 if warm_start else 2
+
+                # Load and verify TensorBoard events
+                event_acc = EventAccumulator(str(log_dir))
+                event_acc.Reload()
+
+                # Check that we have the expected scalar summaries
+                scalars = event_acc.Tags()["scalars"]
+                self.assertIn("search/data/summaries/pareto_volume", scalars)
+                self.assertIn("search/data/summaries/min_loss", scalars)
+
+                # Check that we have multiple events for each summary
+                pareto_events = event_acc.Scalars("search/data/summaries/pareto_volume")
+                min_loss_events = event_acc.Scalars("search/data/summaries/min_loss")
+
+                self.assertGreater(len(pareto_events), 0)
+                self.assertGreater(len(min_loss_events), 0)
+
+                # Verify model still works as expected
+                self.assertLessEqual(model.get_best()["loss"], 1e-4)
+
+    def test_negative_losses(self):
+        X = self.rstate.rand(100, 3) * 20.0
+        variance = X[:, 0] * 0.1
+        eps = self.rstate.randn(100) * np.sqrt(variance)
+        y = X[:, 0] + X[:, 1] ** 2 + eps
+        spec = TemplateExpressionSpec(
+            expressions=["f_mu", "f_logvar"],
+            variable_names=["x1", "x2", "x3", "y"],
+            combine="mu = f_mu(x1, x2, x3); logvar = f_logvar(x1, x2, x3); 0.5f0 * (logvar + (mu - y)^2 / exp(logvar)) - 2",
+        )
+        model = PySRRegressor(
+            **self.default_test_kwargs,
+            expression_spec=spec,
+            binary_operators=["+", "*", "-"],
+            unary_operators=["log", "exp"],
+            elementwise_loss="(pred, targ) -> pred",
+            loss_scale="linear",
+            early_stop_condition="stop_if_under_n1(loss, complexity) = loss < -1.0",
+        )
+        model.fit(np.column_stack([X, y]), 0 * y)
+        self.assertLessEqual(model.get_best()["loss"], -1.0)
+
+    def test_comparison_operator(self):
+        X = self.rstate.randn(100, 2)
+        y = ((X[:, 0] + X[:, 1]) < (X[:, 0] * X[:, 1])).astype(float)
+
+        model = PySRRegressor(
+            binary_operators=["<", "+", "*"],
+            **self.default_test_kwargs,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity <= 7",
+        )
+
+        model.fit(X, y)
+
+        best_equation = model.get_best()["equation"]
+        self.assertIn("less", best_equation)
+        self.assertLessEqual(model.get_best()["loss"], 1e-4)
+
+        y_pred = model.predict(X)
+        np.testing.assert_array_almost_equal(y, y_pred, decimal=3)
+
+    def test_operators_parameter(self):
+        X = self.rstate.randn(100, 3)
+        # Create a function that would be perfect for muladd: muladd(x, y, z) = x*y + z
+        y = X[:, 0] * X[:, 1] + X[:, 2] + np.sin(X[:, 0])
+        # Test that operators parameter works with arity > 2
+        model = PySRRegressor(
+            operators={1: ["sin"], 3: ["muladd"]},
+            **self.default_test_kwargs,
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity <= 10",
+        )
+        model.fit(X, y)
+        # Should work with both sin and muladd operators
+        self.assertLessEqual(model.get_best()["loss"], 1e-4)
+
+    def test_constraints_n_arity_validation(self):
+        X = self.rstate.randn(10, 2)
+        y = X[:, 0] + X[:, 1]
+
+        model = PySRRegressor(
+            operators={1: ["sin"], 2: ["+", "*"], 3: ["muladd"]},
+            constraints={
+                "sin": -1,
+                "+": (-1, -1),
+                "*": (-1, 1),
+                "muladd": (-1, -1, 1),
+            },
+            niterations=1,
+            progress=False,
+            temp_equation_file=False,
+        )
+        try:
+            model.fit(X, y)
+        except Exception as e:
+            if "constraint tuple has length" in str(e):
+                self.fail(f"Valid constraints should not raise validation error: {e}")
+
+        with self.assertRaises(ValueError) as cm:
+            invalid_model = PySRRegressor(
+                operators={3: ["muladd"]},
+                constraints={"muladd": (-1, -1)},
+                niterations=1,
+                progress=False,
+                temp_equation_file=False,
+            )
+            invalid_model.fit(X, y)
+
+        self.assertIn("arity 3 but constraint tuple has length 2", str(cm.exception))
+
+
+class TestGuesses(unittest.TestCase):
+    def setUp(self):
+        self.rstate = np.random.RandomState(1)
+        self.default_test_kwargs = dict(
+            niterations=0, progress=False, temp_equation_file=False
+        )
+
+    def test_single_output_string_guesses(self):
+        X = self.rstate.randn(100, 2)
+        y = 2.0 * X[:, 0] + 3.0 * X[:, 1] + 0.5
+        model = PySRRegressor(
+            guesses=["2.0*x0 + 3.0*x1 + 0.5", "x0 + x1"],
+            **self.default_test_kwargs,
+        )
+        model.fit(X, y)
+        # Check that the exact guess is in the hall of fame
+        self.assertTrue(any(model.equations_["loss"] < 1e-10))
+
+    def test_custom_variable_names_guesses(self):
+        X = self.rstate.randn(100, 2)
+        y = 2.0 * X[:, 0] + 3.0 * X[:, 1] + 0.5
+        model = PySRRegressor(
+            guesses=["2.0*feature1 + 3.0*feature2 + 0.5"],
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-6 && complexity <= 5",
+            **self.default_test_kwargs,
+        )
+        model.fit(X, y, variable_names=["feature1", "feature2"])
+        # Check that the exact guess is in the hall of fame
+        self.assertTrue(any(model.equations_["loss"] < 1e-10))
+
+    def test_multi_output_guesses(self):
+        X = self.rstate.randn(100, 2)
+        Y = np.column_stack([2.0 * X[:, 0] + X[:, 1], X[:, 0] - X[:, 1]])
+        model = PySRRegressor(
+            guesses=[["2.0*x0 + x1"], ["x0 - x1"]],
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-6 && complexity <= 5",
+            **self.default_test_kwargs,
+        )
+        model.fit(X, Y)
+        # Check both outputs have good fits
+        for i, eqs_df in enumerate(model.equations_):
+            self.assertTrue(any(eqs_df["loss"] < 1e-10))
+
+    def test_template_expression_guesses(self):
+        X = self.rstate.randn(100, 2)
+        y = X[:, 0] + X[:, 1]
+        template = TemplateExpressionSpec(
+            expressions=["f"], combine="f(x0, x1)", variable_names=["x0", "x1"]
+        )
+        model = PySRRegressor(
+            expression_spec=template,
+            guesses=[{"f": "#1 + #2"}],
+            **self.default_test_kwargs,
+        )
+        model.fit(X, y)
+        # Check that a good fit was found
+        self.assertTrue(any(model.equations_["loss"] < 1e-10))
+
+    def test_multi_output_template_expression_guesses(self):
+        X = self.rstate.randn(100, 2)
+        Y = np.column_stack([X[:, 0] + X[:, 1], X[:, 0] - X[:, 1]])
+        template = TemplateExpressionSpec(
+            expressions=["f"], combine="f(x0, x1)", variable_names=["x0", "x1"]
+        )
+        model = PySRRegressor(
+            expression_spec=template,
+            guesses=[
+                [{"f": "#1 + #2"}],
+                [{"f": "#1 - #2"}],
+            ],
+            **self.default_test_kwargs,
+        )
+        model.fit(X, Y)
+        # Check both outputs have good fits
+        for i, eqs_df in enumerate(model.equations_):
+            self.assertTrue(any(eqs_df["loss"] < 1e-10))
+
+    def test_invalid_multi_output_format_guesses(self):
+        X = self.rstate.randn(100, 2)
+        Y = np.column_stack([X[:, 0], X[:, 1]])
+        model = PySRRegressor(guesses=["x0", "x1"])
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, Y)
+        self.assertIn("must be a list of lists", str(cm.exception))
+
+    def test_wrong_number_of_guess_lists(self):
+        X = self.rstate.randn(100, 2)
+        Y = np.column_stack([X[:, 0], X[:, 1]])
+        model = PySRRegressor(guesses=[["x0"]])
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, Y)
+        self.assertIn("must match number of outputs", str(cm.exception))
+
+    @skip_if_beartype
+    def test_non_list_guesses_single_output(self):
+        X = self.rstate.randn(100, 2)
+        y = X[:, 0] + X[:, 1]
+        model = PySRRegressor(guesses="x0 + x1")
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, y)
+        self.assertIn(
+            "guesses must be a list for single-output regression", str(cm.exception)
+        )
+
+    def test_multiple_lists_single_output_guesses(self):
+        X = self.rstate.randn(100, 2)
+        y = X[:, 0] + X[:, 1]
+        model = PySRRegressor(guesses=[["x0 + x1"], ["x0 - x1"]])
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, y)
+        self.assertIn(
+            "For single output, provide a list of strings/dicts", str(cm.exception)
+        )
+
+    def test_vector_of_vectors_single_output_guesses(self):
+        X = self.rstate.randn(100, 2)
+        y = X[:, 0] + X[:, 1]
+        model = PySRRegressor(
+            guesses=[["x0 + x1", "x0 - x1"]],
+            early_stop_condition="stop_if(loss, complexity) = loss < 1e-4 && complexity <= 5",
+            **self.default_test_kwargs,
+        )
+        model.fit(X, y)
+        self.assertTrue(any(model.equations_["loss"] < 1e-10))
+
+    def test_guesses_use_zero_based_indexing(self):
+        # Test that guesses use 0-based indexing (x0, x1, x2)
+        # not 1-based (x1, x2, x3)
+        X = self.rstate.randn(100, 3)
+        y = X[:, 0] * X[:, 1] + X[:, 2]  # True function
+
+        # Test with correct guess (should have near-zero loss)
+        model_correct = PySRRegressor(
+            binary_operators=["+", "*"],
+            guesses=["x0 * x1 + x2"],  # Correct 0-based indexing
+            **self.default_test_kwargs,
+        )
+        model_correct.fit(X, y)
+        self.assertLess(model_correct.equations_.iloc[-1]["loss"], 1e-10)
+
+        # Test with wrong guess (off-by-one indexing, should have high loss)
+        model_wrong = PySRRegressor(
+            binary_operators=["+", "*"],
+            guesses=["x1 * x2 + x0"],  # Wrong columns if 0-indexed
+            **self.default_test_kwargs,
+        )
+        model_wrong.fit(X, y)
+        self.assertGreater(model_wrong.equations_.iloc[-1]["loss"], 1.0)
+
+    def test_unary_operators_in_guesses(self):
+        # Test that unary operators (like log) can be used in guesses
+        X = np.abs(self.rstate.randn(100, 2)) + 1  # Ensure positive for log
+        y = np.log(X[:, 0]) + 2.5 * X[:, 1]
+
+        # Test that log operator is parsed and used correctly
+        model = PySRRegressor(
+            binary_operators=["+", "*"],
+            unary_operators=["log"],
+            guesses=["log(x0) + 1.0 * x1"],  # Uses log operator (wrong constant)
+            niterations=0,  # MUST use 0 to test the guess itself
+            progress=False,
+            temp_equation_file=False,
+        )
+        model.fit(X, y)
+        # With niterations=0, constants still get optimized, so loss should be near-zero
+        self.assertLess(model.equations_.iloc[-1]["loss"], 1e-10)
+        # Verify log is in the equation
+        self.assertIn("log", str(model.equations_.iloc[-1]["sympy_format"]))
+
+    def test_empty_guesses_single_output(self):
+        X = self.rstate.randn(50, 2)
+        y = X[:, 0] + 0.1 * X[:, 1]
+        model = PySRRegressor(
+            guesses=[], **{**self.default_test_kwargs, "niterations": 0}
+        )
+        model.fit(X, y)
+        self.assertIsNotNone(model.equations_)
 
 
 def manually_create_model(equations, feature_names=None):
     if feature_names is None:
         feature_names = ["x0", "x1"]
 
+    output_directory = tempfile.mkdtemp()
+    run_id = "test"
     model = PySRRegressor(
         progress=False,
         niterations=1,
         extra_sympy_mappings={},
         output_jax_format=False,
         model_selection="accuracy",
-        equation_file="equation_file.csv",
+        output_directory=output_directory,
+        run_id=run_id,
     )
+    model.output_directory_ = output_directory
+    model.run_id_ = run_id
+    os.makedirs(Path(output_directory) / run_id, exist_ok=True)
 
     # Set up internal parameters as if it had been fitted:
     if isinstance(equations, list):
         # Multi-output.
-        model.equation_file_ = "equation_file.csv"
         model.nout_ = len(equations)
         model.selection_mask_ = None
         model.feature_names_in_ = np.array(feature_names, dtype=object)
         for i in range(model.nout_):
             equations[i]["complexity loss equation".split(" ")].to_csv(
-                f"equation_file.csv.out{i+1}.bkup"
+                str(
+                    Path(output_directory)
+                    / run_id
+                    / f"hall_of_fame_output{i+1}.csv.bak"
+                )
             )
     else:
-        model.equation_file_ = "equation_file.csv"
         model.nout_ = 1
         model.selection_mask_ = None
         model.feature_names_in_ = np.array(feature_names, dtype=object)
         equations["complexity loss equation".split(" ")].to_csv(
-            "equation_file.csv.bkup"
+            str(Path(output_directory) / run_id / "hall_of_fame.csv.bak")
         )
 
     model.refresh()
@@ -630,27 +1208,34 @@ class TestFeatureSelection(unittest.TestCase):
 class TestMiscellaneous(unittest.TestCase):
     """Test miscellaneous functions."""
 
-    def test_csv_to_pkl_conversion(self):
-        """Test that csv filename to pkl filename works as expected."""
-        tmpdir = Path(tempfile.mkdtemp())
-        equation_file = tmpdir / "equations.389479384.28378374.csv"
-        expected_pkl_file = tmpdir / "equations.389479384.28378374.pkl"
+    def test_pickle_inv_sympy_expression(self):
+        """Test that sympy expressions with the inv operator can be pickled and unpickled correctly."""
+        expr_str = "inv(x0) + x1"
+        sympy_expr = pysr2sympy(expr_str, feature_names_in=["x0", "x1"])
 
-        # First, test inputting the paths:
-        test_pkl_file = _csv_filename_to_pkl_filename(equation_file)
-        self.assertEqual(test_pkl_file, str(expected_pkl_file))
+        # Evaluate the original expression at a test point
+        test_vals = {sympy.Symbol("x0"): 2.0, sympy.Symbol("x1"): 3.0}
+        original_result = float(sympy_expr.subs(test_vals))
 
-        # Next, test inputting the strings.
-        test_pkl_file = _csv_filename_to_pkl_filename(str(equation_file))
-        self.assertEqual(test_pkl_file, str(expected_pkl_file))
+        # Pickle and unpickle the sympy expression
+        serialized = pkl.dumps(sympy_expr)
+        deserialized_expr = pkl.loads(serialized)
+
+        # Evaluate the unpickled expression at the same test point
+        unpickled_result = float(deserialized_expr.subs(test_vals))
+
+        # Verify the results match
+        self.assertEqual(original_result, unpickled_result)
+
+        # Check that the same operator mapping was used (1/x for inv)
+        self.assertEqual(original_result, 0.5 + 3.0)  # 1/2 + 3 = 3.5
 
     def test_pickle_with_temp_equation_file(self):
         """If we have a temporary equation file, unpickle the estimator."""
         model = PySRRegressor(
             populations=int(1 + DEFAULT_POPULATIONS / 5),
             temp_equation_file=True,
-            procs=0,
-            multithreading=False,
+            parallelism="serial",
         )
         nout = 3
         X = np.random.randn(100, 2)
@@ -660,9 +1245,15 @@ class TestMiscellaneous(unittest.TestCase):
 
         y_predictions = model.predict(X)
 
-        equation_file_base = model.equation_file_
+        equation_file_base = Path("outputs") / model.run_id_ / "hall_of_fame"
         for i in range(1, nout + 1):
-            assert not os.path.exists(str(equation_file_base) + f".out{i}.bkup")
+            assert not os.path.exists(str(equation_file_base) + f"_output{i}.csv.bak")
+
+        equation_file_base = (
+            Path(model.output_directory_) / model.run_id_ / "hall_of_fame"
+        )
+        for i in range(1, nout + 1):
+            assert os.path.exists(str(equation_file_base) + f"_output{i}.csv.bak")
 
         with tempfile.NamedTemporaryFile() as pickle_file:
             pkl.dump(model, pickle_file)
@@ -687,17 +1278,21 @@ class TestMiscellaneous(unittest.TestCase):
             progress=False,
             random_state=0,
             deterministic=True,  # Deterministic as tests require this.
-            procs=0,
-            multithreading=False,
+            parallelism="serial",
             warm_start=False,
             temp_equation_file=True,
         )  # Return early.
 
-        check_generator = check_estimator(model, generate_only=True)
         exception_messages = []
-        for _, check in check_generator:
-            if check.func.__name__ == "check_complex_data":
-                # We can use complex data, so avoid this check.
+        for _, check in estimator_checks_generator(model):
+            if check.func.__name__ in {
+                # We can use complex data, so avoid this check
+                "check_complex_data",
+                # We handle kwargs manually, so skip this check
+                "check_do_not_raise_errors_in_init_or_set_params",
+                # TODO:
+                "check_n_features_in_after_fitting",
+            }:
                 continue
             try:
                 with warnings.catch_warnings():
@@ -715,6 +1310,41 @@ class TestMiscellaneous(unittest.TestCase):
                 print("\n".join([(" " * 4) + row for row in error_message.split("\n")]))
         # If any checks failed don't let the test pass.
         self.assertEqual(len(exception_messages), 0)
+
+    def test_invalid_batch_size_corrects_and_warns(self):
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            model = PySRRegressor(
+                batch_size=0,
+                niterations=1,
+                progress=False,
+                populations=3,
+            )
+            X = np.random.randn(10, 2)
+            y = X[:, 0]
+            model.fit(X, y)
+
+        self.assertTrue(any("batch_size" in str(w.message) for w in caught))
+
+    def test_progress_disabled_when_stdout_lacks_buffer(self):
+        fake_stdout = type(
+            "FakeStdout", (), {"write": lambda self, *_args, **_kwargs: None}
+        )()
+        fake_stdout.__dir__ = lambda: ["write"]  # Ensure "buffer" is absent
+
+        with mock.patch("pysr.sr.sys.stdout", fake_stdout):
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                model = PySRRegressor(
+                    progress=True,
+                    niterations=1,
+                    populations=3,
+                )
+                X = np.random.randn(10, 2)
+                y = X[:, 0]
+                model.fit(X, y)
+
+        self.assertTrue(any("progress bar" in str(w.message) for w in caught))
 
     def test_param_groupings(self):
         """Test that param_groupings are complete"""
@@ -739,15 +1369,89 @@ class TestMiscellaneous(unittest.TestCase):
         # Check the sets are equal:
         self.assertSetEqual(set(params), set(regressor_params))
 
+    def test_parametric_deprecation_warning(self):
+        """Test that the helpful warning message is displayed."""
+        pattern = re.compile(
+            r"ParametricExpressionSpec is deprecated.*TemplateExpressionSpec.*"
+            r"max_parameters=2.*"
+            r"variable_names=\[\"alpha\", \"beta\"\].*"
+            r"expressions=\[\"f\"\].*"
+            r"variable_names=\[\"alpha\", \"beta\", \"category\"\].*"
+            r"parameters=\{\s*\"p1\": n_categories,\s*\"p2\": n_categories\s*\}.*"
+            r"combine=\"f\(alpha, beta, p1\[category\], p2\[category\]\)\"",
+            flags=re.S,
+        )
+
+        with self.assertWarnsRegex(FutureWarning, pattern):
+            parametric_expression_deprecation_warning(
+                max_parameters=2,
+                variable_names=["alpha", "beta"],
+            )
+
     def test_load_all_packages(self):
         """Test we can load all packages at once."""
         load_all_packages()
         self.assertTrue(jl.seval("ClusterManagers isa Module"))
 
+    def test_get_batch_size(self):
+        """Test the _get_batch_size function."""
+        from pysr.sr import _get_batch_size
+
+        # Test None (auto) mode with different dataset sizes
+        self.assertEqual(_get_batch_size(500, None), 500)
+        self.assertEqual(_get_batch_size(999, None), 999)
+        self.assertEqual(_get_batch_size(1000, None), 1000)
+        self.assertEqual(_get_batch_size(1001, None), 128)
+        self.assertEqual(_get_batch_size(1500, None), 128)
+        self.assertEqual(_get_batch_size(4999, None), 128)
+        self.assertEqual(_get_batch_size(5000, None), 256)
+        self.assertEqual(_get_batch_size(10000, None), 256)
+        self.assertEqual(_get_batch_size(49999, None), 256)
+        self.assertEqual(_get_batch_size(50000, None), 512)
+        self.assertEqual(_get_batch_size(100000, None), 512)
+
+        # Test explicit batch_size
+        self.assertEqual(_get_batch_size(1000, 64), 64)
+        self.assertEqual(_get_batch_size(1000, 2000), 1000)  # Capped at dataset size
+        self.assertEqual(_get_batch_size(50, 100), 50)  # Capped at dataset size
+
+    def test_batching_auto(self):
+        """Test that batching='auto' works correctly."""
+        model = PySRRegressor()
+        self.assertEqual(model.batching, "auto")
+
+        X_small = np.random.randn(100, 2)
+        y_small = np.random.randn(100)
+        model = PySRRegressor(batching="auto", niterations=0)
+        model.fit(X_small, y_small)
+
+        X_large = np.random.randn(1001, 2)
+        y_large = np.random.randn(1001)
+        model2 = PySRRegressor(batching="auto", niterations=0)
+        model2.fit(X_large, y_large)
+
+    def test_batch_size_negative_warning(self):
+        """Test that batch_size < 1 gives a warning for integers only."""
+        X = np.random.randn(10, 2)
+        y = np.random.randn(10)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            with self.assertRaises(UserWarning) as context:
+                model = PySRRegressor(batch_size=0, niterations=0)
+                model.fit(X, y)
+            self.assertIn("batch_size", str(context.exception))
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            model = PySRRegressor(batch_size=None, niterations=0)
+            model.fit(X, y)
+
 
 class TestHelpMessages(unittest.TestCase):
     """Test user help messages."""
 
+    @skip_if_beartype
     def test_deprecation(self):
         """Ensure that deprecation works as expected.
 
@@ -759,6 +1463,14 @@ class TestHelpMessages(unittest.TestCase):
 
         # The correct value should be set:
         self.assertEqual(model.fraction_replaced, 0.2)
+
+        with self.assertRaises(NotImplementedError):
+            model.equation_file_
+
+        with self.assertRaises(ValueError) as cm:
+            PySRRegressor.from_file(equation_file="", run_directory="")
+
+        self.assertIn("Passing `equation_file` is deprecated", str(cm.exception))
 
     def test_deprecated_functions(self):
         with self.assertWarns(FutureWarning):
@@ -774,29 +1486,30 @@ class TestHelpMessages(unittest.TestCase):
     def test_power_law_warning(self):
         """Ensure that a warning is given for a power law operator."""
         with self.assertWarns(UserWarning):
-            _process_constraints(["^"], [], {})
+            _process_constraints({2: ["^"]}, {})
+
+    def test_from_file_requires_operator_configuration(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            run_dir = Path(tmpdir) / "run"
+            run_dir.mkdir()
+            # Minimal hall_of_fame.csv to satisfy the existence check
+            (run_dir / "hall_of_fame.csv").write_text("complexity,loss,equation\n")
+
+            with self.assertRaises(ValueError) as cm:
+                PySRRegressor.from_file(run_directory=run_dir, n_features_in=1)
+
+            self.assertIn("must provide either `operators`", str(cm.exception))
 
     def test_size_warning(self):
         """Ensure that a warning is given for a large input size."""
         model = PySRRegressor()
-        X = np.random.randn(10001, 2)
-        y = np.random.randn(10001)
+        X = np.random.randn(50001, 2)
+        y = np.random.randn(50001)
         with warnings.catch_warnings():
             warnings.simplefilter("error")
             with self.assertRaises(Exception) as context:
                 model.fit(X, y)
-            self.assertIn("more than 10,000", str(context.exception))
-
-    def test_feature_warning(self):
-        """Ensure that a warning is given for large number of features."""
-        model = PySRRegressor()
-        X = np.random.randn(100, 10)
-        y = np.random.randn(100)
-        with warnings.catch_warnings():
-            warnings.simplefilter("error")
-            with self.assertRaises(Exception) as context:
-                model.fit(X, y)
-            self.assertIn("with 10 features or more", str(context.exception))
+            self.assertIn("more than 50,000", str(context.exception))
 
     def test_deterministic_warnings(self):
         """Ensure that warnings are given for determinism"""
@@ -807,7 +1520,7 @@ class TestHelpMessages(unittest.TestCase):
             warnings.simplefilter("error")
             with self.assertRaises(Exception) as context:
                 model.fit(X, y)
-            self.assertIn("`deterministic`", str(context.exception))
+            self.assertIn("`deterministic=True`", str(context.exception))
 
     def test_deterministic_errors(self):
         """Setting deterministic without random_state should error"""
@@ -846,13 +1559,14 @@ class TestHelpMessages(unittest.TestCase):
             model.fit(X, y, variable_names=["f{c}"])
         self.assertIn("Invalid variable name", str(cm.exception))
 
+    @skip_if_beartype
     def test_bad_kwargs(self):
         bad_kwargs = [
             dict(
                 kwargs=dict(
-                    elementwise_loss="g(x, y) = 0.0", loss_function="f(*args) = 0.0"
+                    elementwise_loss="g(x, y) = 0.0", loss_function="f(args...) = 0.0"
                 ),
-                error=ValueError,
+                error=JuliaError,
             ),
             dict(
                 kwargs=dict(maxsize=3),
@@ -893,7 +1607,8 @@ class TestHelpMessages(unittest.TestCase):
     def test_suggest_keywords(self):
         # Easy
         self.assertEqual(
-            _suggest_keywords(PySRRegressor, "loss_function"), ["loss_function"]
+            _suggest_keywords(PySRRegressor, "loss_function"),
+            ["loss_function", "loss_function_expression"],
         )
 
         # More complex, and with error
@@ -909,7 +1624,7 @@ class TestHelpMessages(unittest.TestCase):
 
         # Farther matches (this might need to be changed)
         with self.assertRaises(TypeError) as cm:
-            PySRRegressor(operators=["+", "-"])
+            PySRRegressor(nary_operators=["+", "-"])
 
         self.assertIn("`unary_operators`, `binary_operators`", str(cm.exception))
 
@@ -1207,8 +1922,8 @@ class TestDimensionalConstraints(unittest.TestCase):
         """
         X = np.ones((100, 3))
         y = np.ones((100, 1))
-        temp_dir = Path(tempfile.mkdtemp())
-        equation_file = str(temp_dir / "equation_file.csv")
+        output_dir = tempfile.mkdtemp()
+        run_id = "test"
         model = PySRRegressor(
             binary_operators=["+", "*"],
             early_stop_condition="(l, c) -> l < 1e-6 && c == 3",
@@ -1219,11 +1934,11 @@ class TestDimensionalConstraints(unittest.TestCase):
             complexity_of_constants=10,
             weight_mutate_constant=0.0,
             should_optimize_constants=False,
-            multithreading=False,
+            parallelism="serial",
             deterministic=True,
-            procs=0,
             random_state=0,
-            equation_file=equation_file,
+            output_directory=output_dir,
+            run_id=run_id,
             warm_start=True,
         )
         model.fit(
@@ -1243,16 +1958,18 @@ class TestDimensionalConstraints(unittest.TestCase):
         )
 
         # With pkl file:
-        pkl_file = str(temp_dir / "equation_file.pkl")
-        model2 = PySRRegressor.from_file(pkl_file)
+        run_directory = str(Path(output_dir) / run_id)
+        model2 = PySRRegressor.from_file(run_directory=run_directory)
         best2 = model2.get_best()
         self.assertIn("x0", best2["equation"])
 
         # From csv file alone (we need to delete pkl file:)
         # First, we delete the pkl file:
-        os.remove(pkl_file)
+        os.remove(Path(run_directory) / "checkpoint.pkl")
         model3 = PySRRegressor.from_file(
-            equation_file, binary_operators=["+", "*"], n_features_in=X.shape[1]
+            run_directory=run_directory,
+            binary_operators=["+", "*"],
+            n_features_in=X.shape[1],
         )
         best3 = model3.get_best()
         self.assertIn("x0", best3["equation"])
@@ -1264,8 +1981,131 @@ class TestDimensionalConstraints(unittest.TestCase):
         self.assertEqual(model.equations_.iloc[0].complexity, 1)
         self.assertLess(model.equations_.iloc[0].loss, 1e-6)
 
+    def test_process_constraints_swaps_multiplication_constraints(self):
+        operators = {2: ["mult"]}
+        constraints = {"mult": (1, -1)}
+
+        processed = _process_constraints(operators, constraints)
+
+        self.assertEqual(processed["mult"], (-1, 1))
+
 
 # TODO: Determine desired behavior if second .fit() call does not have units
+
+
+class TestTemplateExpressionSpec(unittest.TestCase):
+    def _check_macro_str(self, spec, expected_str):
+        self.assertEqual(
+            spec._template_macro_str().strip(), dedent(expected_str).strip()
+        )
+
+    def test_single_expression_no_params_single_variable(self):
+        spec = TemplateExpressionSpec(
+            combine="f(x)", expressions=["f"], variable_names=["x"]
+        )
+        self._check_macro_str(
+            spec,
+            """\
+            @template_spec(expressions=(f,),) do x
+                f(x)
+            end
+            """,
+        )
+
+    def test_multiple_expressions_no_params_multiple_variables(self):
+        spec = TemplateExpressionSpec(
+            combine="f(x, y) + g(z)",
+            expressions=["f", "g"],
+            variable_names=["x", "y", "z"],
+        )
+        self._check_macro_str(
+            spec,
+            """
+            @template_spec(expressions=(f, g,),) do x, y, z
+                f(x, y) + g(z)
+            end
+            """,
+        )
+
+    def test_single_expression_single_param_single_variable(self):
+        spec = TemplateExpressionSpec(
+            combine="p[1] * f(x)",
+            expressions=["f"],
+            variable_names=["x"],
+            parameters={"p": 1},
+        )
+        self._check_macro_str(
+            spec,
+            """
+            @template_spec(expressions=(f,), parameters=(p=1,),) do x
+                p[1] * f(x)
+            end
+            """,
+        )
+
+    def test_multiple_expressions_multiple_params_multiple_variables(self):
+        spec = TemplateExpressionSpec(
+            combine="p1[1]*f(x,y) + p2[1]*g(z)",
+            expressions=["f", "g"],
+            variable_names=["x", "y", "z"],
+            parameters={"p1": 2, "p2": 3},
+        )
+        self._check_macro_str(
+            spec,
+            """
+            @template_spec(expressions=(f, g,), parameters=(p1=2, p2=3,),) do x, y, z
+                p1[1]*f(x,y) + p2[1]*g(z)
+            end
+            """,
+        )
+
+    def test_complex_variable_names(self):
+        spec = TemplateExpressionSpec(
+            combine="f(var1) * g(var2)",
+            expressions=["f", "g"],
+            variable_names=["var1", "var2"],
+        )
+        self._check_macro_str(
+            spec,
+            """
+            @template_spec(expressions=(f, g,),) do var1, var2
+                f(var1) * g(var2)
+            end
+            """,
+        )
+
+    def test_mixed_parameter_types(self):
+        spec = TemplateExpressionSpec(
+            combine="alpha*f(x) + beta*g(y)",
+            expressions=["f", "g"],
+            variable_names=["x", "y"],
+            parameters={"alpha": 1, "beta": 2},
+        )
+        self._check_macro_str(
+            spec,
+            """
+            @template_spec(expressions=(f, g,), parameters=(alpha=1, beta=2,),) do x, y
+                alpha*f(x) + beta*g(y)
+            end
+            """,
+        )
+
+    def test_empty_parameters_case(self):
+        spec = TemplateExpressionSpec(
+            combine="f(x)", expressions=["f"], variable_names=["x"], parameters={}
+        )
+        self.assertNotIn("parameters", spec._template_macro_str())
+
+    def test_maximum_parameters_expressions(self):
+        spec = TemplateExpressionSpec(
+            combine=" + ".join([f"f{i}(x)" for i in range(5)]),
+            expressions=[f"f{i}" for i in range(5)],
+            variable_names=["x"],
+            parameters={f"p{i}": i + 1 for i in range(5)},
+        )
+        macro_str = spec._template_macro_str()
+        self.assertIn("expressions=(f0, f1, f2, f3, f4,),", macro_str)
+        self.assertIn("parameters=(p0=1, p1=2, p2=3, p3=4, p4=5,),", macro_str)
 
 
 def runtests(just_tests=False):
@@ -1278,6 +2118,7 @@ def runtests(just_tests=False):
         TestHelpMessages,
         TestLaTeXTable,
         TestDimensionalConstraints,
+        TestGuesses,
     ]
     if just_tests:
         return test_cases

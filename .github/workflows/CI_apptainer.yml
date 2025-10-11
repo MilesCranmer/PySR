@@ -26,15 +26,15 @@ jobs:
         os: [ubuntu-latest]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: eWaterCycle/setup-apptainer@v2
         with:
             apptainer-version: 1.3.0
       - name: Build apptainer
-        run: apptainer build --notest pysr.sif Apptainer.def
+        run: sudo apptainer build --notest pysr.sif Apptainer.def
       - name: Test apptainer
         run: |
           TMPDIR=$(mktemp -d)
           cp pysr.sif $TMPDIR
           cd $TMPDIR
-          apptainer test ./pysr.sif
+          sudo apptainer test ./pysr.sif

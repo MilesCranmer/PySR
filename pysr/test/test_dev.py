@@ -7,8 +7,8 @@ from pathlib import Path
 class TestDev(unittest.TestCase):
     def test_simple_change_to_backend(self):
         """Test that we can use a development version of SymbolicRegression.jl"""
-        PYSR_TEST_JULIA_VERSION = os.environ.get("PYSR_TEST_JULIA_VERSION", "1.6")
-        PYSR_TEST_PYTHON_VERSION = os.environ.get("PYSR_TEST_PYTHON_VERSION", "3.9")
+        PYSR_TEST_JULIA_VERSION = os.environ.get("PYSR_TEST_JULIA_VERSION", "1.11")
+        PYSR_TEST_PYTHON_VERSION = os.environ.get("PYSR_TEST_PYTHON_VERSION", "3.12")
         build_result = subprocess.run(
             [
                 "docker",
