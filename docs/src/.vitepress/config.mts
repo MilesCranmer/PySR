@@ -17,10 +17,9 @@ const nav = [
   { text: 'Home', link: '/' },
   { text: 'Examples', link: '/examples' },
   { text: 'API', link: '/api' },
-  { text: 'Papers', link: '/papers' },
   {
-    text: 'GitHub',
-    link: 'https://github.com/MilesCranmer/PySR'
+    text: 'Forum',
+    link: 'https://github.com/MilesCranmer/PySR/discussions'
   },
   {
     component: 'VersionPicker'
@@ -101,16 +100,16 @@ export default defineConfig({
         ]
       },
       {
+        text: 'Community',
+        items: [
+          { text: 'Papers', link: '/papers' },
+        ]
+      },
+      {
         text: 'Advanced',
         items: [
           { text: 'Tuning', link: '/tuning' },
           { text: 'Backend', link: '/backend' },
-        ]
-      },
-      {
-        text: 'Community',
-        items: [
-          { text: 'Papers', link: '/papers' },
         ]
       }
     ],
