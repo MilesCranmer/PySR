@@ -1,49 +1,61 @@
-name: docs
+name: Documentation
 
 on:
   push:
     branches:
-      - 'master'
+      - master
     paths:
       - 'pysr/**'
       - '.github/workflows/docs.yml'
       - 'docs/**'
       - 'README.md'
-      - 'mkdocs.yml'
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'pysr/**'
+      - '.github/workflows/docs.yml'
+      - 'docs/**'
+      - 'README.md'
   workflow_dispatch:
 
+permissions:
+  contents: write
+  pull-requests: read
+  statuses: write
+
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-
+    strategy:
+      matrix:
+        target: [primary, secondary]
     steps:
-      - uses: actions/checkout@v5
-      - name: "Set up Python"
-        uses: actions/setup-python@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          python-version: '3'
-          cache: pip
-      - name: "Install packages for docs building"
-        run: pip install -r docs/requirements.txt
-      - name: "Install PySR"
-        run: pip install . && python -c 'import pysr'
-      - name: "Build API docs"
-        run: cd docs && ./gen_docs.sh
-      - name: "Deploy documentation to primary repository"
-        run: mkdocs gh-deploy --force
-      - name: "Deploy documentation to secondary repository"
+          node-version: 22
+          cache: npm
+          cache-dependency-path: docs/package-lock.json
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1'
+      - name: Install julia deps
+        run: julia --project=docs -e 'using Pkg; Pkg.instantiate()'
+      - name: Install python deps
+        run: pip install -e .[docs]
+      - name: Install npm deps
+        run: npm ci
+        working-directory: docs
+      - name: Generate documentation markdown
+        run: npm run gen:params && npm run gen:api && npm run gen:index && npm run gen:papers
+        working-directory: docs
+      - name: Deploy
         env:
-          DEPLOY_KEY: ${{ secrets.DAMTP_DEPLOY_KEY }}
-        run: |
-          # Set up SSH key for authentication
-          mkdir -p ~/.ssh
-          echo "$DEPLOY_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-
-          git checkout gh-pages
-          git remote add secondary git@github.com:ai-damtp-cam-ac-uk/pysr.git
-          git push secondary gh-pages --force
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DAMTP_DEPLOY_KEY: ${{ secrets.DAMTP_DEPLOY_KEY }}
+          DEPLOYMENT_TARGET: ${{ matrix.target }}
+        run: julia --project=docs docs/deploy.jl
