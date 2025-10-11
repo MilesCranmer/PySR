@@ -106,7 +106,11 @@ Documenter.documenter_key(::BypassPRCheckConfig) = ENV["DOCUMENTER_KEY"]
 if deployment_target == "secondary"
     # Secondary: Use custom config to bypass PR origin check
     deploy_config = BypassPRCheckConfig()
-    ENV["DOCUMENTER_KEY"] = get(ENV, "DAMTP_DEPLOY_KEY", "")
+    damtp_key = get(ENV, "DAMTP_DEPLOY_KEY", "")
+    if isempty(damtp_key)
+        error("DAMTP_DEPLOY_KEY environment variable is required for secondary deployment but is not set")
+    end
+    ENV["DOCUMENTER_KEY"] = damtp_key
 
     deploy_decision = Documenter.deploy_folder(
         deploy_config;
