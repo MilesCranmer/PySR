@@ -192,6 +192,32 @@ class TestTorch(unittest.TestCase):
             decimal=3,
         )
 
+    def test_constant_arguments(self):
+        # Test that functions with constant arguments work correctly
+        # Regression test for https://github.com/MilesCranmer/PySR/issues/656
+        test_cases = [
+            (pysr.export_sympy.pysr2sympy("sqrt(2)"), np.sqrt(2)),
+            (sympy.exp(2), np.exp(2)),
+            (sympy.log(4), np.log(4)),
+            (sympy.sin(1), np.sin(1)),
+        ]
+
+        for expr, expected in test_cases:
+            m = pysr.export_torch.sympy2torch(expr, [])
+            result = m(self.torch.randn(10, 1))
+            np.testing.assert_almost_equal(result.item(), expected, decimal=3)
+
+        # Test with variables: sqrt(2) * x
+        x = sympy.symbols("x")
+        expr = sympy.sqrt(2) * x
+        m = pysr.export_torch.sympy2torch(expr, [x])
+        X = np.random.randn(10, 1)
+        np.testing.assert_almost_equal(
+            m(self.torch.tensor(X)).detach().numpy().flatten(),
+            np.sqrt(2) * X[:, 0],
+            decimal=3,
+        )
+
     def test_feature_selection_custom_operators(self):
         rstate = np.random.RandomState(0)
         X = pd.DataFrame({f"k{i}": rstate.randn(2000) for i in range(10, 21)})

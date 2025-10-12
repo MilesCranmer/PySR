@@ -98,7 +98,7 @@ def _initialize_torch():
                     self._args = ()
                 elif issubclass(expr.func, sympy.Rational):
                     # This is some fraction fixed in the operator.
-                    self._value = float(expr)
+                    self.register_buffer("_value", torch.tensor(float(expr)))
                     self._torch_func = lambda: self._value
                     self._args = ()
                 elif issubclass(expr.func, sympy.UnevaluatedExpr):
@@ -114,12 +114,12 @@ def _initialize_torch():
                 elif issubclass(expr.func, sympy.Integer):
                     # Can get here if expr is one of the Integer special cases,
                     # e.g. NegativeOne
-                    self._value = int(expr)
+                    self.register_buffer("_value", torch.tensor(int(expr)))
                     self._torch_func = lambda: self._value
                     self._args = ()
                 elif issubclass(expr.func, sympy.NumberSymbol):
                     # Can get here from exp(1) or exact pi
-                    self._value = float(expr)
+                    self.register_buffer("_value", torch.tensor(float(expr)))
                     self._torch_func = lambda: self._value
                     self._args = ()
                 elif issubclass(expr.func, sympy.Symbol):
