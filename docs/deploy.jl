@@ -156,6 +156,14 @@ modified_config = replace(
     r"__DEPLOY_ABSPATH__\s*:\s*JSON\.stringify\(getBaseRepository\([^)]+\)\)" =>
         "__DEPLOY_ABSPATH__: JSON.stringify('$deploy_abspath')",
 )
+# Primary deployment should point to Cambridge as canonical
+# Secondary (Cambridge) should have empty canonical (it's already the canonical site)
+canonical_domain = deployment_target == "primary" ? "https://ai.damtp.cam.ac.uk/pysr/" : ""
+modified_config = replace(
+    modified_config,
+    r"const canonicalDomain = '';" =>
+        "const canonicalDomain = '$canonical_domain';",
+)
 write(config_path, modified_config)
 
 try
@@ -212,6 +220,19 @@ if deploy_decision.subfolder == "dev"
     redirect_file = joinpath(dist_root, "index.html")
     println("Creating redirect index.html to ./dev/")
     write(redirect_file, redirect_html)
+
+    # Create siteinfo.js for dev version
+    # This file is required by the version picker to show all available versions
+    siteinfo_dir = joinpath(dist_versioned, "dev")
+    if isdir(siteinfo_dir)
+        siteinfo_content = """var DOCUMENTER_CURRENT_VERSION = "dev";
+"""
+        siteinfo_file = joinpath(siteinfo_dir, "siteinfo.js")
+        println("Creating siteinfo.js for dev version")
+        write(siteinfo_file, siteinfo_content)
+    else
+        println("Warning: dev directory not found at $(siteinfo_dir), skipping siteinfo.js creation")
+    end
 end
 
 if deployment_target == "secondary"

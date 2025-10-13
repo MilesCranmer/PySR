@@ -9,6 +9,10 @@ function getBaseRepository(base: string): string {
   return parts.length > 0 ? `/${parts[0]}/` : '/';
 }
 
+// Canonical domain for SEO - will be replaced by deploy.jl at build time
+// Empty string means no canonical tag (this site is canonical)
+const canonicalDomain = '';
+
 const baseTemp = {
   base: '/pysr/',
 }
@@ -48,6 +52,17 @@ export default defineConfig({
     ['script', {src: `${baseTemp.base}siteinfo.js`}]
   ],
   ignoreDeadLinks: true,
+  transformHead: ({ pageData }) => {
+    if (!canonicalDomain) return [];
+
+    // Construct canonical URL for this page
+    const pagePath = pageData.relativePath.replace(/((^|\/)index)?\.md$/, '$2');
+    const canonicalUrl = `${canonicalDomain}${pagePath}`;
+
+    return [
+      ['link', { rel: 'canonical', href: canonicalUrl }]
+    ];
+  },
   vite: {
     define: {
       __DEPLOY_ABSPATH__: JSON.stringify(getBaseRepository(baseTemp.base)),
