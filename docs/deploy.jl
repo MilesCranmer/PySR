@@ -139,12 +139,23 @@ println("Deploy decision: all_ok=$(deploy_decision.all_ok), is_preview=$(deploy_
 # Primary uses /PySR/ (capital P), secondary uses /pysr/ (lowercase p)
 base_prefix = deployment_target == "secondary" ? "/pysr/" : "/PySR/"
 full_base = "$(base_prefix)$(deploy_decision.subfolder)$(isempty(deploy_decision.subfolder) ? "" : "/")"
-println("Building VitePress with base: $full_base")
+
+# The version picker needs __DEPLOY_ABSPATH__ to construct URLs to sibling versions
+# This should be the shared prefix (e.g., /pysr/ or /PySR/)
+deploy_abspath = base_prefix
+
+println("Building VitePress with base: $full_base (deploy abspath: $deploy_abspath)")
 
 config_path = joinpath(@__DIR__, "src", ".vitepress", "config.mts")
 original_config = read(config_path, String)
 # Match either /pysr/ or /PySR/ in the config
 modified_config = replace(original_config, r"base:\s*'/[Pp]y[Ss][Rr]/'" => "base: '$full_base'")
+# Also update __DEPLOY_ABSPATH__ so version picker works correctly
+modified_config = replace(
+    modified_config,
+    r"__DEPLOY_ABSPATH__\s*:\s*JSON\.stringify\(getBaseRepository\([^)]+\)\)" =>
+        "__DEPLOY_ABSPATH__: JSON.stringify('$deploy_abspath')",
+)
 write(config_path, modified_config)
 
 try
@@ -175,9 +186,21 @@ end
 
 # Create bases.txt with the correct subfolder from deploy_decision
 # This tells DocumenterVitepress where to deploy (e.g., "dev", "previews/PR1056", "v1.2.3")
+# Don't overwrite if it already exists with content (DocumenterVitepress may generate multi-base configs)
 bases_file = joinpath(dist_root, "bases.txt")
-println("Creating bases.txt with subfolder: $(deploy_decision.subfolder)")
-write(bases_file, "$(deploy_decision.subfolder)\n")
+if !isfile(bases_file)
+    println("Creating bases.txt with subfolder: $(deploy_decision.subfolder)")
+    write(bases_file, "$(deploy_decision.subfolder)\n")
+else
+    bases = filter(!isempty, readlines(bases_file))
+    if isempty(bases)
+        println("Fixing empty bases.txt with subfolder: $(deploy_decision.subfolder)")
+        write(bases_file, "$(deploy_decision.subfolder)\n")
+    else
+        println("bases.txt already exists with $(length(bases)) bases: $bases")
+        # Don't overwrite it - DocumenterVitepress may have generated multiple bases
+    end
+end
 
 # Create redirect index.html at root to redirect to dev
 # Only do this when deploying to dev (not for version tags)
