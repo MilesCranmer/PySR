@@ -311,3 +311,16 @@ papers:
     abstract: We study the potential of symbolic regression (SR) to derive compact and precise analytic expressions that can improve the accuracy and simplicity of phenomenological analyses at the Large Hadron Collider (LHC). As a benchmark, we apply SR to equation recovery in quantum electrodynamics (QED), where established analytical results from quantum field theory provide a reliable framework for evaluation. This benchmark serves to validate the performance and reliability of SR before extending its application to structure functions in the Drell-Yan process mediated by virtual photons, which lack analytic representations from first principles. By combining the simplicity of analytic expressions with the predictive power of machine learning techniques, SR offers a useful tool for facilitating phenomenological analyses in high energy physics.
     image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/refs/heads/master/images/hep_sr_img.png
     date: 2024-12-10
+     - title: Symbolic regression analysis of dynamical dark energy with DESI-DR2 and SN data
+    authors:
+      - Agripino Sousa-Neto (1)
+      - Carlos Bengaly (1)
+      - Javier E. Gonzalez (2)
+      - Jailson Alcaniz (1)
+    affiliations:
+       1: Observatório Nacional
+       2: Universidade Federal de Sergipe
+    link: https://www.sciencedirect.com/science/article/abs/pii/S2212686425003012
+    abstract: Recent measurements of Baryon Acoustic Oscillations (BAO) from the Dark Energy Spectroscopic Survey (DESI DR2), combined with data from the cosmic microwave background (CMB) and Type Ia supernovae (SNe), challenge the $\Lambda$-Cold Dark Matter ($\Lambda$CDM) paradigm. They indicate a potential evolution in the dark energy equation of state (EoS), $w(z)$, as suggested by analyses that employ parametric models. In this paper, we use a model-independent approach known as high performance symbolic regression (PySR) to reconstruct $w(z)$ directly from observational data, allowing us to bypass prior assumptions about the underlying cosmological model. Our findings confirm that the DESI DR2 data alone agree with the $\Lambda$CDM model ($w(z) = -1$) at the redshift range considered. Additionally, when combining DESI data with existing compilations of SN distance measurements, such as Patheon+ and DESY5, we observe no deviation from the $\Lambda$CDM model within $3\sigma$ (C.L.) for the interval of values of present-day matter density parameter $\Omega_m$ and the sound horizon at the drag epoch $r_d$ currently constrained by observational data. Therefore, similarly to the DESI DR1 case, these results suggest that it is still premature to claim statistically significant evidence for a dynamical EoS or deviations from the $\Lambda$CDM model based on the current DESI data in combination with supernova measurements.
+    image: 
+    date: 2025-21-08
