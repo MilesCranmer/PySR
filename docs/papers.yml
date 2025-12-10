@@ -325,5 +325,5 @@ papers:
        4: University of Cambridge
     link: https://arxiv.org/abs/2508.00989v3
     abstract: We explore the use of symbolic regression to derive compact analytical expressions for angular observables relevant to electroweak boson production at the Large Hadron Collider (LHC). Focusing on the angular coefficients that govern the decay distributions of W and Z bosons, we investigate whether symbolic models can well approximate these quantities, typically computed via computationally costly numerical procedures, with high fidelity and interpretability. Using the PySR package, we first validate the approach in controlled settings, namely in angular distributions in lepton-lepton collisions in QED and in leading-order Drell-Yan production at the LHC. We then apply symbolic regression to extract closed-form expressions for the angular coefficients as functions of transverse momentum, rapidity, and invariant mass, using next-to-leading order simulations of Drell-Yan events. Our results demonstrate that symbolic regression can produce accurate and generalisable expressions that match Monte Carlo predictions within uncertainties, while preserving interpretability and providing insight into the kinematic dependence of angular observables.
-    image:
+    image: A1_2d_pt_y-1.png
     date: 2024-12-04
