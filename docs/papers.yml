@@ -14,7 +14,7 @@ papers:
   abstract: Understanding microstructure in terms of closed-form expressions is an open challenge in nonequilibrium statistical physics. We propose a simple and generic method that combines particle-resolved simulations, deep neural networks, and symbolic regression to predict the pair-correlation function of passive and active particles. Our analytical closed-form results closely agree with Brownian dynamics simulations, even at relatively large packing fractions and for strong activity. The proposed method is broadly applicable, computationally efficient, and can be used to enhance the predictive power of nonequilibrium continuum theories and for designing pattern formation.
   image: microstructure_active_matter.png
   date: 2026-01-13
-    
+
   - title: Discovery of a Planar Black Hole Mass Scaling Relation for Spiral Galaxies
     authors:
       - Benjamin L. Davis (1)
