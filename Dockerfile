@@ -6,8 +6,8 @@
 # - pysr: dev-friendly image (installs extras and precompiles Julia deps).
 # - pysr-slurm: image for running a local Slurm cluster for CI tests.
 
-ARG JLVERSION=1.11.8
-ARG PYVERSION=3.12.12
+ARG JLVERSION=1.11
+ARG PYVERSION=3.12
 ARG BASE_IMAGE=bullseye
 
 FROM julia:${JLVERSION}-${BASE_IMAGE} AS jl
