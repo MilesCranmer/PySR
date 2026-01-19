@@ -1,8 +1,7 @@
 # setup.py – retained only for users who still type python setup.py ..."
 import sys
 
-sys.stderr.write(
-    """⚠️  PySR uses pyproject.toml instead of setup.py.
+sys.stderr.write("""⚠️  PySR uses pyproject.toml instead of setup.py.
 
 Install from a checkout with:
     python -m pip install .       # normal
@@ -10,6 +9,5 @@ Install from a checkout with:
 
 Or install from PyPI with:
     pip install pysr
-"""
-)
+""")
 sys.exit(1)
