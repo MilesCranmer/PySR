@@ -11,6 +11,7 @@ from ..test import (
     runtests_autodiff,
     runtests_dev,
     runtests_jax,
+    runtests_slurm,
     runtests_startup,
     runtests_torch,
 )
@@ -49,7 +50,7 @@ def _install(julia_project, quiet, precompile):
     )
 
 
-TEST_OPTIONS = {"main", "jax", "torch", "autodiff", "cli", "dev", "startup"}
+TEST_OPTIONS = {"main", "jax", "torch", "autodiff", "cli", "dev", "startup", "slurm"}
 
 
 @pysr.command("test")
@@ -64,7 +65,8 @@ TEST_OPTIONS = {"main", "jax", "torch", "autodiff", "cli", "dev", "startup"}
 def _tests(tests, expressions):
     """Run parts of the PySR test suite.
 
-    Choose from main, jax, torch, autodiff, cli, dev, and startup. You can give multiple tests, separated by commas.
+    Choose from main, jax, torch, autodiff, cli, dev, startup, and slurm.
+    You can give multiple tests, separated by commas.
     """
     test_cases = []
     for test in tests.split(","):
@@ -83,6 +85,8 @@ def _tests(tests, expressions):
             test_cases.extend(runtests_dev(just_tests=True))
         elif test == "startup":
             test_cases.extend(runtests_startup(just_tests=True))
+        elif test == "slurm":
+            test_cases.extend(runtests_slurm(just_tests=True))
         else:
             warnings.warn(f"Invalid test {test}. Skipping.")
 
