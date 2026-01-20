@@ -32,7 +32,7 @@ jobs:
       matrix:
         target: [primary, secondary]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 22
