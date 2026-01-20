@@ -38,7 +38,7 @@ jobs:
           fi
 
       - name: "Create PR if necessary"
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           title: "Automated update to backend: v${{ steps.get-latest.outputs.version }}"
           body: |
