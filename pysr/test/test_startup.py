@@ -69,8 +69,7 @@ class TestStartup(unittest.TestCase):
                 [
                     sys.executable,
                     "-c",
-                    textwrap.dedent(
-                        f"""
+                    textwrap.dedent(f"""
                         from pysr import PySRRegressor
                         import numpy as np
 
@@ -98,8 +97,7 @@ class TestStartup(unittest.TestCase):
                         best_loss = model.equations_.iloc[-1]["loss"]
 
                         assert best_loss <= {best_loss}
-                    """
-                    ),
+                    """),
                 ],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,

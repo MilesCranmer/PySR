@@ -48,8 +48,7 @@ class TensorBoardLoggerSpec(AbstractLoggerSpec):
 
     def create_logger(self) -> AnyValue:
         # We assume that TensorBoardLogger is already imported via `julia_extensions.py`
-        make_logger = jl.seval(
-            """
+        make_logger = jl.seval("""
             function make_logger(log_dir::AbstractString, overwrite::Bool, log_interval::Int)
                 base_logger = TensorBoardLogger.TBLogger(
                     log_dir,
@@ -57,8 +56,7 @@ class TensorBoardLoggerSpec(AbstractLoggerSpec):
                 )
                 return SRLogger(; logger=base_logger, log_interval)
             end
-        """
-        )
+        """)
         log_dir = str(self.log_dir)
         return make_logger(log_dir, self.overwrite, self.log_interval)
 
