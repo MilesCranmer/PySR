@@ -2,6 +2,19 @@
 # information to generate the "Research Showcase"
 
 papers:
+  - title: Interpretable Symbolic Regression for Predicting Damage Initiation in Hybrid FRP Bolted Connections
+    authors:
+      - Sherif Samy Sorour (1)
+      - Chahinaz Abdelrahman Saleh (2)
+      - Mostafa Shazly (1)
+    affiliations:
+      1: Department of Mechanical Engineering, The British University in Egypt
+      2: Department of Mechanical Design and Production Engineering, Cairo University
+    link: https://doi.org/10.1038/s41598-025-02390-4
+    abstract: "This study presents a framework that combines experimental testing, finite element modeling (FEM), and symbolic regression using PySR to derive interpretable expressions for damage initiation in hybrid GFRP-steel L-joint bolted connections. Unlike traditional ML methods, PySR yielded compact, physics-informed equations that outperformed black-box baselines in both accuracy and generalization, while offering clear insights into design parameters such as torque, edge distance, and clearance. The final symbolic expression proved scalable to different bolt sizes, stacking sequences, and bolt row configurations.This study offers a scalable, interpretable, and predictive framework for hybrid bolted joints, bridging the gap between theoretical models and real-world engineering applications across industries such as aerospace, automotive, and civil engineering."
+    image: frp.PNG
+    date: 2025-05-26
+
   - title: Discovery of a Planar Black Hole Mass Scaling Relation for Spiral Galaxies
     authors:
       - Benjamin L. Davis (1)
