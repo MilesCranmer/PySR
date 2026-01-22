@@ -311,3 +311,16 @@ papers:
     abstract: We study the potential of symbolic regression (SR) to derive compact and precise analytic expressions that can improve the accuracy and simplicity of phenomenological analyses at the Large Hadron Collider (LHC). As a benchmark, we apply SR to equation recovery in quantum electrodynamics (QED), where established analytical results from quantum field theory provide a reliable framework for evaluation. This benchmark serves to validate the performance and reliability of SR before extending its application to structure functions in the Drell-Yan process mediated by virtual photons, which lack analytic representations from first principles. By combining the simplicity of analytic expressions with the predictive power of machine learning techniques, SR offers a useful tool for facilitating phenomenological analyses in high energy physics.
     image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/refs/heads/master/images/hep_sr_img.png
     date: 2024-12-10
+  - title: "Symbolic Regression for State Estimation of Lithium-ion Battery"
+    authors:
+      - Shubham Sambhaji Patil (1)
+      - Anubhav Kamal (1)
+      - Sagar Bharathraj (1)
+      - Ankur Deshwal (1)
+      - Shashishekar P. Adiga (1)
+    affiliations:
+      1: Samsung Semiconductor India Research
+    link: https://ieeexplore.ieee.org/document/11202751
+    abstract: "Modeling lithium-ion batteries has been a challenging problem. One of the critical tasks among many is state estimation, as it enables researchers to design better battery management systems (BMS). Understanding important battery parameters allows researchers to monitor battery health, predict performance, and optimize battery operation. Traditionally, mathematical models using partial differential equations (PDEs) such as the pseudo two-dimensional model (P2D) have been widely used to estimate physical quantities within the battery. However, deployment of P2D for real-time prediction is limited by the high computational cost, instability of numerical techniques, and the requirement of specialized software. Recent studies have successfully applied various machine learning algorithms achieving high predictive accuracy in many cases. These algorithms, however, suffer from limitations on generalizability and high computation requirements, which limit their deployment. We investigate the applicability of symbolic regression (SR), a branch of symbolic AI techniques, to the problem. The results demonstrate equivalent accuracy with P2D while offering orders of magnitude faster execution. As this study uses simulated P2D data, the findings should be interpreted as a proof-of-concept indicating that symbolic regression can yield interpretable, computationally efficient surrogates with promising BMS relevance."
+    image: SR_for_battery.png
+    date: 2025-10-20
