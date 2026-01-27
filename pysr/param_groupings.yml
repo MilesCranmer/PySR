@@ -2,6 +2,7 @@
   - Creating the Search Space:
     - binary_operators
     - unary_operators
+    - operators
     - expression_spec
     - maxsize
     - maxdepth
@@ -38,6 +39,7 @@
     - weight_do_nothing
     - weight_mutate_constant
     - weight_mutate_operator
+    - weight_mutate_feature
     - weight_swap_operands
     - weight_rotate_tree
     - weight_randomize
@@ -62,6 +64,7 @@
   - Migration between Populations:
     - fraction_replaced
     - fraction_replaced_hof
+    - fraction_replaced_guesses
     - migration
     - hof_migration
     - topn
@@ -77,6 +80,8 @@
   - procs
   - cluster_manager
   - heap_size_hint_in_bytes
+  - worker_timeout
+  - worker_imports
   - batching
   - batch_size
   - precision
@@ -88,6 +93,7 @@
   - random_state
   - deterministic
   - warm_start
+  - guesses
 - Monitoring:
   - verbosity
   - update_verbosity

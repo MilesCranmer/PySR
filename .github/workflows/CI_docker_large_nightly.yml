@@ -19,13 +19,13 @@ jobs:
       fail-fast: false
       matrix:
         julia-version: ['1.10', '1']
-        python-version: ['3.10', '3.13']
+        python-version: ['3.10', '3']
         os: [ubuntu-latest]
         arch: ['linux/amd64', 'linux/arm64']
 
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
