@@ -42,6 +42,11 @@ class TestSlurm(unittest.TestCase):
         self.addCleanup(self.data_dir_obj.cleanup)
         self.data_dir = Path(self.data_dir_obj.name).resolve()
 
+        self.docker_config_obj = tempfile.TemporaryDirectory(
+            prefix="pysr-slurm-docker-config-"
+        )
+        self.addCleanup(self.docker_config_obj.cleanup)
+
         self.julia_depot_dir_obj = None
         julia_depot_dir = os.environ.get("PYSR_SLURM_TEST_JULIA_DEPOT_DIR")
         if julia_depot_dir is None:
@@ -56,6 +61,7 @@ class TestSlurm(unittest.TestCase):
         self.compose_env["COMPOSE_PROJECT_NAME"] = (
             f"pysrslurm{os.getpid()}_{time.time_ns()}"
         )
+        self.compose_env["DOCKER_CONFIG"] = self.docker_config_obj.name
         self.compose_env["PYSR_SLURM_TEST_DATA_DIR"] = str(self.data_dir)
         self.compose_env["PYSR_SLURM_TEST_JULIA_DEPOT_DIR"] = str(
             Path(julia_depot_dir).resolve()
@@ -91,96 +97,12 @@ class TestSlurm(unittest.TestCase):
 
         self._wait_for_cluster_ready(timeout_s=300)
 
-    def _wait_for_cluster_ready(self, *, timeout_s: int):
-        start = time.time()
-        last_out = ""
-        while True:
-            ping = _run(
-                [
-                    "docker",
-                    "compose",
-                    "exec",
-                    "-T",
-                    "slurmctld",
-                    "bash",
-                    "-lc",
-                    "scontrol ping",
-                ],
-                cwd=self.cluster_dir,
-                env=self.compose_env,
-            )
-            last_out = ping.stdout
-            if ping.returncode == 0 and "Slurmctld" in ping.stdout:
-                sinfo = _run(
-                    [
-                        "docker",
-                        "compose",
-                        "exec",
-                        "-T",
-                        "slurmctld",
-                        "bash",
-                        "-lc",
-                        "sinfo -N -h -o '%N %T'",
-                    ],
-                    cwd=self.cluster_dir,
-                    env=self.compose_env,
-                )
-                if sinfo.returncode == 0:
-                    states = {}
-                    for line in sinfo.stdout.splitlines():
-                        parts = line.split()
-                        if len(parts) >= 2:
-                            states[parts[0]] = parts[1].lower()
-                    if states.get("c1") == "idle" and states.get("c2") == "idle":
-                        return
-                last_out = sinfo.stdout
-            if time.time() - start > timeout_s:
-                logs = _run(
-                    ["docker", "compose", "logs", "--no-color", "c1", "c2"],
-                    cwd=self.cluster_dir,
-                    env=self.compose_env,
-                ).stdout
-                raise RuntimeError(
-                    f"Slurm cluster did not become ready in {timeout_s}s:\n{last_out}\n\n{logs}"
-                )
-            time.sleep(2)
-
-    def test_pysr_slurm_cluster_manager(self):
-        job_script = self.data_dir / "pysr_slurm_job.sh"
-        job_script.write_text(
-            "\n".join(
-                [
-                    "#!/bin/bash",
-                    "#SBATCH --job-name=pysr-slurm-test",
-                    "#SBATCH --partition=normal",
-                    "#SBATCH --nodes=2",
-                    "#SBATCH --ntasks=4",
-                    "#SBATCH --time=40:00",
-                    "set -euo pipefail",
-                    "python3 - <<'PY'",
-                    "import numpy as np",
-                    "from pysr import PySRRegressor",
-                    "X = np.random.RandomState(0).randn(30, 2)",
-                    "y = X[:, 0] + 1.0",
-                    "model = PySRRegressor(",
-                    "    niterations=3,",
-                    "    populations=3,",
-                    "    progress=False,",
-                    "    temp_equation_file=True,",
-                    "    parallelism='multiprocessing',",
-                    "    procs=2,",
-                    "    cluster_manager='slurm',",
-                    "    verbosity=0,",
-                    ")",
-                    "model.fit(X, y)",
-                    "print('PYSR_SLURM_OK')",
-                    "PY",
-                ]
-            )
-            + "\n"
-        )
-        job_script.chmod(0o755)
-
+    def _run_sbatch(
+        self,
+        job_script: Path,
+        *,
+        timeout_s: int = 2400,
+    ) -> str:
         submit = _run(
             [
                 "docker",
@@ -240,7 +162,7 @@ class TestSlurm(unittest.TestCase):
                 self.fail(
                     f"Slurm job {job_id} did not complete successfully:\n{state.stdout}\n\n{out}"
                 )
-            if time.time() - start > 2400:
+            if time.time() - start > timeout_s:
                 out = _run(
                     [
                         "docker",
@@ -275,7 +197,286 @@ class TestSlurm(unittest.TestCase):
             env=self.compose_env,
         )
         self.assertEqual(output.returncode, 0, msg=output.stdout)
-        self.assertIn("PYSR_SLURM_OK", output.stdout)
+        return output.stdout
+
+    def _assert_scontrol_step_usage(
+        self,
+        output: str,
+        *,
+        expected_tasks: int,
+        expected_nodes: int,
+        label: str,
+    ) -> None:
+        marker = "PYSR_SCONTROL_STEP_SAMPLE"
+        self.assertIn(
+            marker, output, msg=f"{label}: did not capture any scontrol samples."
+        )
+
+        saw_expected = False
+        for sample in output.split(marker)[1:]:
+            step_lines = [
+                line.strip()
+                for line in sample.splitlines()
+                if line.strip().startswith("StepId=")
+            ]
+            steps = [dict(re.findall(r"(\w+)=([^\s]+)", line)) for line in step_lines]
+            running_steps: dict[str, dict[str, str]] = {}
+            for s in steps:
+                step_id = s.get("StepId", "")
+                if step_id.endswith(".batch") or s.get("State", "") != "RUNNING":
+                    continue
+                running_steps[step_id] = s
+
+            total_tasks = 0
+            for step in running_steps.values():
+                tasks = int(step.get("Tasks", "0"))
+                nodes = int(step.get("Nodes", "0"))
+                if tasks > expected_tasks:
+                    self.fail(
+                        f"{label}: too many tasks in Slurm step: expected <= {expected_tasks}, got {tasks}.\n\n{sample}"
+                    )
+                if tasks == expected_tasks and nodes != expected_nodes:
+                    self.fail(
+                        f"{label}: expected {expected_tasks} tasks across {expected_nodes} nodes, got Nodes={nodes}.\n\n{sample}"
+                    )
+                if tasks == expected_tasks and nodes == expected_nodes:
+                    saw_expected = True
+                total_tasks += tasks
+
+            if total_tasks > expected_tasks:
+                self.fail(
+                    f"{label}: too many concurrent tasks across steps: expected <= {expected_tasks}, got {total_tasks}.\n\n{sample}"
+                )
+
+        tail = "\n".join(output.splitlines()[-200:])
+        self.assertTrue(
+            saw_expected,
+            msg=(
+                f"{label}: never observed a RUNNING Slurm step with Tasks={expected_tasks} "
+                f"and Nodes={expected_nodes}.\n\nLast 200 lines:\n{tail}"
+            ),
+        )
+
+    def _wait_for_cluster_ready(self, *, timeout_s: int):
+        start = time.time()
+        last_out = ""
+        while True:
+            ping = _run(
+                [
+                    "docker",
+                    "compose",
+                    "exec",
+                    "-T",
+                    "slurmctld",
+                    "bash",
+                    "-lc",
+                    "scontrol ping",
+                ],
+                cwd=self.cluster_dir,
+                env=self.compose_env,
+            )
+            last_out = ping.stdout
+            if ping.returncode == 0 and "Slurmctld" in ping.stdout:
+                sinfo = _run(
+                    [
+                        "docker",
+                        "compose",
+                        "exec",
+                        "-T",
+                        "slurmctld",
+                        "bash",
+                        "-lc",
+                        "sinfo -N -h -o '%N %T'",
+                    ],
+                    cwd=self.cluster_dir,
+                    env=self.compose_env,
+                )
+                if sinfo.returncode == 0:
+                    states = {}
+                    for line in sinfo.stdout.splitlines():
+                        parts = line.split()
+                        if len(parts) >= 2:
+                            states[parts[0]] = parts[1].lower()
+                    if states.get("c1") == "idle" and states.get("c2") == "idle":
+                        return
+                last_out = sinfo.stdout
+            if time.time() - start > timeout_s:
+                logs = _run(
+                    ["docker", "compose", "logs", "--no-color", "c1", "c2"],
+                    cwd=self.cluster_dir,
+                    env=self.compose_env,
+                ).stdout
+                raise RuntimeError(
+                    f"Slurm cluster did not become ready in {timeout_s}s:\n{last_out}\n\n{logs}"
+                )
+            time.sleep(2)
+
+    def test_pysr_slurm_cluster_manager(self):
+        slurm_job = self.data_dir / "pysr_slurm_job.sh"
+        slurm_job.write_text(
+            "\n".join(
+                [
+                    "#!/bin/bash",
+                    "#SBATCH --job-name=pysr-slurm-test",
+                    "#SBATCH --partition=normal",
+                    "#SBATCH --nodes=2",
+                    "#SBATCH --ntasks-per-node=1",
+                    "#SBATCH --time=40:00",
+                    "set -euo pipefail",
+                    'jobid="${SLURM_JOB_ID:-${SLURM_JOBID:-}}"',
+                    'if [ -z "$jobid" ]; then echo "Missing SLURM_JOB_ID/SLURM_JOBID" >&2; exit 1; fi',
+                    "monitor_steps() {",
+                    "  while true; do",
+                    "    echo PYSR_SCONTROL_STEP_SAMPLE",
+                    '    scontrol show step "$jobid" -o 2>/dev/null || true',
+                    "    sleep 1",
+                    "  done",
+                    "}",
+                    "monitor_steps &",
+                    "MONITOR_PID=$!",
+                    "trap 'kill $MONITOR_PID 2>/dev/null || true' EXIT",
+                    "python3 - <<'PY'",
+                    "import numpy as np",
+                    "from pysr import PySRRegressor",
+                    "X = np.random.RandomState(0).randn(30, 2)",
+                    "y = X[:, 0] + 1.0",
+                    "model = PySRRegressor(",
+                    "    niterations=2,",
+                    "    populations=2,",
+                    "    progress=False,",
+                    "    temp_equation_file=True,",
+                    "    parallelism='multiprocessing',",
+                    "    procs=2,",
+                    "    cluster_manager='slurm',",
+                    "    verbosity=0,",
+                    ")",
+                    "model.fit(X, y)",
+                    "print('PYSR_SLURM_OK:slurm')",
+                    "PY",
+                ]
+            )
+            + "\n"
+        )
+        slurm_job.chmod(0o755)
+
+        native_job = self.data_dir / "pysr_slurm_native_job.sh"
+        native_job.write_text(
+            "\n".join(
+                [
+                    "#!/bin/bash",
+                    "#SBATCH --job-name=pysr-slurm-native-test",
+                    "#SBATCH --partition=normal",
+                    "#SBATCH --nodes=2",
+                    "#SBATCH --ntasks-per-node=1",
+                    "#SBATCH --time=40:00",
+                    "set -euo pipefail",
+                    'jobid="${SLURM_JOB_ID:-${SLURM_JOBID:-}}"',
+                    'if [ -z "$jobid" ]; then echo "Missing SLURM_JOB_ID/SLURM_JOBID" >&2; exit 1; fi',
+                    "monitor_steps() {",
+                    "  while true; do",
+                    "    echo PYSR_SCONTROL_STEP_SAMPLE",
+                    '    scontrol show step "$jobid" -o 2>/dev/null || true',
+                    "    sleep 1",
+                    "  done",
+                    "}",
+                    "monitor_steps &",
+                    "MONITOR_PID=$!",
+                    "trap 'kill $MONITOR_PID 2>/dev/null || true' EXIT",
+                    "python3 - <<'PY'",
+                    "import os",
+                    "os.environ['JULIA_DEBUG'] = 'SlurmClusterManager'",
+                    "import numpy as np",
+                    "from pysr import PySRRegressor",
+                    "X = np.random.RandomState(1).randn(30, 2)",
+                    "y = X[:, 0] + 1.0",
+                    "model = PySRRegressor(",
+                    "    niterations=2,",
+                    "    populations=2,",
+                    "    progress=False,",
+                    "    temp_equation_file=True,",
+                    "    parallelism='multiprocessing',",
+                    "    procs=2,",
+                    "    cluster_manager='slurm_native',",
+                    "    verbosity=0,",
+                    ")",
+                    "model.fit(X, y)",
+                    "print('PYSR_SLURM_OK:slurm_native')",
+                    "PY",
+                ]
+            )
+            + "\n"
+        )
+        native_job.chmod(0o755)
+
+        slurm_output = self._run_sbatch(slurm_job)
+        self.assertIn("PYSR_SLURM_OK:slurm", slurm_output)
+        self._assert_scontrol_step_usage(
+            slurm_output, expected_tasks=2, expected_nodes=2, label="slurm"
+        )
+        self.assertEqual(
+            len(re.findall(r"^PYSR_SLURM_OK:slurm$", slurm_output, flags=re.MULTILINE)),
+            1,
+            msg=f"Expected slurm marker exactly once.\n\n{slurm_output}",
+        )
+
+        slurm_start_lines = re.findall(
+            r"^\[ Info: Starting SLURM job .*", slurm_output, re.MULTILINE
+        )
+        self.assertEqual(
+            len(slurm_start_lines),
+            1,
+            msg=f"Expected exactly one ClusterManagers srun launch.\n\n{slurm_output}",
+        )
+
+        slurm_hosts = set(
+            re.findall(r"Worker \d+ ready .* on host ([^,]+), port", slurm_output)
+        )
+        self.assertEqual(
+            len(
+                re.findall(
+                    r"Worker \d+ ready after .* on host [^,]+, port \d+",
+                    slurm_output,
+                )
+            ),
+            2,
+            msg=f"Expected exactly 2 ClusterManagers workers.\n\n{slurm_output}",
+        )
+        self.assertGreaterEqual(
+            len(slurm_hosts),
+            2,
+            msg=f"Expected ClusterManagers to spawn workers on >=2 hosts; got: {sorted(slurm_hosts)}\n\n{slurm_output}",
+        )
+
+        native_output = self._run_sbatch(native_job)
+        self.assertIn("PYSR_SLURM_OK:slurm_native", native_output)
+        self._assert_scontrol_step_usage(
+            native_output, expected_tasks=2, expected_nodes=2, label="slurm_native"
+        )
+        self.assertEqual(
+            len(
+                re.findall(
+                    r"^PYSR_SLURM_OK:slurm_native$",
+                    native_output,
+                    flags=re.MULTILINE,
+                )
+            ),
+            1,
+            msg=f"Expected slurm_native marker exactly once.\n\n{native_output}",
+        )
+        native_ready_lines = re.findall(
+            r"Worker \d+ ready on host ([^,]+), port \d+", native_output
+        )
+        self.assertEqual(
+            len(native_ready_lines),
+            2,
+            msg=f"Expected exactly 2 SlurmClusterManager workers.\n\n{native_output}",
+        )
+        native_hosts = set(native_ready_lines)
+        self.assertGreaterEqual(
+            len(native_hosts),
+            2,
+            msg=f"Expected slurm_native workers on >=2 hosts; got: {sorted(native_hosts)}\n\n{native_output}",
+        )
 
 
 def runtests(just_tests=False):

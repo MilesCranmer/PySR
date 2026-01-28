@@ -2070,7 +2070,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 os.environ.setdefault(
                     "JULIA_PROJECT", str(Path(active_project).resolve().parent)
                 )
-            cluster_manager = _load_cluster_manager(cluster_manager)
+            cluster_manager = load_cluster_manager(cluster_manager)
 
         if self.autodiff_backend is not None:
             autodiff_backend = jl.Symbol(self.autodiff_backend)
