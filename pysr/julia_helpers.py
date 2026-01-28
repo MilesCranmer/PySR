@@ -35,9 +35,21 @@ KNOWN_CLUSTERMANAGER_BACKENDS = ["slurm", "pbs", "lsf", "sge", "qrsh", "scyld", 
 def load_cluster_manager(cluster_manager: str) -> AnyValue:
     if cluster_manager == "slurm_native":
         jl.seval("using SlurmClusterManager: SlurmManager")
-        # TODO: Is this the right way to do this?
-        jl.seval(f"using Distributed: addprocs")
-        jl.seval("addprocs_slurm_native(args...; kws...) = addprocs(SlurmManager())")
+        jl.seval("using Distributed: addprocs")
+        jl.seval(
+            """
+            function addprocs_slurm_native(numprocs::Integer; exeflags=``, lazy=false, kws...)
+                procs = addprocs(SlurmManager(); exeflags=exeflags, lazy=lazy, kws...)
+                if length(procs) != numprocs
+                    error(
+                        "Requested $numprocs processes, but Slurm allocation has $(length(procs)) tasks. " *
+                        "Set Slurm `--ntasks`/`--ntasks-per-node` to match, and set `procs` accordingly."
+                    )
+                end
+                return procs
+            end
+            """
+        )
         return jl.addprocs_slurm_native
     elif cluster_manager in KNOWN_CLUSTERMANAGER_BACKENDS:
         jl.seval(f"using ClusterManagers: addprocs_{cluster_manager}")
