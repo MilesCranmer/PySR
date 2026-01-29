@@ -8,9 +8,12 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+from typing import cast
 
 
-def _run(cmd: list[str], *, cwd: Path | None = None, env: dict[str, str] | None = None):
+def _run(
+    cmd: list[str], *, cwd: Path | None = None, env: dict[str, str] | None = None
+) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         cmd,
         cwd=cwd,
@@ -119,8 +122,9 @@ class TestSlurm(unittest.TestCase):
         )
         self.assertEqual(submit.returncode, 0, msg=submit.stdout)
         match = re.search(r"Submitted batch job (\d+)", submit.stdout)
-        self.assertIsNotNone(match, msg=f"Could not parse job id:\n{submit.stdout}")
-        job_id = match.group(1)
+        if match is None:
+            self.fail(f"Could not parse job id:\n{submit.stdout}")
+        job_id = cast(str, match.group(1))
 
         start = time.time()
         while True:
