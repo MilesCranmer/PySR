@@ -33,23 +33,23 @@ KNOWN_CLUSTERMANAGER_BACKENDS = ["slurm", "pbs", "lsf", "sge", "qrsh", "scyld", 
 
 
 def load_cluster_manager(cluster_manager: str) -> AnyValue:
-    if cluster_manager == "slurm_native":
+    if cluster_manager == "slurm":
         jl.seval("using SlurmClusterManager: SlurmManager")
         jl.seval("using Distributed")
         jl.seval(
             """
-            function addprocs_slurm_native(numprocs::Integer; exeflags=``, lazy=false, kws...)
+            function addprocs_slurm(numprocs::Integer; exeflags=``, lazy=false, kws...)
                 procs = Distributed.addprocs(SlurmManager(); exeflags=exeflags, lazy=lazy, kws...)
                 # SymbolicRegression may serialize the addprocs function to workers. Defining a
                 # stub on the new workers avoids deserialization failures if it gets captured.
                 Distributed.@everywhere procs begin
-                    function addprocs_slurm_native(
+                    function addprocs_slurm(
                         numprocs::Integer;
                         exeflags=``,
                         lazy=false,
                         kws...,
                     )
-                        error("addprocs_slurm_native should only be called on the master process.")
+                        error("addprocs_slurm should only be called on the master process.")
                     end
                 end
                 if length(procs) != numprocs
@@ -62,7 +62,7 @@ def load_cluster_manager(cluster_manager: str) -> AnyValue:
             end
             """
         )
-        return jl.addprocs_slurm_native
+        return jl.addprocs_slurm
     elif cluster_manager in KNOWN_CLUSTERMANAGER_BACKENDS:
         jl.seval(f"using ClusterManagers: addprocs_{cluster_manager}")
         return jl.seval(f"addprocs_{cluster_manager}")

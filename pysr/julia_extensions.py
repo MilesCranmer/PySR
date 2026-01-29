@@ -38,7 +38,7 @@ def load_required_packages(
     elif autodiff_backend == "Enzyme":
         load_package("Enzyme", "7da242da-08ed-463a-9acd-ee780be4f1d9")
     if cluster_manager is not None:
-        if cluster_manager == "slurm_native":
+        if cluster_manager == "slurm":
             load_package("SlurmClusterManager")
         elif cluster_manager in KNOWN_CLUSTERMANAGER_BACKENDS:
             load_package("ClusterManagers")

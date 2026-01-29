@@ -205,6 +205,7 @@ class TestSlurm(unittest.TestCase):
         *,
         expected_tasks: int,
         expected_nodes: int,
+        expected_nodelist: set[str] | None = None,
         label: str,
     ) -> None:
         marker = "PYSR_SCONTROL_STEP_SAMPLE"
@@ -240,6 +241,19 @@ class TestSlurm(unittest.TestCase):
                         f"{label}: expected {expected_tasks} tasks across {expected_nodes} nodes, got Nodes={nodes}.\n\n{sample}"
                     )
                 if tasks == expected_tasks and nodes == expected_nodes:
+                    if expected_tasks == expected_nodes and expected_tasks > 0:
+                        # With Tasks==Nodes, Slurm must be distributing exactly 1 task per node.
+                        pass
+                    if expected_nodelist is not None:
+                        node_list = step.get("NodeList")
+                        if not node_list:
+                            self.fail(
+                                f"{label}: expected NodeList to be present in scontrol step output.\n\n{sample}"
+                            )
+                        if node_list not in expected_nodelist:
+                            self.fail(
+                                f"{label}: expected NodeList in {sorted(expected_nodelist)}, got {node_list!r}.\n\n{sample}"
+                            )
                     saw_expected = True
                 total_tasks += tasks
 
@@ -336,6 +350,8 @@ class TestSlurm(unittest.TestCase):
                     "MONITOR_PID=$!",
                     "trap 'kill $MONITOR_PID 2>/dev/null || true' EXIT",
                     "python3 - <<'PY'",
+                    "import os",
+                    "os.environ['JULIA_DEBUG'] = 'SlurmClusterManager'",
                     "import numpy as np",
                     "from pysr import PySRRegressor",
                     "X = np.random.RandomState(0).randn(30, 2)",
@@ -359,59 +375,14 @@ class TestSlurm(unittest.TestCase):
         )
         slurm_job.chmod(0o755)
 
-        native_job = self.data_dir / "pysr_slurm_native_job.sh"
-        native_job.write_text(
-            "\n".join(
-                [
-                    "#!/bin/bash",
-                    "#SBATCH --job-name=pysr-slurm-native-test",
-                    "#SBATCH --partition=normal",
-                    "#SBATCH --nodes=2",
-                    "#SBATCH --ntasks-per-node=1",
-                    "#SBATCH --time=40:00",
-                    "set -euo pipefail",
-                    'jobid="${SLURM_JOB_ID:-${SLURM_JOBID:-}}"',
-                    'if [ -z "$jobid" ]; then echo "Missing SLURM_JOB_ID/SLURM_JOBID" >&2; exit 1; fi',
-                    "monitor_steps() {",
-                    "  while true; do",
-                    "    echo PYSR_SCONTROL_STEP_SAMPLE",
-                    '    scontrol show step "$jobid" -o 2>/dev/null || true',
-                    "    sleep 1",
-                    "  done",
-                    "}",
-                    "monitor_steps &",
-                    "MONITOR_PID=$!",
-                    "trap 'kill $MONITOR_PID 2>/dev/null || true' EXIT",
-                    "python3 - <<'PY'",
-                    "import os",
-                    "os.environ['JULIA_DEBUG'] = 'SlurmClusterManager'",
-                    "import numpy as np",
-                    "from pysr import PySRRegressor",
-                    "X = np.random.RandomState(1).randn(30, 2)",
-                    "y = X[:, 0] + 1.0",
-                    "model = PySRRegressor(",
-                    "    niterations=2,",
-                    "    populations=2,",
-                    "    progress=False,",
-                    "    temp_equation_file=True,",
-                    "    parallelism='multiprocessing',",
-                    "    procs=2,",
-                    "    cluster_manager='slurm_native',",
-                    "    verbosity=0,",
-                    ")",
-                    "model.fit(X, y)",
-                    "print('PYSR_SLURM_OK:slurm_native')",
-                    "PY",
-                ]
-            )
-            + "\n"
-        )
-        native_job.chmod(0o755)
-
         slurm_output = self._run_sbatch(slurm_job)
         self.assertIn("PYSR_SLURM_OK:slurm", slurm_output)
         self._assert_scontrol_step_usage(
-            slurm_output, expected_tasks=2, expected_nodes=2, label="slurm"
+            slurm_output,
+            expected_tasks=2,
+            expected_nodes=2,
+            expected_nodelist={"c1,c2", "c[1-2]"},
+            label="slurm",
         )
         self.assertEqual(
             len(re.findall(r"^PYSR_SLURM_OK:slurm$", slurm_output, flags=re.MULTILINE)),
@@ -419,63 +390,17 @@ class TestSlurm(unittest.TestCase):
             msg=f"Expected slurm marker exactly once.\n\n{slurm_output}",
         )
 
-        slurm_start_lines = re.findall(
-            r"^\[ Info: Starting SLURM job .*", slurm_output, re.MULTILINE
-        )
-        self.assertEqual(
-            len(slurm_start_lines),
-            1,
-            msg=f"Expected exactly one ClusterManagers srun launch.\n\n{slurm_output}",
-        )
-
-        slurm_hosts = set(
-            re.findall(r"Worker \d+ ready .* on host ([^,]+), port", slurm_output)
-        )
         self.assertEqual(
             len(
                 re.findall(
-                    r"Worker \d+ ready after .* on host [^,]+, port \d+",
-                    slurm_output,
+                    r"^\[ Info: Starting SLURM job .*", slurm_output, re.MULTILINE
                 )
             ),
-            2,
-            msg=f"Expected exactly 2 ClusterManagers workers.\n\n{slurm_output}",
-        )
-        self.assertGreaterEqual(
-            len(slurm_hosts),
-            2,
-            msg=f"Expected ClusterManagers to spawn workers on >=2 hosts; got: {sorted(slurm_hosts)}\n\n{slurm_output}",
-        )
-
-        native_output = self._run_sbatch(native_job)
-        self.assertIn("PYSR_SLURM_OK:slurm_native", native_output)
-        self._assert_scontrol_step_usage(
-            native_output, expected_tasks=2, expected_nodes=2, label="slurm_native"
-        )
-        self.assertEqual(
-            len(
-                re.findall(
-                    r"^PYSR_SLURM_OK:slurm_native$",
-                    native_output,
-                    flags=re.MULTILINE,
-                )
+            0,
+            msg=(
+                "Expected Slurm backend to use SlurmClusterManager (allocation-based), "
+                "not ClusterManagers.\n\n" + slurm_output
             ),
-            1,
-            msg=f"Expected slurm_native marker exactly once.\n\n{native_output}",
-        )
-        native_ready_lines = re.findall(
-            r"Worker \d+ ready on host ([^,]+), port \d+", native_output
-        )
-        self.assertEqual(
-            len(native_ready_lines),
-            2,
-            msg=f"Expected exactly 2 SlurmClusterManager workers.\n\n{native_output}",
-        )
-        native_hosts = set(native_ready_lines)
-        self.assertGreaterEqual(
-            len(native_hosts),
-            2,
-            msg=f"Expected slurm_native workers on >=2 hosts; got: {sorted(native_hosts)}\n\n{native_output}",
         )
 
 
