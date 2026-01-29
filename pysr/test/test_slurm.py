@@ -330,82 +330,124 @@ class TestSlurm(unittest.TestCase):
             time.sleep(2)
 
     def test_pysr_slurm_cluster_manager(self):
-        slurm_job = self.data_dir / "pysr_slurm_job.sh"
-        slurm_job.write_text(
-            "\n".join(
-                [
-                    "#!/bin/bash",
-                    "#SBATCH --job-name=pysr-slurm-test",
-                    "#SBATCH --partition=normal",
-                    "#SBATCH --nodes=2",
-                    "#SBATCH --ntasks-per-node=1",
-                    "#SBATCH --time=40:00",
-                    "set -euo pipefail",
-                    'jobid="${SLURM_JOB_ID:-${SLURM_JOBID:-}}"',
-                    'if [ -z "$jobid" ]; then echo "Missing SLURM_JOB_ID/SLURM_JOBID" >&2; exit 1; fi',
-                    "monitor_steps() {",
-                    "  while true; do",
-                    "    echo PYSR_SCONTROL_STEP_SAMPLE",
-                    '    scontrol show step "$jobid" -o 2>/dev/null || true',
-                    "    sleep 1",
-                    "  done",
-                    "}",
-                    "monitor_steps &",
-                    "MONITOR_PID=$!",
-                    "trap 'kill $MONITOR_PID 2>/dev/null || true' EXIT",
-                    "python3 - <<'PY'",
-                    "import os",
-                    "os.environ['JULIA_DEBUG'] = 'SlurmClusterManager'",
-                    "import numpy as np",
-                    "from pysr import PySRRegressor",
-                    "X = np.random.RandomState(0).randn(30, 2)",
-                    "y = X[:, 0] + 1.0",
-                    "model = PySRRegressor(",
-                    "    niterations=2,",
-                    "    populations=2,",
-                    "    progress=False,",
-                    "    temp_equation_file=True,",
-                    "    parallelism='multiprocessing',",
-                    "    procs=2,",
-                    "    cluster_manager='slurm',",
-                    "    verbosity=0,",
-                    ")",
-                    "model.fit(X, y)",
-                    "print('PYSR_SLURM_OK:slurm')",
-                    "PY",
-                ]
+        def _assert_worker_distribution(
+            output: str,
+            *,
+            expected_procs: int,
+            expected_nodes: int,
+            expected_per_node: int,
+        ) -> None:
+            worker_hosts = re.findall(
+                r"Worker \d+ ready on host ([^,]+), port \d+",
+                output,
             )
-            + "\n"
-        )
-        slurm_job.chmod(0o755)
+            self.assertEqual(
+                len(worker_hosts),
+                expected_procs,
+                msg=f"Expected {expected_procs} workers.\n\n{output}",
+            )
+            counts: dict[str, int] = {}
+            for host in worker_hosts:
+                counts[host] = counts.get(host, 0) + 1
+            self.assertEqual(
+                len(counts),
+                expected_nodes,
+                msg=f"Expected workers on {expected_nodes} nodes.\n\n{output}",
+            )
+            self.assertTrue(
+                all(v == expected_per_node for v in counts.values()),
+                msg=f"Expected exactly {expected_per_node} workers per node.\n\n{output}",
+            )
 
-        slurm_output = self._run_sbatch(slurm_job)
-        self.assertIn("PYSR_SLURM_OK:slurm", slurm_output)
-        self._assert_scontrol_step_usage(
-            slurm_output,
-            expected_tasks=2,
-            expected_nodes=2,
-            expected_nodelist={"c1,c2", "c[1-2]"},
-            label="slurm",
-        )
-        self.assertEqual(
-            len(re.findall(r"^PYSR_SLURM_OK:slurm$", slurm_output, flags=re.MULTILINE)),
-            1,
-            msg=f"Expected slurm marker exactly once.\n\n{slurm_output}",
-        )
-
-        self.assertEqual(
-            len(
-                re.findall(
-                    r"^\[ Info: Starting SLURM job .*", slurm_output, re.MULTILINE
+        def _run_case(*, ntasks_per_node: int, procs: int, seed: int) -> str:
+            marker = f"PYSR_SLURM_OK:slurm:{procs}"
+            job = self.data_dir / f"pysr_slurm_job_{procs}.sh"
+            job.write_text(
+                "\n".join(
+                    [
+                        "#!/bin/bash",
+                        f"#SBATCH --job-name=pysr-slurm-test-{procs}",
+                        "#SBATCH --partition=normal",
+                        "#SBATCH --nodes=2",
+                        f"#SBATCH --ntasks-per-node={ntasks_per_node}",
+                        "#SBATCH --time=40:00",
+                        "set -euo pipefail",
+                        'jobid="${SLURM_JOB_ID:-${SLURM_JOBID:-}}"',
+                        'if [ -z "$jobid" ]; then echo "Missing SLURM_JOB_ID/SLURM_JOBID" >&2; exit 1; fi',
+                        "monitor_steps() {",
+                        "  while true; do",
+                        "    echo PYSR_SCONTROL_STEP_SAMPLE",
+                        '    scontrol show step "$jobid" -o 2>/dev/null || true',
+                        "    sleep 1",
+                        "  done",
+                        "}",
+                        "monitor_steps &",
+                        "MONITOR_PID=$!",
+                        "trap 'kill $MONITOR_PID 2>/dev/null || true' EXIT",
+                        "python3 - <<'PY'",
+                        "import os",
+                        "os.environ['JULIA_DEBUG'] = 'SlurmClusterManager'",
+                        "import numpy as np",
+                        "from pysr import PySRRegressor",
+                        f"X = np.random.RandomState({seed}).randn(30, 2)",
+                        "y = X[:, 0] + 1.0",
+                        "model = PySRRegressor(",
+                        "    niterations=2,",
+                        "    populations=2,",
+                        "    progress=False,",
+                        "    temp_equation_file=True,",
+                        "    parallelism='multiprocessing',",
+                        f"    procs={procs},",
+                        "    cluster_manager='slurm',",
+                        "    verbosity=0,",
+                        ")",
+                        "model.fit(X, y)",
+                        f"print('{marker}')",
+                        "PY",
+                    ]
                 )
-            ),
-            0,
-            msg=(
-                "Expected Slurm backend to use SlurmClusterManager (allocation-based), "
-                "not ClusterManagers.\n\n" + slurm_output
-            ),
-        )
+                + "\n"
+            )
+            job.chmod(0o755)
+
+            output = self._run_sbatch(job)
+            self.assertIn(marker, output)
+            self.assertEqual(
+                len(re.findall(rf"^{re.escape(marker)}$", output, flags=re.MULTILINE)),
+                1,
+                msg=f"Expected marker exactly once.\n\n{output}",
+            )
+            self.assertEqual(
+                len(
+                    re.findall(r"^\[ Info: Starting SLURM job .*", output, re.MULTILINE)
+                ),
+                0,
+                msg=(
+                    "Expected Slurm backend to use SlurmClusterManager (allocation-based), "
+                    "not ClusterManagers.\n\n" + output
+                ),
+            )
+            return output
+
+        cases = [
+            dict(ntasks_per_node=1, procs=2, seed=0),
+            dict(ntasks_per_node=3, procs=6, seed=2),
+        ]
+        for case in cases:
+            output = _run_case(**case)
+            self._assert_scontrol_step_usage(
+                output,
+                expected_tasks=case["procs"],
+                expected_nodes=2,
+                expected_nodelist={"c1,c2", "c[1-2]"},
+                label=f"slurm({case['procs']})",
+            )
+            _assert_worker_distribution(
+                output,
+                expected_procs=case["procs"],
+                expected_nodes=2,
+                expected_per_node=case["ntasks_per_node"],
+            )
 
 
 def runtests(just_tests=False):

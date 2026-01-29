@@ -131,6 +131,7 @@ export default defineConfig({
         text: 'Advanced',
         items: [
           { text: 'Tuning', link: '/tuning' },
+          { text: 'Slurm', link: '/slurm' },
           { text: 'Backend', link: '/backend' },
         ]
       }
