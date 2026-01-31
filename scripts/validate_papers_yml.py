@@ -25,10 +25,9 @@ We also reject a common footgun:
 
 from __future__ import annotations
 
+import datetime as _dt
 import os
 import re
-import sys
-import datetime as _dt
 from pathlib import Path
 
 import yaml
@@ -87,8 +86,10 @@ def main() -> None:
             errors.append(f"{prefix}.title: required non-empty string")
 
         authors = paper.get("authors")
-        if not isinstance(authors, list) or len(authors) == 0 or not all(
-            is_nonempty_str(a) for a in authors
+        if (
+            not isinstance(authors, list)
+            or len(authors) == 0
+            or not all(is_nonempty_str(a) for a in authors)
         ):
             errors.append(f"{prefix}.authors: required non-empty list of strings")
 
@@ -128,7 +129,11 @@ def main() -> None:
                     )
             else:
                 # Must be a basename only (no paths)
-                if os.path.basename(image_s) != image_s or "/" in image_s or "\\" in image_s:
+                if (
+                    os.path.basename(image_s) != image_s
+                    or "/" in image_s
+                    or "\\" in image_s
+                ):
                     errors.append(
                         f"{prefix}.image: local image must be a basename (e.g. myfig.jpg), not a path"
                     )
