@@ -18,24 +18,6 @@ permissions:
   contents: write
 
 jobs:
-  validate_papers_yml:
-    name: Validate docs/papers.yml
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v6
-      - name: "Set up Python"
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.x'
-          cache: pip
-      - name: "Install validator deps"
-        run: |
-          python -m pip install --upgrade pip
-          pip install pyyaml
-      - name: "Validate papers.yml"
-        run: python scripts/validate_papers_yml.py
-
   test:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
@@ -289,3 +271,22 @@ jobs:
           source .venv/bin/activate
           pip install /tmp/artifacts/*.whl
           python -c "import pysr; pysr.PySRRegressor(niterations=1).fit([[1]], [1])"
+
+  validate_papers_yml:
+    name: Validate docs/papers.yml
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: "Set up Python"
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+          cache: pip
+      - name: "Install validator deps"
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
+      - name: "Validate papers.yml"
+        run: python scripts/validate_papers_yml.py
+
