@@ -1,24 +1,7 @@
 #!/usr/bin/env python3
-"""Synchronize/clean up images submitted with a paper PR.
+"""CI helper for paper PRs: upload/normalize images and comment back with URLs.
 
-This is designed to run in a pull_request_target workflow, *without checking out the PR code*.
-
-Behavior:
-- Detect added image files in the PR under docs/src/public/images.
-- Download the image bytes from the PR head SHA via GitHub API.
-- Resize/compress to a standard size.
-- Create a branch + PR in the docs repository containing the processed images.
-- Comment on the original PR with the new image URLs and suggested edits.
-
-If the PR branch is on the same repository (not a fork), we also attempt to:
-- checkout the PR branch,
-- delete the image files from PySR,
-- update docs/papers.yml image fields to use the absolute URL,
-- push the commit back to the PR branch.
-
-Security notes:
-- Never executes PR-provided code.
-- Uses GitHub API to fetch only the specific image files and (optionally) papers.yml.
+Runs in pull_request_target; never executes PR-provided code.
 """
 
 from __future__ import annotations
