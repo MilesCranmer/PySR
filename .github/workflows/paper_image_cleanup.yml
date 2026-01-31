@@ -52,7 +52,8 @@ jobs:
           PYSR_DOCS_IMAGES_DIR: images
 
           # Resizing/compression targets:
-          MAX_WIDTH: "800"
-          JPEG_QUALITY: "80"
+          # Use PNG (lossless) to avoid blurry diagrams; still resize large images for reasonable file sizes.
+          MAX_WIDTH: "1200"
+          PNG_COMPRESS_LEVEL: "6"
         run: |
           python scripts/paper_image_sync.py

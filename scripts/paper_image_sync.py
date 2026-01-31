@@ -108,11 +108,12 @@ def get_file_bytes_at_ref(repo: str, path: str, ref: str, token: str) -> bytes:
 
 
 def resize_compress_image(
-    src: bytes, *, max_width: int, jpeg_quality: int, input_path: str
+    src: bytes, *, max_width: int, png_compress_level: int, input_path: str
 ) -> tuple[bytes, str]:
     """Return (processed_bytes, output_ext).
 
-    Policy: always output JPEG (no alpha). Any transparency is flattened to white.
+    Policy: always output PNG (lossless) and strip alpha.
+    Any transparency is flattened onto a white background.
     """
 
     with Image.open(io.BytesIO(src)) as im:
@@ -123,19 +124,16 @@ def resize_compress_image(
             new_h = round(im.height * (max_width / im.width))
             im = im.resize((max_width, new_h), Image.Resampling.LANCZOS)
 
-        # JPEG can't do alpha; flatten onto white.
-        if im.mode in {"RGBA", "LA"}:
-            bg = Image.new("RGB", im.size, (255, 255, 255))
-            bg.paste(im, mask=im.split()[-1])
-            im = bg
-        else:
-            im = im.convert("RGB")
+        # Normalize to RGBA so we can consistently flatten alpha if present.
+        rgba = im.convert("RGBA")
+        bg = Image.new("RGB", rgba.size, (255, 255, 255))
+        bg.paste(rgba, mask=rgba.split()[-1])
+        im_rgb = bg
 
         out = io.BytesIO()
-        im.save(
-            out, format="JPEG", quality=jpeg_quality, optimize=True, progressive=True
-        )
-        return out.getvalue(), ".jpg"
+        # PNG is lossless; compress_level affects size/time only (0-9).
+        im_rgb.save(out, format="PNG", optimize=True, compress_level=png_compress_level)
+        return out.getvalue(), ".png"
 
 
 def create_or_update_file(
@@ -311,8 +309,8 @@ def main() -> None:
     docs_token = env("PYSR_DOCS_TOKEN")
     docs_images_dir = env("PYSR_DOCS_IMAGES_DIR")
 
-    max_width = int(env("MAX_WIDTH", "800"))
-    jpeg_quality = int(env("JPEG_QUALITY", "80"))
+    max_width = int(env("MAX_WIDTH", "1200"))
+    png_compress_level = int(env("PNG_COMPRESS_LEVEL", "6"))
 
     pr = get_pr_info(repo, pr_number, gh_token)
     files = list_pr_files(repo, pr_number, gh_token)
@@ -353,7 +351,10 @@ def main() -> None:
     for path in candidate_images:
         raw = get_file_bytes_at_ref(pr.head_repo, path, pr.head_sha, gh_token)
         out_bytes, out_ext = resize_compress_image(
-            raw, max_width=max_width, jpeg_quality=jpeg_quality, input_path=path
+            raw,
+            max_width=max_width,
+            png_compress_level=png_compress_level,
+            input_path=path,
         )
         base = os.path.basename(path)
         # If our compressor changed ext (e.g., jpeg normalization), reflect that.
@@ -405,6 +406,10 @@ def main() -> None:
         name: f"https://raw.githubusercontent.com/{docs_repo}/{branch}/{dst_paths[name]}"
         for name, _ in processed
     }
+    stem_to_uploaded_name = {
+        os.path.splitext(name)[0]: name
+        for name, _ in processed
+    }
 
     # If we can read papers.yml from PR head, propose edits.
     papers_yml_new: str | None = None
@@ -422,8 +427,19 @@ def main() -> None:
                 continue
             # If PR referenced local filename and we uploaded it, replace with url.
             base = os.path.basename(img)
-            if base in urls and not img.startswith("http"):
+            if img.startswith("http"):
+                continue
+
+            if base in urls:
                 paper["image"] = urls[base]
+                changed = True
+                continue
+
+            # If the PR referenced e.g. foo.jpg but we normalized to foo.png,
+            # still update the reference.
+            stem = os.path.splitext(base)[0]
+            if stem in stem_to_uploaded_name:
+                paper["image"] = urls[stem_to_uploaded_name[stem]]
                 changed = True
 
         if changed:
