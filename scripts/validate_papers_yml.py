@@ -1,26 +1,7 @@
 #!/usr/bin/env python3
-"""Validate docs/papers.yml.
+"""Internal CI validator for docs/papers.yml.
 
-Goal: a fast, deterministic PR check that catches the common formatting issues
-maintainers would otherwise check manually.
-
-This is intentionally "simple yet robust": it validates structure and a few
-key invariants, without trying to enforce stylistic preferences.
-
-Rules:
-- YAML must parse.
-- Top-level must be a mapping with key `papers` as a list.
-- Each paper must be a mapping with required keys:
-    - title: non-empty string
-    - authors: non-empty list of strings
-    - link: non-empty string
-    - date: string in YYYY-MM-DD format (basic ISO date)
-    - image: string that is either:
-        - absolute http(s) URL, OR
-        - a basename filename that exists under docs/src/public/images/
-
-We also reject a common footgun:
-- image URLs pointing at the *temporary* bot branch `paper-images/pr-...`.
+Not part of the public API; used in PR checks.
 """
 
 from __future__ import annotations
