@@ -1,0 +1,488 @@
+#!/usr/bin/env python3
+"""Synchronize/clean up images submitted with a paper PR.
+
+This is designed to run in a pull_request_target workflow, *without checking out the PR code*.
+
+Behavior:
+- Detect added image files in the PR under docs/src/public/images.
+- Download the image bytes from the PR head SHA via GitHub API.
+- Resize/compress to a standard size.
+- Create a branch + PR in the docs repository containing the processed images.
+- Comment on the original PR with the new image URLs and suggested edits.
+
+If the PR branch is on the same repository (not a fork), we also attempt to:
+- checkout the PR branch,
+- delete the image files from PySR,
+- update docs/papers.yml image fields to use the absolute URL,
+- push the commit back to the PR branch.
+
+Security notes:
+- Never executes PR-provided code.
+- Uses GitHub API to fetch only the specific image files and (optionally) papers.yml.
+"""
+
+from __future__ import annotations
+
+import base64
+import io
+import os
+import re
+import subprocess
+from dataclasses import dataclass
+from typing import Any
+
+import requests
+import yaml
+from PIL import Image, ImageOps
+
+GITHUB_API = "https://api.github.com"
+
+
+@dataclass
+class PRInfo:
+    number: int
+    base_repo: str
+    head_repo: str
+    head_ref: str
+    head_sha: str
+    is_fork: bool
+
+
+def env(name: str, default: str | None = None) -> str:
+    v = os.environ.get(name, default)
+    if v is None or v == "":
+        raise SystemExit(f"Missing required env var: {name}")
+    return v
+
+
+def gh_request(method: str, url: str, token: str, **kwargs) -> requests.Response:
+    headers = kwargs.pop("headers", {})
+    headers.update(
+        {
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+        }
+    )
+    resp = requests.request(method, url, headers=headers, timeout=60, **kwargs)
+    if resp.status_code >= 400:
+        raise RuntimeError(
+            f"GitHub API error {resp.status_code} for {url}: {resp.text[:500]}"
+        )
+    return resp
+
+
+def get_pr_info(repo: str, pr_number: int, token: str) -> PRInfo:
+    pr = gh_request("GET", f"{GITHUB_API}/repos/{repo}/pulls/{pr_number}", token).json()
+    base_repo = pr["base"]["repo"]["full_name"]
+    head_repo = pr["head"]["repo"]["full_name"]
+    head_ref = pr["head"]["ref"]
+    head_sha = pr["head"]["sha"]
+    is_fork = base_repo.lower() != head_repo.lower()
+    return PRInfo(
+        number=pr_number,
+        base_repo=base_repo,
+        head_repo=head_repo,
+        head_ref=head_ref,
+        head_sha=head_sha,
+        is_fork=is_fork,
+    )
+
+
+def list_pr_files(repo: str, pr_number: int, token: str) -> list[dict[str, Any]]:
+    files: list[dict[str, Any]] = []
+    page = 1
+    while True:
+        resp = gh_request(
+            "GET",
+            f"{GITHUB_API}/repos/{repo}/pulls/{pr_number}/files",
+            token,
+            params={"per_page": 100, "page": page},
+        )
+        batch = resp.json()
+        if not batch:
+            break
+        files.extend(batch)
+        page += 1
+    return files
+
+
+def get_file_bytes_at_ref(repo: str, path: str, ref: str, token: str) -> bytes:
+    resp = gh_request(
+        "GET",
+        f"{GITHUB_API}/repos/{repo}/contents/{path}",
+        token,
+        params={"ref": ref},
+    ).json()
+    if resp.get("encoding") == "base64":
+        return base64.b64decode(resp["content"])
+    # Fallback for large files (may return download_url):
+    if "download_url" in resp and resp["download_url"]:
+        dl = requests.get(resp["download_url"], timeout=60)
+        dl.raise_for_status()
+        return dl.content
+    raise RuntimeError(f"Unable to fetch bytes for {repo}:{path}@{ref}")
+
+
+def resize_compress_image(
+    src: bytes, *, max_width: int, jpeg_quality: int, input_path: str
+) -> tuple[bytes, str]:
+    """Return (processed_bytes, output_ext).
+
+    Policy: always output JPEG (no alpha). Any transparency is flattened to white.
+    """
+
+    with Image.open(io.BytesIO(src)) as im:
+        im = ImageOps.exif_transpose(im)
+
+        # Resize down if needed
+        if im.width > max_width:
+            new_h = round(im.height * (max_width / im.width))
+            im = im.resize((max_width, new_h), Image.Resampling.LANCZOS)
+
+        # JPEG can't do alpha; flatten onto white.
+        if im.mode in {"RGBA", "LA"}:
+            bg = Image.new("RGB", im.size, (255, 255, 255))
+            bg.paste(im, mask=im.split()[-1])
+            im = bg
+        else:
+            im = im.convert("RGB")
+
+        out = io.BytesIO()
+        im.save(
+            out, format="JPEG", quality=jpeg_quality, optimize=True, progressive=True
+        )
+        return out.getvalue(), ".jpg"
+
+
+def create_or_update_file(
+    *, repo: str, path: str, branch: str, message: str, content: bytes, token: str
+) -> None:
+    """Create or update a file in repo on branch."""
+
+    # Check existing file to get sha (for updates)
+    sha: str | None = None
+    try:
+        existing = gh_request(
+            "GET",
+            f"{GITHUB_API}/repos/{repo}/contents/{path}",
+            token,
+            params={"ref": branch},
+        ).json()
+        sha = existing.get("sha")
+    except Exception:
+        sha = None
+
+    payload: dict[str, Any] = {
+        "message": message,
+        "content": base64.b64encode(content).decode("utf-8"),
+        "branch": branch,
+    }
+    if sha:
+        payload["sha"] = sha
+
+    gh_request(
+        "PUT",
+        f"{GITHUB_API}/repos/{repo}/contents/{path}",
+        token,
+        json=payload,
+    )
+
+
+def ensure_branch(repo: str, branch: str, base_branch: str, token: str) -> None:
+    """Ensure branch exists in repo, creating from base_branch if missing."""
+
+    # Does branch exist?
+    r = requests.get(
+        f"{GITHUB_API}/repos/{repo}/git/ref/heads/{branch}",
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+        },
+        timeout=60,
+    )
+    if r.status_code == 200:
+        return
+
+    # Get base sha
+    base = gh_request(
+        "GET", f"{GITHUB_API}/repos/{repo}/git/ref/heads/{base_branch}", token
+    ).json()
+    base_sha = base["object"]["sha"]
+
+    gh_request(
+        "POST",
+        f"{GITHUB_API}/repos/{repo}/git/refs",
+        token,
+        json={"ref": f"refs/heads/{branch}", "sha": base_sha},
+    )
+
+
+def open_pr(
+    *, repo: str, head: str, base: str, title: str, body: str, token: str
+) -> str:
+    """Open a PR. If one already exists for (head->base), return its URL."""
+
+    try:
+        resp = gh_request(
+            "POST",
+            f"{GITHUB_API}/repos/{repo}/pulls",
+            token,
+            json={
+                "title": title,
+                "head": head,
+                "base": base,
+                "body": body,
+                "maintainer_can_modify": True,
+            },
+        ).json()
+        return resp["html_url"]
+    except Exception:
+        # Try to find existing.
+        prs = gh_request(
+            "GET",
+            f"{GITHUB_API}/repos/{repo}/pulls",
+            token,
+            params={"state": "open", "per_page": 100},
+        ).json()
+        for pr in prs:
+            if (
+                pr.get("head", {}).get("ref") == head.split(":")[-1]
+                and pr.get("base", {}).get("ref") == base
+            ):
+                return pr["html_url"]
+        raise
+
+
+def comment_on_pr(repo: str, pr_number: int, token: str, body: str) -> None:
+    gh_request(
+        "POST",
+        f"{GITHUB_API}/repos/{repo}/issues/{pr_number}/comments",
+        token,
+        json={"body": body},
+    )
+
+
+def try_push_cleanup_commit(
+    *, pr: PRInfo, images_to_delete: list[str], papers_yml_new: str | None
+) -> str | None:
+    """If PR is from same repo, push a cleanup commit to the PR branch.
+
+    Returns commit SHA if pushed, else None.
+    """
+
+    if pr.is_fork:
+        return None
+
+    # Fetch and checkout the PR branch.
+    subprocess.check_call(["git", "config", "user.name", "PySR Paper Bot"])
+    subprocess.check_call(["git", "config", "user.email", "actions@github.com"])
+
+    subprocess.check_call(["git", "fetch", "origin", f"{pr.head_ref}:{pr.head_ref}"])
+    subprocess.check_call(["git", "checkout", pr.head_ref])
+
+    changed = False
+
+    for p in images_to_delete:
+        if os.path.exists(p):
+            os.remove(p)
+            changed = True
+
+    if papers_yml_new is not None:
+        with open("docs/papers.yml", "w", encoding="utf-8") as f:
+            f.write(papers_yml_new)
+        changed = True
+
+    if not changed:
+        return None
+
+    subprocess.check_call(["git", "add", "docs/papers.yml"], stdout=subprocess.DEVNULL)
+    for p in images_to_delete:
+        if os.path.exists(p):
+            subprocess.check_call(["git", "add", "-u", p], stdout=subprocess.DEVNULL)
+        else:
+            # add -u will record deletion if it existed.
+            subprocess.check_call(["git", "add", "-u"], stdout=subprocess.DEVNULL)
+
+    subprocess.check_call(
+        [
+            "git",
+            "commit",
+            "-m",
+            "chore(papers): move PR images to docs repo and remove from PySR",
+        ]
+    )
+    subprocess.check_call(["git", "push", "origin", f"HEAD:{pr.head_ref}"])
+
+    sha = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip()
+    return sha
+
+
+def main() -> None:
+    gh_token = env("GH_TOKEN")
+    repo = env("REPO")
+    pr_number = int(env("PR_NUMBER"))
+
+    docs_repo = env("PYSR_DOCS_REPO")
+    docs_token = env("PYSR_DOCS_TOKEN")
+    docs_images_dir = env("PYSR_DOCS_IMAGES_DIR")
+
+    max_width = int(env("MAX_WIDTH", "800"))
+    jpeg_quality = int(env("JPEG_QUALITY", "80"))
+
+    pr = get_pr_info(repo, pr_number, gh_token)
+    files = list_pr_files(repo, pr_number, gh_token)
+
+    # Identify added images (by PR file list) within PySR.
+    image_re = re.compile(r"\.(png|jpe?g|webp)$", re.IGNORECASE)
+    candidate_images: list[str] = []
+    touched_papers_yml = False
+
+    for f in files:
+        filename = f["filename"]
+        status = f["status"]
+        if filename == "docs/papers.yml":
+            touched_papers_yml = True
+        if (
+            filename.startswith("docs/src/public/images/")
+            and image_re.search(filename)
+            and status in {"added", "modified"}
+        ):
+            candidate_images.append(filename)
+
+    if not touched_papers_yml and not candidate_images:
+        # Nothing to do.
+        return
+
+    if not candidate_images:
+        comment_on_pr(
+            repo,
+            pr_number,
+            gh_token,
+            "Paper-image bot: `docs/papers.yml` changed but no images were added under `docs/src/public/images/`. "
+            "If your entry references a local image filename, please add it (or use an absolute `http(s)` URL).",
+        )
+        return
+
+    # Download + process images from PR head sha.
+    processed: list[tuple[str, bytes]] = []  # (basename, bytes)
+    for path in candidate_images:
+        raw = get_file_bytes_at_ref(pr.head_repo, path, pr.head_sha, gh_token)
+        out_bytes, out_ext = resize_compress_image(
+            raw, max_width=max_width, jpeg_quality=jpeg_quality, input_path=path
+        )
+        base = os.path.basename(path)
+        # If our compressor changed ext (e.g., jpeg normalization), reflect that.
+        if out_ext != os.path.splitext(base)[1].lower():
+            base = os.path.splitext(base)[0] + out_ext
+        processed.append((base, out_bytes))
+
+    # Create docs repo branch and commit files via contents API.
+    branch = f"paper-images/pr-{pr_number}"
+
+    # Respect the docs repo's default branch (some repos still use `master`).
+    docs_default_branch = (
+        gh_request("GET", f"{GITHUB_API}/repos/{docs_repo}", docs_token)
+        .json()
+        .get("default_branch", "main")
+    )
+
+    ensure_branch(docs_repo, branch, docs_default_branch, docs_token)
+
+    dst_paths: dict[str, str] = {}
+    for filename, content in processed:
+        dst_path = f"{docs_images_dir}/{filename}".lstrip("/")
+        dst_paths[filename] = dst_path
+        create_or_update_file(
+            repo=docs_repo,
+            path=dst_path,
+            branch=branch,
+            message=f"Add paper image {filename} (from PySR PR #{pr_number})",
+            content=content,
+            token=docs_token,
+        )
+
+    docs_pr_url = open_pr(
+        repo=docs_repo,
+        head=branch,
+        base=docs_default_branch,
+        title=f"Add paper images from PySR PR #{pr_number}",
+        body=(
+            f"Automated upload of paper image(s) from MilesCranmer/PySR PR #{pr_number}.\n\n"
+            f"Source head: {pr.head_repo}@{pr.head_sha}\n"
+            f"Target dir: `{docs_images_dir}`\n"
+        ),
+        token=docs_token,
+    )
+
+    # Construct absolute image URLs to be used in PySR docs.
+    # Prefer raw.githubusercontent.com for stability.
+    urls = {
+        name: f"https://raw.githubusercontent.com/{docs_repo}/{branch}/{dst_paths[name]}"
+        for name, _ in processed
+    }
+
+    # If we can read papers.yml from PR head, propose edits.
+    papers_yml_new: str | None = None
+    try:
+        papers_yml_bytes = get_file_bytes_at_ref(
+            pr.head_repo, "docs/papers.yml", pr.head_sha, gh_token
+        )
+        papers_obj = yaml.safe_load(papers_yml_bytes.decode("utf-8"))
+
+        # Replace any image fields that match basenames we processed (or original names).
+        changed = False
+        for paper in papers_obj.get("papers", []):
+            img = paper.get("image")
+            if not isinstance(img, str):
+                continue
+            # If PR referenced local filename and we uploaded it, replace with url.
+            base = os.path.basename(img)
+            if base in urls and not img.startswith("http"):
+                paper["image"] = urls[base]
+                changed = True
+
+        if changed:
+            papers_yml_new = (
+                "# NOTE: This file was updated by the paper-image bot.\n"
+                + yaml.safe_dump(papers_obj, sort_keys=False, allow_unicode=True)
+            )
+    except Exception:
+        papers_yml_new = None
+
+    pushed_sha = None
+    if papers_yml_new is not None:
+        pushed_sha = try_push_cleanup_commit(
+            pr=pr, images_to_delete=candidate_images, papers_yml_new=papers_yml_new
+        )
+
+    # Comment on the PR with next steps.
+    lines = [
+        "Paper-image bot results:",
+        "",
+        f"- Opened docs PR: {docs_pr_url}",
+        "- Uploaded/resized images:",
+    ]
+    for name in urls:
+        lines.append(f"  - `{name}` → {urls[name]}")
+
+    if pushed_sha:
+        lines += [
+            "",
+            f"- Pushed a cleanup commit to this PR branch: `{pushed_sha}` (deleted local images + updated `docs/papers.yml` to use absolute URLs).",
+        ]
+    else:
+        lines += [
+            "",
+            "I could not push changes back to the PR branch (likely a fork).",
+            "Maintainer options:",
+            "1) Merge the docs PR above, then update `docs/papers.yml` in this PR to set `image:` to the URL(s) above.",
+            "2) Remove the image file(s) from this PR (they don't need to live in PySR once hosted in PySR_Docs).",
+        ]
+
+    comment_on_pr(repo, pr_number, gh_token, "\n".join(lines))
+
+
+if __name__ == "__main__":
+    main()

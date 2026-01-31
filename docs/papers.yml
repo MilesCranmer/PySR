@@ -1,5 +1,15 @@
 # This file stores papers which have used PySR, with
-# information to generate the "Research Showcase"
+# information to generate the "Research Showcase".
+#
+# Images:
+# - Preferred: set `image:` to an absolute URL (http/https).
+# - If you instead add an image file to this repo (under `docs/src/public/images/`),
+#   a maintainer may apply the `paper-image-sync` label on your PR to trigger an
+#   automation that:
+#     1) resizes/compresses the image,
+#     2) opens a PR to MilesCranmer/PySR_Docs with the processed image,
+#     3) updates this PR to reference the hosted URL (only when the branch is in-repo).
+#
 
 papers:
   - title: Discovery of a Planar Black Hole Mass Scaling Relation for Spiral Galaxies
