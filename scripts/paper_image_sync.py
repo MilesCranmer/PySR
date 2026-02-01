@@ -108,12 +108,67 @@ def get_file_bytes_at_ref(repo: str, path: str, ref: str, token: str) -> bytes:
 
 
 def resize_compress_image(
-    src: bytes, *, max_width: int, jpeg_quality: int, input_path: str
+    src: bytes,
+    *,
+    max_width: int,
+    min_width: int,
+    png_compress_level: int,
+    max_bytes: int,
+    quantize_colors: int,
+    input_path: str,
 ) -> tuple[bytes, str]:
     """Return (processed_bytes, output_ext).
 
-    Policy: always output JPEG (no alpha). Any transparency is flattened to white.
+    Policy:
+    - Always output PNG (lossless) and strip alpha.
+    - Any transparency is flattened onto a white background.
+
+    Best-effort size control:
+    1) Try PNG compress_level up to 9 (still lossless).
+    2) If still too large and enabled, try adaptive palette quantization.
+    3) If still too large, iteratively downscale (down to min_width).
+
+    Note: Quantization is technically lossless for flat-color plots/diagrams, but can
+    introduce banding for photographic/gradient-heavy images.
     """
+
+    def save_png(im: Image.Image, *, level: int) -> bytes:
+        out = io.BytesIO()
+        # PNG is lossless; compress_level affects size/time only (0-9).
+        im.save(out, format="PNG", optimize=True, compress_level=level)
+        return out.getvalue()
+
+    def best_lossless(im: Image.Image) -> bytes:
+        best: bytes | None = None
+        for lvl in range(max(0, png_compress_level), 10):
+            b = save_png(im, level=lvl)
+            if best is None or len(b) < len(best):
+                best = b
+            if len(b) <= max_bytes:
+                return b
+        assert best is not None
+        return best
+
+    def best_quantized(im: Image.Image) -> bytes | None:
+        if quantize_colors <= 0:
+            return None
+        best: bytes | None = None
+        # Try a small ladder of palettes (keeps crisp edges for typical plots).
+        for colors in [quantize_colors, 128, 64, 32]:
+            if not (1 <= colors <= 256):
+                continue
+            q = im.quantize(
+                colors=colors,
+                method=Image.Quantize.MEDIANCUT,
+                dither=Image.Dither.NONE,
+            )
+            # Keep as paletted PNG (mode "P") for best size.
+            b = save_png(q, level=9)
+            if best is None or len(b) < len(best):
+                best = b
+            if len(b) <= max_bytes:
+                return b
+        return best
 
     with Image.open(io.BytesIO(src)) as im:
         im = ImageOps.exif_transpose(im)
@@ -123,19 +178,46 @@ def resize_compress_image(
             new_h = round(im.height * (max_width / im.width))
             im = im.resize((max_width, new_h), Image.Resampling.LANCZOS)
 
-        # JPEG can't do alpha; flatten onto white.
-        if im.mode in {"RGBA", "LA"}:
-            bg = Image.new("RGB", im.size, (255, 255, 255))
-            bg.paste(im, mask=im.split()[-1])
-            im = bg
-        else:
-            im = im.convert("RGB")
+        # Normalize to RGBA so we can consistently flatten alpha if present.
+        rgba = im.convert("RGBA")
+        bg = Image.new("RGB", rgba.size, (255, 255, 255))
+        bg.paste(rgba, mask=rgba.split()[-1])
+        im_rgb = bg
 
-        out = io.BytesIO()
-        im.save(
-            out, format="JPEG", quality=jpeg_quality, optimize=True, progressive=True
-        )
-        return out.getvalue(), ".jpg"
+        # 1) lossless compression ladder
+        best = best_lossless(im_rgb)
+        if len(best) <= max_bytes:
+            return best, ".png"
+
+        # 2) quantize (optional)
+        qbest = best_quantized(im_rgb)
+        if qbest is not None and len(qbest) < len(best):
+            best = qbest
+        if len(best) <= max_bytes:
+            return best, ".png"
+
+        # 3) downscale until we hit max_bytes or min_width
+        cur = im_rgb
+        while cur.width > max(min_width, 1):
+            new_w = max(max(min_width, 1), int(cur.width * 0.9))
+            if new_w >= cur.width:
+                break
+            new_h = round(cur.height * (new_w / cur.width))
+            cur = cur.resize((new_w, new_h), Image.Resampling.LANCZOS)
+
+            cand = best_lossless(cur)
+            if len(cand) <= max_bytes:
+                return cand, ".png"
+
+            qcand = best_quantized(cur)
+            if qcand is not None and len(qcand) < len(cand):
+                cand = qcand
+            if len(cand) < len(best):
+                best = cand
+            if len(best) <= max_bytes:
+                return best, ".png"
+
+        return best, ".png"
 
 
 def create_or_update_file(
@@ -311,8 +393,20 @@ def main() -> None:
     docs_token = env("PYSR_DOCS_TOKEN")
     docs_images_dir = env("PYSR_DOCS_IMAGES_DIR")
 
-    max_width = int(env("MAX_WIDTH", "800"))
-    jpeg_quality = int(env("JPEG_QUALITY", "80"))
+    max_width = int(env("MAX_WIDTH", "1200"))
+    min_width = int(env("MIN_WIDTH", "800"))
+    png_compress_level = int(env("PNG_COMPRESS_LEVEL", "6"))
+
+    # Best-effort target size (approximate; PNG is lossless so some images may remain larger).
+    # TARGET_KB takes precedence if set (more ergonomic in workflow files).
+    target_kb = os.environ.get("TARGET_KB", "")
+    if target_kb:
+        max_bytes = int(float(target_kb) * 1000)
+    else:
+        max_bytes = int(env("MAX_BYTES", "300000"))
+
+    # Adaptive palette quantization (0 disables). Helps a lot for plots/diagrams.
+    quantize_colors = int(env("QUANTIZE_COLORS", "256"))
 
     pr = get_pr_info(repo, pr_number, gh_token)
     files = list_pr_files(repo, pr_number, gh_token)
@@ -353,7 +447,13 @@ def main() -> None:
     for path in candidate_images:
         raw = get_file_bytes_at_ref(pr.head_repo, path, pr.head_sha, gh_token)
         out_bytes, out_ext = resize_compress_image(
-            raw, max_width=max_width, jpeg_quality=jpeg_quality, input_path=path
+            raw,
+            max_width=max_width,
+            min_width=min_width,
+            png_compress_level=png_compress_level,
+            max_bytes=max_bytes,
+            quantize_colors=quantize_colors,
+            input_path=path,
         )
         base = os.path.basename(path)
         # If our compressor changed ext (e.g., jpeg normalization), reflect that.
@@ -405,6 +505,7 @@ def main() -> None:
         name: f"https://raw.githubusercontent.com/{docs_repo}/{branch}/{dst_paths[name]}"
         for name, _ in processed
     }
+    stem_to_uploaded_name = {os.path.splitext(name)[0]: name for name, _ in processed}
 
     # If we can read papers.yml from PR head, propose edits.
     papers_yml_new: str | None = None
@@ -422,8 +523,19 @@ def main() -> None:
                 continue
             # If PR referenced local filename and we uploaded it, replace with url.
             base = os.path.basename(img)
-            if base in urls and not img.startswith("http"):
+            if img.startswith("http"):
+                continue
+
+            if base in urls:
                 paper["image"] = urls[base]
+                changed = True
+                continue
+
+            # If the PR referenced e.g. foo.jpg but we normalized to foo.png,
+            # still update the reference.
+            stem = os.path.splitext(base)[0]
+            if stem in stem_to_uploaded_name:
+                paper["image"] = urls[stem_to_uploaded_name[stem]]
                 changed = True
 
         if changed:
