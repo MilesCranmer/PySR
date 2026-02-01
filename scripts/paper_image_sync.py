@@ -93,6 +93,34 @@ def list_pr_files(repo: str, pr_number: int, token: str) -> list[dict[str, Any]]
     return files
 
 
+def pr_has_existing_bot_comment(repo: str, pr_number: int, token: str) -> bool:
+    """Return True if the paper-image bot has already commented on this PR.
+
+    This is used to avoid posting a confusing warning when a user has already
+    synced images to the docs repo and then deletes the local image files from
+    their PR (leaving only a `docs/papers.yml` edit pointing to URLs).
+    """
+
+    page = 1
+    while True:
+        resp = gh_request(
+            "GET",
+            f"{GITHUB_API}/repos/{repo}/issues/{pr_number}/comments",
+            token,
+            params={"per_page": 100, "page": page},
+        )
+        comments = resp.json()
+        if not comments:
+            return False
+
+        for c in comments:
+            body = c.get("body") or ""
+            if COMMENT_MARKER in body:
+                return True
+
+        page += 1
+
+
 def get_file_bytes_at_ref(repo: str, path: str, ref: str, token: str) -> bytes:
     resp = gh_request(
         "GET",
@@ -448,13 +476,17 @@ def main() -> None:
         return
 
     if not candidate_images:
-        comment_on_pr(
-            repo,
-            pr_number,
-            gh_token,
-            "Paper-image bot: `docs/papers.yml` changed but no images were added under `docs/src/public/images/`. "
-            "If your entry references a local image filename, please add it (or use an absolute `http(s)` URL).",
-        )
+        # Common expected case: images were synced in a prior run and the author
+        # removed the local image files from their PR (keeping only URL updates in
+        # `docs/papers.yml`). In that case, don't post a confusing warning.
+        if not pr_has_existing_bot_comment(repo, pr_number, gh_token):
+            comment_on_pr(
+                repo,
+                pr_number,
+                gh_token,
+                "Paper-image bot: `docs/papers.yml` changed but no images were added under `docs/src/public/images/`. "
+                "If your entry references a local image filename, please add it (or use an absolute `http(s)` URL).",
+            )
         return
 
     # Download + process images from PR head sha.
