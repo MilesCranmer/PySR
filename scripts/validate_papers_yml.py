@@ -18,10 +18,9 @@ IMAGES_DIR = Path("docs/src/public/images")
 
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 IMAGE_EXT_RE = re.compile(r"\.(png|jpe?g|webp)$", re.IGNORECASE)
-TEMP_BOT_BRANCH_RE = re.compile(r"/paper-images/pr-\d+(/|$)")
 ALLOWED_DOCS_URL_RE = re.compile(
     r"^https?://raw\.githubusercontent\.com/MilesCranmer/PySR_Docs/(?:"
-    r"master|main|refs/heads/master|refs/heads/main|[0-9a-f]{40}"
+    r"master|main|[0-9a-f]{40}|refs/heads/[^\s]+|paper-images/pr-\d+"
     r")/images/[^\s]+$",
     re.IGNORECASE,
 )
@@ -39,6 +38,7 @@ def is_nonempty_str(x: object) -> bool:
 def main() -> None:
     if not PAPERS_PATH.exists():
         fail(f"Missing {PAPERS_PATH}")
+
 
     raw = PAPERS_PATH.read_text(encoding="utf-8")
 
@@ -102,13 +102,9 @@ def main() -> None:
                 # We expect authors to upload an image with the PR. URLs are typically
                 # only used after a maintainer moves images to PySR_Docs.
                 # Allow only the stable raw.githubusercontent.com location in PySR_Docs.
-                if TEMP_BOT_BRANCH_RE.search(image_s):
+                if not ALLOWED_DOCS_URL_RE.match(image_s):
                     errors.append(
-                        f"{prefix}.image: points to temporary bot branch URL; use a local uploaded image path (preferred)"
-                    )
-                elif not ALLOWED_DOCS_URL_RE.match(image_s):
-                    errors.append(
-                        f"{prefix}.image: URL must be the stable PySR_Docs raw URL (or upload an image in this PR)"
+                        f"{prefix}.image: URL must be a raw.githubusercontent.com URL into MilesCranmer/PySR_Docs under /images/ (or upload an image in this PR)"
                     )
             else:
                 # Must be a basename only (no paths)
