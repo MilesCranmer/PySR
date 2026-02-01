@@ -67,14 +67,25 @@ jobs:
         run: |
           python scripts/paper_image_sync.py
 
+      - name: Check for paper-image bot comment body
+        id: comment-body
+        run: |
+          if [ -f paper-image-bot-comment.md ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Find existing paper-image bot comment
         id: find-comment
+        if: steps.comment-body.outputs.exists == 'true'
         uses: peter-evans/find-comment@v3
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body-includes: "<!-- pysr-paper-image-bot -->"
 
       - name: Create or update paper-image bot comment
+        if: steps.comment-body.outputs.exists == 'true'
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.pull_request.number }}
