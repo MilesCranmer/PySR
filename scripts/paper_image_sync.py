@@ -20,6 +20,9 @@ from PIL import Image, ImageOps
 
 GITHUB_API = "https://api.github.com"
 
+# Unique marker used to identify the paper-image bot comment for updating.
+COMMENT_MARKER = "<!-- pysr-paper-image-bot -->"
+
 
 @dataclass
 class PRInfo:
@@ -321,6 +324,18 @@ def open_pr(
 
 
 def comment_on_pr(repo: str, pr_number: int, token: str, body: str) -> None:
+    # Prefix a marker so the workflow can find and update this comment reliably.
+    if COMMENT_MARKER not in body:
+        body = f"{COMMENT_MARKER}\n{body}"
+
+    # If asked, write the comment to a file instead of posting (so the workflow can
+    # create-or-update the PR comment without spamming new ones).
+    out_path = os.environ.get("COMMENT_BODY_PATH", "").strip()
+    if out_path:
+        with open(out_path, "w", encoding="utf-8") as f:
+            f.write(body.rstrip() + "\n")
+        return
+
     gh_request(
         "POST",
         f"{GITHUB_API}/repos/{repo}/issues/{pr_number}/comments",
