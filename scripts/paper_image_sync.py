@@ -20,6 +20,9 @@ from PIL import Image, ImageOps
 
 GITHUB_API = "https://api.github.com"
 
+# Unique marker used to identify the paper-image bot comment for updating.
+COMMENT_MARKER = "<!-- pysr-paper-image-bot -->"
+
 
 @dataclass
 class PRInfo:
@@ -88,6 +91,34 @@ def list_pr_files(repo: str, pr_number: int, token: str) -> list[dict[str, Any]]
         files.extend(batch)
         page += 1
     return files
+
+
+def pr_has_existing_bot_comment(repo: str, pr_number: int, token: str) -> bool:
+    """Return True if the paper-image bot has already commented on this PR.
+
+    This is used to avoid posting a confusing warning when a user has already
+    synced images to the docs repo and then deletes the local image files from
+    their PR (leaving only a `docs/papers.yml` edit pointing to URLs).
+    """
+
+    page = 1
+    while True:
+        resp = gh_request(
+            "GET",
+            f"{GITHUB_API}/repos/{repo}/issues/{pr_number}/comments",
+            token,
+            params={"per_page": 100, "page": page},
+        )
+        comments = resp.json()
+        if not comments:
+            return False
+
+        for c in comments:
+            body = c.get("body") or ""
+            if COMMENT_MARKER in body:
+                return True
+
+        page += 1
 
 
 def get_file_bytes_at_ref(repo: str, path: str, ref: str, token: str) -> bytes:
@@ -222,8 +253,11 @@ def resize_compress_image(
 
 def create_or_update_file(
     *, repo: str, path: str, branch: str, message: str, content: bytes, token: str
-) -> None:
-    """Create or update a file in repo on branch."""
+) -> str:
+    """Create or update a file in repo on branch.
+
+    Returns the commit SHA created by the contents API.
+    """
 
     # Check existing file to get sha (for updates)
     sha: str | None = None
@@ -246,12 +280,17 @@ def create_or_update_file(
     if sha:
         payload["sha"] = sha
 
-    gh_request(
+    resp = gh_request(
         "PUT",
         f"{GITHUB_API}/repos/{repo}/contents/{path}",
         token,
         json=payload,
-    )
+    ).json()
+
+    commit_sha = (resp.get("commit") or {}).get("sha")
+    if not commit_sha:
+        raise RuntimeError(f"Failed to get commit SHA after updating {repo}:{path}")
+    return commit_sha
 
 
 def ensure_branch(repo: str, branch: str, base_branch: str, token: str) -> None:
@@ -321,6 +360,18 @@ def open_pr(
 
 
 def comment_on_pr(repo: str, pr_number: int, token: str, body: str) -> None:
+    # Prefix a marker so the workflow can find and update this comment reliably.
+    if COMMENT_MARKER not in body:
+        body = f"{COMMENT_MARKER}\n{body}"
+
+    # If asked, write the comment to a file instead of posting (so the workflow can
+    # create-or-update the PR comment without spamming new ones).
+    out_path = os.environ.get("COMMENT_BODY_PATH", "").strip()
+    if out_path:
+        with open(out_path, "w", encoding="utf-8") as f:
+            f.write(body.rstrip() + "\n")
+        return
+
     gh_request(
         "POST",
         f"{GITHUB_API}/repos/{repo}/issues/{pr_number}/comments",
@@ -433,13 +484,17 @@ def main() -> None:
         return
 
     if not candidate_images:
-        comment_on_pr(
-            repo,
-            pr_number,
-            gh_token,
-            "Paper-image bot: `docs/papers.yml` changed but no images were added under `docs/src/public/images/`. "
-            "If your entry references a local image filename, please add it (or use an absolute `http(s)` URL).",
-        )
+        # Common expected case: images were synced in a prior run and the author
+        # removed the local image files from their PR (keeping only URL updates in
+        # `docs/papers.yml`). In that case, don't post a confusing warning.
+        if not pr_has_existing_bot_comment(repo, pr_number, gh_token):
+            comment_on_pr(
+                repo,
+                pr_number,
+                gh_token,
+                "Paper-image bot: `docs/papers.yml` changed but no images were added under `docs/src/public/images/`. "
+                "If your entry references a local image filename, please add it (or use an absolute `http(s)` URL).",
+            )
         return
 
     # Download + process images from PR head sha.
@@ -474,10 +529,14 @@ def main() -> None:
     ensure_branch(docs_repo, branch, docs_default_branch, docs_token)
 
     dst_paths: dict[str, str] = {}
+    # Use a commit-SHA raw URL rather than a branch URL so that:
+    # - CI validation can accept it immediately, and
+    # - the link remains stable regardless of whether the branch is deleted/renamed.
+    docs_images_commit: str | None = None
     for filename, content in processed:
         dst_path = f"{docs_images_dir}/{filename}".lstrip("/")
         dst_paths[filename] = dst_path
-        create_or_update_file(
+        docs_images_commit = create_or_update_file(
             repo=docs_repo,
             path=dst_path,
             branch=branch,
@@ -500,9 +559,11 @@ def main() -> None:
     )
 
     # Construct absolute image URLs to be used in PySR docs.
-    # Prefer raw.githubusercontent.com for stability.
+    # Use a commit SHA rather than a branch name so the URL is stable and passes
+    # docs/papers.yml validation immediately.
+    assert docs_images_commit is not None
     urls = {
-        name: f"https://raw.githubusercontent.com/{docs_repo}/{branch}/{dst_paths[name]}"
+        name: f"https://raw.githubusercontent.com/{docs_repo}/{docs_images_commit}/{dst_paths[name]}"
         for name, _ in processed
     }
     stem_to_uploaded_name = {os.path.splitext(name)[0]: name for name, _ in processed}

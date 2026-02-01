@@ -43,6 +43,10 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
 
+          # Write the would-be PR comment body to this file, so we can update an
+          # existing comment (instead of creating a new one on every run).
+          COMMENT_BODY_PATH: paper-image-bot-comment.md
+
           # Token with permissions to push a branch + open PR in the docs repo.
           # Create as a fine-grained PAT or GitHub App token.
           PYSR_DOCS_TOKEN: ${{ secrets.PYSR_DOCS_TOKEN }}
@@ -62,3 +66,28 @@ jobs:
           QUANTIZE_COLORS: "256"
         run: |
           python scripts/paper_image_sync.py
+
+      - name: Check for paper-image bot comment body
+        id: comment-body
+        run: |
+          if [ -f paper-image-bot-comment.md ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Find existing paper-image bot comment
+        id: find-comment
+        if: steps.comment-body.outputs.exists == 'true'
+        uses: peter-evans/find-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-includes: "<!-- pysr-paper-image-bot -->"
+
+      - name: Create or update paper-image bot comment
+        if: steps.comment-body.outputs.exists == 'true'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          body-path: paper-image-bot-comment.md
