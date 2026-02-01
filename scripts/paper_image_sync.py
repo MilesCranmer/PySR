@@ -220,7 +220,6 @@ def resize_compress_image(
         return best, ".png"
 
 
-
 def create_or_update_file(
     *, repo: str, path: str, branch: str, message: str, content: bytes, token: str
 ) -> None:
@@ -506,10 +505,7 @@ def main() -> None:
         name: f"https://raw.githubusercontent.com/{docs_repo}/{branch}/{dst_paths[name]}"
         for name, _ in processed
     }
-    stem_to_uploaded_name = {
-        os.path.splitext(name)[0]: name
-        for name, _ in processed
-    }
+    stem_to_uploaded_name = {os.path.splitext(name)[0]: name for name, _ in processed}
 
     # If we can read papers.yml from PR head, propose edits.
     papers_yml_new: str | None = None
