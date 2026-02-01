@@ -1984,7 +1984,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 raise ValueError(
                     "To use cluster managers, you must set `parallelism='multiprocessing'`."
                 )
-            cluster_manager = _load_cluster_manager(cluster_manager)
 
         # TODO(mcranmer): These functions should be part of this class.
         operators = _maybe_create_inline_operators(
@@ -2063,6 +2062,17 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             cluster_manager=cluster_manager,
             logger_spec=self.logger_spec,
         )
+
+        if cluster_manager is not None:
+            active_project = jl.seval("Base.active_project()")
+            if isinstance(active_project, str) and len(active_project) > 0:
+                # `ClusterManagers.addprocs_slurm` launches new Julia workers via `srun`.
+                # The project (environment) is propagated via `JULIA_PROJECT` rather
+                # than a `--project=...` flag, so ensure it is set.
+                os.environ.setdefault(
+                    "JULIA_PROJECT", str(Path(active_project).resolve().parent)
+                )
+            cluster_manager = _load_cluster_manager(cluster_manager)
 
         if self.autodiff_backend is not None:
             autodiff_backend = jl.Symbol(self.autodiff_backend)

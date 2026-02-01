@@ -32,8 +32,8 @@ jobs:
       matrix:
         target: [primary, secondary]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -55,6 +55,8 @@ jobs:
         run: npm run gen:params && npm run gen:api && npm run gen:index && npm run gen:papers
         working-directory: docs
       - name: Deploy
+        # Fork PRs don't receive repository secrets; only deploy on push/tag runs.
+        if: github.event_name != 'pull_request'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DAMTP_DEPLOY_KEY: ${{ secrets.DAMTP_DEPLOY_KEY }}
