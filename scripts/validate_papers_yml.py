@@ -39,7 +39,6 @@ def main() -> None:
     if not PAPERS_PATH.exists():
         fail(f"Missing {PAPERS_PATH}")
 
-
     raw = PAPERS_PATH.read_text(encoding="utf-8")
 
     try:
