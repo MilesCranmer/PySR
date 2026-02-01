@@ -253,8 +253,11 @@ def resize_compress_image(
 
 def create_or_update_file(
     *, repo: str, path: str, branch: str, message: str, content: bytes, token: str
-) -> None:
-    """Create or update a file in repo on branch."""
+) -> str:
+    """Create or update a file in repo on branch.
+
+    Returns the commit SHA created by the contents API.
+    """
 
     # Check existing file to get sha (for updates)
     sha: str | None = None
@@ -277,12 +280,17 @@ def create_or_update_file(
     if sha:
         payload["sha"] = sha
 
-    gh_request(
+    resp = gh_request(
         "PUT",
         f"{GITHUB_API}/repos/{repo}/contents/{path}",
         token,
         json=payload,
-    )
+    ).json()
+
+    commit_sha = (resp.get("commit") or {}).get("sha")
+    if not commit_sha:
+        raise RuntimeError(f"Failed to get commit SHA after updating {repo}:{path}")
+    return commit_sha
 
 
 def ensure_branch(repo: str, branch: str, base_branch: str, token: str) -> None:
@@ -521,10 +529,14 @@ def main() -> None:
     ensure_branch(docs_repo, branch, docs_default_branch, docs_token)
 
     dst_paths: dict[str, str] = {}
+    # Use a commit-SHA raw URL rather than a branch URL so that:
+    # - CI validation can accept it immediately, and
+    # - the link remains stable regardless of whether the branch is deleted/renamed.
+    docs_images_commit: str | None = None
     for filename, content in processed:
         dst_path = f"{docs_images_dir}/{filename}".lstrip("/")
         dst_paths[filename] = dst_path
-        create_or_update_file(
+        docs_images_commit = create_or_update_file(
             repo=docs_repo,
             path=dst_path,
             branch=branch,
@@ -547,9 +559,11 @@ def main() -> None:
     )
 
     # Construct absolute image URLs to be used in PySR docs.
-    # Prefer raw.githubusercontent.com for stability.
+    # Use a commit SHA rather than a branch name so the URL is stable and passes
+    # docs/papers.yml validation immediately.
+    assert docs_images_commit is not None
     urls = {
-        name: f"https://raw.githubusercontent.com/{docs_repo}/{branch}/{dst_paths[name]}"
+        name: f"https://raw.githubusercontent.com/{docs_repo}/{docs_images_commit}/{dst_paths[name]}"
         for name, _ in processed
     }
     stem_to_uploaded_name = {os.path.splitext(name)[0]: name for name, _ in processed}

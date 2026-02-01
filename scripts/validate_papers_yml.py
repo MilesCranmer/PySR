@@ -20,7 +20,9 @@ DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 IMAGE_EXT_RE = re.compile(r"\.(png|jpe?g|webp)$", re.IGNORECASE)
 TEMP_BOT_BRANCH_RE = re.compile(r"/paper-images/pr-\d+(/|$)")
 ALLOWED_DOCS_URL_RE = re.compile(
-    r"^https?://raw\.githubusercontent\.com/MilesCranmer/PySR_Docs/(master|refs/heads/master)/images/[^\s]+$",
+    r"^https?://raw\.githubusercontent\.com/MilesCranmer/PySR_Docs/(?:"
+    r"master|main|refs/heads/master|refs/heads/main|[0-9a-f]{40}"
+    r")/images/[^\s]+$",
     re.IGNORECASE,
 )
 
