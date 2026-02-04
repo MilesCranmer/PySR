@@ -5,7 +5,8 @@ on:
     - cron: "0 10 * * *"
   push:
     branches:
-      - "**"
+      - "master"
+      - "release-*"
     tags:
       - "v*.*.*"
   workflow_dispatch:

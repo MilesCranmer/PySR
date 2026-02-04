@@ -116,7 +116,9 @@ jobs:
         shell: bash -l {0}
     strategy:
       matrix:
-        python-version: ['3']
+        # NOTE: pin to a known-supported CPython; `3` can resolve to free-threaded
+        # builds (e.g. 3.14t) which PythonCall.jl doesn't support.
+        python-version: ['3.13']
         os: ['ubuntu-latest']
 
     steps:
