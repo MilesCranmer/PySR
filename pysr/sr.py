@@ -1457,7 +1457,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 pysr_logger.debug(f"Error checkpointing model: {e}")
         if checkpoint_succeeded:
             self.get_checkpoint_metadata_filename().write_text(
-                json.dumps(_get_expected_checkpoint_versions(), indent=2, sort_keys=True)
+                json.dumps(
+                    _get_expected_checkpoint_versions(), indent=2, sort_keys=True
+                )
             )
         self.show_pickle_warnings_ = True
 
