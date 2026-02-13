@@ -2560,6 +2560,21 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 # be correctly filtered with self.selection_mask_
                 X = X[X.columns[self.selection_mask_]]
             X.columns = self.feature_names_in_
+
+        # During fit, we replace spaces in DataFrame column names with
+        # underscores. Apply the same normalization here to avoid confusing
+        # NaNs introduced by the reindex below.
+        if pd.api.types.is_object_dtype(X.columns):
+            cols_str = X.columns.astype(str)
+            if cols_str.str.contains(" ").any():
+                X = X.copy()
+                X.columns = cols_str.str.replace(" ", "_")
+                warnings.warn(
+                    "Spaces in DataFrame column names are not supported. "
+                    "Spaces have been replaced with underscores. \n"
+                    "Please rename the columns to valid names."
+                )
+
         # Without feature information, CallableEquation/lambda_format equations
         # require that the column order of X matches that of the X used during
         # the fitting process. _validate_data removes this feature information

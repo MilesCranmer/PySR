@@ -1230,6 +1230,36 @@ class TestMiscellaneous(unittest.TestCase):
         # Check that the same operator mapping was used (1/x for inv)
         self.assertEqual(original_result, 0.5 + 3.0)  # 1/2 + 3 = 3.5
 
+    def test_predict_replaces_spaces_in_dataframe_columns(self):
+        model = PySRRegressor()
+
+        # Minimal fitted state for predict(): avoid running the Julia backend.
+        model.nout_ = 1
+        model.n_features_in_ = 2
+        model.selection_mask_ = None
+        model.feature_names_in_ = np.array(["a_b", "c_d"])
+        model.display_feature_names_in_ = model.feature_names_in_
+        model.equations_ = pd.DataFrame(
+            [
+                {
+                    "lambda_format": lambda X, *args: X[:, 0] + X[:, 1],
+                    "loss": 0.0,
+                    "complexity": 1,
+                }
+            ]
+        )
+
+        X = pd.DataFrame({"a b": [1.0, 2.0], "c d": [3.0, 4.0]})
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            y = model.predict(X)
+
+        np.testing.assert_allclose(y, np.array([4.0, 6.0]))
+        assert any(
+            "Spaces in DataFrame column names are not supported" in str(wi.message)
+            for wi in w
+        )
+
     def test_pickle_with_temp_equation_file(self):
         """If we have a temporary equation file, unpickle the estimator."""
         model = PySRRegressor(
