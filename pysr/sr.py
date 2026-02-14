@@ -235,6 +235,41 @@ def _check_assertions(
             )
 
 
+
+def _validate_custom_full_objective(custom_full_objective: AnyValue) -> None:
+    """Validate that a Julia `loss_function` looks like a full objective.
+
+    We want a callable that can accept (tree, dataset, options). If it looks like
+    an elementwise loss (prediction, target), raise a short Python ValueError
+    instead of a long Julia MethodError.
+    """
+
+    has_custom_full_objective = jl.seval("x -> x !== nothing")(custom_full_objective)
+    if not has_custom_full_objective:
+        return
+
+    if not jl_is_function(custom_full_objective):
+        raise ValueError("`loss_function` must evaluate to a callable Julia function.")
+
+    methods = jl.seval("f -> collect(methods(f))")(custom_full_objective)
+
+    accepts_three_args = any(
+        (not bool(m.isva) and int(m.nargs) == 4) or (bool(m.isva) and int(m.nargs) <= 4)
+        for m in methods
+    )
+    appears_elementwise = any(
+        (not bool(m.isva) and int(m.nargs) == 3) or (bool(m.isva) and int(m.nargs) <= 3)
+        for m in methods
+    )
+
+    if not accepts_three_args and appears_elementwise:
+        raise ValueError(
+            "You likely passed an elementwise loss via `loss_function`. "
+            "Use `elementwise_loss=...` instead (or `loss_function_expression` "
+            "for `TemplateExpressionSpec`). Example: "
+            '`elementwise_loss="loss(prediction, target) = (prediction - target)^2"`.'
+        )
+
 def _validate_export_mappings(extra_jax_mappings, extra_torch_mappings):
     # It is expected extra_jax/torch_mappings will be updated after fit.
     # Thus, validation is performed here instead of in _validate_init_params
@@ -270,40 +305,6 @@ class _DynamicallySetParams:
     progress: bool
     warmup_maxsize_by: float
 
-
-def _validate_custom_full_objective(custom_full_objective: AnyValue) -> None:
-    """Validate that a Julia `loss_function` looks like a full objective.
-
-    We want a callable that can accept (tree, dataset, options). If it looks like
-    an elementwise loss (prediction, target), raise a short Python ValueError
-    instead of a long Julia MethodError.
-    """
-
-    has_custom_full_objective = jl.seval("x -> x !== nothing")(custom_full_objective)
-    if not has_custom_full_objective:
-        return
-
-    if not jl_is_function(custom_full_objective):
-        raise ValueError("`loss_function` must evaluate to a callable Julia function.")
-
-    methods = jl.seval("f -> collect(methods(f))")(custom_full_objective)
-
-    accepts_three_args = any(
-        (not bool(m.isva) and int(m.nargs) == 4) or (bool(m.isva) and int(m.nargs) <= 4)
-        for m in methods
-    )
-    appears_elementwise = any(
-        (not bool(m.isva) and int(m.nargs) == 3) or (bool(m.isva) and int(m.nargs) <= 3)
-        for m in methods
-    )
-
-    if not accepts_three_args and appears_elementwise:
-        raise ValueError(
-            "You likely passed an elementwise loss via `loss_function`. "
-            "Use `elementwise_loss=...` instead (or `loss_function_expression` "
-            "for `TemplateExpressionSpec`). Example: "
-            '`elementwise_loss="loss(prediction, target) = (prediction - target)^2"`.'
-        )
 
 
 class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
