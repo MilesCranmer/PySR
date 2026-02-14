@@ -235,8 +235,6 @@ def _check_assertions(
             )
 
 
-
-
 def _validate_elementwise_loss(custom_loss: Any) -> None:
     """Validate that a Julia `elementwise_loss` is callable with 2 or 3 args.
 
