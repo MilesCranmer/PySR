@@ -200,6 +200,43 @@ class TestPipeline(unittest.TestCase):
             model.fit(X, y)
         self.assertIn("elementwise_loss", str(cm.exception))
 
+    def test_loss_function_noncallable_errors_early(self):
+        model = PySRRegressor(
+            niterations=1,
+            populations=1,
+            procs=0,
+            progress=False,
+            verbosity=0,
+            temp_equation_file=True,
+            binary_operators=["+"],
+            loss_function="1.0",
+        )
+        X = np.array([[0.0], [1.0]])
+        y = np.array([0.0, 1.0])
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, y)
+        self.assertIn("callable", str(cm.exception))
+
+    def test_loss_function_valid_full_objective_runs(self):
+        model = PySRRegressor(
+            niterations=1,
+            populations=1,
+            procs=0,
+            progress=False,
+            verbosity=0,
+            temp_equation_file=True,
+            binary_operators=["+"],
+            loss_function="""
+            begin
+                loss(tree, dataset, options) = zero(eltype(dataset.y))
+                loss
+            end
+            """,
+        )
+        X = np.array([[0.0], [1.0]])
+        y = np.array([0.0, 1.0])
+        model.fit(X, y)
+
     def test_operator_conflict_error(self):
         regressor = PySRRegressor(
             operators={1: ["sin"]},
