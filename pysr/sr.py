@@ -2560,8 +2560,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             X.columns = self.feature_names_in_
 
         # During fit, we replace spaces in DataFrame column names with
-        # underscores. Apply the same normalization here to avoid confusing
-        # NaNs introduced by the reindex below.
+        # underscores. Apply the same normalization here.
         cols_str = X.columns.astype(str)
         if cols_str.str.contains(" ").any():
             X = X.copy()
