@@ -1522,6 +1522,32 @@ class TestHelpMessages(unittest.TestCase):
             self.assertIn("Checkpoint version metadata mismatch", str(cm.exception))
             self.assertIn("pysr_version", str(cm.exception))
 
+    def test_from_file_checkpoint_without_metadata_falls_back_to_unpickling(self):
+        """Backward-compat: older checkpoints won't have metadata; we should not error early."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            run_dir = Path(tmpdir) / "run"
+            run_dir.mkdir()
+            (run_dir / "checkpoint.pkl").write_bytes(b"this is not a pickle file")
+
+            with self.assertRaises(Exception) as cm:
+                PySRRegressor.from_file(run_directory=run_dir)
+
+            # The error should come from unpickling, not our metadata guardrails.
+            self.assertNotIn("Checkpoint version metadata mismatch", str(cm.exception))
+            self.assertNotIn("Checkpoint metadata file", str(cm.exception))
+
+    def test_from_file_checkpoint_invalid_metadata_json_raises_clear_error(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            run_dir = Path(tmpdir) / "run"
+            run_dir.mkdir()
+            (run_dir / "checkpoint.pkl").write_bytes(b"this is not a pickle file")
+            (run_dir / "checkpoint_metadata.json").write_text("{")
+
+            with self.assertRaises(ValueError) as cm:
+                PySRRegressor.from_file(run_directory=run_dir)
+
+            self.assertIn("not valid JSON", str(cm.exception))
+
     def test_checkpoint_writes_version_metadata(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             model = PySRRegressor()
