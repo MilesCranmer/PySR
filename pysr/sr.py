@@ -235,7 +235,16 @@ def _check_assertions(
             )
 
 
-def _validate_elementwise_loss(custom_loss: Any) -> None:
+
+
+def _jl_is_nothing(value):
+    try:
+        return bool(jl.isnothing(value))
+    except Exception:
+        return False
+
+
+def _validate_elementwise_loss(custom_loss) -> None:
     """Validate that a Julia `elementwise_loss` is callable with 2 or 3 args.
 
     Expected signatures:
@@ -245,11 +254,8 @@ def _validate_elementwise_loss(custom_loss: Any) -> None:
 
     # This can be either a LossFunctions.jl object (e.g. `L2DistLoss()`) or a Julia function.
     # Only validate arity when the evaluated object is actually a function.
-    try:
-        if jl.isnothing(custom_loss):
-            return
-    except Exception:
-        pass
+    if _jl_is_nothing(custom_loss):
+        return
 
     if not jl_is_function(custom_loss):
         return
@@ -268,22 +274,21 @@ def _validate_elementwise_loss(custom_loss: Any) -> None:
         )
 
 
-def _validate_custom_full_objective(custom_full_objective: Any) -> None:
-    """Validate that a Julia `loss_function` looks like a full objective.
+def _validate_custom_objective(
+    custom_objective,
+    *,
+    knob,
+    signature,
+    elementwise_alternative,
+    other_alternative=None,
+) -> None:
+    if _jl_is_nothing(custom_objective):
+        return
 
-    Expected signature: (tree, dataset, options).
-    """
+    if not jl_is_function(custom_objective):
+        raise ValueError(f"`{knob}` must evaluate to a callable Julia function.")
 
-    try:
-        if jl.isnothing(custom_full_objective):
-            return
-    except Exception:
-        pass
-
-    if not jl_is_function(custom_full_objective):
-        raise ValueError("`loss_function` must evaluate to a callable Julia function.")
-
-    methods = jl.collect(jl.methods(custom_full_objective))
+    methods = jl.collect(jl.methods(custom_objective))
     accepts_three_args = any(
         (not bool(m.isva) and int(m.nargs) == 4) or (bool(m.isva) and int(m.nargs) <= 4)
         for m in methods
@@ -294,56 +299,35 @@ def _validate_custom_full_objective(custom_full_objective: Any) -> None:
     )
 
     if not accepts_three_args and appears_elementwise:
-        raise ValueError(
-            "`loss_function` must have signature (tree, dataset, options). "
-            "If you intended an elementwise loss, use `elementwise_loss`. "
-            "If you intended an objective that receives the full expression object, "
-            "use `loss_function_expression`."
+        msg = (
+            f"`{knob}` must have signature {signature}. "
+            f"If you intended an elementwise loss, use `{elementwise_alternative}`."
         )
+        if other_alternative is not None:
+            msg += f" If you intended the other full-objective mode, use `{other_alternative}`."
+        raise ValueError(msg)
 
     if not accepts_three_args:
-        raise ValueError(
-            "`loss_function` must have signature (tree, dataset, options)."
-        )
+        raise ValueError(f"`{knob}` must have signature {signature}.")
 
 
-def _validate_custom_expression_objective(custom_loss_expression: Any) -> None:
-    """Validate that a Julia `loss_function_expression` looks like a full objective.
-
-    Expected signature: (expression, dataset, options).
-    """
-
-    try:
-        if jl.isnothing(custom_loss_expression):
-            return
-    except Exception:
-        pass
-
-    if not jl_is_function(custom_loss_expression):
-        raise ValueError(
-            "`loss_function_expression` must evaluate to a callable Julia function."
-        )
-
-    methods = jl.collect(jl.methods(custom_loss_expression))
-    accepts_three_args = any(
-        (not bool(m.isva) and int(m.nargs) == 4) or (bool(m.isva) and int(m.nargs) <= 4)
-        for m in methods
-    )
-    appears_elementwise = any(
-        (not bool(m.isva) and int(m.nargs) == 3) or (bool(m.isva) and int(m.nargs) <= 3)
-        for m in methods
+def _validate_custom_full_objective(custom_full_objective) -> None:
+    _validate_custom_objective(
+        custom_full_objective,
+        knob="loss_function",
+        signature="(tree, dataset, options)",
+        elementwise_alternative="elementwise_loss",
+        other_alternative="loss_function_expression",
     )
 
-    if not accepts_three_args and appears_elementwise:
-        raise ValueError(
-            "`loss_function_expression` must have signature (expression, dataset, options). "
-            "If you intended an elementwise loss, use `elementwise_loss`."
-        )
 
-    if not accepts_three_args:
-        raise ValueError(
-            "`loss_function_expression` must have signature (expression, dataset, options)."
-        )
+def _validate_custom_expression_objective(custom_loss_expression) -> None:
+    _validate_custom_objective(
+        custom_loss_expression,
+        knob="loss_function_expression",
+        signature="(expression, dataset, options)",
+        elementwise_alternative="elementwise_loss",
+    )
 
 
 def _validate_export_mappings(extra_jax_mappings, extra_torch_mappings):
@@ -490,13 +474,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Default is `None`.
     elementwise_loss : str
         String of Julia code specifying an elementwise loss function.
-
-        Expected signatures:
-        - `myloss(prediction, target)` (unweighted)
-        - `myloss(prediction, target, weights)` (weighted)
-
         Can either be a loss from LossFunctions.jl, or your own loss
-        written as a function.
+        written as a function. Examples of custom written losses include:
+        `myloss(x, y) = abs(x-y)` for non-weighted, or
+        `myloss(x, y, w) = w*abs(x-y)` for weighted.
         The included losses include:
         Regression: `LPDistLoss{P}()`, `L1DistLoss()`,
         `L2DistLoss()` (mean square), `LogitDistLoss()`,
@@ -508,13 +489,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         `SigmoidLoss()`, `DWDMarginLoss(q)`.
         Default is `"L2DistLoss()"`.
     loss_function : str
-        Full objective function (as a Julia function) with signature:
-        `(tree, dataset, options)`.
-
-        This lets you define a custom objective that can inspect the tree,
-        dataset, and options (including doing any custom evaluation or
-        regularization). The default `loss_function` used in SymbolicRegression.jl
-        is roughly equal to:
+        Alternatively, you can specify the full objective function as
+        a snippet of Julia code, including any sort of custom evaluation
+        (including symbolic manipulations beforehand), and any sort
+        of loss function or regularizations. The default `loss_function`
+        used in SymbolicRegression.jl is roughly equal to:
         ```julia
         function eval_loss(tree, dataset::Dataset{T,L}, options)::L where {T,L}
             prediction, flag = eval_tree_array(tree, dataset.X, options)
@@ -524,16 +503,16 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             return sum((prediction .- dataset.y) .^ 2) / dataset.n
         end
         ```
+        where the example elementwise loss is mean-squared error.
+        You may pass a function with the same arguments as this (note
+        that the name of the function doesn't matter). Here,
+        both `prediction` and `dataset.y` are 1D arrays of length `dataset.n`.
         Default is `None`.
     loss_function_expression : str
-        Full objective function (as a Julia function) with signature:
-        `(expression, dataset, options)`.
-
-        This is similar to `loss_function`, but receives the outer expression
-        wrapper as the first argument (rather than the inner tree/node).
-        Useful when you need access to expression-level structure; not specific
-        to any one expression type.
-
+        Similar to `loss_function`, but takes as input the full
+        expression object as the first argument, rather than
+        the innermost `AbstractExpressionNode`. This is useful
+        for specifying custom loss functions on `TemplateExpressionSpec`.
         Default is `None`.
     loss_scale : Literal["log", "linear"]
         Determines how loss values are scaled when computing scores.
