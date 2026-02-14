@@ -235,6 +235,84 @@ def _check_assertions(
             )
 
 
+def _validate_elementwise_loss(custom_loss, *, has_weights: bool) -> None:
+    """Validate that a Julia `elementwise_loss` is callable.
+
+    We require exactly 2 args unless the user passed `weights=` to fit,
+    in which case we require 3 args.
+    """
+
+    # This can be either a LossFunctions.jl object (e.g. `L2DistLoss()`) or a Julia function.
+    # Only validate arity when the evaluated object is actually a function.
+    if not jl_is_function(custom_loss):
+        return
+
+    if has_weights:
+        ok = bool(jl.applicable(custom_loss, 1.0, 1.0, 1.0))
+        if not ok:
+            raise ValueError(
+                "`elementwise_loss` must accept (prediction, target, weight) when `weights` is passed to `fit`."
+            )
+    else:
+        ok = bool(jl.applicable(custom_loss, 1.0, 1.0))
+        if not ok:
+            raise ValueError(
+                "`elementwise_loss` must accept (prediction, target). If you intended a full objective, use "
+                "`loss_function` or `loss_function_expression`."
+            )
+
+
+def _validate_custom_objective(
+    custom_objective,
+    *,
+    knob,
+    signature,
+    other_alternative=None,
+) -> None:
+    if not jl_is_function(custom_objective):
+        raise ValueError(f"`{knob}` must evaluate to a callable Julia function.")
+
+    methods = jl.collect(jl.methods(custom_objective))
+
+    def _accepts_npos(m, npos: int) -> bool:
+        required_npos = int(m.nargs) - 1
+        if bool(m.isva):
+            return required_npos <= npos
+        return required_npos == npos
+
+    accepts_three_args = any(_accepts_npos(m, 3) for m in methods)
+    accepts_two_args = any(_accepts_npos(m, 2) for m in methods)
+
+    if not accepts_three_args and accepts_two_args:
+        msg = (
+            f"`{knob}` must have signature like {signature}. "
+            "If you intended an elementwise loss, use `elementwise_loss`."
+        )
+        if other_alternative is not None:
+            msg += f" If you intended the other full-objective mode, use `{other_alternative}`."
+        raise ValueError(msg)
+
+    if not accepts_three_args:
+        raise ValueError(f"`{knob}` must have signature {signature}.")
+
+
+def _validate_custom_full_objective(custom_full_objective) -> None:
+    _validate_custom_objective(
+        custom_full_objective,
+        knob="loss_function",
+        signature="(tree, dataset, options)",
+        other_alternative="loss_function_expression",
+    )
+
+
+def _validate_custom_expression_objective(custom_loss_expression) -> None:
+    _validate_custom_objective(
+        custom_loss_expression,
+        knob="loss_function_expression",
+        signature="(expression, dataset, options)",
+    )
+
+
 def _validate_export_mappings(extra_jax_mappings, extra_torch_mappings):
     # It is expected extra_jax/torch_mappings will be updated after fit.
     # Thus, validation is performed here instead of in _validate_init_params
@@ -2036,14 +2114,22 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             if self.elementwise_loss is not None
             else "nothing"
         )
+        if self.elementwise_loss is not None:
+            _validate_elementwise_loss(custom_loss, has_weights=weights is not None)
+
         custom_full_objective = jl.seval(
             str(self.loss_function) if self.loss_function is not None else "nothing"
         )
+        if self.loss_function is not None:
+            _validate_custom_full_objective(custom_full_objective)
+
         custom_loss_expression = jl.seval(
             str(self.loss_function_expression)
             if self.loss_function_expression is not None
             else "nothing"
         )
+        if self.loss_function_expression is not None:
+            _validate_custom_expression_objective(custom_loss_expression)
 
         early_stop_condition = jl.seval(
             str(self.early_stop_condition)
