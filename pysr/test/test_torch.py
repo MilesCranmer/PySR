@@ -172,7 +172,7 @@ class TestTorch(unittest.TestCase):
             feature_names_in=["x1"],
             extra_sympy_mappings={"square": lambda x: x**2},
         )
-        m = pysr.export_torch.sympy2torch(ex, ["x1"])
+        m = sympy2torch(ex, ["x1"])
         rng = np.random.RandomState(0)
         X = rng.randn(10, 1)
         np.testing.assert_almost_equal(
@@ -184,7 +184,7 @@ class TestTorch(unittest.TestCase):
     def test_issue_656(self):
         # Should correctly map numeric symbols to floats
         E_plus_x1 = sympy.exp(1) + sympy.symbols("x1")
-        m = pysr.export_torch.sympy2torch(E_plus_x1, ["x1"])
+        m = sympy2torch(E_plus_x1, ["x1"])
         X = np.random.randn(10, 1)
         np.testing.assert_almost_equal(
             m(self.torch.tensor(X)).detach().numpy().flatten(),
@@ -194,7 +194,7 @@ class TestTorch(unittest.TestCase):
 
     def test_issue_571_single_feature_shape(self):
         x = sympy.symbols("x")
-        m = pysr.export_torch.sympy2torch(x + 1, [x])
+        m = sympy2torch(x + 1, [x])
         X = self.torch.randn(32, 1)
         y = m(X)
         self.assertEqual(tuple(y.shape), (32, 1))
@@ -204,21 +204,30 @@ class TestTorch(unittest.TestCase):
             decimal=6,
         )
 
+    def test_issue_571_multifeature_output_is_1d(self):
+        x, y = sympy.symbols("x y")
+        m = sympy2torch(x + y, [x, y])
+        X = self.torch.randn(32, 2)
+        out = m(X)
+        self.assertEqual(tuple(out.shape), (32,))
+        np.testing.assert_almost_equal(
+            out.detach().numpy(),
+            (X[:, 0] + X[:, 1]).detach().numpy(),
+            decimal=6,
+        )
+
     def test_issue_571_composition(self):
         x = sympy.symbols("x")
         a, b = sympy.symbols("a b")
-        m1 = pysr.export_torch.sympy2torch(x + 1, [x])
-        m2 = pysr.export_torch.sympy2torch(2 * x, [x])
-        m3 = pysr.export_torch.sympy2torch(a + b, [a, b])
+        m1 = sympy2torch(x + 1, [x])
+        m2 = sympy2torch(2 * x, [x])
+        m3 = sympy2torch(a + b, [a, b])
 
         X = self.torch.randn(32, 1)
         y1 = m1(X)
         y2 = m2(X)
         self.assertEqual(tuple(y1.shape), (32, 1))
         self.assertEqual(tuple(y2.shape), (32, 1))
-
-        with self.assertRaises(ValueError):
-            m1(X[:, 0])
 
         stacked = self.torch.cat([y1, y2], dim=1)
         y3 = m3(stacked)
@@ -227,6 +236,13 @@ class TestTorch(unittest.TestCase):
             (3 * X[:, 0] + 1).detach().numpy(),
             decimal=6,
         )
+
+    def test_issue_571_reject_1d_input(self):
+        x = sympy.symbols("x")
+        m = sympy2torch(x + 1, [x])
+        X = self.torch.randn(32, 1)
+        with self.assertRaises(ValueError):
+            m(X[:, 0])
 
     def test_constant_arguments(self):
         # Test that functions with constant arguments work correctly
@@ -239,14 +255,14 @@ class TestTorch(unittest.TestCase):
         ]
 
         for expr, expected in test_cases:
-            m = pysr.export_torch.sympy2torch(expr, [])
+            m = sympy2torch(expr, [])
             result = m(self.torch.randn(10, 1))
             np.testing.assert_almost_equal(result.item(), expected, decimal=3)
 
         # Test with variables: sqrt(2) * x
         x = sympy.symbols("x")
         expr = sympy.sqrt(2) * x
-        m = pysr.export_torch.sympy2torch(expr, [x])
+        m = sympy2torch(expr, [x])
         X = np.random.randn(10, 1)
         np.testing.assert_almost_equal(
             m(self.torch.tensor(X)).detach().numpy().flatten(),
