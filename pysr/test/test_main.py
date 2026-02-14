@@ -1235,16 +1235,9 @@ class TestMiscellaneous(unittest.TestCase):
         model = PySRRegressor(
             niterations=1,
             populations=1,
-            population_size=30,
-            maxsize=7,
-            binary_operators=["+"],
-            unary_operators=[],
             procs=0,
-            parallelism="serial",
             progress=False,
             verbosity=0,
-            deterministic=True,
-            random_state=0,
             temp_equation_file=True,
         )
 
