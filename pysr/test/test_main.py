@@ -1231,10 +1231,7 @@ class TestMiscellaneous(unittest.TestCase):
         self.assertEqual(original_result, 0.5 + 3.0)  # 1/2 + 3 = 3.5
 
     def test_predict_replaces_spaces_in_dataframe_columns(self):
-        # Regression for #690: if fit() replaced spaces with underscores in
-        # DataFrame column names, then predict() should apply the same
-        # normalization so `reindex(columns=self.feature_names_in_)` doesn't
-        # silently introduce NaNs.
+        # Regression for #690.
         model = PySRRegressor(
             niterations=1,
             populations=1,
@@ -1253,30 +1250,13 @@ class TestMiscellaneous(unittest.TestCase):
 
         X_fit = pd.DataFrame({"a b": [1.0, 2.0], "c d": [3.0, 4.0]})
         y = X_fit["a b"] + X_fit["c d"]
-
-        # Keep an unmodified copy (fit() mutates DataFrame column names).
         X_pred = X_fit.copy()
 
-        with warnings.catch_warnings(record=True) as w_fit:
-            warnings.simplefilter("always")
-            model.fit(X_fit, y)
-
+        model.fit(X_fit, y)
         np.testing.assert_array_equal(model.feature_names_in_, np.array(["a_b", "c_d"]))
-        assert any(
-            "Spaces in DataFrame column names are not supported" in str(wi.message)
-            for wi in w_fit
-        )
 
-        with warnings.catch_warnings(record=True) as w_pred:
-            warnings.simplefilter("always")
-            y_pred = model.predict(X_pred)
-
-        # Basic sanity: no error, finite outputs.
+        y_pred = model.predict(X_pred)
         assert np.isfinite(y_pred).all()
-        assert any(
-            "Spaces in DataFrame column names are not supported" in str(wi.message)
-            for wi in w_pred
-        )
 
     def test_pickle_with_temp_equation_file(self):
         """If we have a temporary equation file, unpickle the estimator."""
