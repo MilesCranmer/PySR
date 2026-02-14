@@ -192,6 +192,39 @@ class TestTorch(unittest.TestCase):
             decimal=3,
         )
 
+    def test_issue_571_single_feature_shape(self):
+        x = sympy.symbols("x")
+        m = pysr.export_torch.sympy2torch(x + 1, [x])
+        X = self.torch.randn(32, 1)
+        y = m(X)
+        self.assertEqual(tuple(y.shape), (32, 1))
+        np.testing.assert_almost_equal(
+            y.detach().numpy().flatten(),
+            (X[:, 0] + 1).detach().numpy(),
+            decimal=6,
+        )
+
+    def test_issue_571_composition(self):
+        x = sympy.symbols("x")
+        a, b = sympy.symbols("a b")
+        m1 = pysr.export_torch.sympy2torch(x + 1, [x])
+        m2 = pysr.export_torch.sympy2torch(2 * x, [x])
+        m3 = pysr.export_torch.sympy2torch(a + b, [a, b])
+
+        X = self.torch.randn(32, 1)
+        y1 = m1(X[:, 0])
+        y2 = m2(X[:, 0])
+        self.assertEqual(tuple(y1.shape), (32, 1))
+        self.assertEqual(tuple(y2.shape), (32, 1))
+
+        stacked = self.torch.cat([y1, y2], dim=1)
+        y3 = m3(stacked)
+        np.testing.assert_almost_equal(
+            y3.detach().numpy(),
+            (3 * X[:, 0] + 1).detach().numpy(),
+            decimal=6,
+        )
+
     def test_constant_arguments(self):
         # Test that functions with constant arguments work correctly
         # Regression test for https://github.com/MilesCranmer/PySR/issues/656
