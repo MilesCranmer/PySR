@@ -243,14 +243,14 @@ def _validate_custom_full_objective(custom_full_objective: AnyValue) -> None:
     instead of a long Julia MethodError.
     """
 
-    has_custom_full_objective = jl.seval("x -> x !== nothing")(custom_full_objective)
+    has_custom_full_objective = not jl.isnothing(custom_full_objective)
     if not has_custom_full_objective:
         return
 
     if not jl_is_function(custom_full_objective):
         raise ValueError("`loss_function` must evaluate to a callable Julia function.")
 
-    methods = jl.seval("f -> collect(methods(f))")(custom_full_objective)
+    methods = jl.collect(jl.methods(custom_full_objective))
 
     accepts_three_args = any(
         (not bool(m.isva) and int(m.nargs) == 4) or (bool(m.isva) and int(m.nargs) <= 4)
