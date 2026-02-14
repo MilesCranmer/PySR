@@ -235,8 +235,6 @@ def _check_assertions(
             )
 
 
-
-
 def _validate_elementwise_loss(custom_loss: AnyValue) -> None:
     """Validate that a Julia `elementwise_loss` is callable with 2 or 3 args.
 
@@ -249,7 +247,9 @@ def _validate_elementwise_loss(custom_loss: AnyValue) -> None:
         return
 
     if not jl_is_function(custom_loss):
-        raise ValueError("`elementwise_loss` must evaluate to a callable Julia function.")
+        raise ValueError(
+            "`elementwise_loss` must evaluate to a callable Julia function."
+        )
 
     methods = jl.collect(jl.methods(custom_loss))
     ok = any(
@@ -279,13 +279,11 @@ def _validate_custom_full_objective(custom_full_objective: AnyValue) -> None:
 
     methods = jl.collect(jl.methods(custom_full_objective))
     accepts_three_args = any(
-        (not bool(m.isva) and int(m.nargs) == 4)
-        or (bool(m.isva) and int(m.nargs) <= 4)
+        (not bool(m.isva) and int(m.nargs) == 4) or (bool(m.isva) and int(m.nargs) <= 4)
         for m in methods
     )
     appears_elementwise = any(
-        (not bool(m.isva) and int(m.nargs) == 3)
-        or (bool(m.isva) and int(m.nargs) <= 3)
+        (not bool(m.isva) and int(m.nargs) == 3) or (bool(m.isva) and int(m.nargs) <= 3)
         for m in methods
     )
 
@@ -298,7 +296,9 @@ def _validate_custom_full_objective(custom_full_objective: AnyValue) -> None:
         )
 
     if not accepts_three_args:
-        raise ValueError("`loss_function` must have signature (tree, dataset, options).")
+        raise ValueError(
+            "`loss_function` must have signature (tree, dataset, options)."
+        )
 
 
 def _validate_custom_expression_objective(custom_loss_expression: AnyValue) -> None:
@@ -317,13 +317,11 @@ def _validate_custom_expression_objective(custom_loss_expression: AnyValue) -> N
 
     methods = jl.collect(jl.methods(custom_loss_expression))
     accepts_three_args = any(
-        (not bool(m.isva) and int(m.nargs) == 4)
-        or (bool(m.isva) and int(m.nargs) <= 4)
+        (not bool(m.isva) and int(m.nargs) == 4) or (bool(m.isva) and int(m.nargs) <= 4)
         for m in methods
     )
     appears_elementwise = any(
-        (not bool(m.isva) and int(m.nargs) == 3)
-        or (bool(m.isva) and int(m.nargs) <= 3)
+        (not bool(m.isva) and int(m.nargs) == 3) or (bool(m.isva) and int(m.nargs) <= 3)
         for m in methods
     )
 
