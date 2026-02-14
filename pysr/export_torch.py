@@ -187,11 +187,6 @@ def _initialize_torch():
                 if self._selection is not None:
                     X = X[:, self._selection]
 
-                if X.dim() != 2:
-                    raise ValueError(
-                        "Expected a 2D input tensor `X` with shape (L, nfeatures)."
-                    )
-
                 preserve_2d_output = X.shape[1] == 1
                 symbols = {
                     symbol: X[:, i : i + 1] for i, symbol in enumerate(self.symbols_in)
