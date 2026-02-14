@@ -176,7 +176,7 @@ class TestTorch(unittest.TestCase):
         rng = np.random.RandomState(0)
         X = rng.randn(10, 1)
         np.testing.assert_almost_equal(
-            m(torch.tensor(X)).detach().numpy(),
+            m(torch.tensor(X)).detach().numpy().flatten(),
             np.square(np.exp(np.sign(0.44796443))) + 1.5 * X[:, 0],
             decimal=3,
         )
@@ -187,7 +187,7 @@ class TestTorch(unittest.TestCase):
         m = pysr.export_torch.sympy2torch(E_plus_x1, ["x1"])
         X = np.random.randn(10, 1)
         np.testing.assert_almost_equal(
-            m(self.torch.tensor(X)).detach().numpy(),
+            m(self.torch.tensor(X)).detach().numpy().flatten(),
             np.exp(1) + X[:, 0],
             decimal=3,
         )
@@ -212,10 +212,13 @@ class TestTorch(unittest.TestCase):
         m3 = pysr.export_torch.sympy2torch(a + b, [a, b])
 
         X = self.torch.randn(32, 1)
-        y1 = m1(X[:, 0])
-        y2 = m2(X[:, 0])
+        y1 = m1(X)
+        y2 = m2(X)
         self.assertEqual(tuple(y1.shape), (32, 1))
         self.assertEqual(tuple(y2.shape), (32, 1))
+
+        with self.assertRaises(ValueError):
+            m1(X[:, 0])
 
         stacked = self.torch.cat([y1, y2], dim=1)
         y3 = m3(stacked)
