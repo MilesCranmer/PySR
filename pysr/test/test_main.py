@@ -195,7 +195,7 @@ class TestPipeline(unittest.TestCase):
             verbosity=0,
             temp_equation_file=True,
             binary_operators=["+"],
-            loss_function="loss_function(prediction, target) = (prediction - target)^2",
+            loss_function="bad_full_objective(prediction, target) = (prediction - target)^2",
         )
         X = np.array([[0.0], [1.0]])
         y = np.array([0.0, 1.0])
@@ -233,8 +233,8 @@ class TestPipeline(unittest.TestCase):
             binary_operators=["+"],
             loss_function="""
             begin
-                loss(tree, dataset, options) = zero(eltype(dataset.y))
-                loss
+                goodloss(tree, dataset, options) = zero(eltype(dataset.y))
+                goodloss
             end
             """,
         )
@@ -253,8 +253,8 @@ class TestPipeline(unittest.TestCase):
             binary_operators=["+"],
             loss_function="""
             begin
-                varloss(tree, dataset, options...) = zero(eltype(dataset.y))
-                varloss
+                goodvarloss(tree, dataset, options...) = zero(eltype(dataset.y))
+                goodvarloss
             end
             """,
         )
@@ -334,7 +334,7 @@ class TestPipeline(unittest.TestCase):
             verbosity=0,
             temp_equation_file=True,
             binary_operators=["+"],
-            loss_function_expression="loss(prediction, target) = (prediction - target)^2",
+            loss_function_expression="bad_expr_objective(prediction, target) = (prediction - target)^2",
         )
         X = np.array([[0.0], [1.0]])
         y = np.array([0.0, 1.0])
@@ -352,7 +352,7 @@ class TestPipeline(unittest.TestCase):
             verbosity=0,
             temp_equation_file=True,
             binary_operators=["+"],
-            loss_function="loss(tree) = 0.0",
+            loss_function="badloss(tree) = 0.0",
         )
         X = np.array([[0.0], [1.0]])
         y = np.array([0.0, 1.0])
@@ -370,7 +370,7 @@ class TestPipeline(unittest.TestCase):
             verbosity=0,
             temp_equation_file=True,
             binary_operators=["+"],
-            loss_function_expression="loss(expression) = 0.0",
+            loss_function_expression="badexprloss(expression) = 0.0",
         )
         X = np.array([[0.0], [1.0]])
         y = np.array([0.0, 1.0])
