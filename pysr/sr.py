@@ -248,9 +248,6 @@ def _validate_elementwise_loss(custom_loss, *, has_weights: bool) -> None:
 
     # This can be either a LossFunctions.jl object (e.g. `L2DistLoss()`) or a Julia function.
     # Only validate arity when the evaluated object is actually a function.
-    if _jl_is_nothing(custom_loss):
-        return
-
     if not jl_is_function(custom_loss):
         return
 
@@ -295,7 +292,7 @@ def _validate_custom_objective(
 
     if not accepts_three_args and appears_elementwise:
         msg = (
-            f"`{knob}` must have signature {signature}. "
+            f"`{knob}` must have signature like {signature}. "
             f"If you intended an elementwise loss, use `{elementwise_alternative}`."
         )
         if other_alternative is not None:
