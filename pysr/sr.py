@@ -99,13 +99,11 @@ def _validate_custom_full_objective(custom_full_objective: AnyValue) -> None:
     methods = jl.seval("f -> collect(methods(f))")(custom_full_objective)
 
     accepts_three_args = any(
-        (not bool(m.isva) and int(m.nargs) == 4)
-        or (bool(m.isva) and int(m.nargs) <= 4)
+        (not bool(m.isva) and int(m.nargs) == 4) or (bool(m.isva) and int(m.nargs) <= 4)
         for m in methods
     )
     appears_elementwise = any(
-        (not bool(m.isva) and int(m.nargs) == 3)
-        or (bool(m.isva) and int(m.nargs) <= 3)
+        (not bool(m.isva) and int(m.nargs) == 3) or (bool(m.isva) and int(m.nargs) <= 3)
         for m in methods
     )
 
@@ -114,7 +112,7 @@ def _validate_custom_full_objective(custom_full_objective: AnyValue) -> None:
             "You likely passed an elementwise loss via `loss_function`. "
             "Use `elementwise_loss=...` instead (or `loss_function_expression` "
             "for `TemplateExpressionSpec`). Example: "
-            "`elementwise_loss=\"loss(prediction, target) = (prediction - target)^2\"`."
+            '`elementwise_loss="loss(prediction, target) = (prediction - target)^2"`.'
         )
 
 
