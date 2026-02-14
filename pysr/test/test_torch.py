@@ -193,6 +193,7 @@ class TestTorch(unittest.TestCase):
         )
 
     def test_issue_571_single_feature_shape(self):
+        """Issue #571: 1-feature torch module preserves (L, 1) output shape."""
         x = sympy.symbols("x")
         m = sympy2torch(x + 1, [x])
         X = self.torch.randn(32, 1)
@@ -205,6 +206,7 @@ class TestTorch(unittest.TestCase):
         )
 
     def test_issue_571_multifeature_output_is_1d(self):
+        """Issue #571: multi-feature torch modules keep 1D outputs (L,) by default."""
         x, y = sympy.symbols("x y")
         m = sympy2torch(x + y, [x, y])
         X = self.torch.randn(32, 2)
@@ -217,6 +219,7 @@ class TestTorch(unittest.TestCase):
         )
 
     def test_issue_571_composition(self):
+        """Issue #571: composing 1-feature modules into a 2-feature module works."""
         x = sympy.symbols("x")
         a, b = sympy.symbols("a b")
         m1 = sympy2torch(x + 1, [x])
@@ -238,6 +241,7 @@ class TestTorch(unittest.TestCase):
         )
 
     def test_issue_571_reject_1d_input(self):
+        """Issue #571: torch module rejects 1D inputs (expects (L, nfeatures))."""
         x = sympy.symbols("x")
         m = sympy2torch(x + 1, [x])
         X = self.torch.randn(32, 1)
@@ -245,6 +249,7 @@ class TestTorch(unittest.TestCase):
             m(X[:, 0])
 
     def test_issue_571_selection_list_keeps_2d(self):
+        """Issue #571: selection=[i] keeps (L, 1) shape after feature selection."""
         x = sympy.symbols("x")
         m = sympy2torch(x + 1, [x], selection=[0])
         X = self.torch.randn(32, 2)
@@ -252,6 +257,7 @@ class TestTorch(unittest.TestCase):
         self.assertEqual(tuple(out.shape), (32, 1))
 
     def test_issue_571_reject_int_selection(self):
+        """Issue #571: selection that collapses to 1D should raise (selection=0)."""
         x = sympy.symbols("x")
         m = sympy2torch(x + 1, [x], selection=0)
         X = self.torch.randn(32, 2)
