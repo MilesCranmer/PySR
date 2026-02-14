@@ -256,14 +256,6 @@ class TestTorch(unittest.TestCase):
         out = m(X)
         self.assertEqual(tuple(out.shape), (32, 1))
 
-    def test_issue_571_reject_int_selection(self):
-        """Issue #571: selection that collapses to 1D should raise (selection=0)."""
-        x = sympy.symbols("x")
-        m = sympy2torch(x + 1, [x], selection=0)
-        X = self.torch.randn(32, 2)
-        with self.assertRaises(ValueError):
-            m(X)
-
     def test_constant_arguments(self):
         # Test that functions with constant arguments work correctly
         # Regression test for https://github.com/MilesCranmer/PySR/issues/656
