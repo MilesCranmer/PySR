@@ -1,4 +1,7 @@
 [run]
+# pytest-cov 7 dropped its legacy subprocess coverage mechanism; enable
+# coverage.py's subprocess patch so coverage continues to include subprocesses.
+patch = subprocess
 omit =
     */test/*
 source = pysr
