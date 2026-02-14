@@ -81,6 +81,43 @@ ALREADY_RAN = False
 pysr_logger = logging.getLogger(__name__)
 
 
+def _validate_custom_full_objective(custom_full_objective: AnyValue) -> None:
+    """Validate that a Julia `loss_function` looks like a full objective.
+
+    We want a callable that can accept (tree, dataset, options). If it looks like
+    an elementwise loss (prediction, target), raise a short Python ValueError
+    instead of a long Julia MethodError.
+    """
+
+    has_custom_full_objective = jl.seval("x -> x !== nothing")(custom_full_objective)
+    if not has_custom_full_objective:
+        return
+
+    if not jl_is_function(custom_full_objective):
+        raise ValueError("`loss_function` must evaluate to a callable Julia function.")
+
+    methods = jl.seval("f -> collect(methods(f))")(custom_full_objective)
+
+    accepts_three_args = any(
+        (not bool(m.isva) and int(m.nargs) == 4)
+        or (bool(m.isva) and int(m.nargs) <= 4)
+        for m in methods
+    )
+    appears_elementwise = any(
+        (not bool(m.isva) and int(m.nargs) == 3)
+        or (bool(m.isva) and int(m.nargs) <= 3)
+        for m in methods
+    )
+
+    if not accepts_three_args and appears_elementwise:
+        raise ValueError(
+            "You likely passed an elementwise loss via `loss_function`. "
+            "Use `elementwise_loss=...` instead (or `loss_function_expression` "
+            "for `TemplateExpressionSpec`). Example: "
+            "`elementwise_loss=\"loss(prediction, target) = (prediction - target)^2\"`."
+        )
+
+
 def _process_constraints(
     operators: dict[int, list[str]],
     constraints: dict[str, int | tuple[int, ...]],
@@ -2041,34 +2078,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         custom_full_objective = jl.seval(
             str(self.loss_function) if self.loss_function is not None else "nothing"
         )
-        has_custom_full_objective = jl.seval("x -> x !== nothing")(
-            custom_full_objective
-        )
-        if self.loss_function is not None and has_custom_full_objective:
-            if not jl_is_function(custom_full_objective):
-                raise ValueError(
-                    "`loss_function` must evaluate to a callable Julia function."
-                )
-
-            methods = jl.seval("f -> collect(methods(f))")(custom_full_objective)
-            accepts_three_args = any(
-                (not bool(m.isva) and int(m.nargs) == 4)
-                or (bool(m.isva) and int(m.nargs) <= 4)
-                for m in methods
-            )
-            appears_elementwise = any(
-                (not bool(m.isva) and int(m.nargs) == 3)
-                or (bool(m.isva) and int(m.nargs) <= 3)
-                for m in methods
-            )
-
-            if not accepts_three_args and appears_elementwise:
-                raise ValueError(
-                    "You likely passed an elementwise loss via `loss_function`. "
-                    "Use `elementwise_loss=...` instead (or `loss_function_expression` "
-                    "for `TemplateExpressionSpec`). Example: "
-                    '`elementwise_loss="loss(prediction, target) = (prediction - target)^2"`.'
-                )
+        if self.loss_function is not None:
+            _validate_custom_full_objective(custom_full_objective)
         custom_loss_expression = jl.seval(
             str(self.loss_function_expression)
             if self.loss_function_expression is not None
