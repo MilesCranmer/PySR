@@ -1230,6 +1230,27 @@ class TestMiscellaneous(unittest.TestCase):
         # Check that the same operator mapping was used (1/x for inv)
         self.assertEqual(original_result, 0.5 + 3.0)  # 1/2 + 3 = 3.5
 
+    def test_predict_replaces_spaces_in_dataframe_columns(self):
+        # Regression for #690.
+        model = PySRRegressor(
+            niterations=1,
+            populations=1,
+            procs=0,
+            progress=False,
+            verbosity=0,
+            temp_equation_file=True,
+        )
+
+        X_fit = pd.DataFrame({"a b": [1.0, 2.0], "c d": [3.0, 4.0]})
+        y = X_fit["a b"] + X_fit["c d"]
+        X_pred = X_fit.copy()
+
+        model.fit(X_fit, y)
+        np.testing.assert_array_equal(model.feature_names_in_, np.array(["a_b", "c_d"]))
+
+        y_pred = model.predict(X_pred)
+        assert np.isfinite(y_pred).all()
+
     def test_pickle_with_temp_equation_file(self):
         """If we have a temporary equation file, unpickle the estimator."""
         model = PySRRegressor(
