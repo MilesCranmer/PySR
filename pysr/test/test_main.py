@@ -41,6 +41,8 @@ from pysr.sr import (
     _check_assertions,
     _process_constraints,
     _suggest_keywords,
+    _validate_custom_objective,
+    _validate_elementwise_loss,
     idx_model_selection,
 )
 
@@ -250,13 +252,62 @@ class TestPipeline(unittest.TestCase):
             verbosity=0,
             temp_equation_file=True,
             binary_operators=["+"],
-            elementwise_loss="loss(a) = a",
+            elementwise_loss="myloss_bad_arity(a) = a",
         )
         X = np.array([[0.0], [1.0]])
         y = np.array([0.0, 1.0])
         with self.assertRaises(ValueError) as cm:
             model.fit(X, y)
         self.assertIn("elementwise_loss", str(cm.exception))
+
+    def test_elementwise_loss_with_weights_requires_three_args(self):
+        model = PySRRegressor(
+            niterations=1,
+            populations=1,
+            procs=0,
+            progress=False,
+            verbosity=0,
+            temp_equation_file=True,
+            binary_operators=["+"],
+            elementwise_loss="myloss2(prediction, target) = (prediction - target)^2",
+        )
+        X = np.array([[0.0], [1.0]])
+        y = np.array([0.0, 1.0])
+        weights = np.array([1.0, 1.0])
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, y, weights=weights)
+        self.assertIn("elementwise_loss", str(cm.exception))
+        self.assertIn("weights", str(cm.exception))
+
+    def test_elementwise_loss_with_weights_accepts_three_args(self):
+        model = PySRRegressor(
+            niterations=1,
+            populations=1,
+            procs=0,
+            progress=False,
+            verbosity=0,
+            temp_equation_file=True,
+            binary_operators=["+"],
+            elementwise_loss=(
+                "myloss3(prediction, target, weights) = weights * (prediction - target)^2"
+            ),
+        )
+        X = np.array([[0.0], [1.0]])
+        y = np.array([0.0, 1.0])
+        weights = np.array([1.0, 1.0])
+        model.fit(X, y, weights=weights)
+
+    def test_validation_helpers_allow_nothing(self):
+        _validate_elementwise_loss(jl.seval("nothing"), has_weights=False)
+        _validate_custom_objective(
+            jl.seval("nothing"),
+            knob="loss_function",
+            signature="(tree, dataset, options)",
+            elementwise_alternative="elementwise_loss",
+        )
+
+    def test_validation_helpers_skip_nonfunction(self):
+        _validate_elementwise_loss(jl.seval("1.0"), has_weights=False)
 
     def test_loss_function_expression_elementwise_signature_errors_early(self):
         """Validate `loss_function_expression` signature (expression, dataset, options)."""
