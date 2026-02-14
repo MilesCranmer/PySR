@@ -235,7 +235,6 @@ def _check_assertions(
             )
 
 
-
 def _validate_custom_full_objective(custom_full_objective: AnyValue) -> None:
     """Validate that a Julia `loss_function` looks like a full objective.
 
@@ -269,6 +268,7 @@ def _validate_custom_full_objective(custom_full_objective: AnyValue) -> None:
             "for `TemplateExpressionSpec`). Example: "
             '`elementwise_loss="loss(prediction, target) = (prediction - target)^2"`.'
         )
+
 
 def _validate_export_mappings(extra_jax_mappings, extra_torch_mappings):
     # It is expected extra_jax/torch_mappings will be updated after fit.
@@ -304,7 +304,6 @@ class _DynamicallySetParams:
     update_verbosity: int
     progress: bool
     warmup_maxsize_by: float
-
 
 
 class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
