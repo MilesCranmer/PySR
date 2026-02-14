@@ -184,6 +184,7 @@ class TestPipeline(unittest.TestCase):
         )
 
     def test_loss_function_with_elementwise_signature_errors_early(self):
+        """Issue #982: elementwise (prediction, target) loss passed via loss_function errors."""
         model = PySRRegressor(
             niterations=1,
             populations=1,
@@ -201,6 +202,7 @@ class TestPipeline(unittest.TestCase):
         self.assertIn("elementwise_loss", str(cm.exception))
 
     def test_loss_function_noncallable_errors_early(self):
+        """Issue #982: non-callable loss_function (e.g. '1.0') errors early."""
         model = PySRRegressor(
             niterations=1,
             populations=1,
@@ -218,6 +220,7 @@ class TestPipeline(unittest.TestCase):
         self.assertIn("callable", str(cm.exception))
 
     def test_loss_function_valid_full_objective_runs(self):
+        """Issue #982: a valid (tree, dataset, options) objective is accepted."""
         model = PySRRegressor(
             niterations=1,
             populations=1,
