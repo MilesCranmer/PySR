@@ -183,6 +183,23 @@ class TestPipeline(unittest.TestCase):
             jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.turbo), False
         )
 
+    def test_loss_function_with_elementwise_signature_errors_early(self):
+        model = PySRRegressor(
+            niterations=1,
+            populations=1,
+            procs=0,
+            progress=False,
+            verbosity=0,
+            temp_equation_file=True,
+            binary_operators=["+"],
+            loss_function="loss_function(prediction, target) = (prediction - target)^2",
+        )
+        X = np.array([[0.0], [1.0]])
+        y = np.array([0.0, 1.0])
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, y)
+        self.assertIn("elementwise_loss", str(cm.exception))
+
     def test_operator_conflict_error(self):
         regressor = PySRRegressor(
             operators={1: ["sin"]},
