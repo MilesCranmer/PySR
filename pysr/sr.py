@@ -239,12 +239,11 @@ def _jl_is_nothing(value):
     return bool(jl.isnothing(value))
 
 
-def _validate_elementwise_loss(custom_loss) -> None:
-    """Validate that a Julia `elementwise_loss` is callable with 2 or 3 args.
+def _validate_elementwise_loss(custom_loss, *, has_weights: bool) -> None:
+    """Validate that a Julia `elementwise_loss` is callable.
 
-    Expected signatures:
-    - (prediction, target)
-    - (prediction, target, weights)
+    We require exactly 2 args unless the user passed `weights=` to fit,
+    in which case we require 3 args.
     """
 
     # This can be either a LossFunctions.jl object (e.g. `L2DistLoss()`) or a Julia function.
@@ -255,18 +254,19 @@ def _validate_elementwise_loss(custom_loss) -> None:
     if not jl_is_function(custom_loss):
         return
 
-    methods = jl.collect(jl.methods(custom_loss))
-    ok = any(
-        (not bool(m.isva) and int(m.nargs) in {3, 4})
-        or (bool(m.isva) and int(m.nargs) <= 4)
-        for m in methods
-    )
-    if not ok:
-        raise ValueError(
-            "`elementwise_loss` must have signature (prediction, target) or "
-            "(prediction, target, weights). If you intended a full objective, use "
-            "`loss_function` or `loss_function_expression`."
-        )
+    if has_weights:
+        ok = bool(jl.applicable(custom_loss, 1.0, 1.0, 1.0))
+        if not ok:
+            raise ValueError(
+                "`elementwise_loss` must accept (prediction, target, weights) when `weights` is passed to `fit`."
+            )
+    else:
+        ok = bool(jl.applicable(custom_loss, 1.0, 1.0))
+        if not ok:
+            raise ValueError(
+                "`elementwise_loss` must accept (prediction, target). If you intended a full objective, use "
+                "`loss_function` or `loss_function_expression`."
+            )
 
 
 def _validate_custom_objective(
@@ -2129,7 +2129,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             else "nothing"
         )
         if self.elementwise_loss is not None:
-            _validate_elementwise_loss(custom_loss)
+            _validate_elementwise_loss(custom_loss, has_weights=weights is not None)
 
         custom_full_objective = jl.seval(
             str(self.loss_function) if self.loss_function is not None else "nothing"
