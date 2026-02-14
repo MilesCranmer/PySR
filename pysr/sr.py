@@ -236,10 +236,7 @@ def _check_assertions(
 
 
 def _jl_is_nothing(value):
-    try:
-        return bool(jl.isnothing(value))
-    except Exception:
-        return False
+    return bool(jl.isnothing(value))
 
 
 def _validate_elementwise_loss(custom_loss) -> None:
