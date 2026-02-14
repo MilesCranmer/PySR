@@ -179,10 +179,18 @@ def _initialize_torch():
                 return f"{type(self).__name__}(expression={self._expression_string})"
 
             def forward(self, X):
+                if X.dim() == 1:
+                    X = X.unsqueeze(-1)
                 if self._selection is not None:
                     X = X[:, self._selection]
+                if X.dim() == 1:
+                    X = X.unsqueeze(-1)
+                preserve_2d_output = X.dim() == 2 and X.shape[1] == 1
                 symbols = {symbol: X[:, i] for i, symbol in enumerate(self.symbols_in)}
-                return self._node(symbols)
+                output = self._node(symbols)
+                if preserve_2d_output and output.dim() == 1:
+                    output = output.unsqueeze(-1)
+                return output
 
         SingleSymPyModule = _SingleSymPyModule
 
