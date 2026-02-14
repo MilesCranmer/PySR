@@ -235,7 +235,9 @@ def _check_assertions(
             )
 
 
-def _validate_elementwise_loss(custom_loss: AnyValue) -> None:
+
+
+def _validate_elementwise_loss(custom_loss: Any) -> None:
     """Validate that a Julia `elementwise_loss` is callable with 2 or 3 args.
 
     Expected signatures:
@@ -243,13 +245,16 @@ def _validate_elementwise_loss(custom_loss: AnyValue) -> None:
     - (prediction, target, weights)
     """
 
-    if jl.isnothing(custom_loss):
-        return
+    # This can be either a LossFunctions.jl object (e.g. `L2DistLoss()`) or a Julia function.
+    # Only validate arity when the evaluated object is actually a function.
+    try:
+        if jl.isnothing(custom_loss):
+            return
+    except Exception:
+        pass
 
     if not jl_is_function(custom_loss):
-        raise ValueError(
-            "`elementwise_loss` must evaluate to a callable Julia function."
-        )
+        return
 
     methods = jl.collect(jl.methods(custom_loss))
     ok = any(
@@ -265,14 +270,17 @@ def _validate_elementwise_loss(custom_loss: AnyValue) -> None:
         )
 
 
-def _validate_custom_full_objective(custom_full_objective: AnyValue) -> None:
+def _validate_custom_full_objective(custom_full_objective: Any) -> None:
     """Validate that a Julia `loss_function` looks like a full objective.
 
     Expected signature: (tree, dataset, options).
     """
 
-    if jl.isnothing(custom_full_objective):
-        return
+    try:
+        if jl.isnothing(custom_full_objective):
+            return
+    except Exception:
+        pass
 
     if not jl_is_function(custom_full_objective):
         raise ValueError("`loss_function` must evaluate to a callable Julia function.")
@@ -301,14 +309,17 @@ def _validate_custom_full_objective(custom_full_objective: AnyValue) -> None:
         )
 
 
-def _validate_custom_expression_objective(custom_loss_expression: AnyValue) -> None:
+def _validate_custom_expression_objective(custom_loss_expression: Any) -> None:
     """Validate that a Julia `loss_function_expression` looks like a full objective.
 
     Expected signature: (expression, dataset, options).
     """
 
-    if jl.isnothing(custom_loss_expression):
-        return
+    try:
+        if jl.isnothing(custom_loss_expression):
+            return
+    except Exception:
+        pass
 
     if not jl_is_function(custom_loss_expression):
         raise ValueError(
