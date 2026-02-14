@@ -235,10 +235,6 @@ def _check_assertions(
             )
 
 
-def _jl_is_nothing(value):
-    return bool(jl.isnothing(value))
-
-
 def _validate_elementwise_loss(custom_loss, *, has_weights: bool) -> None:
     """Validate that a Julia `elementwise_loss` is callable.
 
@@ -274,9 +270,6 @@ def _validate_custom_objective(
     elementwise_alternative,
     other_alternative=None,
 ) -> None:
-    if _jl_is_nothing(custom_objective):
-        return
-
     if not jl_is_function(custom_objective):
         raise ValueError(f"`{knob}` must evaluate to a callable Julia function.")
 

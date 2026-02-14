@@ -41,8 +41,8 @@ from pysr.sr import (
     _check_assertions,
     _process_constraints,
     _suggest_keywords,
-    _validate_custom_objective,
     _validate_elementwise_loss,
+    _validate_export_mappings,
     idx_model_selection,
 )
 
@@ -297,17 +297,12 @@ class TestPipeline(unittest.TestCase):
         weights = np.array([1.0, 1.0])
         model.fit(X, y, weights=weights)
 
-    def test_validation_helpers_allow_nothing(self):
-        _validate_elementwise_loss(jl.seval("nothing"), has_weights=False)
-        _validate_custom_objective(
-            jl.seval("nothing"),
-            knob="loss_function",
-            signature="(tree, dataset, options)",
-            elementwise_alternative="elementwise_loss",
-        )
-
     def test_validation_helpers_skip_nonfunction(self):
         _validate_elementwise_loss(jl.seval("1.0"), has_weights=False)
+
+    def test_validate_export_mappings_typechecks(self):
+        with self.assertRaises(ValueError):
+            _validate_export_mappings({"a": 1}, None)
 
     def test_loss_function_expression_elementwise_signature_errors_early(self):
         """Validate `loss_function_expression` signature (expression, dataset, options)."""
