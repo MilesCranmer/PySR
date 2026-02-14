@@ -235,8 +235,6 @@ def _check_assertions(
             )
 
 
-
-
 def _jl_is_nothing(value):
     try:
         return bool(jl.isnothing(value))
