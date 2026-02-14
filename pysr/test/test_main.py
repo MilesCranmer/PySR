@@ -343,6 +343,42 @@ class TestPipeline(unittest.TestCase):
         self.assertIn("loss_function_expression", str(cm.exception))
         self.assertIn("elementwise_loss", str(cm.exception))
 
+    def test_loss_function_wrong_signature_errors_early(self):
+        model = PySRRegressor(
+            niterations=1,
+            populations=1,
+            procs=0,
+            progress=False,
+            verbosity=0,
+            temp_equation_file=True,
+            binary_operators=["+"],
+            loss_function="loss(tree) = 0.0",
+        )
+        X = np.array([[0.0], [1.0]])
+        y = np.array([0.0, 1.0])
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, y)
+        self.assertIn("loss_function", str(cm.exception))
+        self.assertIn("(tree, dataset, options)", str(cm.exception))
+
+    def test_loss_function_expression_wrong_signature_errors_early(self):
+        model = PySRRegressor(
+            niterations=1,
+            populations=1,
+            procs=0,
+            progress=False,
+            verbosity=0,
+            temp_equation_file=True,
+            binary_operators=["+"],
+            loss_function_expression="loss(expression) = 0.0",
+        )
+        X = np.array([[0.0], [1.0]])
+        y = np.array([0.0, 1.0])
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, y)
+        self.assertIn("loss_function_expression", str(cm.exception))
+        self.assertIn("(expression, dataset, options)", str(cm.exception))
+
     def test_operator_conflict_error(self):
         regressor = PySRRegressor(
             operators={1: ["sin"]},
