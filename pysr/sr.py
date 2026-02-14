@@ -2067,7 +2067,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     "You likely passed an elementwise loss via `loss_function`. "
                     "Use `elementwise_loss=...` instead (or `loss_function_expression` "
                     "for `TemplateExpressionSpec`). Example: "
-                    "`elementwise_loss=\"loss(prediction, target) = (prediction - target)^2\"`."
+                    '`elementwise_loss="loss(prediction, target) = (prediction - target)^2"`.'
                 )
         custom_loss_expression = jl.seval(
             str(self.loss_function_expression)
