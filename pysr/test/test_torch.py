@@ -244,6 +244,20 @@ class TestTorch(unittest.TestCase):
         with self.assertRaises(ValueError):
             m(X[:, 0])
 
+    def test_issue_571_selection_list_keeps_2d(self):
+        x = sympy.symbols("x")
+        m = sympy2torch(x + 1, [x], selection=[0])
+        X = self.torch.randn(32, 2)
+        out = m(X)
+        self.assertEqual(tuple(out.shape), (32, 1))
+
+    def test_issue_571_reject_int_selection(self):
+        x = sympy.symbols("x")
+        m = sympy2torch(x + 1, [x], selection=0)
+        X = self.torch.randn(32, 2)
+        with self.assertRaises(ValueError):
+            m(X)
+
     def test_constant_arguments(self):
         # Test that functions with constant arguments work correctly
         # Regression test for https://github.com/MilesCranmer/PySR/issues/656
