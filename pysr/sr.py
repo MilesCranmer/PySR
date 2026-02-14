@@ -267,7 +267,6 @@ def _validate_custom_objective(
     *,
     knob,
     signature,
-    elementwise_alternative,
     other_alternative=None,
 ) -> None:
     if not jl_is_function(custom_objective):
@@ -287,7 +286,7 @@ def _validate_custom_objective(
     if not accepts_three_args and accepts_two_args:
         msg = (
             f"`{knob}` must have signature like {signature}. "
-            f"If you intended an elementwise loss, use `{elementwise_alternative}`."
+            "If you intended an elementwise loss, use `elementwise_loss`."
         )
         if other_alternative is not None:
             msg += f" If you intended the other full-objective mode, use `{other_alternative}`."
@@ -302,7 +301,6 @@ def _validate_custom_full_objective(custom_full_objective) -> None:
         custom_full_objective,
         knob="loss_function",
         signature="(tree, dataset, options)",
-        elementwise_alternative="elementwise_loss",
         other_alternative="loss_function_expression",
     )
 
@@ -312,7 +310,6 @@ def _validate_custom_expression_objective(custom_loss_expression) -> None:
         custom_loss_expression,
         knob="loss_function_expression",
         signature="(expression, dataset, options)",
-        elementwise_alternative="elementwise_loss",
     )
 
 
