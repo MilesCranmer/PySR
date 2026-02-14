@@ -251,7 +251,7 @@ def _validate_elementwise_loss(custom_loss, *, has_weights: bool) -> None:
         ok = bool(jl.applicable(custom_loss, 1.0, 1.0, 1.0))
         if not ok:
             raise ValueError(
-                "`elementwise_loss` must accept (prediction, target, weights) when `weights` is passed to `fit`."
+                "`elementwise_loss` must accept (prediction, target, weight) when `weights` is passed to `fit`."
             )
     else:
         ok = bool(jl.applicable(custom_loss, 1.0, 1.0))
@@ -274,16 +274,17 @@ def _validate_custom_objective(
         raise ValueError(f"`{knob}` must evaluate to a callable Julia function.")
 
     methods = jl.collect(jl.methods(custom_objective))
-    accepts_three_args = any(
-        (not bool(m.isva) and int(m.nargs) == 4) or (bool(m.isva) and int(m.nargs) <= 4)
-        for m in methods
-    )
-    appears_elementwise = any(
-        (not bool(m.isva) and int(m.nargs) == 3) or (bool(m.isva) and int(m.nargs) <= 3)
-        for m in methods
-    )
 
-    if not accepts_three_args and appears_elementwise:
+    def _accepts_npos(m, npos: int) -> bool:
+        required_npos = int(m.nargs) - 1
+        if bool(m.isva):
+            return required_npos <= npos
+        return required_npos == npos
+
+    accepts_three_args = any(_accepts_npos(m, 3) for m in methods)
+    accepts_two_args = any(_accepts_npos(m, 2) for m in methods)
+
+    if not accepts_three_args and accepts_two_args:
         msg = (
             f"`{knob}` must have signature like {signature}. "
             f"If you intended an elementwise loss, use `{elementwise_alternative}`."

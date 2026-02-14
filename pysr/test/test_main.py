@@ -242,6 +242,26 @@ class TestPipeline(unittest.TestCase):
         y = np.array([0.0, 1.0])
         model.fit(X, y)
 
+    def test_loss_function_varargs_objective_runs(self):
+        model = PySRRegressor(
+            niterations=1,
+            populations=1,
+            procs=0,
+            progress=False,
+            verbosity=0,
+            temp_equation_file=True,
+            binary_operators=["+"],
+            loss_function="""
+            begin
+                varloss(tree, dataset, options...) = zero(eltype(dataset.y))
+                varloss
+            end
+            """,
+        )
+        X = np.array([[0.0], [1.0]])
+        y = np.array([0.0, 1.0])
+        model.fit(X, y)
+
     def test_elementwise_loss_wrong_signature_errors_early(self):
         """Validate `elementwise_loss` signature (prediction, target[, weights])."""
         model = PySRRegressor(
