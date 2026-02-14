@@ -198,7 +198,11 @@ def _initialize_torch():
                 }
                 output = self._node(symbols)
 
-                if not preserve_2d_output and output.dim() == 2 and output.shape[1] == 1:
+                if (
+                    not preserve_2d_output
+                    and output.dim() == 2
+                    and output.shape[1] == 1
+                ):
                     output = output.squeeze(-1)
 
                 return output
