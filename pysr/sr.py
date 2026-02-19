@@ -2196,7 +2196,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         )
 
         mutation_weights = SymbolicRegression.MutationWeights(
-            mutate_constant=(self.weight_mutate_constant if self.use_constants else 0.0),
+            mutate_constant=(
+                self.weight_mutate_constant if self.use_constants else 0.0
+            ),
             mutate_operator=self.weight_mutate_operator,
             mutate_feature=self.weight_mutate_feature,
             swap_operands=self.weight_swap_operands,

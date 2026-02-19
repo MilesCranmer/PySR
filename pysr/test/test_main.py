@@ -1136,7 +1136,8 @@ class TestUseConstants(unittest.TestCase):
         )
 
         with self.assertRaisesRegex(
-            ValueError, r"`use_constants=False` cannot be combined with `complexity_of_constants`"
+            ValueError,
+            r"`use_constants=False` cannot be combined with `complexity_of_constants`",
         ):
             model.fit(X, y)
 
@@ -1150,7 +1151,8 @@ class TestUseConstants(unittest.TestCase):
         )
 
         with self.assertRaisesRegex(
-            ValueError, r"`use_constants=False` cannot be combined with `complexity_mapping`"
+            ValueError,
+            r"`use_constants=False` cannot be combined with `complexity_mapping`",
         ):
             model.fit(X, y)
 
