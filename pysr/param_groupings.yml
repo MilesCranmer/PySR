@@ -25,6 +25,7 @@
     - nested_constraints
     - complexity_of_operators
     - complexity_of_constants
+    - use_constants
     - complexity_of_variables
     - complexity_mapping
     - warmup_maxsize_by

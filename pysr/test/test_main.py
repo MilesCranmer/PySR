@@ -1100,6 +1100,61 @@ class TestPipeline(unittest.TestCase):
         self.assertIn("arity 3 but constraint tuple has length 2", str(cm.exception))
 
 
+class TestUseConstants(unittest.TestCase):
+    def setUp(self):
+        self.rstate = np.random.RandomState(123)
+        self.default_test_kwargs = dict(
+            binary_operators=["+", "-", "*", "/"],
+            niterations=3,
+            populations=4,
+            population_size=16,
+            maxsize=12,
+            progress=False,
+            temp_equation_file=False,
+        )
+
+    def test_use_constants_disables_real_constants(self):
+        X = self.rstate.randn(120, 2)
+        y = 1.5 * X[:, 0] - 0.7 * X[:, 1] + 0.2
+
+        model = PySRRegressor(
+            **self.default_test_kwargs,
+            use_constants=False,
+        )
+        model.fit(X, y)
+
+        for expr in model.equations_["sympy_format"]:
+            self.assertEqual(expr.atoms(sympy.Float), set())
+
+    def test_use_constants_conflicts_with_complexity_of_constants(self):
+        X = self.rstate.randn(40, 2)
+        y = X[:, 0] + X[:, 1]
+        model = PySRRegressor(
+            **self.default_test_kwargs,
+            use_constants=False,
+            complexity_of_constants=2,
+        )
+
+        with self.assertRaisesRegex(
+            ValueError, r"`use_constants=False` cannot be combined with `complexity_of_constants`"
+        ):
+            model.fit(X, y)
+
+    def test_use_constants_conflicts_with_complexity_mapping(self):
+        X = self.rstate.randn(40, 2)
+        y = X[:, 0] + X[:, 1]
+        model = PySRRegressor(
+            **self.default_test_kwargs,
+            use_constants=False,
+            complexity_mapping="f(tree) = 1",
+        )
+
+        with self.assertRaisesRegex(
+            ValueError, r"`use_constants=False` cannot be combined with `complexity_mapping`"
+        ):
+            model.fit(X, y)
+
+
 class TestGuesses(unittest.TestCase):
     def setUp(self):
         self.rstate = np.random.RandomState(1)

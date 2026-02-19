@@ -518,6 +518,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Default is `None`.
     complexity_of_constants : int | float
         Complexity of constants. Default is `1`.
+    use_constants : bool
+        Whether to allow real-valued constants to appear in generated expressions.
+        If `False`, PySR disables real constants by setting constant complexity above
+        `maxsize` so any expression containing a real constant is excluded.
+        Default is `True`.
     complexity_of_variables : int | float | list[int | float]
         Global complexity of variables. To set different complexities for
         different variables, pass a list of complexities to the `fit` method
@@ -961,6 +966,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         loss_scale: Literal["log", "linear"] = "log",
         complexity_of_operators: dict[str, int | float] | None = None,
         complexity_of_constants: int | float | None = None,
+        use_constants: bool = True,
         complexity_of_variables: int | float | list[int | float] | None = None,
         complexity_mapping: str | None = None,
         parsimony: float = 0.0,
@@ -1081,6 +1087,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.loss_scale = loss_scale
         self.complexity_of_operators = complexity_of_operators
         self.complexity_of_constants = complexity_of_constants
+        self.use_constants = use_constants
         self.complexity_of_variables = complexity_of_variables
         self.complexity_mapping = complexity_mapping
         self.parsimony = parsimony
@@ -1644,6 +1651,18 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         elif self.maxsize < 7:
             raise ValueError("PySR requires a maxsize of at least 7")
 
+        if not self.use_constants:
+            if self.complexity_mapping is not None:
+                raise ValueError(
+                    "`use_constants=False` cannot be combined with `complexity_mapping`, "
+                    "because custom complexity mappings override constant complexity."
+                )
+            if self.complexity_of_constants is not None:
+                raise ValueError(
+                    "`use_constants=False` cannot be combined with `complexity_of_constants`. "
+                    "Leave `complexity_of_constants=None` when disabling constants."
+                )
+
         # NotImplementedError - Values that could be supported at a later time
         if self.optimizer_algorithm not in VALID_OPTIMIZER_ALGORITHMS:
             raise NotImplementedError(
@@ -2163,8 +2182,21 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         else:
             autodiff_backend = None
 
+        effective_complexity_of_constants = (
+            self.complexity_of_constants if self.use_constants else (self.maxsize + 1)
+        )
+        effective_should_optimize_constants = (
+            self.should_optimize_constants and self.use_constants
+        )
+        effective_optimize_probability = (
+            self.optimize_probability if self.use_constants else 0.0
+        )
+        effective_probability_negate_constant = (
+            self.probability_negate_constant if self.use_constants else 0.0
+        )
+
         mutation_weights = SymbolicRegression.MutationWeights(
-            mutate_constant=self.weight_mutate_constant,
+            mutate_constant=(self.weight_mutate_constant if self.use_constants else 0.0),
             mutate_operator=self.weight_mutate_operator,
             mutate_feature=self.weight_mutate_feature,
             swap_operands=self.weight_swap_operands,
@@ -2175,7 +2207,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             simplify=self.weight_simplify,
             randomize=self.weight_randomize,
             do_nothing=self.weight_do_nothing,
-            optimize=self.weight_optimize,
+            optimize=(self.weight_optimize if self.use_constants else 0.0),
         )
 
         # Convert operators dict to Julia format and create OperatorEnum
@@ -2233,7 +2265,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             operators=jl_operator_enum,
             constraints=jl_constraints_dict,
             complexity_of_operators=complexity_of_operators,
-            complexity_of_constants=self.complexity_of_constants,
+            complexity_of_constants=effective_complexity_of_constants,
             complexity_of_variables=complexity_of_variables,
             complexity_mapping=complexity_mapping,
             expression_spec=self.expression_spec_.julia_expression_spec(),
@@ -2271,7 +2303,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             hof_migration=self.hof_migration,
             fraction_replaced_hof=self.fraction_replaced_hof,
             should_simplify=self.should_simplify,
-            should_optimize_constants=self.should_optimize_constants,
+            should_optimize_constants=effective_should_optimize_constants,
             warmup_maxsize_by=runtime_params.warmup_maxsize_by,
             use_frequency=self.use_frequency,
             use_frequency_in_tournament=self.use_frequency_in_tournament,
@@ -2285,10 +2317,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             optimizer_algorithm=self.optimizer_algorithm,
             optimizer_nrestarts=self.optimizer_nrestarts,
             optimizer_f_calls_limit=self.optimizer_f_calls_limit,
-            optimizer_probability=self.optimize_probability,
+            optimizer_probability=effective_optimize_probability,
             optimizer_iterations=self.optimizer_iterations,
             perturbation_factor=self.perturbation_factor,
-            probability_negate_constant=self.probability_negate_constant,
+            probability_negate_constant=effective_probability_negate_constant,
             annealing=self.annealing,
             timeout_in_seconds=self.timeout_in_seconds,
             crossover_probability=self.crossover_probability,
