@@ -2,6 +2,18 @@
 # information to generate the "Research Showcase"
 
 papers:
+  - title: Data-driven skin friction estimation for UAV wings in subsonic flows
+    authors:
+      - Chris Pliakos (1)
+      - Giorgos Efrem (1)
+      - Dimitrios Terzis (1)
+      - Pericles Panagiotou (1)
+    affiliations:
+       1: Laboratory of Fluid Mechanics and Turbomachinery, Department of Mechanical Engineering, Aristotle University of Thessaloniki, 54124 Thessaloniki, Greece
+    link: https://www.aifluids.net/proceedings/S6P16.pdf
+    abstract: Accurate estimation of the skin friction coefficient (𝐶𝑓) is essential for estimating the wall shear stresses (𝜏𝑤) and ultimately the first-layer cell height (𝑦) in wall-resolved RANS simulations of wings, where turbulence models are used, demanding a specific grid resolution near walls (primarily the 𝑦𝑡𝑎𝑟𝑔𝑒𝑡⁺). Conventional flat-plate correlations often fail to account for the three-dimensional nature of real wing flows, introducing uncertainties in 𝐶𝑓 predictions and leading to multiple CFD analyses and mesh refinements to meet the targets. In this work, we propose a machine-learning-based approach exploring symbolic regression to derive a model that correlates wing-specific parameters (e.g., Reynolds number, angle of attack, thickness-to-chord ratio, wing sweep angle) with 𝐶𝑓 at the Mean Aerodynamic Chord (MAC). Data are acquired from an in-house database of over 5,000 RANS simulations for UAV wings operating in the low subsonic regime, covering a wide design space, all conducted following best-practice CFD guidelines to ensure high fidelity. These analyses are performed at various flow conditions covering Reynolds numbers from 10⁵ to 10⁷ and include the complete drag polar for each wing. The proposed correlation provides improved agreement with CFD data and enables more accurate 𝑦⁺ estimations. Validation on different wing geometries, including the ONERA M6 and in-house UAV wings, confirmed the robustness of the model, which improves boundary-layer resolution with only a marginal (~2%) increase in total mesh size, while achieving an R² of 0.68 with negligible computational inference cost. This explicit, data-driven equation offers an efficient method for streamlining mesh generation in aerodynamic simulations.
+    image: https://prnt.sc/4vnCOwkAww20
+    date: 2025-05-30
   - title: Learning Microstructure in Active Matter
     authors:
       - Writu Dasgupta (1)
