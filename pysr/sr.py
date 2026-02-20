@@ -45,12 +45,12 @@ from .feature_selection import run_feature_selection
 from .julia_extensions import load_required_packages
 from .julia_helpers import (
     _escape_filename,
-    _load_cluster_manager,
     jl_array,
     jl_deserialize,
     jl_is_function,
     jl_named_tuple,
     jl_serialize,
+    load_cluster_manager,
 )
 from .julia_import import AnyValue, SymbolicRegression, VectorValue, jl
 from .logger_specs import AbstractLoggerSpec
@@ -683,8 +683,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Default is `None`.
     cluster_manager : str
         For distributed computing, this sets the job queue system. Set
-        to one of "slurm", "pbs", "lsf", "sge", "qrsh", "scyld", or
-        "htc". If set to one of these, PySR will run in distributed
+        to one of "slurm", "pbs", "lsf", "sge", "qrsh", "scyld", or "htc".
+        If set to one of these, PySR will run in distributed
         mode, and use `procs` to figure out how many processes to launch.
         Default is `None`.
     heap_size_hint_in_bytes : int
@@ -1004,13 +1004,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         probability_negate_constant: float = 0.00743,
         tournament_selection_n: int = 15,
         tournament_selection_p: float = 0.982,
-        parallelism: (
-            Literal["serial", "multithreading", "multiprocessing"] | None
-        ) = None,
+        # fmt: off
+        parallelism: Literal["serial", "multithreading", "multiprocessing"] | None = None,
         procs: int | None = None,
-        cluster_manager: (
-            Literal["slurm", "pbs", "lsf", "sge", "qrsh", "scyld", "htc"] | None
-        ) = None,
+        cluster_manager: Literal["slurm", "pbs", "lsf", "sge", "qrsh", "scyld", "htc"] | str | None = None,
+        # fmt: on
         heap_size_hint_in_bytes: int | None = None,
         worker_timeout: float | None = None,
         worker_imports: list[str] | None = None,
@@ -2150,13 +2148,12 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         if cluster_manager is not None:
             active_project = jl.seval("Base.active_project()")
             if isinstance(active_project, str) and len(active_project) > 0:
-                # `ClusterManagers.addprocs_slurm` launches new Julia workers via `srun`.
-                # The project (environment) is propagated via `JULIA_PROJECT` rather
-                # than a `--project=...` flag, so ensure it is set.
+                # Some distributed worker launchers propagate the project (environment)
+                # via `JULIA_PROJECT` rather than a `--project=...` flag.
                 os.environ.setdefault(
                     "JULIA_PROJECT", str(Path(active_project).resolve().parent)
                 )
-            cluster_manager = _load_cluster_manager(cluster_manager)
+            cluster_manager = load_cluster_manager(cluster_manager)
 
         if self.autodiff_backend is not None:
             autodiff_backend = jl.Symbol(self.autodiff_backend)
