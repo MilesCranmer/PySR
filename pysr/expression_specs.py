@@ -275,18 +275,15 @@ class TemplateExpressionSpec(AbstractExpressionSpec):
             template_inputs.append(
                 f"parameters=({', '.join([f'{p}={self.parameters[p]}' for p in self.parameters]) + ','})"
             )
-        return dedent(
-            f"""
+        return dedent(f"""
         @template_spec({', '.join(template_inputs) + ','}) do {', '.join(self.variable_names)}
             {self.combine}
         end
-        """
-        )
+        """)
 
     def julia_expression_options(self):
         f_combine = jl.seval(self.combine)
-        creator = jl.seval(
-            """
+        creator = jl.seval("""
         function _pysr_create_template_structure(
             @nospecialize(function_symbols::AbstractVector),
             @nospecialize(combine::Function),
@@ -301,8 +298,7 @@ class TemplateExpressionSpec(AbstractExpressionSpec):
             structure = SymbolicRegression.TemplateStructure{tuple_symbol}(combine, num_features)
             return (; structure)
         end
-        """
-        )
+        """)
         return creator(self.function_symbols, f_combine, self.num_features)
 
     @property
@@ -327,8 +323,7 @@ def parametric_expression_deprecation_warning(
 ):
     function_name = "f"
     var_names = list(variable_names)
-    message = dedent(
-        f"""
+    message = dedent(f"""
         ParametricExpressionSpec is deprecated. you should switch to TemplateExpressionSpec with explicit parameters indexed by category.
 
         Since you have `max_parameters={max_parameters}` and `variable_names=[{", ".join(f'"{v}"' for v in var_names)}]`, you could migrate like this:
@@ -343,8 +338,7 @@ def parametric_expression_deprecation_warning(
             X = np.column_stack([X, category])       # add the category column
 
         Finally, do not pass `category` when calling .fit().
-    """
-    ).strip()
+    """).strip()
     wrapped = "\n".join(textwrap.fill(line, 88) for line in message.splitlines())
     warnings.warn(wrapped, FutureWarning, stacklevel=3)
 
@@ -416,7 +410,7 @@ def _search_output_to_callable_expressions(
     equations: pd.DataFrame, search_output, i: int | None
 ) -> pd.DataFrame:
     equations = copy.deepcopy(equations)
-    (_, all_out_hof) = search_output
+    _, all_out_hof = search_output
     out_hof = all_out_hof[i] if i is not None else all_out_hof
     expressions = []
     callables = []
