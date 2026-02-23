@@ -5,6 +5,7 @@ This script reads _api_template.md and substitutes the {params_output}
 placeholder with auto-generated parameter docs from param_groupings.yml
 and PySRRegressor docstrings.
 """
+
 import re
 import sys
 from pathlib import Path
