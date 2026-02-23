@@ -130,16 +130,14 @@ class TestPipeline(unittest.TestCase):
             parallelism="multiprocessing",
             turbo=True,
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-10 && complexity == 1",
-            **{
-                loss_key: f"""
+            **{loss_key: f"""
             function my_objective(tree::{node_type}{{T}}, dataset::Dataset{{T}}, options::Options) where T
                 prediction, flag = eval_tree_array(tree, dataset.X, options)
                 !flag && return T(Inf)
                 abs3(x) = abs(x) ^ 3
                 return sum(abs3, prediction .- dataset.y) / length(prediction)
             end
-            """
-            },
+            """},
         )
         model.fit(self.X, y)
         print(model.equations_)
@@ -154,14 +152,12 @@ class TestPipeline(unittest.TestCase):
 
     def test_multiline_seval(self):
         # The user should be able to run multiple things in a single seval call:
-        num = jl.seval(
-            """
+        num = jl.seval("""
             function my_new_objective(x)
                 x^2
             end
             1.5
-        """
-        )
+        """)
         self.assertEqual(num, 1.5)
 
     def test_high_precision_search_custom_loss(self):

@@ -8,26 +8,26 @@ repos:
       - id: check-yaml
       - id: check-added-large-files
   # General formatting
-  - repo: https://github.com/psf/black
-    rev: 25.1.0
+  - repo: https://github.com/psf/black-pre-commit-mirror
+    rev: 26.1.0
     hooks:
       - id: black
       - id: black-jupyter
         exclude: pysr/test/test_nb.ipynb
   # Stripping notebooks
   - repo: https://github.com/kynan/nbstripout
-    rev: 0.8.1
+    rev: 0.9.1
     hooks:
       - id: nbstripout
         exclude: pysr/test/test_nb.ipynb
   # Unused imports
   - repo: https://github.com/hadialqattan/pycln
-    rev: "v2.5.0"
+    rev: "v2.6.0"
     hooks:
       - id: pycln
   # Sorted imports
   - repo: https://github.com/PyCQA/isort
-    rev: "6.0.1"
+    rev: "8.0.0"
     hooks:
       - id: isort
         additional_dependencies: [toml]
