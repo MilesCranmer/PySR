@@ -840,3 +840,56 @@ Here, we write out a full function in Julia.
 
 For the many other features available in PySR, please
 read the [Options section](options.md).
+
+## 16. Physics discovery: Klein-Gordon dispersion
+
+PySR can rediscover known physics laws from data. Here we generate data from
+the [Klein-Gordon](https://en.wikipedia.org/wiki/Klein%E2%80%93Gordon_equation)
+dispersion relation — a fundamental result in relativistic wave mechanics — and
+let PySR recover the exact symbolic form.
+
+The Klein-Gordon equation describes a relativistic scalar field with mass
+parameter $m$ and wave speed $c$:
+
+$$\frac{\partial^2 \psi}{\partial t^2} = c^2 \nabla^2 \psi - m^2 \psi$$
+
+Plane-wave solutions satisfy the dispersion relation $\omega^2 = c^2 k^2 + m^2$.
+Let's see if PySR can discover this from data alone.
+
+First, generate some noisy dispersion data with $c = 1$:
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(0)
+k = rng.uniform(0.1, 10.0, 500)
+m = rng.uniform(0.0, 5.0, 500)
+omega_sq = k**2 + m**2
+omega_sq += 0.01 * rng.normal(size=500) * omega_sq  # 1% relative noise
+
+X = np.column_stack([k, m])
+```
+
+Now fit a symbolic regression model, providing descriptive variable names:
+
+```python
+from pysr import PySRRegressor
+
+model = PySRRegressor(
+    binary_operators=["+", "-", "*"],
+    unary_operators=["square"],
+    niterations=40,
+    populations=30,
+    maxsize=15,
+    variable_names=["k", "m"],
+    extra_sympy_mappings={"square": lambda x: x**2},
+)
+model.fit(X, omega_sq)
+print(model.sympy())
+```
+
+PySR should discover expressions equivalent to `k**2 + m**2`, recovering the
+exact dispersion relation from noisy measurements with no prior physics
+knowledge.
+
+See also `examples/klein_gordon_dispersion.py` for a self-contained script.
