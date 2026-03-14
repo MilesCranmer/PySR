@@ -17,6 +17,7 @@ noise, then lets PySR rediscover the exact symbolic form.
 """
 
 import numpy as np
+
 from pysr import PySRRegressor
 
 
