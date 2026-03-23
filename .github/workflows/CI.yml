@@ -11,6 +11,7 @@ on:
   pull_request:
     branches:
       - 'master'
+      - 'release-v1'
     paths:
       - '**'
 
@@ -42,7 +43,7 @@ jobs:
             os: ubuntu-latest
             test-id: include
           - julia-version: '1'
-            python-version: '3.8'
+            python-version: '3.9'
             os: ubuntu-latest
             test-id: include
 

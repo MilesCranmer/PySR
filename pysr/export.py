@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 from collections.abc import Callable
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -82,9 +83,10 @@ def add_export_formats(
         index=output.index,
     )
 
+    exports_any = cast(Any, exports)
     if output_jax_format:
-        exports["jax_format"] = jax_format
+        exports_any["jax_format"] = jax_format
     if output_torch_format:
-        exports["torch_format"] = torch_format
+        exports_any["torch_format"] = torch_format
 
     return exports
