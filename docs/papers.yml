@@ -2,6 +2,18 @@
 # information to generate the "Research Showcase"
 
 papers:
+  - title: Discovering mathematical concepts through a multi-agent system
+    authors:
+      - Daattavya Aggarwal (1)
+      - Oisin Kim (1)
+      - Carl Henrik Ek (1)
+      - Challenger Mishra (1)
+    affiliations:
+      1: Department of Computer Science & Technology, University of Cambridge
+    link: https://arxiv.org/abs/2603.04528
+    abstract: "Mathematical concepts emerge through an interplay of processes, including experimentation, efforts at proof, and counterexamples. In this paper, we present a new multi-agent model for computational mathematical discovery based on this observation. Our system, conceived with research in mind, poses its own conjectures and then attempts to prove them, making decisions informed by this feedback and an evolving data distribution. Inspired by the history of Euler's conjecture for polyhedra and an open challenge in the literature, we benchmark with the task of autonomously recovering the concept of homology from polyhedral data and knowledge of linear algebra. Our system completes this learning problem. Most importantly, the experiments are ablations, statistically testing the value of the complete dynamic and controlling for experimental setup. They support our main claim: that the optimisation of the right combination of local processes can lead to surprisingly well-aligned notions of mathematical interestingness."
+    image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/cdb95956495a5f2f92b83ec968bc3fca0a71a689/images/conjecturing_agent.png
+    date: 2026-03-04
   - title: Learning Microstructure in Active Matter
     authors:
       - Writu Dasgupta (1)
