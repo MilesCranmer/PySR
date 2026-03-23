@@ -24,7 +24,9 @@ jobs:
         shell: bash
     strategy:
       matrix:
-        julia-version: ['1']
+        # Pin Julia for release-v1: SymbolicRegression v1.x has intermittent worker crashes
+        # on Windows with the latest Julia ("1"), which currently resolves to 1.12.x.
+        julia-version: ['1.11']
         python-version: ['3.13']
         os: [windows-latest]
 
