@@ -157,7 +157,7 @@ spec = TemplateExpressionSpec(
 )
 ```
 
-This will learn an equation of the form: 
+This will learn an equation of the form:
 $$y = \alpha_c\,f(x_1,x_2) + \beta g(x_1 ^2)$$
 where $c$ is the category, $\alpha_c$ is a learned parameter specific to each category, and $\beta$ is a normal scalar category. Note that **unlike ParametricExpressionSpec**, this feature of TemplateExpressionSpec would have you pass the `category` variable _in_ `X` rather than as a category keyword (floating point versions of the categories). This difference means that in a TemplateExpressionSpec, you can actually have _multiple_ categories!
 
@@ -175,12 +175,12 @@ where $c$ is the category, $\alpha_c$ is a learned parameter specific to each ca
 ### New:
 spec = TemplateExpressionSpec(
     "sin(f(x1, x2)) + g(x3)"
-    expressions=["f", "g"], 
+    expressions=["f", "g"],
     variable_names=["x1", "x2", "x3"],
 )
 ```
 
-  
+
 **Full Changelog:** [v1.3.1...v1.4.0](https://github.com/MilesCranmer/PySR/compare/v1.3.1...v1.4.0)
 
 ## [1.3.1] (2024-12-27)
@@ -332,7 +332,7 @@ The default hyperparameters have been significantly revised based on testing:
 
 - New output organization: Results are now stored in `outputs/<run_id>/` rather than in the directory of execution.
 - Improved performance with better parallelism handling
-- Support for Python 3.10+ 
+- Support for Python 3.10+
 - Updated Julia backend to version 1.10+
 - Fix for aliasing issues in crossover operations
 
