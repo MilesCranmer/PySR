@@ -623,7 +623,7 @@ Small patch to Julia version to avoid buggy libgomp in 1.10.1 and 1.10.2.
   - Manually convert `np.str_` to `str` before passing to `variable_names`, otherwise it becomes a `PyArray` and not a `String` (might be worth adding a workaround, it seems like PyJulia does this automatically)
 - (BREAKING) Julia is now installed automatically when you import `pysr` (via JuliaCall)
 - (BREAKING) The user no longer needs to run `python -m pysr install`. The install process is done by JuliaCall at import time.
-  - Removed code related to `pysr.install()` and `python -m pysr install` because JuliaCall now handles this. 
+  - Removed code related to `pysr.install()` and `python -m pysr install` because JuliaCall now handles this.
   - `python -m pysr install` will not give a warning and do nothing.
 - (BREAKING) Remove the feynman problems dataset. Didn't seem good to have a dataset within a library itself.
 - (BREAKING) Deprecated `julia_project` argument (ignored; no effect). The user now needs to set this up by customizing `juliapkg.json`. See updated documentation for instructions.
@@ -733,7 +733,7 @@ x1 = SR.Node(feature=1)  # Create expressions manually
 
 ### What's Changed
 * Automated update to backend: v0.22.3 by @MilesCranmer in https://github.com/MilesCranmer/PySR/pull/409
- 
+
 ### Backend changes
 
 - CompatHelper: bump compat for DynamicExpressions to 0.13, (keep existing compat) by @github-actions in https://github.com/MilesCranmer/SymbolicRegression.jl/pull/250
@@ -836,7 +836,7 @@ x1 = SR.Node(feature=1)  # Create expressions manually
       - By default, only 5 significant digits are now printed, rather than the entire float. You can change this with the `print_precision` option.
       - In the default printed equations, `x₁` is used rather than `x1`.
       - `y = ` is printed at the start (or `y₁ = ` for multi-output). With units this becomes, for example, `y[kg] =`.
-    - **Misc** 
+    - **Misc**
       - Easier to convert from MLJ interface to SymbolicUtils (via `node_to_symbolic(::Node, ::AbstractSRRegressor)`) ([228](https://github.com/MilesCranmer/SymbolicRegression.jl/pull/228))
       - Improved precompilation ([228](https://github.com/MilesCranmer/SymbolicRegression.jl/pull/228))
       - Various performance and type stability improvements ([228](https://github.com/MilesCranmer/SymbolicRegression.jl/pull/228))
@@ -1166,7 +1166,7 @@ https://user-images.githubusercontent.com/7593028/199054602-7ad19e87-19ff-4440-a
 ### What's Changed
 * Custom complexities for operators, constants, and variables (https://github.com/MilesCranmer/PySR/pull/138)
 * Early stopping conditions (https://github.com/MilesCranmer/PySR/pull/134)
-  * Based on a certain loss value being achieved 
+  * Based on a certain loss value being achieved
   * Max number of evaluations (for theoretical studies of genetic algorithms, rather than anything practical).
 * Work with specified expression rather than the one given by `model_selection`, by passing `index` to the function you wish to use (e.g,. `model.predict(X, index=5)` would use the 5th equation.).
 
