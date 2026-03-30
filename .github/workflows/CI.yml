@@ -15,6 +15,8 @@ on:
     paths:
       - '**'
 
+  workflow_dispatch:
+
 permissions:
   contents: write
 
