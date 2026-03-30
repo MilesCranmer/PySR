@@ -83,8 +83,8 @@ def add_export_formats(
     )
 
     if output_jax_format:
-        exports["jax_format"] = jax_format
+        exports["jax_format"] = pd.Series(jax_format, index=output.index)
     if output_torch_format:
-        exports["torch_format"] = torch_format
+        exports["torch_format"] = pd.Series(torch_format, index=output.index)
 
     return exports
