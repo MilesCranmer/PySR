@@ -13,7 +13,6 @@ on:
       - 'master'
     paths:
       - '**'
-
   workflow_dispatch:
 
 jobs:
