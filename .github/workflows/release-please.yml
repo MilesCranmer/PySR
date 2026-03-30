@@ -14,46 +14,10 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: googleapis/release-please-action@v4
         with:
-          fetch-depth: 0
-
-      - uses: actions/checkout@v4
-        with:
-          repository: MilesCranmerBot/release-please
-          ref: 911ad18bdc3bb52bfef564cfbcb35f31aac01df3
-          path: release-please-src
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install release-please deps
-        working-directory: release-please-src
-        run: npm ci
-
-      - name: Build release-please
-        working-directory: release-please-src
-        run: npm run compile
-
-      - name: Create or update release PR
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          node release-please-src/build/src/bin/release-please.js release-pr \
-            --token "$GITHUB_TOKEN" \
-            --repo-url "https://github.com/${{ github.repository }}" \
-            --target-branch release-v1 \
-            --config-file release-please-config.json \
-            --manifest-file .release-please-manifest.json
-
-      - name: Create GitHub release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          node release-please-src/build/src/bin/release-please.js github-release \
-            --token "$GITHUB_TOKEN" \
-            --repo-url "https://github.com/${{ github.repository }}" \
-            --target-branch release-v1 \
-            --config-file release-please-config.json \
-            --manifest-file .release-please-manifest.json
+          command: manifest
+          token: ${{ secrets.GITHUB_TOKEN }}
+          target-branch: release-v1
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
