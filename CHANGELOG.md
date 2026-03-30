@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.10](https://github.com/MilesCranmer/PySR/compare/v1.5.9...v1.5.10) (2026-03-30)
+
+
+### Bug Fixes
+
+* **ci:** backport release-v1 CI fixes ([#1164](https://github.com/MilesCranmer/PySR/issues/1164)) ([704b61f](https://github.com/MilesCranmer/PySR/commit/704b61f3c327e7303f94c8ee761f3879f46c994e))
+* **deps:** allow pandas &lt;4.0.0 ([#1160](https://github.com/MilesCranmer/PySR/issues/1160)) ([111ace9](https://github.com/MilesCranmer/PySR/commit/111ace987c637b00c3197d01f5d293bd2d8d6de0))
+
 ## [1.5.9] (2025-07-15)
 
 ### What's Changed
