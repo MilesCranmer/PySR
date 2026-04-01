@@ -2,6 +2,17 @@
 # information to generate the "Research Showcase"
 
 papers:
+  - title: Discovering parametrizations of implied volatility with symbolic regression
+    authors:
+      - Martin Keller-Ressel (1,2)
+      - Hannes Nikulski (1)
+    affiliations:
+      1: Department of Mathematics, TU Dresden
+      2: ScaDS.AI (Center for Scalable Data Analytics and Artificial Intelligence) Dresden/Leipzig,
+    link: https://arxiv.org/abs/2603.21892
+    abstract: "We investigate the data-driven discovery of parametric representations for implied volatility slices. Using symbolic regression, we search for simple analytic formulas that approximate the total implied variance as a function of log-moneyness and maturity. Our approach generates candidate parametrizations directly from market data without imposing a predefined functional form. We compare the resulting formulas with the widely used SVI parametrization in terms of accuracy and simplicity. Numerical experiments indicate that symbolic regression can identify compact parametrizations with competitive fitting performance."
+    image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/29fc1b43ab0d9f07ce7356c6506414d19f43d55e/images/volatility_fits.png
+    date: 2026-03-31
   - title: Discovering mathematical concepts through a multi-agent system
     authors:
       - Daattavya Aggarwal (1)
