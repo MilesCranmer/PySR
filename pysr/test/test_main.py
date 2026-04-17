@@ -269,9 +269,7 @@ class TestPipeline(unittest.TestCase):
             )
 
     def test_elementwise_loss_with_weights_requires_three_args_warns(self):
-        custom_loss = jl.seval(
-            "myloss2(prediction, target) = (prediction - target)^2"
-        )
+        custom_loss = jl.seval("myloss2(prediction, target) = (prediction - target)^2")
         with self.assertWarnsRegex(UserWarning, "elementwise_loss"):
             _validate_elementwise_loss(
                 custom_loss,
