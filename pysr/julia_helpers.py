@@ -36,8 +36,7 @@ def load_cluster_manager(cluster_manager: str) -> AnyValue:
     if cluster_manager == "slurm":
         jl.seval("using SlurmClusterManager: SlurmManager")
         jl.seval("using Distributed")
-        jl.seval(
-            """
+        jl.seval("""
             function addprocs_slurm(numprocs::Integer; exeflags=``, lazy=false, kws...)
                 procs = Distributed.addprocs(SlurmManager(); exeflags=exeflags, lazy=lazy, kws...)
                 # SymbolicRegression may serialize the addprocs function to workers. Defining a
@@ -60,8 +59,7 @@ def load_cluster_manager(cluster_manager: str) -> AnyValue:
                 end
                 return procs
             end
-            """
-        )
+            """)
         return jl.addprocs_slurm
     elif cluster_manager in KNOWN_CLUSTERMANAGER_BACKENDS:
         jl.seval(f"using ClusterManagers: addprocs_{cluster_manager}")
