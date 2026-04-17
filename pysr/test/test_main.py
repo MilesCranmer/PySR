@@ -258,42 +258,26 @@ class TestPipeline(unittest.TestCase):
         y = np.array([0.0, 1.0])
         model.fit(X, y)
 
-    def test_elementwise_loss_wrong_signature_errors_early(self):
+    def test_elementwise_loss_wrong_signature_warns(self):
         """Validate `elementwise_loss` signature (prediction, target[, weights])."""
-        model = PySRRegressor(
-            niterations=1,
-            populations=1,
-            procs=0,
-            progress=False,
-            verbosity=0,
-            temp_equation_file=True,
-            binary_operators=["+"],
-            elementwise_loss="myloss_bad_arity(a) = a",
-        )
-        X = np.array([[0.0], [1.0]])
-        y = np.array([0.0, 1.0])
-        with self.assertRaises(ValueError) as cm:
-            model.fit(X, y)
-        self.assertIn("elementwise_loss", str(cm.exception))
+        custom_loss = jl.seval("myloss_bad_arity(a) = a")
+        with self.assertWarnsRegex(UserWarning, "elementwise_loss"):
+            _validate_elementwise_loss(
+                custom_loss,
+                has_weights=False,
+                probe_value=np.float32(1.0),
+            )
 
-    def test_elementwise_loss_with_weights_requires_three_args(self):
-        model = PySRRegressor(
-            niterations=1,
-            populations=1,
-            procs=0,
-            progress=False,
-            verbosity=0,
-            temp_equation_file=True,
-            binary_operators=["+"],
-            elementwise_loss="myloss2(prediction, target) = (prediction - target)^2",
+    def test_elementwise_loss_with_weights_requires_three_args_warns(self):
+        custom_loss = jl.seval(
+            "myloss2(prediction, target) = (prediction - target)^2"
         )
-        X = np.array([[0.0], [1.0]])
-        y = np.array([0.0, 1.0])
-        weights = np.array([1.0, 1.0])
-        with self.assertRaises(ValueError) as cm:
-            model.fit(X, y, weights=weights)
-        self.assertIn("elementwise_loss", str(cm.exception))
-        self.assertIn("weights", str(cm.exception))
+        with self.assertWarnsRegex(UserWarning, "elementwise_loss"):
+            _validate_elementwise_loss(
+                custom_loss,
+                has_weights=True,
+                probe_value=np.float32(1.0),
+            )
 
     def test_elementwise_loss_with_weights_accepts_three_args(self):
         model = PySRRegressor(
@@ -312,6 +296,43 @@ class TestPipeline(unittest.TestCase):
         y = np.array([0.0, 1.0])
         weights = np.array([1.0, 1.0])
         model.fit(X, y, weights=weights)
+
+    def test_elementwise_loss_float32_probe_accepts_strictly_typed_loss(self):
+        custom_loss = jl.seval(
+            "(prediction::Float32, target::Float32) -> (prediction - target)^2"
+        )
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            _validate_elementwise_loss(
+                custom_loss,
+                has_weights=False,
+                probe_value=np.float32(1.0),
+            )
+        self.assertEqual(len(caught), 0)
+
+    def test_elementwise_loss_float32_fit_accepts_strictly_typed_loss(self):
+        model = PySRRegressor(
+            niterations=1,
+            populations=1,
+            procs=0,
+            progress=False,
+            verbosity=0,
+            precision=32,
+            temp_equation_file=True,
+            binary_operators=["+"],
+            elementwise_loss=(
+                "(prediction::Float32, target::Float32) -> (prediction - target)^2"
+            ),
+        )
+        X = np.array([[0.0], [1.0]], dtype=np.float32)
+        y = np.array([0.0, 1.0], dtype=np.float32)
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            model.fit(X, y)
+        self.assertFalse(
+            any("elementwise_loss" in str(w.message) for w in caught),
+            msg=[str(w.message) for w in caught],
+        )
 
     def test_validation_helpers_skip_nonfunction(self):
         _validate_elementwise_loss(jl.seval("1.0"), has_weights=False)
