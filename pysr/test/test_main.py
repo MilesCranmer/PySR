@@ -265,7 +265,7 @@ class TestPipeline(unittest.TestCase):
             _validate_elementwise_loss(
                 custom_loss,
                 has_weights=False,
-                probe_dtype=np.float32,
+                probe_value=np.float32(1.0),
             )
 
     def test_elementwise_loss_with_weights_requires_three_args_warns(self):
@@ -274,7 +274,7 @@ class TestPipeline(unittest.TestCase):
             _validate_elementwise_loss(
                 custom_loss,
                 has_weights=True,
-                probe_dtype=np.float32,
+                probe_value=np.float32(1.0),
             )
 
     def test_elementwise_loss_with_weights_accepts_three_args(self):
@@ -304,7 +304,7 @@ class TestPipeline(unittest.TestCase):
             _validate_elementwise_loss(
                 custom_loss,
                 has_weights=False,
-                probe_dtype=np.float32,
+                probe_value=np.float32(1.0),
             )
         self.assertEqual(len(caught), 0)
 
