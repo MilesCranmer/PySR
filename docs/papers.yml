@@ -2,6 +2,17 @@
 # information to generate the "Research Showcase"
 
 papers:
+  - title: An Engineering Model for Static Yawed Wind Turbines Based on Actuator Line Simulations and Symbolic Regression
+    authors:
+      - Haoyuan Sun (1)
+      - Andrea Sciacchitano (1)
+      - Wei Yu (1)
+    affiliations:
+      1: Faculty of Aerospace Engineering, Delft University of Technology,
+    link: http://dx.doi.org/10.1002/we.70118
+    abstract: "Yaw engineering models are commonly used as add-ons to the industrial Blade Element Momentum (BEM) framework to improve load and power predictions by accounting for the skewed wake effect. However, existing yaw engineering models show noticeable limitations in accurately predicting the induced velocity distribution across the blade span. In this study, we employ a genetic symbolic regression approach to develop a new set of yaw engineering models for both the normal and tangential induced velocities of a static yawed wind turbine. The model regression is performed using simulation data from Reynolds-Averaged Navier–Stokes (RANS) simulations with an actuator line model (ALM) of the NREL 5 MW wind turbine, covering a range of yaw angles ($\gamma$) and thrust coefficients ($C_T$) over which the skewed wake effect is dominant. The regressed models are selected based on an optimal trade-off between accuracy and complexity, with complexity constrained to remain comparable to Branlard's yaw engineering model. The selected models are subsequently verified using three unseen cases that span different operating conditions and wind turbine models. Verification is performed through a series of evaluations, including generalization performance tests, implementation within the BEM framework to assess their aerodynamic performances, and quantitative errors and loading analyses. The results demonstrate that the proposed models improve both the amplitude accuracy and azimuthal phase of induced velocities compared to the existing models of Coleman and Branlard, enabling it to accurately capture the phase of the peak aerodynamic forces across each annulus and to predict the non-restoring yaw moment occurring in the inboard region of the turbine, which other models fail to reproduce."
+    image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/
+    date: 2026-04-16
   - title: Discovering parametrizations of implied volatility with symbolic regression
     authors:
       - Martin Keller-Ressel (1,2)
