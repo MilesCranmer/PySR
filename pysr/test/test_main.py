@@ -41,6 +41,8 @@ from pysr.sr import (
     _check_assertions,
     _process_constraints,
     _suggest_keywords,
+    _validate_elementwise_loss,
+    _validate_export_mappings,
     idx_model_selection,
 )
 
@@ -128,16 +130,14 @@ class TestPipeline(unittest.TestCase):
             parallelism="multiprocessing",
             turbo=True,
             early_stop_condition="stop_if(loss, complexity) = loss < 1e-10 && complexity == 1",
-            **{
-                loss_key: f"""
+            **{loss_key: f"""
             function my_objective(tree::{node_type}{{T}}, dataset::Dataset{{T}}, options::Options) where T
                 prediction, flag = eval_tree_array(tree, dataset.X, options)
                 !flag && return T(Inf)
                 abs3(x) = abs(x) ^ 3
                 return sum(abs3, prediction .- dataset.y) / length(prediction)
             end
-            """
-            },
+            """},
         )
         model.fit(self.X, y)
         print(model.equations_)
@@ -152,14 +152,12 @@ class TestPipeline(unittest.TestCase):
 
     def test_multiline_seval(self):
         # The user should be able to run multiple things in a single seval call:
-        num = jl.seval(
-            """
+        num = jl.seval("""
             function my_new_objective(x)
                 x^2
             end
             1.5
-        """
-        )
+        """)
         self.assertEqual(num, 1.5)
 
     def test_high_precision_search_custom_loss(self):
@@ -182,6 +180,200 @@ class TestPipeline(unittest.TestCase):
         self.assertEqual(
             jl.seval("((::Val{x}) where x) -> x")(model.julia_options_.turbo), False
         )
+
+    def test_loss_function_with_elementwise_signature_errors_early(self):
+        """Issue #982: elementwise (prediction, target) loss passed via loss_function errors."""
+        model = PySRRegressor(
+            niterations=1,
+            populations=1,
+            procs=0,
+            progress=False,
+            verbosity=0,
+            temp_equation_file=True,
+            binary_operators=["+"],
+            loss_function="bad_full_objective(prediction, target) = (prediction - target)^2",
+        )
+        X = np.array([[0.0], [1.0]])
+        y = np.array([0.0, 1.0])
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, y)
+        self.assertIn("elementwise_loss", str(cm.exception))
+
+    def test_loss_function_noncallable_errors_early(self):
+        """Issue #982: non-callable loss_function (e.g. '1.0') errors early."""
+        model = PySRRegressor(
+            niterations=1,
+            populations=1,
+            procs=0,
+            progress=False,
+            verbosity=0,
+            temp_equation_file=True,
+            binary_operators=["+"],
+            loss_function="1.0",
+        )
+        X = np.array([[0.0], [1.0]])
+        y = np.array([0.0, 1.0])
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, y)
+        self.assertIn("callable", str(cm.exception))
+
+    def test_loss_function_valid_full_objective_runs(self):
+        """Issue #982: a valid (tree, dataset, options) objective is accepted."""
+        model = PySRRegressor(
+            niterations=1,
+            populations=1,
+            procs=0,
+            progress=False,
+            verbosity=0,
+            temp_equation_file=True,
+            binary_operators=["+"],
+            loss_function="""
+            begin
+                goodloss(tree, dataset, options) = zero(eltype(dataset.y))
+                goodloss
+            end
+            """,
+        )
+        X = np.array([[0.0], [1.0]])
+        y = np.array([0.0, 1.0])
+        model.fit(X, y)
+
+    def test_loss_function_varargs_objective_runs(self):
+        model = PySRRegressor(
+            niterations=1,
+            populations=1,
+            procs=0,
+            progress=False,
+            verbosity=0,
+            temp_equation_file=True,
+            binary_operators=["+"],
+            loss_function="""
+            begin
+                goodvarloss(tree, dataset, options...) = zero(eltype(dataset.y))
+                goodvarloss
+            end
+            """,
+        )
+        X = np.array([[0.0], [1.0]])
+        y = np.array([0.0, 1.0])
+        model.fit(X, y)
+
+    def test_elementwise_loss_wrong_signature_errors_early(self):
+        """Validate `elementwise_loss` signature (prediction, target[, weights])."""
+        model = PySRRegressor(
+            niterations=1,
+            populations=1,
+            procs=0,
+            progress=False,
+            verbosity=0,
+            temp_equation_file=True,
+            binary_operators=["+"],
+            elementwise_loss="myloss_bad_arity(a) = a",
+        )
+        X = np.array([[0.0], [1.0]])
+        y = np.array([0.0, 1.0])
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, y)
+        self.assertIn("elementwise_loss", str(cm.exception))
+
+    def test_elementwise_loss_with_weights_requires_three_args(self):
+        model = PySRRegressor(
+            niterations=1,
+            populations=1,
+            procs=0,
+            progress=False,
+            verbosity=0,
+            temp_equation_file=True,
+            binary_operators=["+"],
+            elementwise_loss="myloss2(prediction, target) = (prediction - target)^2",
+        )
+        X = np.array([[0.0], [1.0]])
+        y = np.array([0.0, 1.0])
+        weights = np.array([1.0, 1.0])
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, y, weights=weights)
+        self.assertIn("elementwise_loss", str(cm.exception))
+        self.assertIn("weights", str(cm.exception))
+
+    def test_elementwise_loss_with_weights_accepts_three_args(self):
+        model = PySRRegressor(
+            niterations=1,
+            populations=1,
+            procs=0,
+            progress=False,
+            verbosity=0,
+            temp_equation_file=True,
+            binary_operators=["+"],
+            elementwise_loss=(
+                "myloss3(prediction, target, weights) = weights * (prediction - target)^2"
+            ),
+        )
+        X = np.array([[0.0], [1.0]])
+        y = np.array([0.0, 1.0])
+        weights = np.array([1.0, 1.0])
+        model.fit(X, y, weights=weights)
+
+    def test_validation_helpers_skip_nonfunction(self):
+        _validate_elementwise_loss(jl.seval("1.0"), has_weights=False)
+
+    def test_validate_export_mappings_typechecks(self):
+        with self.assertRaises(ValueError):
+            _validate_export_mappings({"a": 1}, None)
+
+    def test_loss_function_expression_elementwise_signature_errors_early(self):
+        """Validate `loss_function_expression` signature (expression, dataset, options)."""
+        model = PySRRegressor(
+            niterations=1,
+            populations=1,
+            procs=0,
+            progress=False,
+            verbosity=0,
+            temp_equation_file=True,
+            binary_operators=["+"],
+            loss_function_expression="bad_expr_objective(prediction, target) = (prediction - target)^2",
+        )
+        X = np.array([[0.0], [1.0]])
+        y = np.array([0.0, 1.0])
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, y)
+        self.assertIn("loss_function_expression", str(cm.exception))
+        self.assertIn("elementwise_loss", str(cm.exception))
+
+    def test_loss_function_wrong_signature_errors_early(self):
+        model = PySRRegressor(
+            niterations=1,
+            populations=1,
+            procs=0,
+            progress=False,
+            verbosity=0,
+            temp_equation_file=True,
+            binary_operators=["+"],
+            loss_function="badloss(tree) = 0.0",
+        )
+        X = np.array([[0.0], [1.0]])
+        y = np.array([0.0, 1.0])
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, y)
+        self.assertIn("loss_function", str(cm.exception))
+        self.assertIn("(tree, dataset, options)", str(cm.exception))
+
+    def test_loss_function_expression_wrong_signature_errors_early(self):
+        model = PySRRegressor(
+            niterations=1,
+            populations=1,
+            procs=0,
+            progress=False,
+            verbosity=0,
+            temp_equation_file=True,
+            binary_operators=["+"],
+            loss_function_expression="badexprloss(expression) = 0.0",
+        )
+        X = np.array([[0.0], [1.0]])
+        y = np.array([0.0, 1.0])
+        with self.assertRaises(ValueError) as cm:
+            model.fit(X, y)
+        self.assertIn("loss_function_expression", str(cm.exception))
+        self.assertIn("(expression, dataset, options)", str(cm.exception))
 
     def test_operator_conflict_error(self):
         regressor = PySRRegressor(
@@ -1229,6 +1421,27 @@ class TestMiscellaneous(unittest.TestCase):
 
         # Check that the same operator mapping was used (1/x for inv)
         self.assertEqual(original_result, 0.5 + 3.0)  # 1/2 + 3 = 3.5
+
+    def test_predict_replaces_spaces_in_dataframe_columns(self):
+        # Regression for #690.
+        model = PySRRegressor(
+            niterations=1,
+            populations=1,
+            procs=0,
+            progress=False,
+            verbosity=0,
+            temp_equation_file=True,
+        )
+
+        X_fit = pd.DataFrame({"a b": [1.0, 2.0], "c d": [3.0, 4.0]})
+        y = X_fit["a b"] + X_fit["c d"]
+        X_pred = X_fit.copy()
+
+        model.fit(X_fit, y)
+        np.testing.assert_array_equal(model.feature_names_in_, np.array(["a_b", "c_d"]))
+
+        y_pred = model.predict(X_pred)
+        assert np.isfinite(y_pred).all()
 
     def test_pickle_with_temp_equation_file(self):
         """If we have a temporary equation file, unpickle the estimator."""

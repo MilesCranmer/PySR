@@ -13,6 +13,7 @@ on:
       - 'master'
     paths:
       - '**'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -116,7 +117,9 @@ jobs:
         shell: bash -l {0}
     strategy:
       matrix:
-        python-version: ['3']
+        # NOTE: pin to a known-supported CPython; `3` can resolve to free-threaded
+        # builds (e.g. 3.14t) which PythonCall.jl doesn't support.
+        python-version: ['3.13']
         os: ['ubuntu-latest']
 
     steps:
@@ -271,3 +274,21 @@ jobs:
           source .venv/bin/activate
           pip install /tmp/artifacts/*.whl
           python -c "import pysr; pysr.PySRRegressor(niterations=1).fit([[1]], [1])"
+
+  validate_papers_yml:
+    name: Validate docs/papers.yml
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: "Set up Python"
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+          cache: pip
+      - name: "Install validator deps"
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
+      - name: "Validate papers.yml"
+        run: python scripts/validate_papers_yml.py
