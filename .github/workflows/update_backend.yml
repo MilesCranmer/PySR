@@ -40,7 +40,7 @@ jobs:
         run: |
           if git diff --quiet pysr/juliapkg.json; then
             echo "No changes to pysr/juliapkg.json. Restoring changes."
-            git restore pyproject.toml .release-please-manifest.json
+            git restore pyproject.toml
           fi
 
       - name: "Create PR if necessary"
@@ -56,7 +56,6 @@ jobs:
           delete-branch: true
           commit-message: "chore: update backend to v${{ steps.get-latest.outputs.version }}"
           add-paths: |
-            .release-please-manifest.json
             pyproject.toml
             pysr/juliapkg.json
 

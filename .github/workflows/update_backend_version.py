@@ -12,16 +12,11 @@ assert not new_backend_version.startswith("v"), "Version should not start with '
 repo_root = Path(__file__).parent / ".." / ".."
 pyproject_toml = repo_root / "pyproject.toml"
 juliapkg_json = repo_root / "pysr" / "juliapkg.json"
-release_please_manifest = repo_root / ".release-please-manifest.json"
-
 with open(pyproject_toml) as toml_file:
     pyproject_data = tomlkit.parse(toml_file.read())
 
 with open(juliapkg_json) as f:
     juliapkg_data = json.load(f)
-
-with open(release_please_manifest) as f:
-    release_please_manifest_data = json.load(f)
 
 current_version = pyproject_data["project"]["version"]
 parts = current_version.split(".")
@@ -57,8 +52,6 @@ extra_parts = "." + ".".join(parts[3:]) if len(parts) > 3 else ""
 new_version = f"{major}.{minor}.{new_patch}{new_suffix}{extra_parts}"
 
 pyproject_data["project"]["version"] = new_version
-release_please_manifest_data["."] = new_version
-
 # Update backend - maintain current format (either "rev" or "version")
 backend_pkg = juliapkg_data["packages"]["SymbolicRegression"]
 if "rev" in backend_pkg:
@@ -75,8 +68,4 @@ with open(pyproject_toml, "w") as toml_file:
 
 with open(juliapkg_json, "w") as f:
     json.dump(juliapkg_data, f, indent=4)
-    f.write("\n")
-
-with open(release_please_manifest, "w") as f:
-    json.dump(release_please_manifest_data, f, indent=2)
     f.write("\n")
