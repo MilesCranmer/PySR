@@ -236,14 +236,12 @@ def _check_assertions(
 
 
 def _validate_elementwise_loss(
-    custom_loss, *, has_weights: bool, probe_value: Any = 1.0
+    custom_loss, *, has_weights: bool, probe_dtype: Callable[[float], Any] = float
 ) -> None:
     """Validate that a Julia `elementwise_loss` is callable.
 
     We probe with the dtype that the Julia backend will use, which avoids
     falsely rejecting strictly typed losses such as `(::Float32, ::Float32)`.
-    If the probe still fails, emit a warning rather than raising so Julia can
-    surface the real `MethodError` during fitting for advanced custom losses.
     """
 
     # This can be either a LossFunctions.jl object (e.g. `L2DistLoss()`) or a Julia function.
@@ -251,30 +249,24 @@ def _validate_elementwise_loss(
     if not jl_is_function(custom_loss):
         return
 
+    probe_value = probe_dtype(1.0)
     probe_args = (
         (probe_value, probe_value, probe_value)
         if has_weights
         else (probe_value, probe_value)
     )
     ok = bool(jl.applicable(custom_loss, *probe_args))
-    if ok:
-        return
-
     if has_weights:
-        warnings.warn(
-            "`elementwise_loss` did not match the probed (prediction, target, weight) signature "
-            "for the dtype used during fitting. Continuing anyway so Julia can surface a more "
-            "specific `MethodError` if needed.",
-            stacklevel=2,
-        )
+        if not ok:
+            raise ValueError(
+                "`elementwise_loss` must accept (prediction, target, weight) when `weights` is passed to `fit`."
+            )
     else:
-        warnings.warn(
-            "`elementwise_loss` did not match the probed (prediction, target) signature for "
-            "the dtype used during fitting. If you intended a full objective, use "
-            "`loss_function` or `loss_function_expression`. Continuing anyway so Julia can "
-            "surface a more specific `MethodError` if needed.",
-            stacklevel=2,
-        )
+        if not ok:
+            raise ValueError(
+                "`elementwise_loss` must accept (prediction, target). If you intended a full objective, use "
+                "`loss_function` or `loss_function_expression`."
+            )
 
 
 def _validate_custom_objective(
@@ -2125,7 +2117,6 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             complexity_of_variables = jl_array(complexity_of_variables)
 
         np_dtype = self._get_precision_mapped_dtype(np.array(X))
-        probe_value = np_dtype(1.0)
 
         custom_loss = jl.seval(
             str(self.elementwise_loss)
@@ -2136,7 +2127,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             _validate_elementwise_loss(
                 custom_loss,
                 has_weights=weights is not None,
-                probe_value=probe_value,
+                probe_dtype=np_dtype,
             )
 
         custom_full_objective = jl.seval(
