@@ -320,7 +320,7 @@ class TestPipeline(unittest.TestCase):
         _validate_elementwise_loss(
             custom_loss,
             has_weights=False,
-            probe_dtype=np.float32,
+            probe_value=np.float32(1.0),
         )
 
     def test_elementwise_loss_float32_fit_accepts_strictly_typed_loss(self):
