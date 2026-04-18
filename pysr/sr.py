@@ -238,10 +238,11 @@ def _check_assertions(
 def _validate_elementwise_loss(
     custom_loss, *, has_weights: bool, probe_dtype: Callable[[float], Any] = float
 ) -> None:
-    """Validate that a Julia `elementwise_loss` is callable.
+    """Check whether a Julia `elementwise_loss` accepts the expected inputs.
 
-    We probe with the dtype that the Julia backend will use, which avoids
-    falsely rejecting strictly typed losses such as `(::Float32, ::Float32)`.
+    The function probes the loss with two or three arguments, depending on
+    whether weights are present, using the dtype that fitting will use. If the
+    probe fails, it raises a `ValueError` describing the expected signature.
     """
 
     # This can be either a LossFunctions.jl object (e.g. `L2DistLoss()`) or a Julia function.
