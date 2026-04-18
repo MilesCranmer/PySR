@@ -236,13 +236,14 @@ def _check_assertions(
 
 
 def _validate_elementwise_loss(
-    custom_loss, *, has_weights: bool, probe_dtype: Callable[[float], Any] = float
+    custom_loss, *, has_weights: bool, probe_value: Any = 1.0
 ) -> None:
     """Check whether a Julia `elementwise_loss` accepts the expected inputs.
 
     The function probes the loss with two or three arguments, depending on
-    whether weights are present, using the dtype that fitting will use. If the
-    probe fails, it raises a `ValueError` describing the expected signature.
+    whether weights are present, using the same dtype that fitting will use.
+    If the probe fails, it raises a `ValueError` describing the expected
+    signature.
     """
 
     # This can be either a LossFunctions.jl object (e.g. `L2DistLoss()`) or a Julia function.
@@ -250,7 +251,6 @@ def _validate_elementwise_loss(
     if not jl_is_function(custom_loss):
         return
 
-    probe_value = probe_dtype(1.0)
     probe_args = (
         (probe_value, probe_value, probe_value)
         if has_weights
@@ -2128,7 +2128,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             _validate_elementwise_loss(
                 custom_loss,
                 has_weights=weights is not None,
-                probe_dtype=np_dtype,
+                probe_value=np_dtype(1.0),
             )
 
         custom_full_objective = jl.seval(
