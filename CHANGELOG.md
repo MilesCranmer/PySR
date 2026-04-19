@@ -1,5 +1,52 @@
 # Changelog
 
+## [2.1.0](https://github.com/MilesCranmer/PySR/compare/v2.0.0...v2.1.0) (2026-04-19)
+
+
+### Features
+
+* add slurm tests using docker compose ([0364d43](https://github.com/MilesCranmer/PySR/commit/0364d43c01ba058784e9e8eaab357f927895ce1e))
+* raise friendly error when loss functions have bad signatures ([#1138](https://github.com/MilesCranmer/PySR/issues/1138)) ([1e18b9a](https://github.com/MilesCranmer/PySR/commit/1e18b9a34cd8971d1a18fcc690a85f050ddbe728))
+
+
+### Bug Fixes
+
+* correct type in elementwise loss validation ([#1184](https://github.com/MilesCranmer/PySR/issues/1184)) ([912c4c2](https://github.com/MilesCranmer/PySR/commit/912c4c22e47428e5209067d1aa1c30cf52ed4f11))
+* normalize DataFrame column spaces in predict ([#1136](https://github.com/MilesCranmer/PySR/issues/1136)) ([3bffc62](https://github.com/MilesCranmer/PySR/commit/3bffc62d2d410bbb0e298fec71f2acaf54faf6e5))
+* torch export with constant arguments ([bb721b5](https://github.com/MilesCranmer/PySR/commit/bb721b5687248165f4cdbb08807498185947ae4c))
+* torch export with constant arguments ([e280034](https://github.com/MilesCranmer/PySR/commit/e280034231acb03b146e6a0333e02d3fc38acebc))
+* typing issue in export format ([2b173ff](https://github.com/MilesCranmer/PySR/commit/2b173ffa1fbe8ff6a07ab223f1132343a2b4c324))
+
+
+### Documentation
+
+* add example paper on active matter ([#1107](https://github.com/MilesCranmer/PySR/issues/1107)) ([37b2d85](https://github.com/MilesCranmer/PySR/commit/37b2d85687a2108aae4c8d6987b8bc3397b50f13))
+* add example paper on Lya forest analysis ([#1098](https://github.com/MilesCranmer/PySR/issues/1098)) ([b4e7db3](https://github.com/MilesCranmer/PySR/commit/b4e7db3d6ac077736302c3f24b275c2d82e0c619))
+* add example paper on SR for batteries ([#1074](https://github.com/MilesCranmer/PySR/issues/1074)) ([f567e7c](https://github.com/MilesCranmer/PySR/commit/f567e7ca001b70f03eadb47035b35fef2525107b))
+* add implied volatility showcase paper ([#1172](https://github.com/MilesCranmer/PySR/issues/1172)) ([c435527](https://github.com/MilesCranmer/PySR/commit/c435527ccddb89a7a4e2835fb064679b3ed3e537))
+* add language picker ([9227472](https://github.com/MilesCranmer/PySR/commit/9227472c240190bcede17aedf84ec5f09f273319))
+* add math discovery paper ([#1156](https://github.com/MilesCranmer/PySR/issues/1156)) ([95ffa50](https://github.com/MilesCranmer/PySR/commit/95ffa501fad23a5d5e938ee89cf8f07edc1d2f54))
+* clean up splash page and reorg sidebar ([c5531f9](https://github.com/MilesCranmer/PySR/commit/c5531f905150874feebf3eb6b68f8e4f1d916c57))
+* fix api docs generation ([19dc565](https://github.com/MilesCranmer/PySR/commit/19dc565dd9c304067a71ecfb284e9fb6ba024df9))
+* fix image paths ([71d5c2e](https://github.com/MilesCranmer/PySR/commit/71d5c2e620980be709c175f6796383647c0cd2c5))
+* fix paper rendering ([0f924f6](https://github.com/MilesCranmer/PySR/commit/0f924f6effaa275ccaa9df15489cde895c018b4a))
+* fix paper styling ([dfe08af](https://github.com/MilesCranmer/PySR/commit/dfe08af0bd43faf4914c8aae4953632caeeabdd7))
+* fix preview deployment for both targets ([356ddb9](https://github.com/MilesCranmer/PySR/commit/356ddb9afe94a6f9e8705bf80ee35f2ace468bd0))
+* fix readme link ([d071b3e](https://github.com/MilesCranmer/PySR/commit/d071b3e60d3460a1758613cce353e53ef1393d56))
+* fix redirect ([fac6aab](https://github.com/MilesCranmer/PySR/commit/fac6aabb7acbda37a6ece28015ad9935e6b94e99))
+* fix splash page ([47a8dab](https://github.com/MilesCranmer/PySR/commit/47a8dabb9003798b4f0b5fb5c7046439c83dc05f))
+* generic cleanup ([a879aea](https://github.com/MilesCranmer/PySR/commit/a879aeaa6cff9a8eaa9251a192e8bf92e28ca3f6))
+* include version picker ([a76e11b](https://github.com/MilesCranmer/PySR/commit/a76e11b1d3c3c6a15a0c0d7b7e18829cf2e6cbe5))
+* move markdown to separate file ([31c75af](https://github.com/MilesCranmer/PySR/commit/31c75af8c1362c679d5dd8a93dc9a3011b33baae))
+* overhaul to vitepress ([f7b8725](https://github.com/MilesCranmer/PySR/commit/f7b87257babd1950e94751df8523f564f842c4d2))
+* refactor to clean up docs ([27ac0db](https://github.com/MilesCranmer/PySR/commit/27ac0dbf4ad1158c2e16058f632e17f77ef38479))
+* revert additional pieces of template ([a206b11](https://github.com/MilesCranmer/PySR/commit/a206b1170ed2d3dfd249e4d244d6c4675ec985b7))
+* revert image issue ([1e21305](https://github.com/MilesCranmer/PySR/commit/1e21305d88bf6bd82cbd97deee64b8eeb2cdae7a))
+* set canonical url ([5c3d3f1](https://github.com/MilesCranmer/PySR/commit/5c3d3f17811f350ff800f94849bbc048dbe2a504))
+* set error when no key ([45025eb](https://github.com/MilesCranmer/PySR/commit/45025eb57de8804db3c757a82738499309ba0310))
+* tweak splash page logo ([342f35e](https://github.com/MilesCranmer/PySR/commit/342f35e0560bde1317d69e7dd156ecb0866f9640))
+* use DocumenterVitepress.jl to build pysr docs ([2853c50](https://github.com/MilesCranmer/PySR/commit/2853c50de8f4e84d53f2278a8d6be71f4d3d5244))
+
 ## [2.0.0a1] (2025-10-08)
 
 This is an _alpha_ release of v2.0.0. There will still be changes before the release of v2.0.0, likely including new hyperparameter defaults.
