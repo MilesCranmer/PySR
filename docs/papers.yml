@@ -372,3 +372,18 @@ papers:
     abstract: "Cosmic reionization of HI leaves enduring relics in the post-reionization intergalactic medium, potentially influencing the Lyman-α (Lyα) forest down to redshifts as low as z≈2, which is the so-called ''memory of reionization'' effect. Here, we re-analyze the baryonic acoustic oscillation (BAO) measurements from Lyα absorption and quasar correlations using data from the extended Baryonic Oscillation Spectroscopic Survey (eBOSS) Data Release 16 (DR16), incorporating for the first time the memory of reionization in the Lyα forest. Three distinct scenarios of reionization timeline are considered in our analyses. We find that the recovered BAO parameters (α∥, α⊥) remain consistent with the original eBOSS DR16 analysis. However, models incorporating reionization relics provide a better fit to the data, with a tantalizing preference for early reionization, consistent with recent findings from the James Webb Space Telescope. Furthermore, the inclusion of reionization relics significantly impacts the non-BAO parameters. For instance, we report deviations of up to 3σ in the Lyα redshift-space distortion parameter and ∼7σ in the linear Lyα bias for the late reionization scenario. Our findings suggest that the eBOSS Lyα data is more accurately described by models that incorporate a broadband enhancement to the Lyα forest power spectrum, highlighting the importance of accounting for reionization relics in cosmological analyses."
     image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/paper-images/pr-1098/images/wedges.png
     date: 2025-11-14
+  - title: "Distilling human mobility models with symbolic regression"
+    authors:
+      - Hao Guo (1)
+      - Weiyu Zhang (1)
+      - Junjie Yang (1)
+      - Yuanqiao Hou (1)
+      - Lei Dong (1)
+      - Yu Liu (1)
+    affiliations:
+      1: Peking University
+    link: https://onlinelibrary.wiley.com/doi/10.1111/gean.70043
+    abstract: "Human mobility is a fundamental aspect of social behavior, with broad applications in transportation, urban planning, and epidemic modeling. Represented by the gravity model and the radiation model, established analytical models for mobility phenomena are often discovered by analogy to physical processes. Such discoveries can be challenging and rely on intuition, while the potential of emerging social observation data in model discovery is largely unexploited. Here, we propose a systematic approach that leverages symbolic regression to automatically discover interpretable models from human mobility data. Our approach finds several well-known formulas, such as the distance decay effect and classical gravity models, as well as previously unknown ones, such as an exponential-power-law decay that can be explained by the maximum entropy principle. By relaxing the constraints on the complexity of model expressions, we further show how key variables of human mobility are progressively incorporated into the model, making this framework a powerful tool for revealing the underlying mathematical structures of complex social phenomena directly from observational data."
+    image: https://onlinelibrary.wiley.com/cms/asset/dfe8b0b3-04df-4019-a24d-8c4dd75daa6a/gean70043-fig-0001-m.jpg
+    date: 2026-05-04
+
