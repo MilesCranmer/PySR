@@ -14,8 +14,7 @@ class BacksolveOptions:
     max_library_size : int
         Maximum number of candidate library terms. Default is `500`.
     lambda_ : float
-        STLSQ sparsity threshold. This maps to the Julia `lambda` keyword.
-        Default is `0.01`.
+        STLSQ sparsity threshold. Default is `0.01`.
     max_iter : int
         Maximum number of STLSQ iterations. Default is `10`.
     """
