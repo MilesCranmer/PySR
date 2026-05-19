@@ -417,6 +417,21 @@ class TestPipeline(unittest.TestCase):
         ):
             regressor._validate_and_modify_params()
 
+    def test_warns_on_default_niterations(self):
+        model_default = PySRRegressor()
+        with self.assertWarnsRegex(UserWarning, "niterations.*default"):
+            model_default._validate_and_modify_params()
+
+        model_explicit_default_value = PySRRegressor(niterations=DEFAULT_NITERATIONS)
+        with self.assertWarnsRegex(UserWarning, "niterations.*default"):
+            model_explicit_default_value._validate_and_modify_params()
+
+        model_explicit = PySRRegressor(niterations=DEFAULT_NITERATIONS * 5)
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            model_explicit._validate_and_modify_params()
+        self.assertFalse(any("niterations" in str(w.message) for w in caught))
+
     def test_multioutput_custom_operator_quiet_custom_complexity(self):
         y = self.X[:, [0, 1]] ** 2
         model = PySRRegressor(
@@ -1743,7 +1758,7 @@ class TestHelpMessages(unittest.TestCase):
 
     def test_size_warning(self):
         """Ensure that a warning is given for a large input size."""
-        model = PySRRegressor()
+        model = PySRRegressor(niterations=DEFAULT_NITERATIONS * 2)
         X = np.random.randn(50001, 2)
         y = np.random.randn(50001)
         with warnings.catch_warnings():
@@ -1754,7 +1769,7 @@ class TestHelpMessages(unittest.TestCase):
 
     def test_deterministic_warnings(self):
         """Ensure that warnings are given for determinism"""
-        model = PySRRegressor(random_state=0)
+        model = PySRRegressor(niterations=DEFAULT_NITERATIONS * 2, random_state=0)
         X = np.random.randn(100, 2)
         y = np.random.randn(100)
         with warnings.catch_warnings():

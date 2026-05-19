@@ -342,6 +342,7 @@ def _validate_export_mappings(extra_jax_mappings, extra_torch_mappings):
 
 # Class validation constants
 VALID_OPTIMIZER_ALGORITHMS = ["BFGS", "NelderMead"]
+_DEFAULT_NITERATIONS = 100
 
 
 @dataclass
@@ -412,7 +413,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Number of iterations of the algorithm to run. The best
         equations are printed and migrate between populations at the
         end of each iteration.
-        Default is `100`.
+        Default is `100`, which is intentionally small for quick demos;
+        production runs typically want a much larger value. PySR emits a
+        warning if you leave this at the default; set it to a different
+        value to silence the warning.
     populations : int
         Number of populations running.
         Default is `31`.
@@ -953,7 +957,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         unary_operators: list[str] | None = None,
         operators: dict[int, list[str]] | None = None,
         expression_spec: AbstractExpressionSpec | None = None,
-        niterations: int = 100,
+        niterations: int = _DEFAULT_NITERATIONS,
         populations: int = 31,
         population_size: int = 27,
         max_evals: int | None = None,
@@ -1068,6 +1072,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.operators = operators
         self.expression_spec = expression_spec
         self.niterations = niterations
+        self._niterations_was_default = niterations == _DEFAULT_NITERATIONS
         self.populations = populations
         self.population_size = population_size
         self.ncycles_per_iteration = ncycles_per_iteration
@@ -1651,6 +1656,16 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             )
         elif self.maxsize < 7:
             raise ValueError("PySR requires a maxsize of at least 7")
+
+        if self._niterations_was_default:
+            warnings.warn(
+                f"`niterations` is using the default of {_DEFAULT_NITERATIONS}, "
+                "which is intentionally small for quick demos. For production "
+                "runs you will almost always want a higher value (commonly "
+                "1000+). Set `niterations` to a different value to silence this "
+                "warning. "
+                "See https://ai.damtp.cam.ac.uk/pysr/tuning/ for guidance."
+            )
 
         # NotImplementedError - Values that could be supported at a later time
         if self.optimizer_algorithm not in VALID_OPTIMIZER_ALGORITHMS:
