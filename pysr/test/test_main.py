@@ -14,6 +14,7 @@ from unittest import mock
 
 import numpy as np
 import pandas as pd
+import pytest
 import sympy  # type: ignore
 
 try:
@@ -61,6 +62,42 @@ os.environ["SYMBOLIC_REGRESSION_IS_TESTING"] = os.environ.get(
 
 # Import from juliacall at end:
 from juliacall import JuliaError  # type: ignore
+
+
+def test_precision_warning_triggers_on_large_magnitude():
+    X = np.array([[1e17, 1.0], [2.0, 3.0]], dtype=np.float64)
+    with pytest.warns(UserWarning, match=r"precision=32.*max \|X\|"):
+        PySRRegressor._maybe_warn_precision_for_data(X)
+
+
+def test_precision_warning_triggers_on_tiny_magnitude():
+    X = np.array([[1e-17, 1.0], [2.0, 3.0]], dtype=np.float64)
+    with pytest.warns(UserWarning, match="precision=32.*min nonzero"):
+        PySRRegressor._maybe_warn_precision_for_data(X)
+
+
+def test_precision_warning_triggers_on_dynamic_range():
+    X = np.array([[1e6, 1.0], [1e-5, 1.0]], dtype=np.float64)
+    with pytest.warns(UserWarning, match="precision=32.*dynamic range"):
+        PySRRegressor._maybe_warn_precision_for_data(X)
+
+
+def test_precision_warning_quiet_on_normal_data():
+    X = np.random.RandomState(0).randn(100, 3)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        PySRRegressor._maybe_warn_precision_for_data(X)
+    assert not any("precision=32" in str(w.message) for w in caught)
+
+
+def test_precision_warning_quiet_at_precision_64():
+    model = PySRRegressor(precision=64)
+    X = np.array([[1e20, 1.0], [2.0, 3.0]], dtype=np.float64)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        if model.precision == 32:
+            model._maybe_warn_precision_for_data(X)
+    assert not any("precision=32" in str(w.message) for w in caught)
 
 
 class TestPipeline(unittest.TestCase):

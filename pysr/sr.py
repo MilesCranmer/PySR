@@ -737,6 +737,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         you 64 or 16 bits of floating point precision, respectively.
         If you pass complex data, the corresponding complex precision
         will be used (i.e., `64` for complex128, `32` for complex64).
+        PySR emits a warning at fit time if `precision=32` is paired with data
+        that has very large magnitude (>=1e16), very small nonzero magnitude
+        (<=1e-16), or a dynamic range >=1e10. Set `precision=64` to silence it;
+        explicit `precision=32` still warns when these triggers are present.
         Default is `32`.
     autodiff_backend : Literal["Zygote", "Mooncake", "Enzyme"] | None
         Which backend to use for automatic differentiation during constant
@@ -1812,6 +1816,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             weights = check_array(weights, ensure_2d=False)
             check_consistent_length(weights, y)
         X, y = self._validate_data_X_y(X, y)
+        if self.precision == 32:
+            self._maybe_warn_precision_for_data(X)
         self.feature_names_in_ = _safe_check_feature_names_in(
             self, variable_names, generate_names=False
         )
@@ -1847,6 +1853,39 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             complexity_of_variables,
             X_units,
             y_units,
+        )
+
+    @staticmethod
+    def _maybe_warn_precision_for_data(X: np.ndarray) -> None:
+        finite = np.isfinite(X)
+        if not finite.any():
+            return
+
+        abs_X = np.abs(X[finite])
+        max_abs = float(abs_X.max())
+        nonzero = abs_X[abs_X > 0]
+        min_abs_nonzero = float(nonzero.min()) if nonzero.size else float("inf")
+        dynamic_range = (
+            max_abs / min_abs_nonzero
+            if np.isfinite(min_abs_nonzero) and min_abs_nonzero > 0
+            else 0.0
+        )
+
+        triggers = []
+        if max_abs >= 1e16:
+            triggers.append(f"max |X| = {max_abs:.2e}")
+        if 0 < min_abs_nonzero <= 1e-16:
+            triggers.append(f"min nonzero |X| = {min_abs_nonzero:.2e}")
+        if dynamic_range >= 1e10:
+            triggers.append(f"dynamic range = {dynamic_range:.2e}")
+        if not triggers:
+            return
+
+        warnings.warn(
+            "PySR is running with `precision=32` (float32, ~7 digits of "
+            "mantissa) on data that may not survive single-precision arithmetic: "
+            + "; ".join(triggers)
+            + ". Consider passing `precision=64` for better numerical fidelity."
         )
 
     def _validate_data_X_y(self, X: Any, y: Any) -> tuple[ndarray, ndarray]:
