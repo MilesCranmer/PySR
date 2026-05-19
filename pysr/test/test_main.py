@@ -14,6 +14,7 @@ from unittest import mock
 
 import numpy as np
 import pandas as pd
+import pytest
 import sympy  # type: ignore
 
 try:
@@ -43,6 +44,7 @@ from pysr.sr import (
     _suggest_keywords,
     _validate_elementwise_loss,
     _validate_export_mappings,
+    _warn_if_populations_lt_procs,
     idx_model_selection,
 )
 
@@ -61,6 +63,39 @@ os.environ["SYMBOLIC_REGRESSION_IS_TESTING"] = os.environ.get(
 
 # Import from juliacall at end:
 from juliacall import JuliaError  # type: ignore
+
+
+def test_warns_when_populations_less_than_procs():
+    with pytest.warns(UserWarning, match="populations.*smaller than"):
+        _warn_if_populations_lt_procs(
+            populations=4, parallelism="multiprocessing", numprocs=8
+        )
+
+
+def test_no_warn_when_populations_ge_procs():
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        _warn_if_populations_lt_procs(
+            populations=8, parallelism="multiprocessing", numprocs=8
+        )
+        _warn_if_populations_lt_procs(
+            populations=31, parallelism="multiprocessing", numprocs=8
+        )
+    assert not any("populations" in str(w.message) for w in caught)
+
+
+def test_no_warn_when_parallelism_not_multiprocessing():
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        _warn_if_populations_lt_procs(
+            populations=1, parallelism="serial", numprocs=None
+        )
+        _warn_if_populations_lt_procs(
+            populations=1,
+            parallelism="multithreading",
+            numprocs=None,
+        )
+    assert not any("populations" in str(w.message) for w in caught)
 
 
 class TestPipeline(unittest.TestCase):

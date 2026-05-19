@@ -2049,6 +2049,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         parallelism, numprocs = _map_parallelism_params(
             self.parallelism, self.procs, getattr(self, "multithreading", None)
         )
+        _warn_if_populations_lt_procs(self.populations, parallelism, numprocs)
 
         if self.deterministic and parallelism != "serial":
             raise ValueError(
@@ -3153,6 +3154,25 @@ def _mutate_parameter(param_name: str, param_value):
         return False
 
     return param_value
+
+
+def _warn_if_populations_lt_procs(
+    populations: int,
+    parallelism: Literal["serial", "multithreading", "multiprocessing"],
+    numprocs: int | None,
+) -> None:
+    if (
+        parallelism == "multiprocessing"
+        and numprocs is not None
+        and populations < numprocs
+    ):
+        warnings.warn(
+            f"`populations={populations}` is smaller than the resolved "
+            f"worker count (`numprocs={numprocs}`). Each population is assigned "
+            "to one worker, so the extra workers will sit idle for most of the "
+            "search. Consider increasing `populations` to at least the number "
+            "of workers (commonly 3-5x), or reducing `procs` to match."
+        )
 
 
 def _map_parallelism_params(
