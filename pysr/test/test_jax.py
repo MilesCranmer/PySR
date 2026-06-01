@@ -1,3 +1,4 @@
+import pickle as pkl
 import tempfile
 import unittest
 from functools import partial
@@ -182,9 +183,10 @@ class TestJAX(unittest.TestCase):
             model.display_feature_names_in_ = np.array(["x0"])
             model.selection_mask_ = np.ones(1, dtype=np.bool_)
             model.refresh()
+            model.equations_.loc[:, "lambda_format"] = [lambda x: x]
 
-            model._checkpoint()
-            assert (run_dir / "checkpoint.pkl").stat().st_size > 0
+            with open(run_dir / "checkpoint.pkl", "wb") as f:
+                pkl.dump(model, f)
 
             model2 = PySRRegressor.from_file(
                 run_directory=run_dir,
@@ -204,6 +206,27 @@ class TestJAX(unittest.TestCase):
             run_dir = Path(tmpdir) / "empty_checkpoint"
             run_dir.mkdir()
             (run_dir / "checkpoint.pkl").touch()
+            pd.DataFrame(
+                {
+                    "Complexity": [1],
+                    "Loss": [0.0],
+                    "Equation": ["x0"],
+                }
+            ).to_csv(run_dir / "hall_of_fame.csv")
+
+            model = PySRRegressor.from_file(
+                run_directory=run_dir,
+                binary_operators=["+"],
+                unary_operators=[],
+                n_features_in=1,
+            )
+            assert str(model.sympy(index=0)) == "x0"
+
+    def test_from_file_corrupt_checkpoint_falls_back_to_csv(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            run_dir = Path(tmpdir) / "corrupt_checkpoint"
+            run_dir.mkdir()
+            (run_dir / "checkpoint.pkl").write_bytes(b"not a pickle")
             pd.DataFrame(
                 {
                     "Complexity": [1],
