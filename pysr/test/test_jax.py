@@ -169,9 +169,7 @@ class TestJAX(unittest.TestCase):
 
             model = PySRRegressor(
                 progress=False,
-                unary_operators=[
-                    "cos_approx(x) = 1 - x^2 / 2 + x^4 / 24 + x^6 / 720"
-                ],
+                unary_operators=["cos_approx(x) = 1 - x^2 / 2 + x^4 / 24 + x^6 / 720"],
                 extra_sympy_mappings={"cos_approx": sp_cos_approx},
                 extra_jax_mappings=jax_mapping,
                 output_jax_format=True,

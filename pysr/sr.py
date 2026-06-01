@@ -1340,9 +1340,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         model.n_features_in_ = n_features_in
 
         if feature_names_in is None:
-            model.feature_names_in_ = np.array(
-                [f"x{i}" for i in range(n_features_in)]
-            )
+            model.feature_names_in_ = np.array([f"x{i}" for i in range(n_features_in)])
             model.display_feature_names_in_ = np.array(
                 [f"x{_subscriptify(i)}" for i in range(n_features_in)]
             )
