@@ -100,6 +100,20 @@ papers:
     abstract: We explore the use of symbolic regression to derive compact analytical expressions for angular observables relevant to electroweak boson production at the Large Hadron Collider (LHC). Focusing on the angular coefficients that govern the decay distributions of W and Z bosons, we investigate whether symbolic models can well approximate these quantities, typically computed via computationally costly numerical procedures, with high fidelity and interpretability. Using the PySR package, we first validate the approach in controlled settings, namely in angular distributions in lepton-lepton collisions in QED and in leading-order Drell-Yan production at the LHC. We then apply symbolic regression to extract closed-form expressions for the angular coefficients as functions of transverse momentum, rapidity, and invariant mass, using next-to-leading order simulations of Drell-Yan events. Our results demonstrate that symbolic regression can produce accurate and generalisable expressions that match Monte Carlo predictions within uncertainties, while preserving interpretability and providing insight into the kinematic dependence of angular observables.
     image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/48020babcca1e73d2f5bbbd4ef3f0ec3265c59fb/images/pr1096_angular_coefficients_sr.png
     date: 2024-12-04
+  - title: Individual chaotic behaviour of the S-stars in the Galactic centre
+    authors:
+      - Sam J. Beckers (1)
+      - Colin M. Poppelaars (1)
+      - Veronica S. Ulibarrena (1)
+      - Tjarda N. Boekholt (2)
+      - Simon F. Portegies Zwart (1)
+    affiliations:
+      1: Leiden Observatory, Leiden University
+      2: NASA Ames Research Center
+    link: https://www.aanda.org/articles/aa/full_html/2024/05/aa48361-23/aa48361-23.html
+    abstract: Located at the core of the Galactic centre, the S-star cluster serves as a remarkable illustration of chaos in dynamical systems. The long-term chaotic behaviour of this system can be studied with gravitational $N$-body simulations. By applying a small perturbation to the initial position of star S5, we can compare the evolution of this system to its unperturbed evolution. This results in two solutions that diverge exponentially, defined by the separation in position space $\delta_{r}$, with an average Lyapunov timescale of $\sim$420 yr, corresponding to the largest positive Lyapunov exponent. Even though the general trend of the chaotic evolution is governed in part by the supermassive black hole Sagittarius $\rm A^{*}$ (Sgr $\rm A^{*}$), individual differences between the stars can be noted in the behaviour of their phase-space curves. We present an analysis of the individual behaviour of the stars in this Newtonian chaotic dynamical system. The individuality of their behaviour is evident from offsets in the position space separation curves of the S-stars and the black hole. We propose that the offsets originate from the initial orbital elements of the S-stars, where Sgr $\rm A^{*}$ is considered in one of the focal points of the Keplerian orbits. Methods were considered to find a relation between these elements and the separation in position space. Symbolic regression provides the clearest diagnostics for finding an interpretable expression for the problem. Our symbolic regression model indicates that $\left\langle\delta_r\right\rangle \propto e^{2.3}$, implying that the time-averaged individual separation in position space increases rapidly with the initial eccentricity of the S-stars.
+    image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/48020babcca1e73d2f5bbbd4ef3f0ec3265c59fb/images/pr813_s_stars_chaos.png
+    date: 2024-02-15
   - title: Discovering parametrizations of implied volatility with symbolic regression
     authors:
       - Martin Keller-Ressel (1,2)
