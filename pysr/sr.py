@@ -2662,16 +2662,23 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         equation_file_contents = cast(List[pd.DataFrame], self.equation_file_contents_)
 
-        ret_outputs = [
-            pd.concat(
-                [
-                    output,
-                    *([calculate_scores(output)] if self.loss_scale == "log" else []),
-                    self.expression_spec_.create_exports(
-                        self, output, search_output, i if self.nout_ > 1 else None
-                    ),
-                ],
-                axis=1,
+        ret_outputs: list[pd.DataFrame] = [
+            cast(
+                pd.DataFrame,
+                pd.concat(
+                    [
+                        output,
+                        *(
+                            [calculate_scores(output)]
+                            if self.loss_scale == "log"
+                            else []
+                        ),
+                        self.expression_spec_.create_exports(
+                            self, output, search_output, i if self.nout_ > 1 else None
+                        ),
+                    ],
+                    axis=1,
+                ),
             )
             for i, output in enumerate(equation_file_contents)
         ]
