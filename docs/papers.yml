@@ -55,6 +55,23 @@ papers:
     abstract: "Recent measurements of Baryon Acoustic Oscillations (BAO) from the Dark Energy Spectroscopic Survey (DESI DR2), combined with data from the cosmic microwave background (CMB) and Type Ia supernovae (SNe), challenge the $\\Lambda$-Cold Dark Matter ($\\Lambda$CDM) paradigm. They indicate a potential evolution in the dark energy equation of state (EoS), $w(z)$, as suggested by analyses that employ parametric models. In this paper, we use a model-independent approach known as high performance symbolic regression (PySR) to reconstruct $w(z)$ directly from observational data, allowing us to bypass prior assumptions about the underlying cosmological model. Our findings confirm that the DESI DR2 data alone agree with the $\\Lambda$CDM model ($w(z) = -1$) at the redshift range considered. Additionally, when combining DESI data with existing compilations of SN distance measurements, such as Pantheon+ and DESY5, we observe no deviation from the $\\Lambda$CDM model within $3\\sigma$ (C.L.) for the interval of values of present-day matter density parameter $\\Omega_m$ and the sound horizon at the drag epoch $r_d$ currently constrained by observational data. Therefore, similarly to the DESI DR1 case, these results suggest that it is still premature to claim statistically significant evidence for a dynamical EoS or deviations from the $\\Lambda$CDM model based on the current DESI data in combination with supernova measurements."
     image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/48020babcca1e73d2f5bbbd4ef3f0ec3265c59fb/images/pr1195_dynamical_dark_energy_sr.png
     date: 2025-09-23
+  - title: Machine learning framework to predict product distribution of lignocellulosic biomass pyrolysis
+    authors:
+      - Leonardo Voltolini (1)
+      - Fernando Arrais Romero Dias Lima (1,3)
+      - Carine Menezes Rebello (3)
+      - Ivaldo Itabaiana Jr. (1)
+      - Idelfonso B.R. Nogueira (3)
+      - Argimiro Resende Secchi (1,2)
+      - Maurício B. de Souza Jr. (1,2)
+    affiliations:
+      1: School of Chemistry, EPQB, Universidade Federal do Rio de Janeiro (UFRJ)
+      2: Chemical Engineering Program, PEQ/COPPE, Universidade Federal do Rio de Janeiro (UFRJ)
+      3: Chemical Engineering Department, Norwegian University of Science and Technology (NTNU)
+    link: https://www.sciencedirect.com/science/article/abs/pii/S0960852425007126
+    abstract: Machine learning methods have become a trend to model distinct chemical processes, as an alternative to complex first-principles models. Given the complexity of biomass pyrolysis mechanisms, these methods offer a promising approach but often face challenges regarding data scarcity and lack of interpretability. This study aims to develop an interpretable framework for modeling biomass pyrolysis using data from fixed-bed lignocellulosic biomass pyrolysis experiments. A mass change basis was proposed to construct machine learning models, including artificial neural network (ANN) and symbolic regression (SR) models. Feature importance was assessed using Shapley Additive Explanations (SHAP) and compared to Partial Least Squares (PLS) regression, with PLS consistently identifying the best features for symbolic regression. Both ANN and SR models showed similar accuracy, achieving coefficient of determination (R$^2$) greater than 0.85 across all phase products in the testing set. Additionally, an uncertainty assessment of SR parameters was conducted to improve model robustness ensuring prediction stability. SR models exhibited superior generalization capacity during extrapolation tests, achieving R$^2$ values above 0.9 for char and gas phases. For oil values exceeding 10 grams, the SR models struggled with generalization. Overall, the proposed framework provides a valuable tool for interpreting and modeling pyrolysis process data, enabling its use in the decision-making process.
+    image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/48020babcca1e73d2f5bbbd4ef3f0ec3265c59fb/images/pr994_biomass_pyrolysis_framework.png
+    date: 2025-06-14
   - title: Data-driven skin friction estimation for UAV wings in subsonic flows
     authors:
       - Christos Pliakos (1)
