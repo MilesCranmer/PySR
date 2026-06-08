@@ -17,6 +17,20 @@ papers:
     abstract: "1. Connecting mathematical models with empirically measured microbial growth has remained challenging, as numerous competing models based on different theoretical approaches can fit observations. Therefore, we develop a method to automatically propose growth models from microbial data alone. We validate this approach using an available dataset of E. coli grown on known resources, and study 14 species across various concentrations of a rich medium. 2. The inherently interpretable approach of symbolic regression infers explicit dynamical models directly from growth data. Using symbolic regression natively, does not favour biologically interpretable models, but we find cumulative population gain to be a more informative machine learning feature than population size. 3. Random Forest machine learning allows us to relate this finding to the approximation of a constant-rate per capita resource consumption. This suggests that the area under the growth curve (AUC) measured in routine experiments provides information on the effective resource dynamics governing microbial growth. Finally, we use theoretical insights to inform the symbolic regression algorithm and favour biologically interpretable models. 4. Overall, we found that balancing between data fit, parsimony and biological relevance favoured both the simplest, linear approximation and models based on Monod dynamics, with either one or two underlying resources. Therefore, our approach to read growth laws off of microbial batch cultures provides insights on data-driven modelling."
     image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/48020babcca1e73d2f5bbbd4ef3f0ec3265c59fb/images/pr1200_microbial_growth_models.png
     date: 2026-06-01
+  - title: Distilling human mobility models with symbolic regression
+    authors:
+      - Hao Guo (1)
+      - Weiyu Zhang (1)
+      - Junjie Yang (1)
+      - Yuanqiao Hou (1)
+      - Lei Dong (1)
+      - Yu Liu (1)
+    affiliations:
+      1: Peking University
+    link: https://onlinelibrary.wiley.com/doi/10.1111/gean.70043
+    abstract: "Human mobility is a fundamental aspect of social behavior, with broad applications in transportation, urban planning, and epidemic modeling. Represented by the gravity model and the radiation model, established analytical models for mobility phenomena are often discovered by analogy to physical processes. Such discoveries can be challenging and rely on intuition, while the potential of emerging social observation data in model discovery is largely unexploited. Here, we propose a systematic approach that leverages symbolic regression to automatically discover interpretable models from human mobility data. Our approach finds several well-known formulas, such as the distance decay effect and classical gravity models, as well as previously unknown ones, such as an exponential-power-law decay that can be explained by the maximum entropy principle. By relaxing the constraints on the complexity of model expressions, we further show how key variables of human mobility are progressively incorporated into the model, making this framework a powerful tool for revealing the underlying mathematical structures of complex social phenomena directly from observational data."
+    image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/48020babcca1e73d2f5bbbd4ef3f0ec3265c59fb/images/pr1188_human_mobility_models.png
+    date: 2026-05-04
   - title: Discovering parametrizations of implied volatility with symbolic regression
     authors:
       - Martin Keller-Ressel (1,2)
