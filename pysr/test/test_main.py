@@ -1540,6 +1540,8 @@ class TestMiscellaneous(unittest.TestCase):
                     warnings.simplefilter("ignore")
                     check(model)
                 print("Passed", check.func.__name__)
+            except unittest.SkipTest as exc:
+                print("Skipped", check.func.__name__, "with:", exc)
             except Exception:
                 error_message = str(traceback.format_exc())
                 exception_messages.append(
