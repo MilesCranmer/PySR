@@ -2,6 +2,21 @@
 # information to generate the "Research Showcase"
 
 papers:
+  - title: Discovering data-driven microbial growth models with symbolic regression
+    authors:
+      - T. Anthony Sun (1)
+      - Dovydas Kičiatovas (1)
+      - Inga-Katariina Aapalampi (2)
+      - Teemu Kuosmanen (1)
+      - Teppo Hiltunen (2)
+      - Ville Mustonen (1)
+    affiliations:
+      1: Department of Organismal and Evolutionary Biology & Department of Computer Science, University of Helsinki
+      2: Department of Biology, University of Turku
+    link: https://doi.org/10.1111/2041-210x.70335
+    abstract: "1. Connecting mathematical models with empirically measured microbial growth has remained challenging, as numerous competing models based on different theoretical approaches can fit observations. Therefore, we develop a method to automatically propose growth models from microbial data alone. We validate this approach using an available dataset of E. coli grown on known resources, and study 14 species across various concentrations of a rich medium. 2. The inherently interpretable approach of symbolic regression infers explicit dynamical models directly from growth data. Using symbolic regression natively, does not favour biologically interpretable models, but we find cumulative population gain to be a more informative machine learning feature than population size. 3. Random Forest machine learning allows us to relate this finding to the approximation of a constant-rate per capita resource consumption. This suggests that the area under the growth curve (AUC) measured in routine experiments provides information on the effective resource dynamics governing microbial growth. Finally, we use theoretical insights to inform the symbolic regression algorithm and favour biologically interpretable models. 4. Overall, we found that balancing between data fit, parsimony and biological relevance favoured both the simplest, linear approximation and models based on Monod dynamics, with either one or two underlying resources. Therefore, our approach to read growth laws off of microbial batch cultures provides insights on data-driven modelling."
+    image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/48020babcca1e73d2f5bbbd4ef3f0ec3265c59fb/images/pr1200_microbial_growth_models.png
+    date: 2026-06-01
   - title: Discovering parametrizations of implied volatility with symbolic regression
     authors:
       - Martin Keller-Ressel (1,2)
