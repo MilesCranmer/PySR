@@ -84,6 +84,22 @@ papers:
     abstract: Accurate estimation of the skin friction coefficient (𝐶𝑓) is essential for estimating the wall shear stresses (𝜏𝑤) and ultimately the first-layer cell height (𝑦) in wall-resolved RANS simulations of wings, where turbulence models are used, demanding a specific grid resolution near walls (primarily the 𝑦𝑡𝑎𝑟𝑔𝑒𝑡⁺). Conventional flat-plate correlations often fail to account for the three-dimensional nature of real wing flows, introducing uncertainties in 𝐶𝑓 predictions and leading to multiple CFD analyses and mesh refinements to meet the targets. In this work, we propose a machine-learning-based approach exploring symbolic regression to derive a model that correlates wing-specific parameters (e.g., Reynolds number, angle of attack, thickness-to-chord ratio, wing sweep angle) with 𝐶𝑓 at the Mean Aerodynamic Chord (MAC). Data are acquired from an in-house database of over 5,000 RANS simulations for UAV wings operating in the low subsonic regime, covering a wide design space, all conducted following best-practice CFD guidelines to ensure high fidelity. These analyses are performed at various flow conditions covering Reynolds numbers from 10⁵ to 10⁷ and include the complete drag polar for each wing. The proposed correlation provides improved agreement with CFD data and enables more accurate 𝑦⁺ estimations. Validation on different wing geometries, including the ONERA M6 and in-house UAV wings, confirmed the robustness of the model, which improves boundary-layer resolution with only a marginal (~2%) increase in total mesh size, while achieving an R² of 0.68 with negligible computational inference cost. This explicit, data-driven equation offers an efficient method for streamlining mesh generation in aerodynamic simulations.
     image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/48020babcca1e73d2f5bbbd4ef3f0ec3265c59fb/images/pr1127_skin_friction.png
     date: 2025-05-30
+  - title: Angular Coefficients from Interpretable Machine Learning with Symbolic Regression
+    authors:
+      - Josh Bendavid (1)
+      - Daniel Conde (2)
+      - Manuel Morales-Alvarado (3)
+      - Veronica Sanz (2)
+      - Maria Ubiali (4)
+    affiliations:
+      1: CERN, European Organization for Nuclear Research, Geneva
+      2: Universidad de Valencia
+      3: Istituto Nazionale di Fisica Nucleare
+      4: University of Cambridge
+    link: https://arxiv.org/abs/2508.00989v3
+    abstract: We explore the use of symbolic regression to derive compact analytical expressions for angular observables relevant to electroweak boson production at the Large Hadron Collider (LHC). Focusing on the angular coefficients that govern the decay distributions of W and Z bosons, we investigate whether symbolic models can well approximate these quantities, typically computed via computationally costly numerical procedures, with high fidelity and interpretability. Using the PySR package, we first validate the approach in controlled settings, namely in angular distributions in lepton-lepton collisions in QED and in leading-order Drell-Yan production at the LHC. We then apply symbolic regression to extract closed-form expressions for the angular coefficients as functions of transverse momentum, rapidity, and invariant mass, using next-to-leading order simulations of Drell-Yan events. Our results demonstrate that symbolic regression can produce accurate and generalisable expressions that match Monte Carlo predictions within uncertainties, while preserving interpretability and providing insight into the kinematic dependence of angular observables.
+    image: https://raw.githubusercontent.com/MilesCranmer/PySR_Docs/48020babcca1e73d2f5bbbd4ef3f0ec3265c59fb/images/pr1096_angular_coefficients_sr.png
+    date: 2024-12-04
   - title: Discovering parametrizations of implied volatility with symbolic regression
     authors:
       - Martin Keller-Ressel (1,2)
