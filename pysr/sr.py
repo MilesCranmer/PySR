@@ -1551,9 +1551,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         if index is not None:
             if isinstance(self.equations_, list):
-                assert isinstance(index, list), (
-                    "With multiple output features, index must be a list."
-                )
+                assert isinstance(
+                    index, list
+                ), "With multiple output features, index must be a list."
                 return [eq.iloc[i] for eq, i in zip(self.equations_, index)]
             else:
                 equations_ = cast(pd.DataFrame, self.equations_)
