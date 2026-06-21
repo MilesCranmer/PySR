@@ -80,7 +80,9 @@ class TestPipeline(unittest.TestCase):
     def test_temp_equation_file_respects_tempdir(self):
         with tempfile.TemporaryDirectory() as d:
             tempdir = Path(d) / "pysr-temp"
-            model = PySRRegressor(temp_equation_file=True, tempdir=str(tempdir), run_id="t")
+            model = PySRRegressor(
+                temp_equation_file=True, tempdir=str(tempdir), run_id="t"
+            )
             model._setup_equation_file()
             self.assertEqual(Path(model.output_directory_).parent, tempdir)
 
