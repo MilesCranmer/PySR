@@ -1590,15 +1590,16 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             if self.output_directory is not None:
                 assert self.output_directory_ == self.output_directory
         else:
-            self.output_directory_ = (
-                tempfile.mkdtemp()
-                if self.temp_equation_file
-                else (
+            if self.temp_equation_file:
+                if self.tempdir is not None:
+                    Path(self.tempdir).mkdir(parents=True, exist_ok=True)
+                self.output_directory_ = tempfile.mkdtemp(dir=self.tempdir)
+            else:
+                self.output_directory_ = (
                     "outputs"
                     if self.output_directory is None
                     else self.output_directory
                 )
-            )
             self.run_id_ = (
                 cast(str, SymbolicRegression.SearchUtilsModule.generate_run_id())
                 if self.run_id is None

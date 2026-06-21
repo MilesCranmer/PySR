@@ -77,6 +77,15 @@ class TestPipeline(unittest.TestCase):
         self.rstate = np.random.RandomState(0)
         self.X = self.rstate.randn(100, 5)
 
+    def test_temp_equation_file_respects_tempdir(self):
+        with tempfile.TemporaryDirectory() as d:
+            tempdir = Path(d) / "pysr-temp"
+            model = PySRRegressor(
+                temp_equation_file=True, tempdir=str(tempdir), run_id="t"
+            )
+            model._setup_equation_file()
+            self.assertEqual(Path(model.output_directory_).parent, tempdir)
+
     def test_linear_relation(self):
         y = self.X[:, 0]
         model = PySRRegressor(
@@ -2237,6 +2246,17 @@ class TestDimensionalConstraints(unittest.TestCase):
 
 
 class TestTemplateExpressionSpec(unittest.TestCase):
+    def test_num_features_symbol_keys(self):
+        # ponytail: one check — dict keys must reach Julia as Symbols
+        spec = TemplateExpressionSpec(
+            ["f", "g"],
+            "combine(fs, vars) = fs.f(vars[1], vars[2]) + fs.g(vars[3])",
+            {"f": 2, "g": 1},
+        )
+        options = spec.julia_expression_options()
+        names = jl.seval("x -> propertynames(x.structure.num_features)")(options)
+        self.assertEqual(names, (jl.Symbol("f"), jl.Symbol("g")))
+
     def _check_macro_str(self, spec, expected_str):
         self.assertEqual(
             spec._template_macro_str().strip(), dedent(expected_str).strip()
