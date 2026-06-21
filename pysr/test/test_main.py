@@ -77,6 +77,15 @@ class TestPipeline(unittest.TestCase):
         self.rstate = np.random.RandomState(0)
         self.X = self.rstate.randn(100, 5)
 
+    def test_temp_equation_file_respects_tempdir(self):
+        with tempfile.TemporaryDirectory() as d:
+            tempdir = Path(d) / "pysr-temp"
+            model = PySRRegressor(
+                temp_equation_file=True, tempdir=str(tempdir), run_id="t"
+            )
+            model._setup_equation_file()
+            self.assertEqual(Path(model.output_directory_).parent, tempdir)
+
     def test_linear_relation(self):
         y = self.X[:, 0]
         model = PySRRegressor(
