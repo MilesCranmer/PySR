@@ -39,6 +39,7 @@ from .expression_specs import (
     AbstractExpressionSpec,
     ExpressionSpec,
     ParametricExpressionSpec,
+    TemplateExpressionSpec,
     parametric_expression_deprecation_warning,
 )
 from .feature_selection import run_feature_selection
@@ -1466,6 +1467,19 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                     )
                 ]
         return pickled_state
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        # ponytail: raise immediately on reload instead of confusing SymPy error later
+        self.__dict__.update(state)
+        if (
+            "equations_" in state
+            and state["equations_"] is not None
+            and isinstance(self.expression_spec, TemplateExpressionSpec)
+        ):
+            raise NotImplementedError(
+                "Reloading fitted TemplateExpressionSpec models is not yet supported. "
+                "Please refit the model in the current session."
+            )
 
     def _checkpoint(self):
         """Save the model's current state to a checkpoint file.
