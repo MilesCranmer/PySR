@@ -2246,6 +2246,20 @@ class TestDimensionalConstraints(unittest.TestCase):
 
 
 class TestTemplateExpressionSpec(unittest.TestCase):
+    def test_reload_raises_clear_error(self):
+        # ponytail: one check — reload of fitted template spec raises immediately
+        import pickle
+        model = PySRRegressor(
+            expression_spec=TemplateExpressionSpec(
+                combine="f(x)", expressions=["f"], variable_names=["x"]
+            )
+        )
+        model.equations_ = pd.DataFrame({"loss": [0.0]})
+        model.feature_names_in_ = np.array(["x"])
+        model.nout_ = 1
+        with self.assertRaisesRegex(NotImplementedError, "not yet supported"):
+            pickle.loads(pickle.dumps(model))
+
     def _check_macro_str(self, spec, expected_str):
         self.assertEqual(
             spec._template_macro_str().strip(), dedent(expected_str).strip()
