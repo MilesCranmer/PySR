@@ -1471,8 +1471,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
     def __setstate__(self, state: dict[str, Any]) -> None:
         # ponytail: raise immediately on reload instead of confusing SymPy error later
         self.__dict__.update(state)
-        if "equations_" in state and state["equations_"] is not None and isinstance(
-            self.expression_spec, TemplateExpressionSpec
+        if (
+            "equations_" in state
+            and state["equations_"] is not None
+            and isinstance(self.expression_spec, TemplateExpressionSpec)
         ):
             raise NotImplementedError(
                 "Reloading fitted TemplateExpressionSpec models is not yet supported. "

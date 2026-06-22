@@ -2249,6 +2249,7 @@ class TestTemplateExpressionSpec(unittest.TestCase):
     def test_reload_raises_clear_error(self):
         # ponytail: one check — reload of fitted template spec raises immediately
         import pickle
+
         model = PySRRegressor(
             expression_spec=TemplateExpressionSpec(
                 combine="f(x)", expressions=["f"], variable_names=["x"]
