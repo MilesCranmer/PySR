@@ -779,12 +779,13 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Logger specification for the Julia backend. See, for example,
         `TensorBoardLoggerSpec`.
         Default is `None`.
-    input_stream : str
-        The stream to read user input from. By default, this is `"stdin"`.
+    input_stream : str | None
+        The stream to read user input from. By default, this is `None`,
+        which lets the Julia backend choose the appropriate stream.
         If you encounter issues with reading from `stdin`, like a hang,
         you can simply pass `"devnull"` to this argument. You can also
         reference an arbitrary Julia object in the `Main` namespace.
-        Default is `"stdin"`.
+        Default is `None`.
     run_id : str
         A unique identifier for the run. Will be generated using the
         current date and time if not provided.
@@ -1044,7 +1045,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         print_precision: int = 5,
         progress: bool = True,
         logger_spec: AbstractLoggerSpec | None = None,
-        input_stream: str = "stdin",
+        input_stream: str | None = None,
         run_id: str | None = None,
         output_directory: str | None = None,
         temp_equation_file: bool = False,
@@ -2152,7 +2153,8 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             else "nothing"
         )
 
-        input_stream = jl.seval(self.input_stream)
+        if self.input_stream is not None:
+            input_stream = jl.seval(self.input_stream)
 
         load_required_packages(
             turbo=self.turbo,
@@ -2244,7 +2246,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
         # Call to Julia backend.
         # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/OptionsStruct.jl
-        options = SymbolicRegression.Options(
+        options_kwargs = dict(
             operators=jl_operator_enum,
             constraints=jl_constraints_dict,
             complexity_of_operators=complexity_of_operators,
@@ -2309,12 +2311,14 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             crossover_probability=self.crossover_probability,
             skip_mutation_failures=self.skip_mutation_failures,
             max_evals=self.max_evals,
-            input_stream=input_stream,
             early_stop_condition=early_stop_condition,
             seed=seed,
             deterministic=self.deterministic,
             define_helper_functions=False,
         )
+        if self.input_stream is not None:
+            options_kwargs["input_stream"] = input_stream
+        options = SymbolicRegression.Options(**options_kwargs)
 
         self.julia_options_stream_ = jl_serialize(options)
 
