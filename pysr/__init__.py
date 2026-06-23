@@ -23,6 +23,7 @@ from .julia_import import jl, SymbolicRegression  # isort:skip
 from importlib.metadata import PackageNotFoundError, version
 
 from . import sklearn_monkeypatch
+from .backsolve_options import BacksolveOptions
 from .deprecated import best, best_callable, best_row, best_tex, install, pysr
 from .export_jax import sympy2jax
 from .export_torch import sympy2torch
@@ -51,6 +52,7 @@ __all__ = [
     "install",
     "load_all_packages",
     "PySRRegressor",
+    "BacksolveOptions",
     "AbstractExpressionSpec",
     "ExpressionSpec",
     "TemplateExpressionSpec",

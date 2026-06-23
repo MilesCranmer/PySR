@@ -24,6 +24,7 @@ except ImportError:
     estimator_checks_generator = functools.partial(check_estimator, generate_only=True)
 
 from pysr import (
+    BacksolveOptions,
     ParametricExpressionSpec,
     PySRRegressor,
     TemplateExpressionSpec,
@@ -168,6 +169,32 @@ class TestPipeline(unittest.TestCase):
             1.5
         """)
         self.assertEqual(num, 1.5)
+
+    def test_backsolve_options(self):
+        model = PySRRegressor(
+            niterations=1,
+            populations=1,
+            population_size=5,
+            tournament_selection_n=2,
+            ncycles_per_iteration=1,
+            binary_operators=["+", "*"],
+            weight_backsolve=0.5,
+            backsolve_options=BacksolveOptions(
+                max_library_size=37,
+                lambda_=0.2,
+                max_iter=3,
+            ),
+            progress=False,
+            temp_equation_file=True,
+        )
+        model.fit(self.X[:, :1], self.X[:, 0])
+
+        self.assertEqual(model.julia_options_.mutation_weights.backsolve, 0.5)
+        self.assertEqual(model.julia_options_.backsolve.max_library_size, 37)
+        self.assertEqual(
+            jl.getproperty(model.julia_options_.backsolve, jl.Symbol("lambda")), 0.2
+        )
+        self.assertEqual(model.julia_options_.backsolve.max_iter, 3)
 
     def test_high_precision_search_custom_loss(self):
         y = 1.23456789 * self.X[:, 0]

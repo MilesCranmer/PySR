@@ -45,12 +45,15 @@
     - weight_randomize
     - weight_simplify
     - weight_optimize
+    - weight_backsolve
     - crossover_probability
     - annealing
     - alpha
     - perturbation_factor
     - probability_negate_constant
     - skip_mutation_failures
+  - Backsolve:
+    - backsolve_options
   - Tournament Selection:
     - tournament_selection_n
     - tournament_selection_p

@@ -26,6 +26,7 @@ from sklearn.utils import check_array, check_consistent_length, check_random_sta
 from sklearn.utils.validation import _check_feature_names_in  # type: ignore
 from sklearn.utils.validation import check_is_fitted
 
+from .backsolve_options import BacksolveOptions
 from .denoising import denoise, multi_denoise
 from .deprecated import DEPRECATED_KWARGS
 from .export_latex import (
@@ -629,6 +630,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         every iteration. Using it as a mutation is useful if you want to use
         a large `ncycles_periteration`, and may not optimize very often.
         Default is `0.0`.
+    weight_backsolve: float
+        Relative likelihood for the experimental backsolve mutation.
+        Default is `0.0`.
     crossover_probability : float
         Absolute probability of crossover-type genetic operation, instead of a mutation.
         Default is `0.0259`.
@@ -636,6 +640,9 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         Whether to skip mutation and crossover failures, rather than
         simply re-sampling the current member.
         Default is `True`.
+    backsolve_options : BacksolveOptions | None
+        Options for the experimental backsolve mutation. Default is `None`,
+        which uses the Julia backend defaults.
     migration : bool
         Whether to migrate.  Default is `True`.
     hof_migration : bool
@@ -996,8 +1003,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         weight_randomize: float = 0.000502,
         weight_simplify: float = 0.00209,
         weight_optimize: float = 0.0,
+        weight_backsolve: float = 0.0,
         crossover_probability: float = 0.0259,
         skip_mutation_failures: bool = True,
+        backsolve_options: BacksolveOptions | None = None,
         migration: bool = True,
         hof_migration: bool = True,
         topn: int = 12,
@@ -1113,8 +1122,10 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.weight_randomize = weight_randomize
         self.weight_simplify = weight_simplify
         self.weight_optimize = weight_optimize
+        self.weight_backsolve = weight_backsolve
         self.crossover_probability = crossover_probability
         self.skip_mutation_failures = skip_mutation_failures
+        self.backsolve_options = backsolve_options
         # -- Migration parameters
         self.migration = migration
         self.hof_migration = hof_migration
@@ -2191,6 +2202,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
             randomize=self.weight_randomize,
             do_nothing=self.weight_do_nothing,
             optimize=self.weight_optimize,
+            backsolve=self.weight_backsolve,
         )
 
         # Convert operators dict to Julia format and create OperatorEnum
@@ -2270,6 +2282,11 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 else len(X)
             ),
             mutation_weights=mutation_weights,
+            backsolve=(
+                self.backsolve_options.julia_options()
+                if self.backsolve_options is not None
+                else None
+            ),
             tournament_selection_p=self.tournament_selection_p,
             tournament_selection_n=self.tournament_selection_n,
             # These have the same name:
