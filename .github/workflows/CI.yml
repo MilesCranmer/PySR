@@ -48,7 +48,7 @@ jobs:
             test-id: include
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: "Set up Julia"
         uses: julia-actions/setup-julia@v2
         with:
@@ -101,7 +101,7 @@ jobs:
             python-version: '3.10'
             julia-version: '1.10'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
       - name: "Install PySR"
         run: |
@@ -123,7 +123,7 @@ jobs:
         os: ['ubuntu-latest']
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: "Cache conda"
         uses: actions/cache@v5
         env:
@@ -166,7 +166,7 @@ jobs:
         os: ['ubuntu-latest']
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: "Set up Python"
         uses: actions/setup-python@v6
         with:
@@ -196,7 +196,7 @@ jobs:
         python-version: ['3.13']
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: "Set up Python"
         uses: actions/setup-python@v6
         with:
@@ -221,7 +221,7 @@ jobs:
         julia-version: ['1']
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: "Set up Julia"
         uses: julia-actions/setup-julia@v2
         with:
@@ -250,7 +250,7 @@ jobs:
         shell: bash -l {0}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
@@ -280,7 +280,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: "Set up Python"
         uses: actions/setup-python@v6
         with:
