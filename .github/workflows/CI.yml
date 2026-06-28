@@ -89,7 +89,7 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          slug: MilesCranmer/PySR
+          slug: astroautomata/PySR
 
   dev_install:
     runs-on: ${{ matrix.os }}
