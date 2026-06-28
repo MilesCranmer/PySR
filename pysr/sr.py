@@ -2243,7 +2243,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
                 jl_constraints_dict = jl.Dict(constraints_pairs)
 
         # Call to Julia backend.
-        # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/OptionsStruct.jl
+        # See https://github.com/astroautomata/SymbolicRegression.jl/blob/master/src/OptionsStruct.jl
         options = SymbolicRegression.Options(
             operators=jl_operator_enum,
             constraints=jl_constraints_dict,
