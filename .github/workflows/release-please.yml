@@ -38,7 +38,7 @@ jobs:
       id-token: write
     steps:
       - name: Checkout released revision
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ needs.release-please.outputs.sha }}
       - name: Set up Python
