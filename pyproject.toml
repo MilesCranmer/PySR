@@ -35,7 +35,7 @@ dev = [
     "ipython>=8,<9",
     "jax[cpu]>=0.4,<0.6",
     "jupyter>=1,<2",
-    "mypy>=1,<2",
+    "mypy>=1,<3",
     "nbval>=0.11,<0.12",
     "pandas-stubs",
     "pre-commit>=3.0,<5",
