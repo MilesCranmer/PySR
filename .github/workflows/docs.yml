@@ -41,7 +41,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
-      - uses: julia-actions/setup-julia@v2
+      - uses: julia-actions/setup-julia@v3
         with:
           version: '1'
       - name: Install julia deps
