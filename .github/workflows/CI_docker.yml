@@ -1,18 +1,8 @@
 name: Docker
 
 on:
-  push:
-    branches:
-      - 'master'
-    paths:
-      - '**'
-    tags:
-      - 'v*.*.*'
-  pull_request:
-    branches:
-      - 'master'
-    paths:
-      - '**'
+  schedule:
+    - cron: "0 10 1 * *"
   workflow_dispatch:
 
 jobs:

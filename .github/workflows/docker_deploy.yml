@@ -1,8 +1,6 @@
 name: Deploy Docker
 
 on:
-  schedule:
-    - cron: "0 10 * * *"
   push:
     branches:
       - "master"

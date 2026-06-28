@@ -3,6 +3,12 @@ on:
   schedule:
     - cron: '00 00 * * *'
   workflow_dispatch:
+    inputs:
+      force:
+        description: "Force update even if an open PR already exists"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -17,7 +23,6 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3'
-          cache: pip
 
       - name: "Install dependencies"
         run: python -m pip install --upgrade pip
@@ -30,12 +35,25 @@ jobs:
           cd SymbolicRegression.jl
           echo "version=$(git describe --tags --match='v*' --abbrev=0 | sed 's/^v//')" >> $GITHUB_OUTPUT
 
+      - name: "Check for existing open PR"
+        id: existing-pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh pr list --repo "$GITHUB_REPOSITORY" --head "backend-update/v${{ steps.get-latest.outputs.version }}" --state open | grep -q .; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: "Update SymbolicRegression.jl version in PySR"
+        if: ${{ steps.existing-pr.outputs.exists != 'true' || (github.event_name == 'workflow_dispatch' && inputs.force) }}
         run: |
           python .github/workflows/update_backend_version.py ${{ steps.get-latest.outputs.version }}
 
       - name: "Create PR if necessary"
         id: cpr
+        if: ${{ steps.existing-pr.outputs.exists != 'true' || (github.event_name == 'workflow_dispatch' && inputs.force) }}
         uses: peter-evans/create-pull-request@v8
         with:
           branch: backend-update/v${{ steps.get-latest.outputs.version }}
@@ -50,7 +68,7 @@ jobs:
             pysr/juliapkg.json
 
       - name: "Trigger CI workflows (backend update PR)"
-        if: steps.cpr.outputs.pull-request-number != ''
+        if: ${{ steps.cpr.outputs.pull-request-number != '' || (github.event_name == 'workflow_dispatch' && inputs.force) }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -58,7 +76,3 @@ jobs:
           gh workflow run "Linux" --repo "$GITHUB_REPOSITORY" --ref "$ref" || true
           gh workflow run "Windows" --repo "$GITHUB_REPOSITORY" --ref "$ref" || true
           gh workflow run "macOS" --repo "$GITHUB_REPOSITORY" --ref "$ref" || true
-          gh workflow run "Docker" --repo "$GITHUB_REPOSITORY" --ref "$ref" || true
-          gh workflow run "Apptainer" --repo "$GITHUB_REPOSITORY" --ref "$ref" || true
-          gh workflow run "Documentation" --repo "$GITHUB_REPOSITORY" --ref "$ref" || true
-          gh workflow run "CodeQL" --repo "$GITHUB_REPOSITORY" --ref "$ref" || true

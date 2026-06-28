@@ -2,15 +2,19 @@ name: Docker_Large_Nightly
 
 on:
   schedule:
-    # Run at the 0th minute of the 10th hour (UTC).
-    # This means the job will run at 5am EST.
-    - cron: "0 10 * * *"
-    # This will automatically run on master branch only.
+    - cron: "0 10 15 * *"
   workflow_dispatch:
+    inputs:
+      include-arm64:
+        description: "Also run a slow linux/arm64 QEMU smoke test"
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   test:
     runs-on: ${{ matrix.os }}
+    if: ${{ matrix.arch != 'linux/arm64' || (github.event_name == 'workflow_dispatch' && inputs.include-arm64) }}
     continue-on-error: ${{ matrix.arch == 'linux/arm64' }}
     defaults:
       run:

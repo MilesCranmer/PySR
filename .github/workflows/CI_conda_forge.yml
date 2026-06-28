@@ -4,10 +4,7 @@ name: conda-forge
 
 on:
   schedule:
-    # Run at the 0th minute of the 10th hour (UTC).
-    # This means the job will run at 5am EST.
-    - cron: "0 10 * * *"
-    # This will automatically run on master branch only.
+    - cron: "0 10 * * 1"
   workflow_dispatch:
 
 jobs:
