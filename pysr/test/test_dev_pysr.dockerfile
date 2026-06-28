@@ -40,9 +40,9 @@ RUN cat /pysr/sr_version | sed 's/[\^=~]//g' > /pysr/sr_version_processed
 # Now, we check out the version of SymbolicRegression.jl that PySR is using:
 # If sr_version starts with 'v', use it as-is; otherwise prepend 'v'
 RUN if grep -q '^v' /pysr/sr_version_processed; then \
-        git clone -b "$(cat /pysr/sr_version_processed)" --single-branch https://github.com/MilesCranmer/SymbolicRegression.jl /srjl; \
+        git clone -b "$(cat /pysr/sr_version_processed)" --single-branch https://github.com/astroautomata/SymbolicRegression.jl /srjl; \
     else \
-        git clone -b "v$(cat /pysr/sr_version_processed)" --single-branch https://github.com/MilesCranmer/SymbolicRegression.jl /srjl; \
+        git clone -b "v$(cat /pysr/sr_version_processed)" --single-branch https://github.com/astroautomata/SymbolicRegression.jl /srjl; \
     fi
 
 # Edit SymbolicRegression.jl to create a new function.
