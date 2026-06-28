@@ -1999,7 +1999,7 @@ class PySRRegressor(MultiOutputMixin, RegressorMixin, BaseEstimator):
         self.logger_ = logger
 
         # Call to Julia backend.
-        # See https://github.com/MilesCranmer/SymbolicRegression.jl/blob/master/src/OptionsStruct.jl
+        # See https://github.com/astroautomata/SymbolicRegression.jl/blob/master/src/OptionsStruct.jl
         options = SymbolicRegression.Options(
             binary_operators=jl_array(jl_binary_operators, dtype=jl.Function),
             unary_operators=jl_array(jl_unary_operators, dtype=jl.Function),
