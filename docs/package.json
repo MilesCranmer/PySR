@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@nolebase/vitepress-plugin-enhanced-readabilities": "^2.14.0",
-    "d3-format": "^3.1.0",
+    "d3-format": "^3.1.2",
     "markdown-it": "^14.1.0",
     "markdown-it-footnote": "^4.0.0",
     "markdown-it-mathjax3": "^4.3.2",
