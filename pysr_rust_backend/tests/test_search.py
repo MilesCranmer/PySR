@@ -112,7 +112,9 @@ class TestSearch(unittest.TestCase):
         X = np.ones((4, 1), dtype=np.float32)
         y = np.ones(4, dtype=np.float32)
 
-        with self.assertRaisesRegex(ValueError, "unsupported or unknown mutation_weights"):
+        with self.assertRaisesRegex(
+            ValueError, "unsupported or unknown mutation_weights"
+        ):
             self._search(X, y, options={"mutation_weights": {"not_a_real_weight": 1.0}})
 
     def test_search_accepts_nondefault_seed(self):
