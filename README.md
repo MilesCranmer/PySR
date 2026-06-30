@@ -89,7 +89,8 @@ PySRRegressor(backend="rust")
 
 The Rust backend adapter expects the optional `symbolic_regression_rs` Python
 module from the `pysr-rust-backend` package. It is installed automatically by
-the `rust` extra.
+the `rust` extra. In this draft branch, the connector package source lives in
+[`pysr_rust_backend`](./pysr_rust_backend).
 
 The default `backend="auto"` uses the Rust backend when `pysr-rust-backend` is
 installed and falls back to Julia otherwise. Set `backend="julia"` to force the
