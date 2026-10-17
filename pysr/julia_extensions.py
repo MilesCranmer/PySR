@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import os
-from contextlib import contextmanager
 from typing import Literal
 
 from .julia_import import Pkg, jl
@@ -63,31 +61,19 @@ def isinstalled(uuid_s: str):
     return jl.haskey(dependencies, uuid) and dependencies[uuid].is_direct_dep
 
 
-@contextmanager
-def _pkg_autoprecompile_disabled():
-    # Julia 1.13.2's auto-precompile after `Pkg.add` fails with "Unknown package" when the add
-    # changes the version of an indirect dependency (JuliaLang/Pkg.jl#4866, fixed in #4867).
-    # The `using` in `load_package` precompiles what it needs instead.
-    old_value = os.environ.get("JULIA_PKG_PRECOMPILE_AUTO")
-    os.environ["JULIA_PKG_PRECOMPILE_AUTO"] = "0"
-    try:
-        yield
-    finally:
-        if old_value is None:
-            del os.environ["JULIA_PKG_PRECOMPILE_AUTO"]
-        else:
-            os.environ["JULIA_PKG_PRECOMPILE_AUTO"] = old_value
-
-
 def load_package(package_name: str, uuid_s: str) -> None:
     if not isinstalled(uuid_s):
 
         def _add_package():
-            Pkg.add(name=package_name, uuid=uuid_s)
+            # Julia 1.13.2's auto-precompile after `Pkg.add` fails with "Unknown package" when the add
+            # changes the version of an indirect dependency (JuliaLang/Pkg.jl#4866, fixed in #4867).
+            # The `using` below precompiles what it needs instead.
+            jl.seval(
+                '(name, uuid) -> withenv(() -> Pkg.add(; name, uuid), "JULIA_PKG_PRECOMPILE_AUTO" => "0")'
+            )(package_name, uuid_s)
             Pkg.resolve()
 
-        with _pkg_autoprecompile_disabled():
-            try_with_registry_fallback(_add_package)
+        try_with_registry_fallback(_add_package)
 
     # TODO: Protect against loading the same symbol from two packages,
     #       maybe with a @gensym here.
