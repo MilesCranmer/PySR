@@ -58,16 +58,25 @@ const shareAppearanceAcrossSites = `(() => {
   const domain = "pysr.ai";
   const host = location.hostname;
   if (host !== domain && !host.endsWith("." + domain)) return;
-  const saved = document.cookie.match(/(?:^|; )vitepress-theme-appearance=([^;]*)/);
-  if (saved) localStorage.setItem(key, saved[1]);
+  const shared = () => document.cookie.match(/(?:^|; )vitepress-theme-appearance=([^;]*)/)?.[1];
+  const saved = shared();
+  if (saved) localStorage.setItem(key, saved);
+  addEventListener("pageshow", (event) => {
+    const value = shared();
+    if (event.persisted && value && value !== localStorage.getItem(key)) {
+      localStorage.setItem(key, value);
+      location.reload();
+    }
+  });
   addEventListener("DOMContentLoaded", () => {
-    const html = document.documentElement;
-    let dark = html.classList.contains("dark");
+    // The class also flips when the OS theme changes under "auto"; only a changed stored value is a user choice.
+    let last = localStorage.getItem(key);
     new MutationObserver(() => {
-      if (html.classList.contains("dark") === dark) return;
-      dark = !dark;
-      document.cookie = key + "=" + localStorage.getItem(key) + "; domain=" + domain + "; path=/; max-age=31536000; SameSite=Lax";
-    }).observe(html, { attributeFilter: ["class"] });
+      const value = localStorage.getItem(key);
+      if (value === last) return;
+      last = value;
+      document.cookie = key + "=" + value + "; domain=" + domain + "; path=/; max-age=31536000; SameSite=Lax";
+    }).observe(document.documentElement, { attributeFilter: ["class"] });
   });
 })();`
 
