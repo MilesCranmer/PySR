@@ -1681,8 +1681,10 @@ class TestMiscellaneous(unittest.TestCase):
         rstate = np.random.RandomState(0)
         X = rstate.randn(100, 2)
         y = X[:, 0] * X[:, 1]
+        # Search for a fixed two seconds so scheduler pauses stay small next to `elapsed / 4`.
         model = PySRRegressor(
-            niterations=40,
+            niterations=1_000_000,
+            timeout_in_seconds=2,
             populations=8,
             verbosity=0,
             progress=False,
