@@ -1667,16 +1667,29 @@ class TestMiscellaneous(unittest.TestCase):
 
     def test_search_releases_the_gil(self):
         """Other Python threads must keep running while Julia searches."""
-        gaps = []
-        stop = threading.Event()
 
-        def sample_gaps():
-            previous = time.monotonic()
-            while not stop.is_set():
-                time.sleep(0.01)
-                now = time.monotonic()
-                gaps.append(now - previous)
-                previous = now
+        def longest_pause_during_fit(model, X, y):
+            gaps = []
+            stop = threading.Event()
+
+            def sample_gaps():
+                previous = time.monotonic()
+                while not stop.is_set():
+                    time.sleep(0.01)
+                    now = time.monotonic()
+                    gaps.append(now - previous)
+                    previous = now
+
+            watcher = threading.Thread(target=sample_gaps, daemon=True)
+            watcher.start()
+            started = time.monotonic()
+            try:
+                model.fit(X, y)
+            finally:
+                elapsed = time.monotonic() - started
+                stop.set()
+                watcher.join(timeout=5)
+            return max(gaps), elapsed
 
         rstate = np.random.RandomState(0)
         X = rstate.randn(100, 2)
@@ -1691,18 +1704,14 @@ class TestMiscellaneous(unittest.TestCase):
             temp_equation_file=True,
         )
 
-        watcher = threading.Thread(target=sample_gaps, daemon=True)
-        watcher.start()
-        started = time.monotonic()
-        try:
-            model.fit(X, y)
-        finally:
-            elapsed = time.monotonic() - started
-            stop.set()
-            watcher.join(timeout=5)
-
-        # Holding the GIL across the search would leave one gap spanning it.
-        self.assertLess(max(gaps), elapsed / 4)
+        # The first fit in a session compiles Julia code while holding the GIL,
+        # which can pause Python for over a second on CI, so allow one more fit.
+        for _ in range(2):
+            longest_pause, elapsed = longest_pause_during_fit(model, X, y)
+            if longest_pause < elapsed / 4:
+                return
+        # Holding the GIL across the search would leave one pause spanning it.
+        self.assertLess(longest_pause, elapsed / 4)
 
     def test_loss_function_can_call_back_into_python(self):
         """A Julia loss_function shim can drive a Python objective mid-search."""
