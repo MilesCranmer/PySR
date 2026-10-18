@@ -51,6 +51,35 @@ const nav = [
   }
 ]
 
+// pysr.ai and julia.pysr.ai are separate origins with separate localStorage, so mirror
+// VitePress's light/dark choice into a cookie that both sites read before first paint.
+const shareAppearanceAcrossSites = `(() => {
+  const key = "vitepress-theme-appearance";
+  const domain = "pysr.ai";
+  const host = location.hostname;
+  if (host !== domain && !host.endsWith("." + domain)) return;
+  const shared = () => document.cookie.match(/(?:^|; )vitepress-theme-appearance=([^;]*)/)?.[1];
+  const saved = shared();
+  if (saved) localStorage.setItem(key, saved);
+  addEventListener("pageshow", (event) => {
+    const value = shared();
+    if (event.persisted && value && value !== localStorage.getItem(key)) {
+      localStorage.setItem(key, value);
+      location.reload();
+    }
+  });
+  addEventListener("DOMContentLoaded", () => {
+    // The class also flips when the OS theme changes under "auto"; only a changed stored value is a user choice.
+    let last = localStorage.getItem(key);
+    new MutationObserver(() => {
+      const value = localStorage.getItem(key);
+      if (value === last) return;
+      last = value;
+      document.cookie = key + "=" + value + "; domain=" + domain + "; path=/; max-age=31536000; SameSite=Lax";
+    }).observe(document.documentElement, { attributeFilter: ["class"] });
+  });
+})();`
+
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   base: '/',
@@ -61,6 +90,7 @@ export default defineConfig({
   outDir: '../dist',
   srcExclude: ['**/_*.md'],
   head: [
+    ['script', {}, shareAppearanceAcrossSites],
     ['link', { rel: 'icon', type: 'image/x-icon', href: `${baseTemp.base}favicon.ico` }],
     ['link', { rel: 'icon', type: 'image/png', sizes: '16x16', href: `${baseTemp.base}favicon-16x16.png` }],
     ['link', { rel: 'icon', type: 'image/png', sizes: '32x32', href: `${baseTemp.base}favicon-32x32.png` }],
