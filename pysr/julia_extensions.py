@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import Literal
 
 from .julia_import import Pkg, jl
@@ -65,8 +66,19 @@ def load_package(package_name: str, uuid_s: str) -> None:
     if not isinstalled(uuid_s):
 
         def _add_package():
-            Pkg.add(name=package_name, uuid=uuid_s)
-            Pkg.resolve()
+            # Julia 1.13.2's auto-precompile after `Pkg.add` fails with "Unknown package" when the add
+            # changes the version of an indirect dependency (JuliaLang/Pkg.jl#4866, fixed in #4867).
+            # The `using` below precompiles what it needs instead.
+            old_value = os.environ.get("JULIA_PKG_PRECOMPILE_AUTO")
+            os.environ["JULIA_PKG_PRECOMPILE_AUTO"] = "0"
+            try:
+                Pkg.add(name=package_name, uuid=uuid_s)
+                Pkg.resolve()
+            finally:
+                if old_value is None:
+                    del os.environ["JULIA_PKG_PRECOMPILE_AUTO"]
+                else:
+                    os.environ["JULIA_PKG_PRECOMPILE_AUTO"] = old_value
 
         try_with_registry_fallback(_add_package)
 
