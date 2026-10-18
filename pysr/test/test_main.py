@@ -1684,7 +1684,7 @@ class TestMiscellaneous(unittest.TestCase):
         # Search for a fixed two seconds so scheduler pauses stay small next to `elapsed / 4`.
         model = PySRRegressor(
             niterations=1_000_000,
-            timeout_in_seconds=2,
+            timeout_in_seconds=2.0,
             populations=8,
             verbosity=0,
             progress=False,
