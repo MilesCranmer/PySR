@@ -1,5 +1,36 @@
 # Changelog
 
+## [2.7.1](https://github.com/astroautomata/PySR/compare/v2.7.0...v2.7.1) (2026-10-18)
+
+
+### Bug Fixes
+
+* accept weights of shape (n, 1) with targets of shape (n, 1) ([1823414](https://github.com/astroautomata/PySR/commit/1823414ee962162115602eae68bad62328ce213f))
+* early rejection of bad variable names ([#1418](https://github.com/astroautomata/PySR/issues/1418)) ([e5db909](https://github.com/astroautomata/PySR/commit/e5db909788a346b7ab2d00fba206e86f7b24cc10))
+* evaluate integer and boolean inputs to predict in floating point ([1823414](https://github.com/astroautomata/PySR/commit/1823414ee962162115602eae68bad62328ce213f))
+* export max and min with three or more arguments ([1fd4114](https://github.com/astroautomata/PySR/commit/1fd411441da9e66a10b9a88f9de92f6a91d1361b))
+* export Piecewise-based operators to PyTorch and JAX ([#1415](https://github.com/astroautomata/PySR/issues/1415)) ([1fd4114](https://github.com/astroautomata/PySR/commit/1fd411441da9e66a10b9a88f9de92f6a91d1361b))
+* install Julia extensions without Pkg auto-precompile ([#1433](https://github.com/astroautomata/PySR/issues/1433)) ([dd2c6f6](https://github.com/astroautomata/PySR/commit/dd2c6f6416f537cadbbf358f0aab1425c32a7efc))
+* leave caller DataFrames untouched in fit and predict ([#1417](https://github.com/astroautomata/PySR/issues/1417)) ([1823414](https://github.com/astroautomata/PySR/commit/1823414ee962162115602eae68bad62328ce213f))
+* let extra_torch_mappings override built-in mappings ([1fd4114](https://github.com/astroautomata/PySR/commit/1fd411441da9e66a10b9a88f9de92f6a91d1361b))
+* use element-wise max and min in JAX export ([1fd4114](https://github.com/astroautomata/PySR/commit/1fd411441da9e66a10b9a88f9de92f6a91d1361b))
+
+
+### Performance Improvements
+
+* allocation-free operator constraint check ([SymbolicRegression.jl PR 762](https://github.com/astroautomata/SymbolicRegression.jl/pull/762)) ([78566a7](https://github.com/astroautomata/PySR/commit/78566a7655d05c492128d163020d3125908bf89a))
+
+
+### Dependencies
+
+* require DynamicExpressions 2.13 ([SymbolicRegression.jl PR 772](https://github.com/astroautomata/SymbolicRegression.jl/pull/772)) ([78566a7](https://github.com/astroautomata/PySR/commit/78566a7655d05c492128d163020d3125908bf89a))
+* update backend to v2.7.1 ([78566a7](https://github.com/astroautomata/PySR/commit/78566a7655d05c492128d163020d3125908bf89a))
+
+
+### Documentation
+
+* share the light/dark choice between pysr.ai and julia.pysr.ai ([#1432](https://github.com/astroautomata/PySR/issues/1432)) ([cf31619](https://github.com/astroautomata/PySR/commit/cf31619b8f3ba1a884d0c2fd9eb82543f4614f85))
+
 ## [2.7.0](https://github.com/astroautomata/PySR/compare/v2.6.2...v2.7.0) (2026-10-07)
 
 
