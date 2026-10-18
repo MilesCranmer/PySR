@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.7.2](https://github.com/astroautomata/PySR/compare/v2.7.1...v2.7.2) (2026-10-18)
+
+
+### Bug Fixes
+
+* keep other stdin readers alive in close_reader! ([SymbolicRegression.jl PR 774](https://github.com/astroautomata/SymbolicRegression.jl/pull/774)) ([61fe27e](https://github.com/astroautomata/PySR/commit/61fe27e8ed1e8353fa70c61caa7d5521028aba8d))
+
+
+### Dependencies
+
+* update backend to v2.7.2 ([61fe27e](https://github.com/astroautomata/PySR/commit/61fe27e8ed1e8353fa70c61caa7d5521028aba8d))
+
 ## [2.7.1](https://github.com/astroautomata/PySR/compare/v2.7.0...v2.7.1) (2026-10-18)
 
 
