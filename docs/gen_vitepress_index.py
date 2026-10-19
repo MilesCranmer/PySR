@@ -54,6 +54,9 @@ def process_readme_content(readme_content):
         # Fix internal links to use VitePress paths
         line = line.replace("(https://pysr.ai/papers)", "(/papers)")
         line = re.sub(r"(?<!!)(\[[^]]+\]\()([^\s)]*)\)", repo_link, line)
+        line = re.sub(
+            r'<img src="https://avatars\.githubusercontent\.com/[^>]*><br />', "", line
+        )
 
         # Skip table of contents entries
         if line.startswith("**Contents**:") or (
