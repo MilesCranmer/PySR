@@ -1,15 +1,12 @@
 """Functions for initializing the Julia environment and installing deps."""
 
-from typing import Any, Callable, cast, overload
+from typing import Any, cast, overload
 
 import numpy as np
-from juliacall import convert as jl_convert  # type: ignore
 from numpy.typing import NDArray
 
 from .deprecated import init_julia, install
 from .julia_import import AnyValue, jl
-
-jl_convert = cast(Callable[[Any, Any], Any], jl_convert)
 
 jl.seval("using Serialization: Serialization")
 jl.seval("using PythonCall: PythonCall")
@@ -51,9 +48,9 @@ def jl_array(x, dtype=None):
     if x is None:
         return None
     elif dtype is None:
-        return jl_convert(jl.Array, x)
+        return PythonCall.pyconvert(jl.Array, x)
     else:
-        return jl_convert(jl.Array[dtype], x)
+        return PythonCall.pyconvert(jl.Array[dtype], x)
 
 
 def jl_numpy_array(x):
@@ -61,7 +58,7 @@ def jl_numpy_array(x):
 
 
 def jl_dict(x):
-    return jl_convert(jl.Dict, x)
+    return PythonCall.pyconvert(jl.Dict, x)
 
 
 def jl_named_tuple(d):
