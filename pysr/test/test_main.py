@@ -1883,6 +1883,32 @@ class TestMiscellaneous(unittest.TestCase):
         y_pred = model.predict(X)
         assert np.isfinite(y_pred).all()
 
+    def test_str_subclass_mixed_with_non_str_dataframe_columns(self):
+        # Next to a non-string column name, a str subclass name is left as it
+        # is: scikit-learn ignores the names, as before, instead of raising
+        # a TypeError for a mix of str and non-str names.
+        class Cols(str, Enum):
+            A = "a"
+
+        model = PySRRegressor(
+            niterations=1,
+            populations=1,
+            procs=0,
+            progress=False,
+            verbosity=0,
+            temp_equation_file=True,
+        )
+
+        X = pd.DataFrame({Cols.A: [1.0, 2.0, 3.0], 0: [3.0, 4.0, 5.0]})
+        y = X[Cols.A] + X[0]
+
+        model.fit(X, y)
+        np.testing.assert_array_equal(model.feature_names_in_, np.array(["x0", "x1"]))
+        self.assertEqual(list(X.columns), [Cols.A, 0])
+
+        y_pred = model.predict(X.to_numpy())
+        assert np.isfinite(y_pred).all()
+
     def test_pickle_with_temp_equation_file(self):
         """If we have a temporary equation file, unpickle the estimator."""
         model = PySRRegressor(
